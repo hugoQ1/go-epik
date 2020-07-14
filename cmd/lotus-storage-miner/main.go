@@ -102,6 +102,7 @@ func getActorAddress(ctx context.Context, nodeAPI api.StorageMiner, overrideMadd
 		if err != nil {
 			return maddr, err
 		}
+		return
 	}
 
 	maddr, err = nodeAPI.ActorAddress(ctx)
