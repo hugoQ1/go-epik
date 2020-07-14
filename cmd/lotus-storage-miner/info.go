@@ -26,6 +26,12 @@ var infoCmd = &cli.Command{
 	Usage: "Print storage miner info",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "color"},
+		&cli.StringFlag{
+			Name:    "actor",
+			Value:   "",
+			Usage:   "specify other actor to check state for (read only)",
+			Aliases: []string{"a"},
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		color.NoColor = !cctx.Bool("color")
