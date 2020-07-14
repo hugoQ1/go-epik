@@ -72,6 +72,9 @@ func main() {
 				Usage:   "specify other actor to check state for (read only)",
 				Aliases: []string{"a"},
 			},
+			&cli.BoolFlag{
+				Name: "color",
+			},
 			&cli.StringFlag{
 				Name:    "repo",
 				EnvVars: []string{"LOTUS_PATH"},
