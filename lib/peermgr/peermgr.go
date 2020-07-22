@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/lotus/metrics"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"go.opencensus.io/stats"
 	"go.uber.org/fx"
 

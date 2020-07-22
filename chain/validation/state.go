@@ -15,8 +15,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var _ vstate.VMWrapper = &StateWrapper{}

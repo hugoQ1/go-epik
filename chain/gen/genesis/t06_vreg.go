@@ -11,7 +11,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var RootVerifierAddr address.Address

@@ -30,8 +30,8 @@ sudo pacman -Syu go gcc git bzr jq pkg-config opencl-icd-loader opencl-headers
 Clone
 
 ```sh
-git clone https://github.com/filecoin-project/lotus.git
-cd lotus/
+git clone https://github.com/EpiK-Protocol/go-epik.git
+cd epik/
 ```
 
 Install
@@ -41,4 +41,4 @@ make clean && make all
 sudo make install
 ```
 
-After installing Lotus, you can run the `lotus` command directly from your CLI to see usage documentation. Next, you can join the [Lotus Testnet](https://docs.lotu.sh/en+join-testnet).
+After installing epik, you can run the `epik` command directly from your CLI to see usage documentation. Next, you can join the [epik Testnet](https://docs.lotu.sh/en+join-testnet).

@@ -15,8 +15,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api/apibstore"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 // UserData is the data returned from the DiffTipSetKeyFunc

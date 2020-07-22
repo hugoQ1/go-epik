@@ -1,6 +1,6 @@
-# Updating Lotus
+# Updating epik
 
-If you installed Lotus on your machine, you can upgrade to the latest version by doing the following:
+If you installed epik on your machine, you can upgrade to the latest version by doing the following:
 
 ```sh
 # get the latest

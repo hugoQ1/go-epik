@@ -20,12 +20,12 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 
-	"github.com/filecoin-project/lotus/chain/gen"
-	genesis2 "github.com/filecoin-project/lotus/chain/gen/genesis"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/genesis"
-	"github.com/filecoin-project/lotus/node/modules"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/genesis"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
 var glog = logging.Logger("genesis")

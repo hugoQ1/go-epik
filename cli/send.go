@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/urfave/cli/v2"
 )
 

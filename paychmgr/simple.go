@@ -12,9 +12,9 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 func (pm *Manager) createPaych(ctx context.Context, from, to address.Address, amt types.BigInt) (cid.Cid, error) {

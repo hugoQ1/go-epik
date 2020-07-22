@@ -3,8 +3,8 @@ package testing
 import (
 	"time"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 )
 
 func RandomBeacon() (beacon.RandomBeacon, error) {

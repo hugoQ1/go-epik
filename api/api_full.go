@@ -18,8 +18,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
 // FullNode API is a low-level interface to the Filecoin network full node
@@ -103,9 +103,9 @@ type FullNode interface {
 
 	// MethodGroup: Sync
 	// The Sync method group contains methods for interacting with and
-	// observing the lotus sync service.
+	// observing the epik sync service.
 
-	// SyncState returns the current status of the lotus sync system.
+	// SyncState returns the current status of the epik sync system.
 	SyncState(context.Context) (*SyncState, error)
 
 	// SyncSubmitBlock can be used to submit a newly created block to the.

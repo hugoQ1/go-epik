@@ -36,7 +36,7 @@ Assemble a `FullTipSet` populated with the single block received earlier.
 
 `V`: Beacon entires are ordered by their round number.
 
-`V:` Tipset `Parents` CIDs match the fetched parent tipset through block sync. (This check is not enforced correctly at the moment, see [issue](https://github.com/filecoin-project/lotus/issues/1918).)
+`V:` Tipset `Parents` CIDs match the fetched parent tipset through block sync. (This check is not enforced correctly at the moment, see [issue](https://github.com/EpiK-Protocol/go-epik/issues/1918).)
 
 ## `(*Syncer).ValidateBlock()`
 

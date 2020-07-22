@@ -10,7 +10,7 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
 
-	"github.com/filecoin-project/lotus/chain/actors/aerrors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
 )
 
 type NotAVeryGoodMarshaler struct{}

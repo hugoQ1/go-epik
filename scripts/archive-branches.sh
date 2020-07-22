@@ -3,8 +3,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 org=filecoin-project
-repo=lotus
-arch_repo="$org/lotus-archived"
+repo=epik
+arch_repo="$org/epik-archived"
 api_repo="repos/$org/$repo"
 
 exclusions=(

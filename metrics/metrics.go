@@ -22,7 +22,7 @@ var (
 
 // Measures
 var (
-	LotusInfo                           = stats.Int64("info", "Arbitrary counter to tag lotus info to", stats.UnitDimensionless)
+	EpikInfo                            = stats.Int64("info", "Arbitrary counter to tag epik info to", stats.UnitDimensionless)
 	ChainNodeHeight                     = stats.Int64("chain/node_height", "Current Height of the node", stats.UnitDimensionless)
 	ChainNodeWorkerHeight               = stats.Int64("chain/node_worker_height", "Current Height of workers on the node", stats.UnitDimensionless)
 	MessageReceived                     = stats.Int64("message/received", "Counter for total received messages", stats.UnitDimensionless)
@@ -38,8 +38,8 @@ var (
 var (
 	InfoView = &view.View{
 		Name:        "info",
-		Description: "Lotus node information",
-		Measure:     LotusInfo,
+		Description: "epik node information",
+		Measure:     EpikInfo,
 		Aggregation: view.LastValue(),
 		TagKeys:     []tag.Key{Version, Commit},
 	}

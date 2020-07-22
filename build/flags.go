@@ -5,11 +5,11 @@ package build
 // etc.
 //
 // When this value is set to true, it is expected that the user will
-// provide any such configurations through the Lotus API itself.
+// provide any such configurations through the epik API itself.
 //
-// This is useful when you're using Lotus as a library, such as to orchestrate
+// This is useful when you're using epik as a library, such as to orchestrate
 // test scenarios, or for other purposes where you don't need to use the
 // defaults shipped with the binary.
 //
-// For this flag to be effective, it must be enabled _before_ instantiating Lotus.
+// For this flag to be effective, it must be enabled _before_ instantiating epik.
 var DisableBuiltinAssets = false

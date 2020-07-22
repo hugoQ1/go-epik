@@ -14,8 +14,8 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/config"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/filecoin-project/sector-storage/stores"
 )
 
@@ -89,7 +89,7 @@ func (lmem *lockedMemRepo) Path() string {
 		return lmem.tempDir
 	}
 
-	t, err := ioutil.TempDir(os.TempDir(), "lotus-memrepo-temp-")
+	t, err := ioutil.TempDir(os.TempDir(), "epik-memrepo-temp-")
 	if err != nil {
 		panic(err) // only used in tests, probably fine
 	}

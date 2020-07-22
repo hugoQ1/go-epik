@@ -1,7 +1,7 @@
 FROM golang:1.14.1-buster
 MAINTAINER ldoublewood <ldoublewood@gmail.com>
 
-ENV SRC_DIR /lotus
+ENV SRC_DIR /epik
 
 RUN apt-get update && apt-get install -y ca-certificates llvm clang mesa-opencl-icd ocl-icd-opencl-dev jq
 
@@ -56,9 +56,9 @@ FROM busybox:1-glibc
 MAINTAINER ldoublewood <ldoublewood@gmail.com>
 
 # Get the executable binary and TLS CAs from the build container.
-ENV SRC_DIR /lotus
-COPY --from=0 $SRC_DIR/lotus /usr/local/bin/lotus
-COPY --from=0 $SRC_DIR/lotus-* /usr/local/bin/
+ENV SRC_DIR /epik
+COPY --from=0 $SRC_DIR/epik /usr/local/bin/epik
+COPY --from=0 $SRC_DIR/epik-* /usr/local/bin/
 COPY --from=0 /tmp/su-exec/su-exec /sbin/su-exec
 COPY --from=0 /tmp/tini /sbin/tini
 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
@@ -82,14 +82,14 @@ ENV HOME_PATH /data
 ENV PARAMCACHE_PATH /var/tmp/filecoin-proof-parameters
 
 RUN mkdir -p $HOME_PATH $PARAMCACHE_PATH \
-  && adduser -D -h $HOME_PATH -u 1000 -G users lotus \
-  && chown lotus:users $HOME_PATH $PARAMCACHE_PATH
+  && adduser -D -h $HOME_PATH -u 1000 -G users epik \
+  && chown epik:users $HOME_PATH $PARAMCACHE_PATH
 
 
 VOLUME $HOME_PATH
 VOLUME $PARAMCACHE_PATH
 
-USER lotus
+USER epik
 
 # Execute the daemon subcommand by default
-CMD ["/sbin/tini", "--", "lotus", "daemon"]
+CMD ["/sbin/tini", "--", "epik", "daemon"]

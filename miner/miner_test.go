@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/types"
 )
 
 func mustIDAddr(i uint64) address.Address {

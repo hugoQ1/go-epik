@@ -21,15 +21,15 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/events"
-	"github.com/filecoin-project/lotus/chain/market"
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/lib/sigs"
-	"github.com/filecoin-project/lotus/markets/utils"
-	"github.com/filecoin-project/lotus/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/events"
+	"github.com/EpiK-Protocol/go-epik/chain/market"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/markets/utils"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 )
 
 type ClientNodeAdapter struct {

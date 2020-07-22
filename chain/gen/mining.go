@@ -11,12 +11,12 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 )
 
 func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w *wallet.Wallet, bt *api.BlockTemplate) (*types.FullBlock, error) {

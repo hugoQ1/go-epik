@@ -22,32 +22,32 @@
       "posts": [
         {
           "title": "Arch Linux Installation",
-          "slug": "en+install-lotus-arch",
-          "github": "en/install-lotus-arch.md",
+          "slug": "en+install-epik-arch",
+          "github": "en/install-epik-arch.md",
           "value": null
         },
         {
           "title": "Ubuntu Installation",
-          "slug": "en+install-lotus-ubuntu",
-          "github": "en/install-lotus-ubuntu.md",
+          "slug": "en+install-epik-ubuntu",
+          "github": "en/install-epik-ubuntu.md",
           "value": null
         },
         {
           "title": "Fedora Installation",
-          "slug": "en+install-lotus-fedora",
-          "github": "en/install-lotus-fedora.md",
+          "slug": "en+install-epik-fedora",
+          "github": "en/install-epik-fedora.md",
           "value": null
         },
         {
           "title": "MacOS Installation",
-          "slug": "en+install-lotus-macos",
-          "github": "en/install-lotus-macos.md",
+          "slug": "en+install-epik-macos",
+          "github": "en/install-epik-macos.md",
           "value": null
         },
         {
-          "title": "Updating Lotus",
-          "slug": "en+updating-lotus",
-          "github": "en/updating-lotus.md",
+          "title": "Updating epik",
+          "slug": "en+updating-epik",
+          "github": "en/updating-epik.md",
           "value": null
         },
         {
@@ -57,7 +57,7 @@
           "value": null
         },
         {
-          "title": "Use Lotus with systemd",
+          "title": "Use epik with systemd",
           "slug": "en+install-systemd-services",
           "github": "en/install-systemd-services.md",
           "value": null
@@ -83,9 +83,9 @@
       "value": null,
       "posts": [
         {
-          "title": "Lotus Seal Worker",
-          "slug": "en+lotus-seal-worker",
-          "github": "en/mining-lotus-seal-worker.md",
+          "title": "epik Seal Worker",
+          "slug": "en+epik-seal-worker",
+          "github": "en/mining-epik-seal-worker.md",
           "value": null
         },
         {

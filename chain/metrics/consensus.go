@@ -11,9 +11,9 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"go.uber.org/fx"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/impl/full"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
 
 var log = logging.Logger("metrics")

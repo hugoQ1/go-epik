@@ -7,7 +7,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
 	xerrors "golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 func (pm *Manager) loadPaychState(ctx context.Context, ch address.Address) (*types.Actor, *paych.State, error) {

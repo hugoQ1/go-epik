@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/types/mock"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
 )
 
 var genTs = mock.TipSet(mock.MkBlock(nil, 0, 0))

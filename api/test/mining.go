@@ -15,8 +15,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/node/impl"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
 
 var log = logging.Logger("apitest")

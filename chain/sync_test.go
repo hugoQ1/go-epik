@@ -19,16 +19,16 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	mocktypes "github.com/filecoin-project/lotus/chain/types/mock"
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/impl"
-	"github.com/filecoin-project/lotus/node/modules"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	mocktypes "github.com/EpiK-Protocol/go-epik/chain/types/mock"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 func init() {

@@ -12,11 +12,11 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	_ "github.com/filecoin-project/lotus/lib/sigs/bls"  // enable bls signatures
-	_ "github.com/filecoin-project/lotus/lib/sigs/secp" // enable secp signatures
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"  // enable bls signatures
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp" // enable secp signatures
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 )
 
 var log = logging.Logger("wallet")

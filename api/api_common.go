@@ -9,7 +9,7 @@ import (
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 type Common interface {

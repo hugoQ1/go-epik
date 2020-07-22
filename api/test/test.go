@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 type TestNode struct {

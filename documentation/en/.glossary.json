@@ -65,7 +65,7 @@
   },
   "filecoin-testnet": {
     "title": "Filecoin Testnet",
-    "value": "Until we launch, we are making lots of changes to Lotus. The Testnet is expected to bring a few significant fixes/improvements. During Testnet, you can retrieve test filecoin from our network faucet to use as collateral to start mining. Test filecoin do not have any value – the official filecoin tokens will not be released until Mainnet launch."
+    "value": "Until we launch, we are making lots of changes to epik. The Testnet is expected to bring a few significant fixes/improvements. During Testnet, you can retrieve test filecoin from our network faucet to use as collateral to start mining. Test filecoin do not have any value – the official filecoin tokens will not be released until Mainnet launch."
   },
   "filecoin-decentralized-storage-market": {
     "title": "Filecoin Decentralized Storage Market",
@@ -75,7 +75,7 @@
     "title": "Filecoin Proof Parameters",
     "value": "The proving algorithms rely on a large binary parameter file."
   },
-  "lotus-devnet": {
+  "epik-devnet": {
     "title": "DevNet",
     "value": "On the DevNets, you can store data as a storage client and also try how Filecoin mining works. The devnets are an important development tool for those who anticipate building applications on top of the Filecoin protocol or storing data on the decentralized storage market. "
   },
@@ -83,9 +83,9 @@
     "title": "Filecoin Distributed Storage Network",
     "value": "Filecoin is a distributed storage network based on a blockchain mechanism. Filecoin miners can elect to provide storage capacity for the network, and thereby earn units of the Filecoin cryptocurrency (FIL) by periodically producing cryptographic proofs that certify that they are providing the capacity specified."
   },
-  "lotus-node": {
-    "title": "Lotus Node",
-    "value": "The Lotus Node is full of capabilities. It runs the Blockchain system, makes retrieval deals, does data transfer, supports block producer logic, and syncs and validates the chain."
+  "epik-node": {
+    "title": "epik Node",
+    "value": "The epik Node is full of capabilities. It runs the Blockchain system, makes retrieval deals, does data transfer, supports block producer logic, and syncs and validates the chain."
   },
   "block-rewards": {
     "title": "Block Reward",
@@ -93,10 +93,10 @@
   },
   "block-producer-miner": {
     "title": "Miner (Block Producer)",
-    "value": "The Block Producer Miner's logic. It currently shares an interface and process with the Lotus Node. A Block Producer chooses which messages to include in a block and is rewarded according to each message’s gas price and consumption, forming a market."
+    "value": "The Block Producer Miner's logic. It currently shares an interface and process with the epik Node. A Block Producer chooses which messages to include in a block and is rewarded according to each message’s gas price and consumption, forming a market."
   },
-  "lotus-storage-miner": {
-    "title": "Storage Miner (lotus-storage-miner)",
+  "epik-storage-miner": {
+    "title": "Storage Miner (epik-storage-miner)",
     "value": "The Storage Miner's logic. It has its own dedicated process. Contributes to the network through Sector commitments and Proofs of Spacetime to prove that it is storing the sectors it has commited to."
   },
   "swarm-port": {
@@ -104,7 +104,7 @@
     "value": "The LibP2P Swarm manages groups of connections to peers, handles incoming and outgoing streams, and is part of the storage miners implementation. The port value is part of the Host interface."
   },
   "daemon": {
-    "title": "Lotus Daemon",
+    "title": "epik Daemon",
     "value": "A Daemon is a program that runs as a background process. A Daemon in the context of the Filecoin Distributed Storage Network may enable applications to communicate with peers, handle protocols, participate in pubsub, and interact with a distributed hash table (DHT)."
   },
   "storage-deal": {
@@ -129,7 +129,7 @@
   },
   "total-network-power": {
     "title": "Total Network Power",
-    "value": "A reference to all the Power Tables for every subchain, accounting for each Lotus Storage Miner on chain."
+    "value": "A reference to all the Power Tables for every subchain, accounting for each epik Storage Miner on chain."
   },
   "chain-block-height": {
     "title": "Chain Block Height",

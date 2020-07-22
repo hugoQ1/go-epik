@@ -11,19 +11,19 @@ In this `docker-examples/` directory are community-contributed Docker and Docker
    - local node for a developer (`api-local-`)
    - hosted endpoint for apps / multiple developers (`api-hosted-`)
 - **For a local devnet or shared devnet**
-   - basic local devnet (also see [lotus docs on setting up a local devnet](https://lotu.sh/en+setup-local-dev-net))
+   - basic local devnet (also see [epik docs on setting up a local devnet](https://lotu.sh/en+setup-local-dev-net))
    - shared devnet
   
 
 ## Contributions
 
-- `miner-basic-busybox` - from @ldoublewood ([lotus PR 745](https://github.com/filecoin-project/lotus/pull/745))
+- `miner-basic-busybox` - from @ldoublewood ([epik PR 745](https://github.com/EpiK-Protocol/go-epik/pull/745))
 - `api-local-arch` - from @mateodelnorte
 - `api-hosted-debian-nginx` - from @RTradeLtd
 
 #### More examples:
-- [Issue 1143](https://github.com/filecoin-project/lotus/issues/1143)
-- [PR 1047](https://github.com/filecoin-project/lotus/pull/1047/files)
+- [Issue 1143](https://github.com/EpiK-Protocol/go-epik/issues/1143)
+- [PR 1047](https://github.com/EpiK-Protocol/go-epik/pull/1047/files)
 
 ## Contributing
 

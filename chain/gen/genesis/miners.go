@@ -22,11 +22,11 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/genesis"
 )
 
 func MinerAddress(genesisIndex uint64) address.Address {

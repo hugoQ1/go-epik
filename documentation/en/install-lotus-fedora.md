@@ -27,8 +27,8 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 Clone
 
 ```sh
-git clone https://github.com/filecoin-project/lotus.git
-cd lotus/
+git clone https://github.com/EpiK-Protocol/go-epik.git
+cd epik/
 ```
 
 Install
@@ -38,4 +38,4 @@ $ make clean && make all
 $ sudo make install
 ```
 
-After installing Lotus, you can run the `lotus` command directly from your CLI to see usage documentation. Next, you can join the [Lotus TestNet](https://docs.lotu.sh/en+join-testnet).
+After installing epik, you can run the `epik` command directly from your CLI to see usage documentation. Next, you can join the [epik TestNet](https://docs.lotu.sh/en+join-testnet).

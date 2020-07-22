@@ -3,7 +3,7 @@ package chain
 import (
 	"fmt"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/ipfs/go-cid"
 )

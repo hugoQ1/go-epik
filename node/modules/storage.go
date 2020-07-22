@@ -5,9 +5,9 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 func LockedRepo(lr repo.LockedRepo) func(lc fx.Lifecycle) repo.LockedRepo {

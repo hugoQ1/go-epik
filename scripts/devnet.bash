@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-session="lotus-interop"
+session="epik-interop"
 wdaemon="daemon"
 wminer="miner"
 wsetup="setup"
@@ -24,10 +24,10 @@ if [ -z "$DEVNET" ]; then
   DEVNET="yes"
 fi
 
-BASEDIR=$(mktemp -d -t "lotus-interopnet.XXXX")
+BASEDIR=$(mktemp -d -t "epik-interopnet.XXXX")
 
 if [ "$BUILD" == "yes" ]; then
-  git clone --branch "$BRANCH" https://github.com/filecoin-project/lotus.git "${BASEDIR}/build"
+  git clone --branch "$BRANCH" https://github.com/EpiK-Protocol/go-epik.git "${BASEDIR}/build"
 fi
 
 
@@ -42,30 +42,30 @@ SCRIPTDIR="\$( cd "\$( dirname "\${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 pushd \$SCRIPTDIR/../build
 
 pwd
-env RUSTFLAGS="-C target-cpu=native -g" FFI_BUILD_FROM_SOURCE=1 make clean deps lotus lotus-storage-miner lotus-shed
-cp lotus lotus-storage-miner lotus-shed ../bin/
+env RUSTFLAGS="-C target-cpu=native -g" FFI_BUILD_FROM_SOURCE=1 make clean deps epik epik-storage-miner epik-shed
+cp epik epik-storage-miner epik-shed ../bin/
 
 popd
 EOF
 
 cat > "${BASEDIR}/scripts/env.fish" <<EOF
 set -x PATH ${BASEDIR}/bin \$PATH
-set -x LOTUS_PATH ${BASEDIR}/.lotus
-set -x LOTUS_STORAGE_PATH ${BASEDIR}/.lotusstorage
+set -x EPIK_PATH ${BASEDIR}/.epik
+set -x EPIK_STORAGE_PATH ${BASEDIR}/.epikstorage
 EOF
 
 cat > "${BASEDIR}/scripts/env.bash" <<EOF
 export PATH=${BASEDIR}/bin:\$PATH
-export LOTUS_PATH=${BASEDIR}/.lotus
-export LOTUS_STORAGE_PATH=${BASEDIR}/.lotusstorage
+export EPIK_PATH=${BASEDIR}/.epik
+export EPIK_STORAGE_PATH=${BASEDIR}/.epikstorage
 EOF
 
 cat > "${BASEDIR}/scripts/create_miner.bash" <<EOF
 #!/usr/bin/env bash
 set -x
 
-lotus wallet import ~/.genesis-sectors/pre-seal-t01000.key
-lotus-storage-miner init --genesis-miner --actor=t01000 --sector-size=2KiB --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync
+epik wallet import ~/.genesis-sectors/pre-seal-t01000.key
+epik-storage-miner init --genesis-miner --actor=t01000 --sector-size=2KiB --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync
 EOF
 
 cat > "${BASEDIR}/scripts/pledge_sectors.bash" <<EOF
@@ -73,26 +73,26 @@ cat > "${BASEDIR}/scripts/pledge_sectors.bash" <<EOF
 
 set -x
 
-while [ ! -d ${BASEDIR}/.lotusstorage ]; do
+while [ ! -d ${BASEDIR}/.epikstorage ]; do
   sleep 5
 done
 
-while [ ! -f ${BASEDIR}/.lotusstorage/api ]; do
+while [ ! -f ${BASEDIR}/.epikstorage/api ]; do
   sleep 5
 done
 
 sleep 30
 
-sector=\$(lotus-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
+sector=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
 current="\$sector"
 
 while true; do
-  if (( \$(lotus-storage-miner sectors list | wc -l) > ${PLEDGE_COUNT} )); then
+  if (( \$(epik-storage-miner sectors list | wc -l) > ${PLEDGE_COUNT} )); then
     break
   fi
 
   while true; do
-    state=\$(lotus-storage-miner sectors list | tail -n1 | awk '{print \$2}')
+    state=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$2}')
 
     if [ -z "\$state" ]; then
       break
@@ -102,15 +102,15 @@ while true; do
       PreCommit1 | PreCommit2 | Packing | Unsealed | PreCommitting | Committing | CommitWait | FinalizeSector ) sleep 30 ;;
       WaitSeed | Proving ) break ;;
       * ) echo "Unknown Sector State: \$state"
-          lotus-storage-miner sectors status --log \$current
+          epik-storage-miner sectors status --log \$current
           break ;;
     esac
   done
 
-  lotus-storage-miner sectors pledge
+  epik-storage-miner sectors pledge
 
   while [ "\$current" == "\$sector" ]; do
-    sector=\$(lotus-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
+    sector=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
     sleep 5
   done
 
@@ -123,21 +123,21 @@ cat > "${BASEDIR}/scripts/monitor.bash" <<EOF
 
 while true; do
   clear
-  lotus sync status
+  epik sync status
 
   echo
   echo
   echo Storage Miner Info
-  lotus-storage-miner info
+  epik-storage-miner info
 
   echo
   echo
   echo Sector List
-  lotus-storage-miner sectors list | tail -n4
+  epik-storage-miner sectors list | tail -n4
 
   sleep 25
 
-  lotus-shed noncefix --addr \$(lotus wallet list) --auto
+  epik-shed noncefix --addr \$(epik wallet list) --auto
 
 done
 EOF
@@ -150,10 +150,10 @@ chmod +x "${BASEDIR}/scripts/monitor.bash"
 if [ "$BUILD" == "yes" ]; then
   bash "${BASEDIR}/scripts/build.bash"
 else
-  cp ./lotus ${BASEDIR}/bin/
-  cp ./lotus-storage-miner ${BASEDIR}/bin/
-  cp ./lotus-seed ${BASEDIR}/bin/
-  cp ./lotus-shed ${BASEDIR}/bin/
+  cp ./epik ${BASEDIR}/bin/
+  cp ./epik-storage-miner ${BASEDIR}/bin/
+  cp ./epik-seed ${BASEDIR}/bin/
+  cp ./epik-shed ${BASEDIR}/bin/
 fi
 
 tmux new-session -d -s $session -n $wsetup
@@ -178,15 +178,15 @@ tmux send-keys -t $session:$wcli      "source ${BASEDIR}/scripts/env.$shell" C-m
 tmux send-keys -t $session:$wpledging "source ${BASEDIR}/scripts/env.$shell" C-m
 tmux send-keys -t $session:$wshell "source ${BASEDIR}/scripts/env.$shell" C-m
 
-tmux send-keys -t $session:$wdaemon "lotus-seed genesis new devnet.json" C-m
-tmux send-keys -t $session:$wdaemon "lotus-seed genesis add-miner devnet.json ~/.genesis-sectors/pre-seal-t01000.json" C-m
-tmux send-keys -t $session:$wdaemon "lotus daemon --api 48010 --lotus-make-genesis=dev.gen --genesis-template=devnet.json --bootstrap=false 2>&1 | tee -a ${BASEDIR}/daemon.log" C-m
+tmux send-keys -t $session:$wdaemon "epik-seed genesis new devnet.json" C-m
+tmux send-keys -t $session:$wdaemon "epik-seed genesis add-miner devnet.json ~/.genesis-sectors/pre-seal-t01000.json" C-m
+tmux send-keys -t $session:$wdaemon "epik daemon --api 48010 --epik-make-genesis=dev.gen --genesis-template=devnet.json --bootstrap=false 2>&1 | tee -a ${BASEDIR}/daemon.log" C-m
 
-export LOTUS_PATH="${BASEDIR}/.lotus"
-${BASEDIR}/bin/lotus wait-api
+export EPIK_PATH="${BASEDIR}/.epik"
+${BASEDIR}/bin/epik wait-api
 
 tmux send-keys -t $session:$wminer   "${BASEDIR}/scripts/create_miner.bash" C-m
-tmux send-keys -t $session:$wminer   "lotus-storage-miner run --api 48020 --nosync 2>&1 | tee -a ${BASEDIR}/miner.log" C-m
+tmux send-keys -t $session:$wminer   "epik-storage-miner run --api 48020 --nosync 2>&1 | tee -a ${BASEDIR}/miner.log" C-m
 tmux send-keys -t $session:$wcli     "${BASEDIR}/scripts/monitor.bash" C-m
 tmux send-keys -t $session:$wpleding "${BASEDIR}/scripts/pledge_sectors.bash" C-m
 

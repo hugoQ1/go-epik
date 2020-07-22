@@ -8,8 +8,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/stretchr/testify/require"
 
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/types"
 )
 
 func TestTsCache(t *testing.T) {

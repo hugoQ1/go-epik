@@ -9,7 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/filecoin-project/lotus/lib/addrutil"
+	"github.com/EpiK-Protocol/go-epik/lib/addrutil"
 )
 
 var netCmd = &cli.Command{

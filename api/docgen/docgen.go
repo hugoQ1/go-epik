@@ -12,14 +12,14 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-jsonrpc/auth"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/apistruct"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
@@ -93,7 +93,7 @@ func init() {
 	addExample(abi.SectorSize(32 * 1024 * 1024 * 1024))
 	addExample(api.MpoolChange(0))
 	addExample(network.Connected)
-	addExample(dtypes.NetworkName("lotus"))
+	addExample(dtypes.NetworkName("epik"))
 	addExample(api.SyncStateStage(1))
 	addExample(build.APIVersion)
 	addExample(api.PCHInbound)

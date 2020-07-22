@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/ipfs/go-cid"
 )
 

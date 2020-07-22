@@ -8,10 +8,10 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/lotus/lib/bufbstore"
-	"github.com/filecoin-project/lotus/lib/ipfsbstore"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
+	"github.com/EpiK-Protocol/go-epik/lib/ipfsbstore"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
 
 // IpfsClientBlockstore returns a ClientBlockstore implementation backed by an IPFS node.

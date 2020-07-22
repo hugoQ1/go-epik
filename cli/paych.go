@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
 	"github.com/urfave/cli/v2"
 
-	types "github.com/filecoin-project/lotus/chain/types"
+	types "github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var paychCmd = &cli.Command{

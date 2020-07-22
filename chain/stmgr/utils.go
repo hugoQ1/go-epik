@@ -31,14 +31,14 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/beacon"
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
 func GetNetworkName(ctx context.Context, sm *StateManager, st cid.Cid) (dtypes.NetworkName, error) {
@@ -514,7 +514,7 @@ func MinerGetBaseInfo(ctx context.Context, sm *StateManager, bcn beacon.RandomBe
 
 	prev, err := sm.ChainStore().GetLatestBeaconEntry(ts)
 	if err != nil {
-		if os.Getenv("LOTUS_IGNORE_DRAND") != "_yes_" {
+		if os.Getenv("EPIK_IGNORE_DRAND") != "_yes_" {
 			return nil, xerrors.Errorf("failed to get latest beacon entry: %w", err)
 		}
 

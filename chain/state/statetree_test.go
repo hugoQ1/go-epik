@@ -7,8 +7,8 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	address "github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 )

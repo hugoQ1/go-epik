@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	logging "github.com/ipfs/go-log"
 	"golang.org/x/xerrors"
@@ -17,7 +17,7 @@ type Response struct {
 	Err   error
 }
 
-// RandomBeacon represents a system that provides randomness to Lotus.
+// RandomBeacon represents a system that provides randomness to epik.
 // Other components interrogate the RandomBeacon to acquire randomness that's
 // valid for a specific chain epoch. Also to verify beacon entries that have
 // been posted on chain.

@@ -14,9 +14,9 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/crypto"

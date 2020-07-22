@@ -18,15 +18,15 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-car"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
 	dag "github.com/ipfs/go-merkledag"
 	dstest "github.com/ipfs/go-merkledag/test"
 	unixfile "github.com/ipfs/go-unixfs/file"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/impl"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
@@ -190,7 +190,7 @@ func testRetrieval(t *testing.T, ctx context.Context, err error, client *impl.Fu
 		t.Fatal("no offers")
 	}
 
-	rpath, err := ioutil.TempDir("", "lotus-retrieve-test-")
+	rpath, err := ioutil.TempDir("", "epik-retrieve-test-")
 	if err != nil {
 		t.Fatal(err)
 	}

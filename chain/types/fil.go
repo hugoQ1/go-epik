@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 type FIL BigInt

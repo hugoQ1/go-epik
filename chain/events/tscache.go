@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 type tsByHFunc func(context.Context, abi.ChainEpoch, types.TipSetKey) (*types.TipSet, error)

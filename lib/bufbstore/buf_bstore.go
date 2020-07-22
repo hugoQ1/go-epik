@@ -20,7 +20,7 @@ type BufferedBS struct {
 
 func NewBufferedBstore(base bstore.Blockstore) *BufferedBS {
 	buf := bstore.NewBlockstore(ds.NewMapDatastore())
-	if os.Getenv("LOTUS_DISABLE_VM_BUF") == "iknowitsabadidea" {
+	if os.Getenv("EPIK_DISABLE_VM_BUF") == "iknowitsabadidea" {
 		log.Warn("VM BLOCKSTORE BUFFERING IS DISABLED")
 		buf = base
 	}

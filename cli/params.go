@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 var fetchParamCmd = &cli.Command{

@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"golang.org/x/xerrors"
 
 	logging "github.com/ipfs/go-log/v2"

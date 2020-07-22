@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
+	types "github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/filecoin-project/go-address"
-	types "github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"golang.org/x/xerrors"
 
@@ -213,7 +213,7 @@ var walletImport = &cli.Command{
 		&cli.StringFlag{
 			Name:  "format",
 			Usage: "specify input format for key",
-			Value: "hex-lotus",
+			Value: "hex-epik",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -244,7 +244,7 @@ var walletImport = &cli.Command{
 
 		var ki types.KeyInfo
 		switch cctx.String("format") {
-		case "hex-lotus":
+		case "hex-epik":
 			data, err := hex.DecodeString(strings.TrimSpace(string(inpdata)))
 			if err != nil {
 				return err
@@ -253,7 +253,7 @@ var walletImport = &cli.Command{
 			if err := json.Unmarshal(data, &ki); err != nil {
 				return err
 			}
-		case "json-lotus":
+		case "json-epik":
 			if err := json.Unmarshal(inpdata, &ki); err != nil {
 				return err
 			}

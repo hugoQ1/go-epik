@@ -7,4 +7,4 @@ Another container spins up a simple block explorer.
 
 ## Repo
 
-https://github.com/RTradeLtd/lotus-infra
+https://github.com/RTradeLtd/epik-infra

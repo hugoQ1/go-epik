@@ -3,7 +3,7 @@ package stats
 import (
 	"testing"
 
-	"github.com/filecoin-project/lotus/api"
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/stretchr/testify/require"
 )
 

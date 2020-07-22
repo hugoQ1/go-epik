@@ -8,9 +8,9 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
 )
 
 func mustEnc(i cbg.CBORMarshaler) []byte {

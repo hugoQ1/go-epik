@@ -28,10 +28,10 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
 
-	"github.com/filecoin-project/lotus/chain/actors/aerrors"
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/lib/bufbstore"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 var log = logging.Logger("vm")

@@ -13,12 +13,12 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	lru "github.com/hashicorp/golang-lru"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
 
 	logging "github.com/ipfs/go-log/v2"
 	"go.opencensus.io/trace"
@@ -194,7 +194,7 @@ func (m *Miner) mine(ctx context.Context) {
 			// Wait until the next epoch, plus the propagation delay, so a new tipset
 			// has enough time to form.
 			//
-			// See:  https://github.com/filecoin-project/lotus/issues/1845
+			// See:  https://github.com/EpiK-Protocol/go-epik/issues/1845
 			nextRound := time.Unix(int64(base.TipSet.MinTimestamp()+build.BlockDelaySecs*uint64(base.NullRounds))+int64(build.PropagationDelaySecs), 0)
 
 			select {

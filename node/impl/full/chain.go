@@ -32,10 +32,10 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
 )
 
 var log = logging.Logger("fullnode")

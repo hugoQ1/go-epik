@@ -1,4 +1,4 @@
-package lotuslog
+package epiklog
 
 import (
 	"os"

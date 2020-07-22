@@ -7,4 +7,4 @@ _cli_bash_autocomplete() {
      COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) );
      return 0;
 };
-complete -F _cli_bash_autocomplete lotus-storage-miner
+complete -F _cli_bash_autocomplete epik-storage-miner

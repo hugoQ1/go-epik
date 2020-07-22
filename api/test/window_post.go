@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/filecoin-project/lotus/api"
+	"github.com/EpiK-Protocol/go-epik/api"
 	"os"
 	"strings"
 	"testing"
@@ -15,8 +15,8 @@ import (
 	miner2 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	sealing "github.com/filecoin-project/storage-fsm"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/impl"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
 
 func TestPledgeSector(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int) {

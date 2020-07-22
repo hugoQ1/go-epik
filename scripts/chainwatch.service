@@ -1,14 +1,14 @@
 [Unit]
 Description=Chainwatch
-After=lotus-daemon.service
-Requires=lotus-daemon.service
+After=epik-daemon.service
+Requires=epik-daemon.service
 
 [Service]
-Environment=GOLOG_FILE="/var/log/lotus/chainwatch.log"
+Environment=GOLOG_FILE="/var/log/epik/chainwatch.log"
 Environment=GOLOG_LOG_FMT="json"
-Environment=LOTUS_DB=""
-Environment=LOTUS_PATH="%h/.lotus"
-EnvironmentFile=-/etc/lotus/chainwatch.env
+Environment=EPIK_DB=""
+Environment=EPIK_PATH="%h/.epik"
+EnvironmentFile=-/etc/epik/chainwatch.env
 ExecStart=/usr/local/bin/chainwatch run
 
 [Install]

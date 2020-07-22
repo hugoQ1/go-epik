@@ -3,14 +3,14 @@
 // This file makes hardcoded parameters (const) configurable as vars.
 //
 // Its purpose is to unlock various degrees of flexibility and parametrization
-// when writing Testground plans for Lotus.
+// when writing Testground plans for epik.
 //
 package build
 
 import (
 	"math/big"
 
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"

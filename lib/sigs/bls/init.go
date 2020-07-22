@@ -8,7 +8,7 @@ import (
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 
-	"github.com/filecoin-project/lotus/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 )
 
 type blsSigner struct{}

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )
 

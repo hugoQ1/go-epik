@@ -6,7 +6,7 @@ import (
 
 	big2 "github.com/filecoin-project/specs-actors/actors/abi/big"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 const BigIntMaxSerializedLen = 128 // is this big enough? or too big?

@@ -8,18 +8,18 @@ import (
 	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var (
 	ErrNoAPIEndpoint     = errors.New("API not running (no endpoint)")
 	ErrNoAPIToken        = errors.New("API token not set")
-	ErrRepoAlreadyLocked = errors.New("repo is already locked (lotus daemon already running)")
+	ErrRepoAlreadyLocked = errors.New("repo is already locked (epik daemon already running)")
 	ErrClosedRepo        = errors.New("repo is no longer open")
 )
 
 type Repo interface {
-	// APIEndpoint returns multiaddress for communication with Lotus API
+	// APIEndpoint returns multiaddress for communication with epik API
 	APIEndpoint() (multiaddr.Multiaddr, error)
 
 	// APIToken returns JWT API Token for use in operations that require auth

@@ -9,7 +9,7 @@ import (
 
 var waitApiCmd = &cli.Command{
 	Name:  "wait-api",
-	Usage: "Wait for lotus api to come online",
+	Usage: "Wait for epik api to come online",
 	Action: func(cctx *cli.Context) error {
 		for i := 0; i < 30; i++ {
 			api, closer, err := GetFullNodeAPI(cctx)

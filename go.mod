@@ -1,4 +1,4 @@
-module github.com/filecoin-project/lotus
+module github.com/EpiK-Protocol/go-epik
 
 go 1.14
 

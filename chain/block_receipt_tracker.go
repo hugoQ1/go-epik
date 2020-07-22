@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/hashicorp/golang-lru"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )

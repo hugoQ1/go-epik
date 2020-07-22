@@ -26,7 +26,7 @@ issues:
 
   exclude-use-default: false
   exclude-rules:
-    - path: lotuspond
+    - path: epikpond
       linters:
         - errcheck
 

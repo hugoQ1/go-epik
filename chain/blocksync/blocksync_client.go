@@ -20,12 +20,12 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	incrt "github.com/EpiK-Protocol/go-epik/lib/increadtimeout"
+	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	cborutil "github.com/filecoin-project/go-cbor-util"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	incrt "github.com/filecoin-project/lotus/lib/increadtimeout"
-	"github.com/filecoin-project/lotus/lib/peermgr"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
 )
 
 type BlockSync struct {

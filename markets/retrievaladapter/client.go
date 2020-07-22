@@ -14,10 +14,10 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/node/impl/full"
-	payapi "github.com/filecoin-project/lotus/node/impl/paych"
-	"github.com/filecoin-project/lotus/paychmgr"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
+	"github.com/EpiK-Protocol/go-epik/paychmgr"
 )
 
 type retrievalClientNode struct {
@@ -27,7 +27,7 @@ type retrievalClientNode struct {
 }
 
 // NewRetrievalClientNode returns a new node adapter for a retrieval client that talks to the
-// Lotus Node
+// epik Node
 func NewRetrievalClientNode(pmgr *paychmgr.Manager, payapi payapi.PaychAPI, chainapi full.ChainAPI) retrievalmarket.RetrievalClientNode {
 	return &retrievalClientNode{pmgr: pmgr, payapi: payapi, chainapi: chainapi}
 }

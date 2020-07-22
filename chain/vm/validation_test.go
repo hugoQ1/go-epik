@@ -9,7 +9,7 @@ import (
 
 	suites "github.com/filecoin-project/chain-validation/suites"
 
-	factory "github.com/filecoin-project/lotus/chain/validation"
+	factory "github.com/EpiK-Protocol/go-epik/chain/validation"
 )
 
 // TestSkipper contains a list of test cases skipped by the implementation.

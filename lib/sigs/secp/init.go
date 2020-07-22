@@ -8,7 +8,7 @@ import (
 	crypto2 "github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/minio/blake2b-simd"
 
-	"github.com/filecoin-project/lotus/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 )
 
 type secpSigner struct{}

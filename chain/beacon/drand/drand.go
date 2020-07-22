@@ -21,9 +21,9 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/abi"
 
-	"github.com/filecoin-project/lotus/chain/beacon"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
 var log = logging.Logger("drand")
@@ -41,7 +41,7 @@ func (dp *drandPeer) IsTLS() bool {
 	return dp.tls
 }
 
-// DrandBeacon connects Lotus with a drand network in order to provide
+// DrandBeacon connects epik with a drand network in order to provide
 // randomness to the system in a way that's aligned with Filecoin rounds/epochs.
 //
 // We connect to drand peers via their public HTTP endpoints. The peers are

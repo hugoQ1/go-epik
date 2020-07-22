@@ -14,17 +14,17 @@ staging=$(mktemp -d)
 
 make debug
 
-./lotus-seed --sector-dir="${sdt0111}" pre-seal --miner-addr=t0111 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
-./lotus-seed --sector-dir="${sdt0222}" pre-seal --miner-addr=t0222 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
-./lotus-seed --sector-dir="${sdt0333}" pre-seal --miner-addr=t0333 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
+./epik-seed --sector-dir="${sdt0111}" pre-seal --miner-addr=t0111 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
+./epik-seed --sector-dir="${sdt0222}" pre-seal --miner-addr=t0222 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
+./epik-seed --sector-dir="${sdt0333}" pre-seal --miner-addr=t0333 --sector-offset=0 --sector-size=${SECTOR_SIZE} --num-sectors=${NUM_SECTORS} &
 
 wait
 
-./lotus-seed aggregate-manifests "${sdt0111}/pre-seal-t0111.json" "${sdt0222}/pre-seal-t0222.json" "${sdt0333}/pre-seal-t0333.json" > "${staging}/genesis.json"
+./epik-seed aggregate-manifests "${sdt0111}/pre-seal-t0111.json" "${sdt0222}/pre-seal-t0222.json" "${sdt0333}/pre-seal-t0333.json" > "${staging}/genesis.json"
 
-lotus_path=$(mktemp -d)
+epik_path=$(mktemp -d)
 
-./lotus --repo="${lotus_path}" daemon --lotus-make-random-genesis="${staging}/devnet.car" --genesis-presealed-sectors="${staging}/genesis.json" --bootstrap=false &
+./epik --repo="${epik_path}" daemon --epik-make-random-genesis="${staging}/devnet.car" --genesis-presealed-sectors="${staging}/genesis.json" --bootstrap=false &
 lpid=$!
 
 sleep 3
@@ -52,9 +52,9 @@ for (( i=0; i<${#sdlist[@]}; i++ )); do
   mineraddr=$(echo $filename | sed 's/pre-seal-//g')
 
   wallet_raw=$(jq -rc ".${mineraddr}.Key" < ${preseal}/${filefull})
-  wallet_b16=$(./lotus-shed base16 "${wallet_raw}")
-  wallet_adr=$(./lotus-shed keyinfo --format="{{.Address}}" "${wallet_b16}")
-  wallet_adr_enc=$(./lotus-shed base32 "wallet-${wallet_adr}")
+  wallet_b16=$(./epik-shed base16 "${wallet_raw}")
+  wallet_adr=$(./epik-shed keyinfo --format="{{.Address}}" "${wallet_b16}")
+  wallet_adr_enc=$(./epik-shed base32 "wallet-${wallet_adr}")
 
   mkdir -p "${ldlist[$i]}/keystore"
   cat > "${ldlist[$i]}/keystore/${wallet_adr_enc}" <<EOF
@@ -67,17 +67,17 @@ done
 pids=()
 for (( i=0; i<${#ldlist[@]}; i++ )); do
   repo=${ldlist[$i]}
-  ./lotus --repo="${repo}" daemon --api "3000$i" --bootstrap=false &
+  ./epik --repo="${repo}" daemon --api "3000$i" --bootstrap=false &
   pids+=($!)
 done
 
 sleep 10
 
-boot=$(./lotus --repo="${ldlist[0]}" net listen)
+boot=$(./epik --repo="${ldlist[0]}" net listen)
 
 for (( i=1; i<${#ldlist[@]}; i++ )); do
   repo=${ldlist[$i]}
-  ./lotus --repo="${repo}" net connect ${boot}
+  ./epik --repo="${repo}" net connect ${boot}
 done
 
 sleep 3
@@ -86,12 +86,12 @@ mdt0111=$(mktemp -d)
 mdt0222=$(mktemp -d)
 mdt0333=$(mktemp -d)
 
-env LOTUS_PATH="${ldt0111}" LOTUS_STORAGE_PATH="${mdt0111}" ./lotus-storage-miner init --genesis-miner --actor=t0111 --pre-sealed-sectors="${sdt0111}" --pre-sealed-metadata="${sdt0111}/pre-seal-t0111.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
-env LOTUS_PATH="${ldt0111}" LOTUS_STORAGE_PATH="${mdt0111}" ./lotus-storage-miner run --nosync &
+env EPIK_PATH="${ldt0111}" EPIK_STORAGE_PATH="${mdt0111}" ./epik-storage-miner init --genesis-miner --actor=t0111 --pre-sealed-sectors="${sdt0111}" --pre-sealed-metadata="${sdt0111}/pre-seal-t0111.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
+env EPIK_PATH="${ldt0111}" EPIK_STORAGE_PATH="${mdt0111}" ./epik-storage-miner run --nosync &
 mpid=$!
 
-env LOTUS_PATH="${ldt0222}" LOTUS_STORAGE_PATH="${mdt0222}" ./lotus-storage-miner init                 --actor=t0222 --pre-sealed-sectors="${sdt0222}" --pre-sealed-metadata="${sdt0222}/pre-seal-t0222.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
-env LOTUS_PATH="${ldt0333}" LOTUS_STORAGE_PATH="${mdt0333}" ./lotus-storage-miner init                 --actor=t0333 --pre-sealed-sectors="${sdt0333}" --pre-sealed-metadata="${sdt0333}/pre-seal-t0333.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
+env EPIK_PATH="${ldt0222}" EPIK_STORAGE_PATH="${mdt0222}" ./epik-storage-miner init                 --actor=t0222 --pre-sealed-sectors="${sdt0222}" --pre-sealed-metadata="${sdt0222}/pre-seal-t0222.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
+env EPIK_PATH="${ldt0333}" EPIK_STORAGE_PATH="${mdt0333}" ./epik-storage-miner init                 --actor=t0333 --pre-sealed-sectors="${sdt0333}" --pre-sealed-metadata="${sdt0333}/pre-seal-t0333.json" --nosync=true --sector-size="${SECTOR_SIZE}" || true
 
 kill $mpid
 wait $mpid

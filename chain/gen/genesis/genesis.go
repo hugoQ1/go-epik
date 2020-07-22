@@ -19,11 +19,11 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/genesis"
 )
 
 const AccountStart = 100

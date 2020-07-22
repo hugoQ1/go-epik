@@ -34,7 +34,7 @@ func FromReader(reader io.Reader, def interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	err = envconfig.Process("LOTUS", cfg)
+	err = envconfig.Process("epik", cfg)
 	if err != nil {
 		return nil, fmt.Errorf("processing env vars overrides: %s", err)
 	}

@@ -8,8 +8,8 @@ import (
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
 
-	"github.com/filecoin-project/lotus/api/apistruct"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 var authCmd = &cli.Command{

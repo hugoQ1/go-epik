@@ -1,68 +1,68 @@
 # Frequently Asked Questions
 
-Here are some FAQs concerning the Lotus implementation and participation in 
+Here are some FAQs concerning the epik implementation and participation in 
 Testnet.
 For questions concerning the broader Filecoin project, please 
 go [here](https://filecoin.io/faqs/).
 
-## Introduction to Lotus
+## Introduction to epik
 
-### What is Lotus?
+### What is epik?
 
-Lotus is an implementation of the **Filecoin Distributed Storage Network**, written in Go. 
+epik is an implementation of the **Filecoin Distributed Storage Network**, written in Go. 
 It is designed to be modular and interoperable with any other implementation of the Filecoin Protocol.
-More information about Lotus can be found [here](https://lotu.sh/).
+More information about epik can be found [here](https://lotu.sh/).
 
-### What are the components of Lotus?
+### What are the components of epik?
 
-Lotus is composed of two separate pieces that can talk to each other:
+epik is composed of two separate pieces that can talk to each other:
 
-The Lotus Node can sync the blockchain, validating all blocks, transfers, and deals
+The epik Node can sync the blockchain, validating all blocks, transfers, and deals
 along the way. It can also facilitate the creation of new storage deals. If you are not 
 interested in providing your own storage to the network, and do not want to produce blocks
-yourself, then the Lotus Node is all you need!
+yourself, then the epik Node is all you need!
 
-The Lotus Storage Miner does everything you need for the registration of storage, and the
-production of new blocks. The Lotus Storage Miner communicates with the network
-by talking to a Lotus Node over the JSON-RPC API.
+The epik Storage Miner does everything you need for the registration of storage, and the
+production of new blocks. The epik Storage Miner communicates with the network
+by talking to a epik Node over the JSON-RPC API.
 
-## Setting up a Lotus Node
+## Setting up a epik Node
 
-### How do I set up a Lotus Node?
+### How do I set up a epik Node?
 
 Follow the instructions found [here](https://docs.lotu.sh/en+getting-started).
 
-### Where can I get the latest version of Lotus?
+### Where can I get the latest version of epik?
 
 Download the binary tagged as the `Latest Release` from the
- [Lotus Github repo](https://github.com/filecoin-project/lotus/releases).
+ [epik Github repo](https://github.com/EpiK-Protocol/go-epik/releases).
  
-### What operating systems can Lotus run on?
+### What operating systems can epik run on?
 
-Lotus can build and run on most Linux and MacOS systems with at least 
+epik can build and run on most Linux and MacOS systems with at least 
 8GB of RAM. Windows is not yet supported.
 
-### How can I update to the latest version of Lotus?
+### How can I update to the latest version of epik?
 
-To update Lotus, follow the instructions [here](https://lotu.sh/en+updating-lotus).
+To update epik, follow the instructions [here](https://lotu.sh/en+updating-epik).
 
-### How do I prepare a fresh installation of Lotus?
+### How do I prepare a fresh installation of epik?
 
-Stop the Lotus daemon, and delete all related files, including sealed and chain data by 
-running `rm ~/.lotus ~/.lotusstorage`.
+Stop the epik daemon, and delete all related files, including sealed and chain data by 
+running `rm ~/.epik ~/.epikstorage`.
 
-Then, install Lotus afresh by following the instructions 
+Then, install epik afresh by following the instructions 
 found [here](https://docs.lotu.sh/en+getting-started).
 
-## Interacting with a Lotus Node
+## Interacting with a epik Node
 
-### How can I communicate with a Lotus Node?
+### How can I communicate with a epik Node?
 
-Lotus Nodes have a command-line interface, as well as a JSON-RPC API.
+epik Nodes have a command-line interface, as well as a JSON-RPC API.
 
 ### What are the commands I can send using the command-line interface? 
 
-The command-line interface is self-documenting, try running `lotus --help` from the `lotus` home 
+The command-line interface is self-documenting, try running `epik --help` from the `epik` home 
 directory for more.
 
 ### How can I send a request over the JSON-RPC API?
@@ -73,13 +73,13 @@ Information on how to send a `cURL` request to the JSON-RPC API can be found
 ### What are the requests I can send over the JSON-RPC API?
 
 Please have a look at the 
-[source code](https://github.com/filecoin-project/lotus/blob/master/api/api_full.go) 
+[source code](https://github.com/EpiK-Protocol/go-epik/blob/master/api/api_full.go) 
 for a list of methods supported by the JSON-RPC API.
 ## The Test Network
 
 ### What is Testnet?
 
-Testnet is a live network of Lotus Nodes run by the 
+Testnet is a live network of epik Nodes run by the 
 community for testing purposes.
  It has 2 PiB of storage (and growing!) dedicated to it.
 
@@ -94,9 +94,9 @@ The [dashboard](https://stats.testnet.filecoin.io/) displays the status of the n
 well as a ton
 of other metrics you might find interesting.
 
-## Mining with a Lotus Node on Testnet
+## Mining with a epik Node on Testnet
 
-### How do I get started mining with Lotus?
+### How do I get started mining with epik?
 
 Follow the instructions found [here](https://lotu.sh/en+mining).
 
@@ -118,15 +118,15 @@ that your GPU simply isn't necessary at the moment you checked.
 
 ## Advanced questions
 
-### Is there a Docker image for lotus?
+### Is there a Docker image for epik?
 
 Community-contributed Docker and Docker Compose examples are available 
-[here](https://github.com/filecoin-project/lotus/tree/master/tools/dockers/docker-examples).
+[here](https://github.com/EpiK-Protocol/go-epik/tree/master/tools/dockers/docker-examples).
 
 ### How can I run two miners on the same machine?
 
 You can do so by changing the storage path variable for the second miner, e.g.,
-`LOTUS_STORAGE_PATH=~/.lotusstorage2`. You will also need to make sure that no ports collide.
+`EPIK_STORAGE_PATH=~/.epikstorage2`. You will also need to make sure that no ports collide.
 
 ### How do I setup my own local devnet?     
 
@@ -135,4 +135,4 @@ Follow the instructions found [here](https://lotu.sh/en+setup-local-dev-net).
 ### Are there any other implementations of Filecoin?
 
 Yes! Check out the [go-filecoin](https://github.com/filecoin-project/go-filecoin#filecoin-go-filecoin)
-implementation, which is fully interoperable with Lotus!
+implementation, which is fully interoperable with epik!

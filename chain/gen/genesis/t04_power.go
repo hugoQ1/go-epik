@@ -10,7 +10,7 @@ import (
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 func SetupStoragePowerActor(bs bstore.Blockstore) (*types.Actor, error) {

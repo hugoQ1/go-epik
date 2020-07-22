@@ -15,10 +15,10 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 func init() {

@@ -9,18 +9,18 @@ import (
 	"github.com/filecoin-project/go-address"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/types/mock"
-	"github.com/filecoin-project/lotus/chain/vectors"
-	"github.com/filecoin-project/lotus/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
+	"github.com/EpiK-Protocol/go-epik/chain/vectors"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 
-	_ "github.com/filecoin-project/lotus/lib/sigs/bls"
-	_ "github.com/filecoin-project/lotus/lib/sigs/secp"
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 )
 
 func init() {

@@ -6,11 +6,11 @@ import (
 
 	gen "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/blocksync"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/hello"
-	"github.com/filecoin-project/lotus/paychmgr"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/blocksync"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/hello"
+	"github.com/EpiK-Protocol/go-epik/paychmgr"
 )
 
 func main() {

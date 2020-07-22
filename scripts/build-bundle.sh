@@ -19,9 +19,9 @@ mkdir bundle
 pushd bundle
 
 BINARIES=(
-    "lotus"
-    "lotus-storage-miner"
-    "lotus-seal-worker"
+    "epik"
+    "epik-storage-miner"
+    "epik-seal-worker"
 )
 
 export IPFS_PATH=`mktemp -d`
@@ -33,20 +33,20 @@ sleep 30
 
 for ARCH in "${ARCHS[@]}"
 do
-    mkdir -p "${ARCH}/lotus"
+    mkdir -p "${ARCH}/epik"
     pushd "${ARCH}"
     for BINARY in "${BINARIES[@]}"
     do
-        cp "../../${ARCH}/${BINARY}" "lotus/"
-        chmod +x "lotus/${BINARY}"
+        cp "../../${ARCH}/${BINARY}" "epik/"
+        chmod +x "epik/${BINARY}"
     done
 
-    tar -zcvf "../lotus_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" lotus
+    tar -zcvf "../epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" epik
     popd
     rm -rf "${ARCH}"
 
-    sha512sum "lotus_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f1 > "lotus_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.sha512"
+    sha512sum "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f1 > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.sha512"
 
-    ipfs add "lotus_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f2 > "lotus_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.cid"
+    ipfs add "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f2 > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.cid"
 done
 popd

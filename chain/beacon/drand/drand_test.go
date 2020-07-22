@@ -8,7 +8,7 @@ import (
 	hclient "github.com/drand/drand/client/http"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 func TestPrintGroupInfo(t *testing.T) {

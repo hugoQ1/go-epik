@@ -9,10 +9,10 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/types"
-	lcli "github.com/filecoin-project/lotus/cli"
 
 	"github.com/urfave/cli/v2"
 )
@@ -24,9 +24,9 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "repo",
-				EnvVars: []string{"LOTUS_PATH"},
+				EnvVars: []string{"EPIK_PATH"},
 				Hidden:  true,
-				Value:   "~/.lotus", // TODO: Consider XDG_DATA_HOME
+				Value:   "~/.epik", // TODO: Consider XDG_DATA_HOME
 			},
 		},
 		Commands: []*cli.Command{runCmd},

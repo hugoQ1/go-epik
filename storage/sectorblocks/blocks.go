@@ -19,9 +19,9 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	sealing "github.com/filecoin-project/storage-fsm"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/storage"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/storage"
 )
 
 type SealSerialization uint8

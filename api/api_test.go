@@ -22,7 +22,7 @@ func goCmd() string {
 }
 
 func TestDoesntDependOnFFI(t *testing.T) {
-	deps, err := exec.Command(goCmd(), "list", "-deps", "github.com/filecoin-project/lotus/api").Output()
+	deps, err := exec.Command(goCmd(), "list", "-deps", "github.com/EpiK-Protocol/go-epik/api").Output()
 	if err != nil {
 		t.Fatal(err)
 	}

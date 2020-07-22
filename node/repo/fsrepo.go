@@ -22,8 +22,8 @@ import (
 
 	"github.com/filecoin-project/sector-storage/stores"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/config"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/config"
 )
 
 const (

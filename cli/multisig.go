@@ -22,10 +22,10 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/apibstore"
-	"github.com/filecoin-project/lotus/build"
-	types "github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/build"
+	types "github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var multisigCmd = &cli.Command{

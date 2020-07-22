@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Anyone can set up a **Lotus Node** and connect to the **Lotus Testnet**. This is the best way to explore the current CLI and the **Filecoin Decentralized Storage Market**.
+Anyone can set up a **epik Node** and connect to the **epik Testnet**. This is the best way to explore the current CLI and the **Filecoin Decentralized Storage Market**.
 
-## Note: Using the Lotus Node from China
+## Note: Using the epik Node from China
 
-If you are trying to use `lotus` from China. You should set this **environment variable** on your machine:
+If you are trying to use `epik` from China. You should set this **environment variable** on your machine:
 
 ```sh
 IPFS_GATEWAY="https://proof-parameters.s3.cn-south-1.jdcloud-oss.com/ipfs/"
@@ -17,36 +17,36 @@ IPFS_GATEWAY="https://proof-parameters.s3.cn-south-1.jdcloud-oss.com/ipfs/"
 Start the **daemon** using the default configuration in `./build`:
 
 ```sh
-lotus daemon
+epik daemon
 ```
 
 In another terminal window, check your connection with peers:
 
 ```sh
-lotus net peers | wc -l
+epik net peers | wc -l
 ```
 
 In order to connect to the network, you need to be connected to at least 1 peer. If you’re seeing 0 peers, read our [troubleshooting notes](https://docs.lotu.sh/en+setup-troubleshooting).
 
-Make sure that you have a reasonable "open files limit" set on your machine, such as 10000. If you're seeing a lower value, such as 256 (default on macOS), read our [troubleshooting notes](https://docs.lotu.sh/en+setup-troubleshooting) on how to update it prior to starting the Lotus daemon.
+Make sure that you have a reasonable "open files limit" set on your machine, such as 10000. If you're seeing a lower value, such as 256 (default on macOS), read our [troubleshooting notes](https://docs.lotu.sh/en+setup-troubleshooting) on how to update it prior to starting the epik daemon.
 
 ## Chain sync
 
 While the daemon is running, the next requirement is to sync the chain. Run the command below to view the chain sync progress. To see current chain height, visit the [network stats page](https://stats.testnet.filecoin.io/).
 
 ```sh
-lotus sync wait
+epik sync wait
 ```
 
 - This step will take anywhere between a few hours to a couple of days.
-- You will be able to perform **Lotus Testnet** operations after it is finished.
+- You will be able to perform **epik Testnet** operations after it is finished.
 
 ## Create your first address
 
 Initialize a new wallet:
 
 ```sh
-lotus wallet new
+epik wallet new
 ```
 
 Sometimes your operating system may limit file name length to under 150 characters. You need to use a file system that supports long filenames.
@@ -63,10 +63,10 @@ t1aswwvjsae63tcrniz6x5ykvsuotlgkvlulnqpsi
 
 ## Check wallet address balance
 
-Wallet balances in the Lotus Testnet are in **FIL**, the smallest denomination of FIL is an **attoFil**, where 1 attoFil = 10^-18 FIL.
+Wallet balances in the epik Testnet are in **FIL**, the smallest denomination of FIL is an **attoFil**, where 1 attoFil = 10^-18 FIL.
 
 ```sh
-lotus wallet balance <YOUR_NEW_ADDRESS>
+epik wallet balance <YOUR_NEW_ADDRESS>
 ```
 
 You will not see any attoFIL in your wallet if your **chain** is not fully synced.
@@ -76,7 +76,7 @@ You will not see any attoFIL in your wallet if your **chain** is not fully synce
 To send FIL to another wallet from your default account, use this command:
 
 ```
-lotus send <target> <amount>
+epik send <target> <amount>
 ```
 
 ## Monitor the dashboard

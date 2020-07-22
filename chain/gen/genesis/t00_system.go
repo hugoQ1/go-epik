@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/filecoin-project/specs-actors/actors/builtin/system"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"

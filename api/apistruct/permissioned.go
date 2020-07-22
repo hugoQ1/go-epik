@@ -1,8 +1,8 @@
 package apistruct
 
 import (
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/filecoin-project/go-jsonrpc/auth"
-	"github.com/filecoin-project/lotus/api"
 )
 
 const (

@@ -53,12 +53,12 @@ fi
 RELEASE_UPLOAD_URL=`echo "${RELEASE_RESPONSE}" | jq -r '.upload_url' | cut -d'{' -f1`
 
 bundles=(
-  "lotus_${CIRCLE_TAG}_linux-amd64.tar.gz"
-  "lotus_${CIRCLE_TAG}_linux-amd64.tar.gz.cid"
-  "lotus_${CIRCLE_TAG}_linux-amd64.tar.gz.sha512"
-  "lotus_${CIRCLE_TAG}_darwin-amd64.tar.gz"
-  "lotus_${CIRCLE_TAG}_darwin-amd64.tar.gz.cid"
-  "lotus_${CIRCLE_TAG}_darwin-amd64.tar.gz.sha512"
+  "epik_${CIRCLE_TAG}_linux-amd64.tar.gz"
+  "epik_${CIRCLE_TAG}_linux-amd64.tar.gz.cid"
+  "epik_${CIRCLE_TAG}_linux-amd64.tar.gz.sha512"
+  "epik_${CIRCLE_TAG}_darwin-amd64.tar.gz"
+  "epik_${CIRCLE_TAG}_darwin-amd64.tar.gz.cid"
+  "epik_${CIRCLE_TAG}_darwin-amd64.tar.gz.sha512"
 )
 for RELEASE_FILE in "${bundles[@]}"
 do

@@ -26,9 +26,9 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/actors"
-	types "github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	types "github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var chainCmd = &cli.Command{
@@ -432,7 +432,7 @@ var chainGetCmd = &cli.Command{
 	},
 	Description: `Get ipld node under a specified path:
 
-   lotus chain get /ipfs/[cid]/some/path
+   epik chain get /ipfs/[cid]/some/path
 
    Path prefixes:
    - /ipfs/[cid], /ipld/[cid] - traverse IPLD path
@@ -665,14 +665,14 @@ var chainBisectCmd = &cli.Command{
 	ArgsUsage: "[minHeight maxHeight path shellCommand <shellCommandArgs (if any)>]",
 	Description: `Bisect the chain state tree:
 
-   lotus chain bisect [min height] [max height] '1/2/3/state/path' 'shell command' 'args'
+   epik chain bisect [min height] [max height] '1/2/3/state/path' 'shell command' 'args'
 
    Returns the first tipset in which condition is true
                   v
    [start] FFFFFFFTTT [end]
 
    Example: find height at which deal ID 100 000 appeared
-    - lotus chain bisect 1 32000 '@Ha:t03/1' jq -e '.[2] > 100000'
+    - epik chain bisect 1 32000 '@Ha:t03/1' jq -e '.[2] > 100000'
 
    For special path elements see 'chain get' help
 `,

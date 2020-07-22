@@ -5,9 +5,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types/mock"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	datastore "github.com/ipfs/go-datastore"
 	syncds "github.com/ipfs/go-datastore/sync"

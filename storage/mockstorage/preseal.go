@@ -9,9 +9,9 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
-	"github.com/filecoin-project/lotus/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/genesis"
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/sector-storage/zerocomm"
 )

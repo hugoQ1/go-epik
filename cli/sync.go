@@ -9,9 +9,9 @@ import (
 	cid "github.com/ipfs/go-cid"
 	"github.com/urfave/cli/v2"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain"
 )
 
 var syncCmd = &cli.Command{

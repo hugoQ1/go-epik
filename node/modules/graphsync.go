@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/ipfs/go-graphsync"
 	graphsyncimpl "github.com/ipfs/go-graphsync/impl"
 	gsnet "github.com/ipfs/go-graphsync/network"

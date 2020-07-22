@@ -17,7 +17,7 @@ MODULES:=
 CLEAN:=
 BINS:=
 
-ldflags=-X=github.com/filecoin-project/lotus/build.CurrentCommit=+git.$(subst -,.,$(shell git describe --always --match=NeVeRmAtCh --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null))
+ldflags=-X=github.com/EpiK-Protocol/go-epik/build.CurrentCommit=+git.$(subst -,.,$(shell git describe --always --match=NeVeRmAtCh --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null))
 ifneq ($(strip $(LDFLAGS)),)
 	ldflags+=-extldflags=$(LDFLAGS)
 endif
@@ -58,75 +58,75 @@ deps: $(BUILD_DEPS)
 .PHONY: deps
 
 debug: GOFLAGS+=-tags=debug
-debug: lotus lotus-storage-miner lotus-seal-worker lotus-seed
+debug: epik epik-storage-miner epik-seal-worker epik-seed
 
 2k: GOFLAGS+=-tags=2k
-2k: lotus lotus-storage-miner lotus-seal-worker lotus-seed
+2k: epik epik-storage-miner epik-seal-worker epik-seed
 
-lotus: $(BUILD_DEPS)
-	rm -f lotus
-	go build $(GOFLAGS) -o lotus ./cmd/lotus
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus -i ./build
+epik: $(BUILD_DEPS)
+	rm -f epik
+	go build $(GOFLAGS) -o epik ./cmd/epik
+	go run github.com/GeertJohan/go.rice/rice append --exec epik -i ./build
 
-.PHONY: lotus
-BINS+=lotus
+.PHONY: epik
+BINS+=epik
 
-lotus-storage-miner: $(BUILD_DEPS)
-	rm -f lotus-storage-miner
-	go build $(GOFLAGS) -o lotus-storage-miner ./cmd/lotus-storage-miner
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus-storage-miner -i ./build
-.PHONY: lotus-storage-miner
-BINS+=lotus-storage-miner
+epik-storage-miner: $(BUILD_DEPS)
+	rm -f epik-storage-miner
+	go build $(GOFLAGS) -o epik-storage-miner ./cmd/epik-storage-miner
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-storage-miner -i ./build
+.PHONY: epik-storage-miner
+BINS+=epik-storage-miner
 
-lotus-seal-worker: $(BUILD_DEPS)
-	rm -f lotus-seal-worker
-	go build $(GOFLAGS) -o lotus-seal-worker ./cmd/lotus-seal-worker
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus-seal-worker -i ./build
-.PHONY: lotus-seal-worker
-BINS+=lotus-seal-worker
+epik-seal-worker: $(BUILD_DEPS)
+	rm -f epik-seal-worker
+	go build $(GOFLAGS) -o epik-seal-worker ./cmd/epik-seal-worker
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-seal-worker -i ./build
+.PHONY: epik-seal-worker
+BINS+=epik-seal-worker
 
-lotus-shed: $(BUILD_DEPS)
-	rm -f lotus-shed
-	go build $(GOFLAGS) -o lotus-shed ./cmd/lotus-shed
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus-shed -i ./build
-.PHONY: lotus-shed
-BINS+=lotus-shed
+epik-shed: $(BUILD_DEPS)
+	rm -f epik-shed
+	go build $(GOFLAGS) -o epik-shed ./cmd/epik-shed
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-shed -i ./build
+.PHONY: epik-shed
+BINS+=epik-shed
 
-build: lotus lotus-storage-miner lotus-seal-worker
-	@[[ $$(type -P "lotus") ]] && echo "Caution: you have \
-an existing lotus binary in your PATH. This may cause problems if you don't run 'sudo make install'" || true
+build: epik epik-storage-miner epik-seal-worker
+	@[[ $$(type -P "epik") ]] && echo "Caution: you have \
+an existing epik binary in your PATH. This may cause problems if you don't run 'sudo make install'" || true
 
 .PHONY: build
 
 install:
-	install -C ./lotus /usr/local/bin/lotus
-	install -C ./lotus-storage-miner /usr/local/bin/lotus-storage-miner
-	install -C ./lotus-seal-worker /usr/local/bin/lotus-seal-worker
+	install -C ./epik /usr/local/bin/epik
+	install -C ./epik-storage-miner /usr/local/bin/epik-storage-miner
+	install -C ./epik-seal-worker /usr/local/bin/epik-seal-worker
 
 install-services: install
 	mkdir -p /usr/local/lib/systemd/system
-	mkdir -p /var/log/lotus
-	install -C -m 0644 ./scripts/lotus-daemon.service /usr/local/lib/systemd/system/lotus-daemon.service
-	install -C -m 0644 ./scripts/lotus-miner.service /usr/local/lib/systemd/system/lotus-miner.service
+	mkdir -p /var/log/epik
+	install -C -m 0644 ./scripts/epik-daemon.service /usr/local/lib/systemd/system/epik-daemon.service
+	install -C -m 0644 ./scripts/epik-miner.service /usr/local/lib/systemd/system/epik-miner.service
 	systemctl daemon-reload
 	@echo
-	@echo "lotus-daemon and lotus-miner services installed. Don't forget to 'systemctl enable lotus-daemon|lotus-miner' for it to be enabled on startup."
+	@echo "epik-daemon and epik-miner services installed. Don't forget to 'systemctl enable epik-daemon|epik-miner' for it to be enabled on startup."
 
 clean-services:
-	rm -f /usr/local/lib/systemd/system/lotus-daemon.service
-	rm -f /usr/local/lib/systemd/system/lotus-miner.service
+	rm -f /usr/local/lib/systemd/system/epik-daemon.service
+	rm -f /usr/local/lib/systemd/system/epik-miner.service
 	rm -f /usr/local/lib/systemd/system/chainwatch.service
 	systemctl daemon-reload
 
 # TOOLS
 
-lotus-seed: $(BUILD_DEPS)
-	rm -f lotus-seed
-	go build $(GOFLAGS) -o lotus-seed ./cmd/lotus-seed
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus-seed -i ./build
+epik-seed: $(BUILD_DEPS)
+	rm -f epik-seed
+	go build $(GOFLAGS) -o epik-seed ./cmd/epik-seed
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-seed -i ./build
 
-.PHONY: lotus-seed
-BINS+=lotus-seed
+.PHONY: epik-seed
+BINS+=epik-seed
 
 benchmarks:
 	go run github.com/whyrusleeping/bencher ./... > bench.json
@@ -135,30 +135,30 @@ benchmarks:
 .PHONY: benchmarks
 
 pond: 2k
-	go build -o pond ./lotuspond
-	(cd lotuspond/front && npm i && CI=false npm run build)
+	go build -o pond ./epikpond
+	(cd epikpond/front && npm i && CI=false npm run build)
 .PHONY: pond
 BINS+=pond
 
 townhall:
 	rm -f townhall
-	go build -o townhall ./cmd/lotus-townhall
-	(cd ./cmd/lotus-townhall/townhall && npm i && npm run build)
-	go run github.com/GeertJohan/go.rice/rice append --exec townhall -i ./cmd/lotus-townhall -i ./build
+	go build -o townhall ./cmd/epik-townhall
+	(cd ./cmd/epik-townhall/townhall && npm i && npm run build)
+	go run github.com/GeertJohan/go.rice/rice append --exec townhall -i ./cmd/epik-townhall -i ./build
 .PHONY: townhall
 BINS+=townhall
 
 fountain:
 	rm -f fountain
-	go build -o fountain ./cmd/lotus-fountain
-	go run github.com/GeertJohan/go.rice/rice append --exec fountain -i ./cmd/lotus-fountain -i ./build
+	go build -o fountain ./cmd/epik-fountain
+	go run github.com/GeertJohan/go.rice/rice append --exec fountain -i ./cmd/epik-fountain -i ./build
 .PHONY: fountain
 BINS+=fountain
 
 chainwatch:
 	rm -f chainwatch
-	go build -o chainwatch ./cmd/lotus-chainwatch
-	go run github.com/GeertJohan/go.rice/rice append --exec chainwatch -i ./cmd/lotus-chainwatch -i ./build
+	go build -o chainwatch ./cmd/epik-chainwatch
+	go run github.com/GeertJohan/go.rice/rice append --exec chainwatch -i ./cmd/epik-chainwatch -i ./build
 .PHONY: chainwatch
 BINS+=chainwatch
 
@@ -171,7 +171,7 @@ install-chainwatch-service: chainwatch
 
 bench:
 	rm -f bench
-	go build -o bench ./cmd/lotus-bench
+	go build -o bench ./cmd/epik-bench
 	go run github.com/GeertJohan/go.rice/rice append --exec bench -i ./build
 .PHONY: bench
 BINS+=bench
@@ -184,15 +184,15 @@ stats:
 BINS+=stats
 
 health:
-	rm -f lotus-health
-	go build -o lotus-health ./cmd/lotus-health
-	go run github.com/GeertJohan/go.rice/rice append --exec lotus-health -i ./build
+	rm -f epik-health
+	go build -o epik-health ./cmd/epik-health
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-health -i ./build
 
 .PHONY: health
 BINS+=health
 
 testground:
-	go build -tags testground -o /dev/null ./cmd/lotus
+	go build -tags testground -o /dev/null ./cmd/epik
 
 .PHONY: testground
 BINS+=testground
@@ -202,16 +202,16 @@ BINS+=testground
 buildall: $(BINS)
 
 completions:
-	./scripts/make-completions.sh lotus
-	./scripts/make-completions.sh lotus-storage-miner
+	./scripts/make-completions.sh epik
+	./scripts/make-completions.sh epik-storage-miner
 .PHONY: completions
 
 install-completions:
 	mkdir -p /usr/share/bash-completion/completions /usr/local/share/zsh/site-functions/
-	install -C ./scripts/bash-completion/lotus /usr/share/bash-completion/completions/lotus
-	install -C ./scripts/bash-completion/lotus-storage-miner /usr/share/bash-completion/completions/lotus-storage-miner
-	install -C ./scripts/zsh-completion/lotus /usr/local/share/zsh/site-functions/_lotus
-	install -C ./scripts/zsh-completion/lotus-storage-miner /usr/local/share/zsh/site-functions/_lotus-storage-miner
+	install -C ./scripts/bash-completion/epik /usr/share/bash-completion/completions/epik
+	install -C ./scripts/bash-completion/epik-storage-miner /usr/share/bash-completion/completions/epik-storage-miner
+	install -C ./scripts/zsh-completion/epik /usr/local/share/zsh/site-functions/_epik
+	install -C ./scripts/zsh-completion/epik-storage-miner /usr/local/share/zsh/site-functions/_epik-storage-miner
 
 clean:
 	rm -rf $(CLEAN) $(BINS)
@@ -227,7 +227,7 @@ type-gen:
 	go run ./gen/main.go
 
 method-gen:
-	(cd ./lotuspond/front/src/chain && go run ./methodgen.go)
+	(cd ./epikpond/front/src/chain && go run ./methodgen.go)
 
 gen: type-gen method-gen
 

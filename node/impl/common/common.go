@@ -18,10 +18,10 @@ import (
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/lp2p"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/lp2p"
 )
 
 type CommonAPI struct {

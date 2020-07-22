@@ -10,8 +10,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
 
-	store "github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
+	store "github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -112,7 +112,7 @@ func (bs *BlockSync) executeGsyncSelector(ctx context.Context, p peer.ID, root c
 	return nil
 }
 
-// Fallback for interacting with other non-lotus nodes
+// Fallback for interacting with other non-epik nodes
 func (bs *BlockSync) fetchBlocksGraphSync(ctx context.Context, p peer.ID, req *BlockSyncRequest) (*BlockSyncResponse, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

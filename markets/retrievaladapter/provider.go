@@ -12,9 +12,9 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/storage"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/storage"
 )
 
 type retrievalProviderNode struct {
@@ -24,7 +24,7 @@ type retrievalProviderNode struct {
 }
 
 // NewRetrievalProviderNode returns a new node adapter for a retrieval provider that talks to the
-// Lotus Node
+// epik Node
 func NewRetrievalProviderNode(miner *storage.Miner, sealer sectorstorage.SectorManager, full api.FullNode) retrievalmarket.RetrievalProviderNode {
 	return &retrievalProviderNode{miner, sealer, full}
 }

@@ -12,10 +12,10 @@ var log = logging.Logger("tracing")
 
 func SetupJaegerTracing(serviceName string) *jaeger.Exporter {
 
-	if _, ok := os.LookupEnv("LOTUS_JAEGER"); !ok {
+	if _, ok := os.LookupEnv("EPIK_JAEGER"); !ok {
 		return nil
 	}
-	agentEndpointURI := os.Getenv("LOTUS_JAEGER")
+	agentEndpointURI := os.Getenv("EPIK_JAEGER")
 
 	je, err := jaeger.NewExporter(jaeger.Options{
 		AgentEndpoint: agentEndpointURI,

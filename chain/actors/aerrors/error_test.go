@@ -3,7 +3,7 @@ package aerrors_test
 import (
 	"testing"
 
-	. "github.com/filecoin-project/lotus/chain/actors/aerrors"
+	. "github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
 
 	"github.com/stretchr/testify/assert"

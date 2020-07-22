@@ -11,8 +11,8 @@ import (
 
 	cborutil "github.com/filecoin-project/go-cbor-util"
 
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
@@ -37,7 +37,7 @@ const BlockSyncMaxRequestLength = 800
 // A request contains a start anchor block (referred to with a CID), and a
 // amount of blocks requested beyond the anchor (including the anchor itself).
 //
-// A client can also pass options, encoded as a 64-bit bitfield. Lotus supports
+// A client can also pass options, encoded as a 64-bit bitfield. epik supports
 // two options at the moment:
 //
 //  - include block contents

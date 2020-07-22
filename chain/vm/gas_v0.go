@@ -175,19 +175,19 @@ func (pl *pricelistV0) OnHashing(dataSize int) GasCharge {
 
 // OnComputeUnsealedSectorCid
 func (pl *pricelistV0) OnComputeUnsealedSectorCid(proofType abi.RegisteredSealProof, pieces []abi.PieceInfo) GasCharge {
-	// TODO: this needs more cost tunning, check with @lotus
+	// TODO: this needs more cost tunning, check with @epik
 	return newGasCharge("OnComputeUnsealedSectorCid", pl.computeUnsealedSectorCidBase, 0).WithVirtual(382370, 0)
 }
 
 // OnVerifySeal
 func (pl *pricelistV0) OnVerifySeal(info abi.SealVerifyInfo) GasCharge {
-	// TODO: this needs more cost tunning, check with @lotus
+	// TODO: this needs more cost tunning, check with @epik
 	return newGasCharge("OnVerifySeal", pl.verifySealBase, 0).WithVirtual(199954003, 0)
 }
 
 // OnVerifyPost
 func (pl *pricelistV0) OnVerifyPost(info abi.WindowPoStVerifyInfo) GasCharge {
-	// TODO: this needs more cost tunning, check with @lotus
+	// TODO: this needs more cost tunning, check with @epik
 	return newGasCharge("OnVerifyPost", pl.verifyPostBase, 0).WithVirtual(2629471704, 0).WithExtra(len(info.ChallengedSectors))
 }
 

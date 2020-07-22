@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/filecoin-project/lotus/lib/addrutil"
+	"github.com/EpiK-Protocol/go-epik/lib/addrutil"
 	"golang.org/x/xerrors"
 
 	rice "github.com/GeertJohan/go.rice"

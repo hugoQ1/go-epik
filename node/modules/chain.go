@@ -19,16 +19,16 @@ import (
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 
-	"github.com/filecoin-project/lotus/chain"
-	"github.com/filecoin-project/lotus/chain/beacon"
-	"github.com/filecoin-project/lotus/chain/blocksync"
-	"github.com/filecoin-project/lotus/chain/messagepool"
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/chain"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/blocksync"
+	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 func ChainExchange(mctx helpers.MetricsCtx, lc fx.Lifecycle, host host.Host, rt routing.Routing, bs dtypes.ChainGCBlockstore) dtypes.ChainExchange {
@@ -95,7 +95,7 @@ func ChainStore(lc fx.Lifecycle, bs dtypes.ChainBlockstore, ds dtypes.MetadataDS
 
 func ErrorGenesis() Genesis {
 	return func() (header *types.BlockHeader, e error) {
-		return nil, xerrors.New("No genesis block provided, provide the file with 'lotus daemon --genesis=[genesis file]'")
+		return nil, xerrors.New("No genesis block provided, provide the file with 'epik daemon --genesis=[genesis file]'")
 	}
 }
 

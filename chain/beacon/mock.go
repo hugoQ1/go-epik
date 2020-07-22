@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/minio/blake2b-simd"
 	"golang.org/x/xerrors"

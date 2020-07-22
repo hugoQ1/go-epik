@@ -16,13 +16,13 @@ import (
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
 
-	"github.com/filecoin-project/lotus/api/apistruct"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/journal"
-	"github.com/filecoin-project/lotus/lib/addrutil"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/EpiK-Protocol/go-epik/lib/addrutil"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 var log = logging.Logger("modules")

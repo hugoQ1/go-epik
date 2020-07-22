@@ -39,14 +39,14 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/markets/utils"
-	"github.com/filecoin-project/lotus/node/impl/full"
-	"github.com/filecoin-project/lotus/node/impl/paych"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/markets/utils"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/node/impl/paych"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
 const dealStartBuffer abi.ChainEpoch = 10000 // TODO: allow setting

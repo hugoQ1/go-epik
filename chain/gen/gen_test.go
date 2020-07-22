@@ -9,8 +9,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
 
-	_ "github.com/filecoin-project/lotus/lib/sigs/bls"
-	_ "github.com/filecoin-project/lotus/lib/sigs/secp"
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 )
 
 func init() {

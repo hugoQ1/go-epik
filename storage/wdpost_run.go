@@ -16,9 +16,9 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var errNoPartitions = errors.New("no partitions")
@@ -150,16 +150,16 @@ func (s *WindowPoStScheduler) checkNextRecoveries(ctx context.Context, deadline 
 	if err != nil {
 		return xerrors.Errorf("checking unrecovered sectors: %w", err)
 	}
-	
+
 	// if all sectors failed to recover, don't declare recoveries
 	sbfCount, err := sbf.Count()
 	if err != nil {
 		return xerrors.Errorf("counting recovered sectors: %w", err)
 	}
-	
+
 	if sbfCount == 0 {
-	 	log.Warnw("No recoveries to declare", "deadline", deadline, "faulty", uc)
-	 	return nil
+		log.Warnw("No recoveries to declare", "deadline", deadline, "faulty", uc)
+		return nil
 	}
 
 	params := &miner.DeclareFaultsRecoveredParams{

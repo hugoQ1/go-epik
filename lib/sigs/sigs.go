@@ -9,7 +9,7 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 // Sign takes in signature type, private key and message. Returns a signature for that message.

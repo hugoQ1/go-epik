@@ -32,7 +32,7 @@ Gossip sub spec and some introduction.
 
 # Look at the constructor of a miner
 
-Follow the `lotus-storage-miner` command to see how a miner is created, from the command to the message to the storage power logic.
+Follow the `epik-storage-miner` command to see how a miner is created, from the command to the message to the storage power logic.
 
 # Directory structure so far, main structures seen, their relation
 
@@ -48,7 +48,7 @@ The term *block* has different meanings depending on the context, many times bot
 
 In contrast, in the higher Filecoin (application) layer, a block is roughly (FIXME: link to spec definition, if we have any) a set of zero or more messages grouped together by a single miner which is itself grouped with other blocks (from other miners) in the same round to form a tipset. The Filecoin blockchain is a series of "chained" tipsets, each referencing its parent by its header's *CID*, that is, its header as seen as a single IPFS block, this is where both layers interact.
 
-Using now the full Go package qualifiers to avoid any ambiguity, the Filecoin block, `github.com/filecoin-project/lotus/chain/types.FullBlock`, is defined as,
+Using now the full Go package qualifiers to avoid any ambiguity, the Filecoin block, `github.com/EpiK-Protocol/go-epik/chain/types.FullBlock`, is defined as,
 
 ```Go
 package types
@@ -112,37 +112,37 @@ In terms of the Filecoin network the node is a peer on a distributed hierarchy, 
 
 The node itself was initiated with the `daemon` command, it already started syncing to the chain by default. Along with that service it also started a [JSON-RPC](https://en.wikipedia.org/wiki/JSON-RPC) server to allow a client to interact with it. (FIXME: Check if this client is local or can be remote, link to external documentation of connection API.)
 
-We can connect to this server through the Lotus CLI. Virtually any other command other than `daemon` will run a client that will connect (by default) to the address specified in the `api` file in the repo associated with the node (by default in `~/.lotus`), e.g.,
+We can connect to this server through the epik CLI. Virtually any other command other than `daemon` will run a client that will connect (by default) to the address specified in the `api` file in the repo associated with the node (by default in `~/.epik`), e.g.,
 
 ```sh
-cat  ~/.lotus/api && echo
+cat  ~/.epik/api && echo
 # /ip4/127.0.0.1/tcp/1234/http
 
-# With `lotus daemon` running in another terminal.
+# With `epik daemon` running in another terminal.
 nc -v -z 127.0.0.1 1234 
 
 # Start daemon and turn off the logs to not clutter the command line.
-bash -c "lotus daemon &" &&
-  lotus wait-api &&
-  lotus log set-level error # Or a env.var in the daemon command.
+bash -c "epik daemon &" &&
+  epik wait-api &&
+  epik log set-level error # Or a env.var in the daemon command.
 
 nc -v -z 127.0.0.1 1234
 # Connection to 127.0.0.1 1234 port [tcp/*] succeeded!
 
-killall lotus
-# FIXME: We need a lotus stop command:
-#  https://github.com/filecoin-project/lotus/issues/1827
+killall epik
+# FIXME: We need a epik stop command:
+#  https://github.com/EpiK-Protocol/go-epik/issues/1827
 ```
 
 FIXME: Link to more in-depth documentation of the CLI architecture, maybe some IPFS documentation (since they share some common logic).
 
 ## Node API
 
-The JSON-RPC server exposes the node API, the `FullNode` interface (defined in `api/api_full.go`). When we issue a command like `lotus sync status` to query the progress of the node sync we don't access the node's internals, those are decoupled in a separate daemon process, we call the `SyncState` function (of the `FullNode` API interface) through the RPC client started by our own command (see `NewFullNodeRPC` in `api/client/client.go` for more details).
+The JSON-RPC server exposes the node API, the `FullNode` interface (defined in `api/api_full.go`). When we issue a command like `epik sync status` to query the progress of the node sync we don't access the node's internals, those are decoupled in a separate daemon process, we call the `SyncState` function (of the `FullNode` API interface) through the RPC client started by our own command (see `NewFullNodeRPC` in `api/client/client.go` for more details).
 
 FIXME: Link to (and create) documentation about API fulfillment.
 
-Because we rely heavily on reflection for this part of the code the call chain is not easily visible by just following the references through the symbolic analysis of the IDE. If we start by the `lotus sync` command definition (in `cli/sync.go`), we eventually end up in the method interface `SyncState`, and when we look for its implementation we will find two functions:
+Because we rely heavily on reflection for this part of the code the call chain is not easily visible by just following the references through the symbolic analysis of the IDE. If we start by the `epik sync` command definition (in `cli/sync.go`), we eventually end up in the method interface `SyncState`, and when we look for its implementation we will find two functions:
 
 * `(*SyncAPI).SyncState()` (in `node/impl/full/sync.go`): this is the actual implementation of the API function that shows what the node (here acting as the RPC server) will execute when it receives the RPC request issued from the CLI acting as the client.
 

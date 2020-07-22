@@ -1,6 +1,6 @@
 # Protocol Labs Standard Testing Configuration
 
-> This documentation page describes the standard testing configuration the Protocol Labs team has used to test **Lotus Storage Miner**s on Lotus. There is no guarantee this testing configuration will be suitable for Filecoin storage mining at MainNet launch. If you need to buy new hardware to join the Filecoin Testnet, we recommend to buy no more hardware than you require for testing. To learn more please read this [Protocol Labs Standard Testing Configuration post](https://filecoin.io/blog/filecoin-testnet-mining/).
+> This documentation page describes the standard testing configuration the Protocol Labs team has used to test **epik Storage Miner**s on epik. There is no guarantee this testing configuration will be suitable for Filecoin storage mining at MainNet launch. If you need to buy new hardware to join the Filecoin Testnet, we recommend to buy no more hardware than you require for testing. To learn more please read this [Protocol Labs Standard Testing Configuration post](https://filecoin.io/blog/filecoin-testnet-mining/).
 
 **Sector sizes** and **minimum pledged storage** required to mine blocks are two very important Filecoin Testnet parameters that impact hardware decisions. We will continue to refine all parameters during Testnet.
 
@@ -8,7 +8,7 @@ BECAUSE OF THIS, OUR STANDARD TESTING CONFIGURATION FOR FILECOIN MAINNET CAN AND
 
 ## Example configuration
 
-The setup below is a minimal example for sealing 32 GiB sectors on Lotus:
+The setup below is a minimal example for sealing 32 GiB sectors on epik:
 
 - 2 TB of hard drive space.
 - 8 core CPU
@@ -24,7 +24,7 @@ For the first part of the sealing process, AMD CPU's are __highly recommended__,
 
 ## Benchmarked GPUs
 
-GPUs are a must for getting **block rewards**. Here are a few that have been confirmed to generate **SNARKs** quickly enough to successfully mine blocks on the Lotus Testnet.
+GPUs are a must for getting **block rewards**. Here are a few that have been confirmed to generate **SNARKs** quickly enough to successfully mine blocks on the epik Testnet.
 
 - GeForce RTX 2080 Ti
 - GeForce RTX 2080 SUPER
@@ -51,4 +51,4 @@ To get the number of cores for your GPU, you will need to check your card’s sp
 
 ## Benchmarking
 
-Here is a [benchmarking tool](https://github.com/filecoin-project/lotus/tree/master/cmd/lotus-bench) and a [GitHub issue thread](https://github.com/filecoin-project/lotus/issues/694) for those who wish to experiment with and contribute hardware setups for the **Filecoin Testnet**.
+Here is a [benchmarking tool](https://github.com/EpiK-Protocol/go-epik/tree/master/cmd/epik-bench) and a [GitHub issue thread](https://github.com/EpiK-Protocol/go-epik/issues/694) for those who wish to experiment with and contribute hardware setups for the **Filecoin Testnet**.

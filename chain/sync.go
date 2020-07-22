@@ -35,18 +35,18 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/beacon"
-	"github.com/filecoin-project/lotus/chain/blocksync"
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/lib/sigs"
-	"github.com/filecoin-project/lotus/metrics"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/blocksync"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 )
 
 // Blocks that are more than MaxHeightDrift epochs above
@@ -773,7 +773,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock) (er
 	})
 
 	beaconValuesCheck := async.Err(func() error {
-		if os.Getenv("LOTUS_IGNORE_DRAND") == "_yes_" {
+		if os.Getenv("EPIK_IGNORE_DRAND") == "_yes_" {
 			return nil
 		}
 

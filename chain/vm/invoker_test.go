@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/actors/aerrors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"

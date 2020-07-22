@@ -15,9 +15,9 @@ import (
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"go.uber.org/fx"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
 
 type P2PHostIn struct {
@@ -46,7 +46,7 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 		libp2p.Peerstore(params.Peerstore),
 		libp2p.NoListenAddrs,
 		libp2p.Ping(true),
-		libp2p.UserAgent("lotus-" + build.UserVersion()),
+		libp2p.UserAgent("epik-" + build.UserVersion()),
 	}
 	for _, o := range params.Opts {
 		opts = append(opts, o...)

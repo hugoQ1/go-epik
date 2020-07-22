@@ -10,12 +10,12 @@ import (
 	"go.uber.org/fx"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	full "github.com/EpiK-Protocol/go-epik/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/paychmgr"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/types"
-	full "github.com/filecoin-project/lotus/node/impl/full"
-	"github.com/filecoin-project/lotus/paychmgr"
 )
 
 type PaychAPI struct {

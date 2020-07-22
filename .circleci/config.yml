@@ -42,13 +42,13 @@ commands:
       - restore_cache:
           name: Restore parameters cache
           keys:
-            - 'v25-2k-lotus-params'
+            - 'v25-2k-epik-params'
           paths:
             - /var/tmp/filecoin-proof-parameters/
-      - run:  ./lotus fetch-params 2048
+      - run:  ./epik fetch-params 2048
       - save_cache:
           name: Save parameters cache
-          key: 'v25-2k-lotus-params'
+          key: 'v25-2k-epik-params'
           paths:
             - /var/tmp/filecoin-proof-parameters/
   install_ipfs:
@@ -91,12 +91,12 @@ jobs:
       - run:
           command: make buildall
       - store_artifacts:
-          path: lotus
+          path: epik
       - store_artifacts:
-          path: lotus-storage-miner
+          path: epik-storage-miner
       - store_artifacts:
-          path: lotus-seal-worker
-      - run: mkdir linux && mv lotus lotus-storage-miner lotus-seal-worker linux/
+          path: epik-seal-worker
+      - run: mkdir linux && mv epik epik-storage-miner epik-seal-worker linux/
       - persist_to_workspace:
           root: "."
           paths:
@@ -138,7 +138,7 @@ jobs:
         description: gotestsum format. https://github.com/gotestyourself/gotestsum#format
       coverage:
         type: string
-        default: -coverprofile=coverage.txt -coverpkg=github.com/filecoin-project/lotus/...
+        default: -coverprofile=coverage.txt -coverpkg=github.com/EpiK-Protocol/go-epik/...
         description: Coverage flag. Set to the empty string to disable.
       codecov-upload:
         type: boolean
@@ -151,7 +151,7 @@ jobs:
       - install-deps
       - prepare
       - run:
-          command: make deps lotus
+          command: make deps epik
           no_output_timeout: 30m
       - download-params
       - go/install-gotestsum:
@@ -161,7 +161,7 @@ jobs:
           environment:
             GOTESTSUM_JUNITFILE: /tmp/test-reports/<< parameters.test-suite-name >>/junit.xml
             GOTESTSUM_FORMAT: << parameters.gotestsum-format >>
-            LOTUS_TEST_WINDOW_POST: << parameters.winpost-test >>
+            EPIK_TEST_WINDOW_POST: << parameters.winpost-test >>
           command: |
             mkdir -p /tmp/test-reports/<< parameters.test-suite-name >>
             gotestsum -- \
@@ -187,10 +187,10 @@ jobs:
     <<: *test
 
   build-macos:
-    description: build darwin lotus binary
+    description: build darwin epik binary
     macos:
       xcode: "10.0.0"
-    working_directory: ~/go/src/github.com/filecoin-project/lotus
+    working_directory: ~/go/src/github.com/EpiK-Protocol/go-epik
     steps:
       - prepare:
           linux: false
@@ -215,25 +215,25 @@ jobs:
             chmod +x /usr/local/bin/jq
       - restore_cache:
           name: restore cargo cache
-          key: v3-go-deps-{{ arch }}-{{ checksum "~/go/src/github.com/filecoin-project/lotus/go.sum" }}
+          key: v3-go-deps-{{ arch }}-{{ checksum "~/go/src/github.com/EpiK-Protocol/go-epik/go.sum" }}
       - install-deps
       - run:
           command: make build
           no_output_timeout: 30m
       - store_artifacts:
-          path: lotus
+          path: epik
       - store_artifacts:
-          path: lotus-storage-miner
+          path: epik-storage-miner
       - store_artifacts:
-          path: lotus-seal-worker
-      - run: mkdir darwin && mv lotus lotus-storage-miner lotus-seal-worker darwin/
+          path: epik-seal-worker
+      - run: mkdir darwin && mv epik epik-storage-miner epik-seal-worker darwin/
       - persist_to_workspace:
           root: "."
           paths:
             - darwin
       - save_cache:
           name: save cargo cache
-          key: v3-go-deps-{{ arch }}-{{ checksum "~/go/src/github.com/filecoin-project/lotus/go.sum" }}
+          key: v3-go-deps-{{ arch }}-{{ checksum "~/go/src/github.com/EpiK-Protocol/go-epik/go.sum" }}
           paths:
             - "~/.rustup"
             - "~/.cargo"

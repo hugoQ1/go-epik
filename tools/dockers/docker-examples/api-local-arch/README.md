@@ -5,4 +5,4 @@
 
 ## Repo
 
-https://github.com/mateodelnorte/filecoin-lotus-docker
+https://github.com/mateodelnorte/filecoin-epik-docker

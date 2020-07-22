@@ -20,14 +20,14 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	sealing "github.com/filecoin-project/storage-fsm"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/apistruct"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/miner"
-	"github.com/filecoin-project/lotus/node/impl/common"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/storage"
-	"github.com/filecoin-project/lotus/storage/sectorblocks"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/miner"
+	"github.com/EpiK-Protocol/go-epik/node/impl/common"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/storage"
+	"github.com/EpiK-Protocol/go-epik/storage/sectorblocks"
 )
 
 type StorageMinerAPI struct {

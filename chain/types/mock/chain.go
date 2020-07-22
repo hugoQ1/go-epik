@@ -9,8 +9,8 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 )
 
 func Address(i uint64) address.Address {

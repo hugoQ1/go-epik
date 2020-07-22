@@ -17,18 +17,18 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/state"
-	"github.com/filecoin-project/lotus/chain/vm"
-	"github.com/filecoin-project/lotus/journal"
-	"github.com/filecoin-project/lotus/metrics"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 
 	amt "github.com/filecoin-project/go-amt-ipld/v2"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	lru "github.com/hashicorp/golang-lru"
 	block "github.com/ipfs/go-block-format"
@@ -1183,7 +1183,7 @@ func (cs *ChainStore) GetLatestBeaconEntry(ts *types.TipSet) (*types.BeaconEntry
 		cur = next
 	}
 
-	if os.Getenv("LOTUS_IGNORE_DRAND") == "_yes_" {
+	if os.Getenv("EPIK_IGNORE_DRAND") == "_yes_" {
 		return &types.BeaconEntry{
 			Data: []byte{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
 		}, nil

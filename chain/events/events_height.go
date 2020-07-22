@@ -7,7 +7,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"go.opencensus.io/trace"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 type heightEvents struct {

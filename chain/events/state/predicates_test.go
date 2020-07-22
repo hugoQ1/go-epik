@@ -24,7 +24,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 	tutils "github.com/filecoin-project/specs-actors/support/testing"
 
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
 var dummyCid cid.Cid

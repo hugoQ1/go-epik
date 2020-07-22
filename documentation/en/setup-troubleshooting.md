@@ -5,10 +5,10 @@
 Here is a command that will delete your chain data, stored wallets, stored data and any miners you have set up:
 
 ```sh
-rm -rf ~/.lotus ~/.lotusstorage
+rm -rf ~/.epik ~/.epikstorage
 ```
 
-This command usually resolves any issues with running `lotus` but it is not always required for updates. We will share information about when resetting your chain data and miners is required for an update in the future.
+This command usually resolves any issues with running `epik` but it is not always required for updates. We will share information about when resetting your chain data and miners is required for an update in the future.
 
 ## Error: Failed to connect bootstrap peer
 
@@ -23,13 +23,13 @@ WARN  peermgr peermgr/peermgr.go:131  failed to connect to bootstrap peer: faile
 ERROR hello hello/hello.go:81 other peer has different genesis!
 ```
 
-- Try deleting your file system's `~/.lotus` directory. Check that it exists with `ls ~/.lotus`.
+- Try deleting your file system's `~/.epik` directory. Check that it exists with `ls ~/.epik`.
 
 ```sh
 - repo is already locked
 ```
 
-- You already have another lotus daemon running.
+- You already have another epik daemon running.
 
 ## Config: Open files limit
 
@@ -39,7 +39,7 @@ On most systems you can check the open files limit with:
 ulimit -n
 ```
 
-You can also modify this number by using the `ulimit` command. It gives you the ability to control the resources available for the shell or process started by it. If the number is below 10000, you can change it with the following command prior to starting the Lotus daemon:
+You can also modify this number by using the `ulimit` command. It gives you the ability to control the resources available for the shell or process started by it. If the number is below 10000, you can change it with the following command prior to starting the epik daemon:
 
 ```sh
 ulimit -n 10000

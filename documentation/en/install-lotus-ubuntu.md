@@ -27,21 +27,21 @@ sudo apt upgrade
 
 Install the latest version of Go by following [the docs on their website](https://golang.org/doc/install).
 
-### Clone the Lotus repository
+### Clone the epik repository
 
 ```sh
-git clone https://github.com/filecoin-project/lotus.git
-cd lotus/
+git clone https://github.com/EpiK-Protocol/go-epik.git
+cd epik/
 ```
 
-### Build the Lotus binaries from source and install
+### Build the epik binaries from source and install
 
 ```sh
 make clean && make all
 sudo make install
 ```
 
-After installing Lotus, you can run the `lotus` command directly from your CLI to see usage documentation. Next, you can join the [Lotus Testnet](https://docs.lotu.sh/en+join-testnet).
+After installing epik, you can run the `epik` command directly from your CLI to see usage documentation. Next, you can join the [epik Testnet](https://docs.lotu.sh/en+join-testnet).
 
 ### Interopnet
 
@@ -50,4 +50,4 @@ If you seek a smaller network to test, you can join the `interopnet`. Please not
 git checkout interopnet
 ```
 
-Please also note that this documentation (if viewed on the website) might not be up to date with the interopnet. For the latest documentation on the interopnet branch, see the [Lotus Documentation Interopnet Branch on GitHub](https://github.com/filecoin-project/lotus/tree/interopnet/documentation/en)
+Please also note that this documentation (if viewed on the website) might not be up to date with the interopnet. For the latest documentation on the interopnet branch, see the [epik Documentation Interopnet Branch on GitHub](https://github.com/EpiK-Protocol/go-epik/tree/interopnet/documentation/en)

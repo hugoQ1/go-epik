@@ -13,19 +13,19 @@ FIL_PROOFS_PARAMETER_CACHE
 The **Bellman** lockfile is created to lock a GPU for a process. This bug can occur when this file isn't properly cleaned up:
 
 ```sh
-mining block failed: computing election proof: github.com/filecoin-project/lotus/miner.(*Miner).mineOne
+mining block failed: computing election proof: github.com/EpiK-Protocol/go-epik/miner.(*Miner).mineOne
 ```
 
-This bug occurs when the storage miner can't acquire the `bellman.lock`. To fix it you need to stop the `lotus-storage-miner` and remove `/tmp/bellman.lock`.
+This bug occurs when the storage miner can't acquire the `bellman.lock`. To fix it you need to stop the `epik-storage-miner` and remove `/tmp/bellman.lock`.
 
 ## Error: Failed to get api endpoint
 
 ```sh
-lotus-storage-miner info
-# WARN  main  lotus-storage-miner/main.go:73  failed to get api endpoint: (/Users/myrmidon/.lotusstorage) %!w(*errors.errorString=&{API not running (no endpoint)}):
+epik-storage-miner info
+# WARN  main  epik-storage-miner/main.go:73  failed to get api endpoint: (/Users/myrmidon/.epikstorage) %!w(*errors.errorString=&{API not running (no endpoint)}):
 ```
 
-If you see this, that means your **Lotus Storage Miner** isn't ready yet. You need to finish [syncing the chain](https://docs.lotu.sh/en+join-testnet).
+If you see this, that means your **epik Storage Miner** isn't ready yet. You need to finish [syncing the chain](https://docs.lotu.sh/en+join-testnet).
 
 ## Error: Your computer may not be fast enough
 
@@ -38,7 +38,7 @@ If you see this, that means your computer is too slow and your blocks are not in
 ## Error: No space left on device
 
 ```sh
-lotus-storage-miner sectors pledge
+epik-storage-miner sectors pledge
 # No space left on device (os error 28)
 ```
 
@@ -46,7 +46,7 @@ If you see this, that means `pledge-sector` wrote too much data to `$TMPDIR` whi
 
 ## Error: GPU unused
 
-If you suspect that your GPU is not being used, first make sure it is properly configured as described in the [testing configuration page](hardware-mining.md). Once you've done that (and set the `BELLMAN_CUSTOM_GPU` as appropriate if necessary) you can verify your GPU is being used by running a quick lotus-bench benchmark.
+If you suspect that your GPU is not being used, first make sure it is properly configured as described in the [testing configuration page](hardware-mining.md). Once you've done that (and set the `BELLMAN_CUSTOM_GPU` as appropriate if necessary) you can verify your GPU is being used by running a quick epik-bench benchmark.
 
 First, to watch GPU utilization run `nvtop` in one terminal, then in a separate terminal, run:
 
@@ -55,12 +55,12 @@ make bench
 ./bench sealing --sector-size=2KiB
 ```
 
-This process uses a fair amount of GPU, and generally takes ~4 minutes to complete. If you do not see any activity in nvtop from lotus during the entire process, it is likely something is misconfigured with your GPU.
+This process uses a fair amount of GPU, and generally takes ~4 minutes to complete. If you do not see any activity in nvtop from epik during the entire process, it is likely something is misconfigured with your GPU.
 
 ## Checking Sync Progress
 
 You can use this command to check how far behind you are on syncing:
 
 ```sh
-date -d @$(./lotus chain getblock $(./lotus chain head) | jq .Timestamp)
+date -d @$(./epik chain getblock $(./epik chain head) | jq .Timestamp)
 ```

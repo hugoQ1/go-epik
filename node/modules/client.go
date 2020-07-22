@@ -28,13 +28,13 @@ import (
 	"github.com/ipfs/go-datastore/namespace"
 	"github.com/ipfs/go-filestore"
 
-	"github.com/filecoin-project/lotus/markets/retrievaladapter"
-	"github.com/filecoin-project/lotus/node/impl/full"
-	payapi "github.com/filecoin-project/lotus/node/impl/paych"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/helpers"
-	"github.com/filecoin-project/lotus/node/repo"
-	"github.com/filecoin-project/lotus/paychmgr"
+	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
+	"github.com/EpiK-Protocol/go-epik/paychmgr"
 )
 
 func ClientFstore(r repo.LockedRepo) (dtypes.ClientFilestore, error) {

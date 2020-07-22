@@ -9,8 +9,8 @@ import (
 	"github.com/filecoin-project/go-crypto"
 	acrypto "github.com/filecoin-project/specs-actors/actors/crypto"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 )
 
 type KeyManager struct {
@@ -61,7 +61,7 @@ func (k *KeyManager) Sign(addr address.Address, data []byte) (acrypto.Signature,
 			Data: sig,
 		}, nil
 	} else if ki.Type == wallet.KTBLS {
-		panic("lotus validator cannot sign BLS messages")
+		panic("epik validator cannot sign BLS messages")
 	} else {
 		panic("unknown signature type")
 	}

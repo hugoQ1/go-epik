@@ -13,8 +13,8 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/genesis"
 )
 
 func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []genesis.Actor) (*types.Actor, error) {

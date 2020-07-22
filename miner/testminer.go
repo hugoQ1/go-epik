@@ -3,9 +3,9 @@ package miner
 import (
 	"context"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/gen"
 	lru "github.com/hashicorp/golang-lru"
 )
 

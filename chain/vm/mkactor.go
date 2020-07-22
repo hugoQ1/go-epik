@@ -3,7 +3,7 @@ package vm
 import (
 	"context"
 
-	"github.com/filecoin-project/lotus/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
@@ -11,9 +11,9 @@ import (
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/actors/aerrors"
-	"github.com/filecoin-project/lotus/chain/types"
 )
 
 func init() {

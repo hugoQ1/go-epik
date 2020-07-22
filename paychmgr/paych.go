@@ -17,11 +17,11 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/lotus/chain/actors"
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/lib/sigs"
-	"github.com/filecoin-project/lotus/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 )
 
 var log = logging.Logger("paych")

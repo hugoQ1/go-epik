@@ -44,7 +44,7 @@ type Loc struct {
 func (l Loc) Show() bool {
 	ignorePrefix := []string{
 		"reflect.",
-		"github.com/filecoin-project/lotus/chain/vm.(*Invoker).transform",
+		"github.com/EpiK-Protocol/go-epik/chain/vm.(*Invoker).transform",
 		"github.com/filecoin-project/go-amt-ipld/",
 	}
 	for _, pre := range ignorePrefix {
@@ -82,7 +82,7 @@ func (gt *GasTrace) MarshalJSON() ([]byte, error) {
 			frames := runtime.CallersFrames(gt.Callers)
 			for {
 				frame, more := frames.Next()
-				if frame.Function == "github.com/filecoin-project/lotus/chain/vm.(*VM).ApplyMessage" {
+				if frame.Function == "github.com/EpiK-Protocol/go-epik/chain/vm.(*VM).ApplyMessage" {
 					break
 				}
 				l := Loc{

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/lotus/lib/lotuslog"
-	"github.com/filecoin-project/lotus/storage/mockstorage"
+	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
+	"github.com/EpiK-Protocol/go-epik/storage/mockstorage"
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
 
 	"github.com/filecoin-project/go-storedcounter"
@@ -31,21 +31,21 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/client"
-	"github.com/filecoin-project/lotus/api/test"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/actors"
-	genesis2 "github.com/filecoin-project/lotus/chain/gen/genesis"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
-	"github.com/filecoin-project/lotus/cmd/lotus-seed/seed"
-	genesis "github.com/filecoin-project/lotus/genesis"
-	"github.com/filecoin-project/lotus/miner"
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/modules"
-	modtest "github.com/filecoin-project/lotus/node/modules/testing"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/client"
+	"github.com/EpiK-Protocol/go-epik/api/test"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
+	genesis "github.com/EpiK-Protocol/go-epik/genesis"
+	"github.com/EpiK-Protocol/go-epik/miner"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	modtest "github.com/EpiK-Protocol/go-epik/node/modules/testing"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 	sectorstorage "github.com/filecoin-project/sector-storage"
 	"github.com/filecoin-project/sector-storage/mock"
 )
@@ -473,7 +473,7 @@ func TestAPIDealFlowReal(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	lotuslog.SetupLogLevels()
+	epiklog.SetupLogLevels()
 	logging.SetLogLevel("miner", "ERROR")
 	logging.SetLogLevel("chainstore", "ERROR")
 	logging.SetLogLevel("chain", "ERROR")
@@ -518,8 +518,8 @@ func TestPledgeSectors(t *testing.T) {
 }
 
 func TestWindowedPost(t *testing.T) {
-	if os.Getenv("LOTUS_TEST_WINDOW_POST") != "1" {
-		t.Skip("this takes a few minutes, set LOTUS_TEST_WINDOW_POST=1 to run")
+	if os.Getenv("EPIK_TEST_WINDOW_POST") != "1" {
+		t.Skip("this takes a few minutes, set EPIK_TEST_WINDOW_POST=1 to run")
 	}
 
 	logging.SetLogLevel("miner", "ERROR")

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/specs-actors/actors/abi"
@@ -15,10 +16,10 @@ import (
 	vtypes "github.com/filecoin-project/chain-validation/chain/types"
 	vstate "github.com/filecoin-project/chain-validation/state"
 
-	"github.com/filecoin-project/lotus/chain/stmgr"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
 )
 
 // Applier applies messages to state trees and storage.
@@ -34,7 +35,7 @@ func NewApplier(sw *StateWrapper, syscalls runtime.Syscalls) *Applier {
 }
 
 func (a *Applier) ApplyMessage(epoch abi.ChainEpoch, message *vtypes.Message) (vtypes.ApplyMessageResult, error) {
-	lm := toLotusMsg(message)
+	lm := toEpikMsg(message)
 	receipt, penalty, reward, err := a.applyMessage(epoch, lm)
 	return vtypes.ApplyMessageResult{
 		Receipt: receipt,
@@ -48,9 +49,9 @@ func (a *Applier) ApplySignedMessage(epoch abi.ChainEpoch, msg *vtypes.SignedMes
 	var lm types.ChainMsg
 	switch msg.Signature.Type {
 	case crypto.SigTypeSecp256k1:
-		lm = toLotusSignedMsg(msg)
+		lm = toEpikSignedMsg(msg)
 	case crypto.SigTypeBLS:
-		lm = toLotusMsg(&msg.Message)
+		lm = toEpikMsg(&msg.Message)
 	default:
 		return vtypes.ApplyMessageResult{}, xerrors.New("Unknown signature type")
 	}
@@ -77,11 +78,11 @@ func (a *Applier) ApplyTipSetMessages(epoch abi.ChainEpoch, blocks []vtypes.Bloc
 		}
 
 		for _, m := range b.BLSMessages {
-			bm.BlsMessages = append(bm.BlsMessages, toLotusMsg(m))
+			bm.BlsMessages = append(bm.BlsMessages, toEpikMsg(m))
 		}
 
 		for _, m := range b.SECPMessages {
-			bm.SecpkMessages = append(bm.SecpkMessages, toLotusSignedMsg(m))
+			bm.SecpkMessages = append(bm.SecpkMessages, toEpikSignedMsg(m))
 		}
 
 		bms = append(bms, bm)
@@ -135,16 +136,16 @@ func (a *Applier) applyMessage(epoch abi.ChainEpoch, lm types.ChainMsg) (vtypes.
 	ctx := context.TODO()
 	base := a.stateWrapper.Root()
 
-	lotusVM, err := vm.NewVM(base, epoch, &vmRand{}, a.stateWrapper.bs, a.syscalls)
+	epikVM, err := vm.NewVM(base, epoch, &vmRand{}, a.stateWrapper.bs, a.syscalls)
 	// need to modify the VM invoker to add the puppet actor
 	chainValInvoker := vm.NewInvoker()
 	chainValInvoker.Register(puppet.PuppetActorCodeID, puppet.Actor{}, puppet.State{})
-	lotusVM.SetInvoker(chainValInvoker)
+	epikVM.SetInvoker(chainValInvoker)
 	if err != nil {
 		return vtypes.MessageReceipt{}, big.Zero(), big.Zero(), err
 	}
 
-	ret, err := lotusVM.ApplyMessage(ctx, lm)
+	ret, err := epikVM.ApplyMessage(ctx, lm)
 	if err != nil {
 		return vtypes.MessageReceipt{}, big.Zero(), big.Zero(), err
 	}
@@ -154,7 +155,7 @@ func (a *Applier) applyMessage(epoch abi.ChainEpoch, lm types.ChainMsg) (vtypes.
 		rval = []byte{}
 	}
 
-	a.stateWrapper.stateRoot, err = lotusVM.Flush(ctx)
+	a.stateWrapper.stateRoot, err = epikVM.Flush(ctx)
 	if err != nil {
 		return vtypes.MessageReceipt{}, big.Zero(), big.Zero(), err
 	}
@@ -168,7 +169,7 @@ func (a *Applier) applyMessage(epoch abi.ChainEpoch, lm types.ChainMsg) (vtypes.
 	return mr, ret.Penalty, abi.NewTokenAmount(ret.GasUsed), nil
 }
 
-func toLotusMsg(msg *vtypes.Message) *types.Message {
+func toEpikMsg(msg *vtypes.Message) *types.Message {
 	return &types.Message{
 		To:   msg.To,
 		From: msg.From,
@@ -184,9 +185,9 @@ func toLotusMsg(msg *vtypes.Message) *types.Message {
 	}
 }
 
-func toLotusSignedMsg(msg *vtypes.SignedMessage) *types.SignedMessage {
+func toEpikSignedMsg(msg *vtypes.SignedMessage) *types.SignedMessage {
 	return &types.SignedMessage{
-		Message:   *toLotusMsg(&msg.Message),
+		Message:   *toEpikMsg(&msg.Message),
 		Signature: msg.Signature,
 	}
 }

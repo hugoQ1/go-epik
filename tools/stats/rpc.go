@@ -11,13 +11,13 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/client"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/client"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
 func getAPI(path string) (string, http.Header, error) {
