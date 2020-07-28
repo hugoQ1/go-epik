@@ -61,8 +61,8 @@ const WinningPoStSectorSetLookback = abi.ChainEpoch(10)
 // /////
 // Devnet settings
 
-const TotalFilecoin = uint64(2_000_000_000)
-const MiningRewardTotal = uint64(1_400_000_000)
+const TotalFilecoin = uint64(1_000_000_000)
+const MiningRewardTotal = uint64(700_000_000)
 
 const FilecoinPrecision = uint64(1_000_000_000_000_000_000)
 

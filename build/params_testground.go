@@ -51,8 +51,8 @@ var (
 	TicketRandomnessLookback     = abi.ChainEpoch(1)
 	WinningPoStSectorSetLookback = abi.ChainEpoch(10)
 
-	TotalFilecoin     uint64 = 2_000_000_000
-	MiningRewardTotal uint64 = 1_400_000_000
+	TotalFilecoin     uint64 = 1_000_000_000
+	MiningRewardTotal uint64 = 700_000_000
 
 	FilecoinPrecision uint64 = 1_000_000_000_000_000_000
 

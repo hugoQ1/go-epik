@@ -46,7 +46,7 @@ The process:
   - Make init actor
     - Create accounts mappings
     - Set NextID to MinerStart
-  - Setup Reward (1.4B fil)
+  - Setup Reward (0.7B epk)
   - Setup Cron
   - Create empty power actor
   - Create empty market
