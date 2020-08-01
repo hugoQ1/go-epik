@@ -12,7 +12,7 @@ import (
 // NewCommonRPC creates a new http jsonrpc client.
 func NewCommonRPC(addr string, requestHeader http.Header) (api.Common, jsonrpc.ClientCloser, error) {
 	var res apistruct.CommonStruct
-	closer, err := jsonrpc.NewMergeClient(addr, "Filecoin",
+	closer, err := jsonrpc.NewMergeClient(addr, "EpiK",
 		[]interface{}{
 			&res.Internal,
 		},
@@ -25,7 +25,7 @@ func NewCommonRPC(addr string, requestHeader http.Header) (api.Common, jsonrpc.C
 // NewFullNodeRPC creates a new http jsonrpc client.
 func NewFullNodeRPC(addr string, requestHeader http.Header) (api.FullNode, jsonrpc.ClientCloser, error) {
 	var res apistruct.FullNodeStruct
-	closer, err := jsonrpc.NewMergeClient(addr, "Filecoin",
+	closer, err := jsonrpc.NewMergeClient(addr, "EpiK",
 		[]interface{}{
 			&res.CommonStruct.Internal,
 			&res.Internal,
@@ -37,7 +37,7 @@ func NewFullNodeRPC(addr string, requestHeader http.Header) (api.FullNode, jsonr
 // NewStorageMinerRPC creates a new http jsonrpc client for storage miner
 func NewStorageMinerRPC(addr string, requestHeader http.Header) (api.StorageMiner, jsonrpc.ClientCloser, error) {
 	var res apistruct.StorageMinerStruct
-	closer, err := jsonrpc.NewMergeClient(addr, "Filecoin",
+	closer, err := jsonrpc.NewMergeClient(addr, "EpiK",
 		[]interface{}{
 			&res.CommonStruct.Internal,
 			&res.Internal,
@@ -50,7 +50,7 @@ func NewStorageMinerRPC(addr string, requestHeader http.Header) (api.StorageMine
 
 func NewWorkerRPC(addr string, requestHeader http.Header) (api.WorkerAPI, jsonrpc.ClientCloser, error) {
 	var res apistruct.WorkerStruct
-	closer, err := jsonrpc.NewMergeClient(addr, "Filecoin",
+	closer, err := jsonrpc.NewMergeClient(addr, "EpiK",
 		[]interface{}{
 			&res.Internal,
 		},

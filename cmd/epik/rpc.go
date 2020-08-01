@@ -30,7 +30,7 @@ var log = logging.Logger("main")
 
 func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shutdownCh <-chan struct{}) error {
 	rpcServer := jsonrpc.NewServer()
-	rpcServer.Register("Filecoin", apistruct.PermissionedFullAPI(a))
+	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(a))
 
 	ah := &auth.Handler{
 		Verify: a.AuthVerify,
@@ -47,7 +47,7 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 	http.Handle("/rest/v0/import", importAH)
 
 	exporter, err := prometheus.NewExporter(prometheus.Options{
-		Namespace: "epik",
+		Namespace: "EpiK",
 	})
 	if err != nil {
 		log.Fatalf("could not create the prometheus stats exporter: %v", err)
