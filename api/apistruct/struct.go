@@ -109,7 +109,7 @@ type FullNodeStruct struct {
 		WalletImport         func(context.Context, *types.KeyInfo) (address.Address, error)                       `perm:"admin"`
 		WalletDelete         func(context.Context, address.Address) error                                         `perm:"write"`
 
-		ClientImport          func(ctx context.Context, ref api.FileRef) (cid.Cid, error)                                          `perm:"admin"`
+		ClientImport          func(ctx context.Context, params *api.ImportParams) (cid.Cid, error)                                          `perm:"admin"`
 		ClientListImports     func(ctx context.Context) ([]api.Import, error)                                                      `perm:"write"`
 		ClientHasLocal        func(ctx context.Context, root cid.Cid) (bool, error)                                                `perm:"write"`
 		ClientFindData        func(ctx context.Context, root cid.Cid) ([]api.QueryOffer, error)                                    `perm:"read"`
@@ -341,8 +341,8 @@ func (c *FullNodeStruct) ClientListImports(ctx context.Context) ([]api.Import, e
 	return c.Internal.ClientListImports(ctx)
 }
 
-func (c *FullNodeStruct) ClientImport(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
-	return c.Internal.ClientImport(ctx, ref)
+func (c *FullNodeStruct) ClientImport(ctx context.Context, params *api.ImportParams) (cid.Cid, error) {
+	return c.Internal.ClientImport(ctx, params)
 }
 
 func (c *FullNodeStruct) ClientHasLocal(ctx context.Context, root cid.Cid) (bool, error) {

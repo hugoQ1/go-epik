@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/filecoin-project/go-fil-markets/pieceio"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -257,13 +258,35 @@ func (a *API) makeRetrievalQuery(ctx context.Context, rp rm.RetrievalPeer, paylo
 	}
 }
 
-func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
+func (a *API) ClientImport(ctx context.Context, params *api.ImportParams) (cid.Cid, error) {
 
 	bufferedDS := ipld.NewBufferedDAG(ctx, a.LocalDAG)
-	nd, err := a.clientImport(ref, bufferedDS)
+	nd, err := a.clientImport(params.FileRef, bufferedDS)
 
 	if err != nil {
 		return cid.Undef, err
+	}
+
+	ts, err := a.ChainHead(ctx)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed getting chain height: %w", err)
+	}
+	miners, err := a.StateListMiners(ctx, ts.Key())
+	if err != nil {
+		return cid.Undef, err
+	}
+	for _, miner := range miners {
+		params := &api.StartDealParams{
+			Data: &storagemarket.DataRef{Root: nd},
+			Wallet: params.Wallet,
+			Miner: miner,
+			EpochPrice: types.NewInt(0),
+			MinBlocksDuration: math.MaxUint64,
+		}
+		_, err := a.ClientStartDeal(ctx, params)
+		if err != nil {
+			return cid.Undef, err
+		}
 	}
 
 	return nd, nil
@@ -527,6 +550,10 @@ func (a *API) clientImport(ref api.FileRef, bufferedDS *ipld.BufferedDAG) (cid.C
 		return cid.Undef, err
 	}
 
+	if err := a.checkRDFFile(ref, file); err != nil {
+		return cid.Undef, err
+	}
+
 	if ref.IsCAR {
 		var store car.Store
 		if a.Filestore == nil {
@@ -568,4 +595,9 @@ func (a *API) clientImport(ref api.FileRef, bufferedDS *ipld.BufferedDAG) (cid.C
 	}
 
 	return nd.Cid(), nil
+}
+
+func (a *API) checkRDFFile(ref api.FileRef, r io.Reader) error {
+	//TODO: add rdf file check, only rdf data is be allowed.
+	return nil
 }

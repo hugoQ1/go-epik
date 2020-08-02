@@ -69,7 +69,7 @@ var clientCmd = &cli.Command{
 var clientImportCmd = &cli.Command{
 	Name:      "import",
 	Usage:     "Import data",
-	ArgsUsage: "[inputPath]",
+	ArgsUsage: "[inputPath, wallet]",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "car",
@@ -98,7 +98,15 @@ var clientImportCmd = &cli.Command{
 			Path:  absPath,
 			IsCAR: cctx.Bool("car"),
 		}
-		c, err := api.ClientImport(ctx, ref)
+
+		wallet, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+		c, err := api.ClientImport(ctx, &lapi.ImportParams{
+			Wallet: wallet,
+			FileRef: ref,
+		})
 		if err != nil {
 			return err
 		}
