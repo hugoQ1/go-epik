@@ -6,13 +6,13 @@ import (
 
 	_ "github.com/lib/pq"
 
-	lcli "github.com/filecoin-project/lotus/cli"
+	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/cmd/lotus-chainwatch/processor"
-	"github.com/filecoin-project/lotus/cmd/lotus-chainwatch/syncer"
+	"github.com/EpiK-Protocol/go-epik/cmd/epik-chainwatch/processor"
+	"github.com/EpiK-Protocol/go-epik/cmd/epik-chainwatch/syncer"
 )
 
 var runCmd = &cli.Command{

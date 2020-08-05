@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/chain/events/state"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/chain/events/state"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/xerrors"
@@ -22,9 +22,9 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/types"
-	cw_util "github.com/filecoin-project/lotus/cmd/lotus-chainwatch/util"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	cw_util "github.com/EpiK-Protocol/go-epik/cmd/epik-chainwatch/util"
 )
 
 func (p *Processor) setupMiners() error {

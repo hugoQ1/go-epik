@@ -16,8 +16,8 @@ import (
 	_init "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	cw_util "github.com/filecoin-project/lotus/cmd/lotus-chainwatch/util"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	cw_util "github.com/EpiK-Protocol/go-epik/cmd/epik-chainwatch/util"
 )
 
 func (p *Processor) setupCommonActors() error {
