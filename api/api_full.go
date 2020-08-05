@@ -220,6 +220,9 @@ type FullNode interface {
 
 	//ClientListAsks() []Ask
 
+	// ClientRemove removes file storage from system, returns message cid.
+	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
+
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// All methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.

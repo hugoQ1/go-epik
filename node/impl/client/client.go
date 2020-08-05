@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"math"
 
 	"github.com/filecoin-project/go-fil-markets/pieceio"
@@ -600,4 +602,26 @@ func (a *API) clientImport(ref api.FileRef, bufferedDS *ipld.BufferedDAG) (cid.C
 func (a *API) checkRDFFile(ref api.FileRef, r io.Reader) error {
 	//TODO: add rdf file check, only rdf data is be allowed.
 	return nil
+}
+
+func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&miner.RemoveSectorParams{})
+
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: ", err)
+	}
+
+	smsg, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:       builtin.StorageMarketActorAddr,
+		From:     wallet,
+		Value:    types.NewInt(0),
+		GasPrice: types.NewInt(0),
+		GasLimit: 1000000,
+		Method:   builtin.MethodsMiner.RemoveSector,
+		Params:   params,
+	})
+	if serr != nil {
+		return cid.Undef, serr
+	}
+	return smsg.Cid(), nil
 }

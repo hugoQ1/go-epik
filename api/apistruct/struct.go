@@ -109,7 +109,7 @@ type FullNodeStruct struct {
 		WalletImport         func(context.Context, *types.KeyInfo) (address.Address, error)                       `perm:"admin"`
 		WalletDelete         func(context.Context, address.Address) error                                         `perm:"write"`
 
-		ClientImport          func(ctx context.Context, params *api.ImportParams) (cid.Cid, error)                                          `perm:"admin"`
+		ClientImport          func(ctx context.Context, params *api.ImportParams) (cid.Cid, error)                                 `perm:"admin"`
 		ClientListImports     func(ctx context.Context) ([]api.Import, error)                                                      `perm:"write"`
 		ClientHasLocal        func(ctx context.Context, root cid.Cid) (bool, error)                                                `perm:"write"`
 		ClientFindData        func(ctx context.Context, root cid.Cid) ([]api.QueryOffer, error)                                    `perm:"read"`
@@ -121,6 +121,7 @@ type FullNodeStruct struct {
 		ClientQueryAsk        func(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.SignedStorageAsk, error) `perm:"read"`
 		ClientCalcCommP       func(ctx context.Context, inpath string, miner address.Address) (*api.CommPRet, error)               `perm:"read"`
 		ClientGenCar          func(ctx context.Context, ref api.FileRef, outpath string) error                                     `perm:"write"`
+		ClientRemove          func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
 
 		StateNetworkName                  func(context.Context) (dtypes.NetworkName, error)                                                                   `perm:"read"`
 		StateMinerSectors                 func(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*api.ChainSectorInfo, error)        `perm:"read"`
@@ -381,6 +382,10 @@ func (c *FullNodeStruct) ClientCalcCommP(ctx context.Context, inpath string, min
 
 func (c *FullNodeStruct) ClientGenCar(ctx context.Context, ref api.FileRef, outpath string) error {
 	return c.Internal.ClientGenCar(ctx, ref, outpath)
+}
+
+func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
+	return c.Internal.ClientRemove(ctx, root, wallet)
 }
 
 func (c *FullNodeStruct) MpoolPending(ctx context.Context, tsk types.TipSetKey) ([]*types.SignedMessage, error) {
