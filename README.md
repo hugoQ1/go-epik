@@ -4,7 +4,7 @@ Building an Everlasting Knowledge Vault - Broaden AI’s Horizons
 
 # go-epik
 
-go-epik is an implementation of the EpiK Distributed Storage Network. For more details about EpiK, check out the [Epik Wiki](https://github.com/EpiK-Protocol/wiki).
+go-epik is an implementation of the EpiK Distributed Storage Network. For more details about EpiK, check out the [Epik Wiki](https://github.com/EpiK-Protocol/go-epik/wiki).
 
 ## Building & Documentation
 
