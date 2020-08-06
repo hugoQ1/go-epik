@@ -62,7 +62,7 @@ func main() {
 
 	app := &cli.App{
 		Name:                 "epik-storage-miner",
-		Usage:                "Filecoin decentralized storage network storage miner",
+		Usage:                "EpiK decentralized storage network storage miner",
 		Version:              build.UserVersion(),
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{

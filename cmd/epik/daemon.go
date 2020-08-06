@@ -270,6 +270,8 @@ var DaemonCmd = &cli.Command{
 			return xerrors.Errorf("getting api endpoint: %w", err)
 		}
 
+		log.Infof("rpc endpoint is: %s", endpoint.String())
+
 		// TODO: properly parse api endpoint (or make it a URL)
 		return serveRPC(api, stop, endpoint, shutdownChan)
 	},
