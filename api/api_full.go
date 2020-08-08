@@ -223,6 +223,9 @@ type FullNode interface {
 	// ClientRemove removes file storage from system, returns message cid.
 	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
 
+	// ClientQuery query file status and return file urls.
+	ClientQuery(ctx context.Context, roots []cid.Cid) ([]FileResp, error)
+
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// All methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.
@@ -624,4 +627,10 @@ const (
 type Fault struct {
 	Miner address.Address
 	Epoch abi.ChainEpoch
+}
+
+type FileResp struct {
+	Root cid.Cid
+	Status int
+	Url string
 }

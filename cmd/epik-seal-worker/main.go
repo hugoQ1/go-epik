@@ -285,7 +285,7 @@ var runCmd = &cli.Command{
 		log.Info("Setting up control endpoint at " + cctx.String("address"))
 
 		rpcServer := jsonrpc.NewServer()
-		rpcServer.Register("Filecoin", apistruct.PermissionedWorkerAPI(workerApi))
+		rpcServer.Register("EpiK", apistruct.PermissionedWorkerAPI(workerApi))
 
 		mux.Handle("/rpc/v0", rpcServer)
 		mux.PathPrefix("/remote").HandlerFunc((&stores.FetchHandler{Local: localStore}).ServeHTTP)

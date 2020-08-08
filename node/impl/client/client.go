@@ -625,3 +625,34 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	}
 	return smsg.Cid(), nil
 }
+
+func (a *API) ClientQuery(ctx context.Context, roots []cid.Cid) ([]api.FileResp, error) {
+	payer, err := a.WalletDefaultAddress(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fileResps := make([]api.FileResp, 0)
+	for _, root := range roots {
+		offers, err := a.ClientFindData(ctx, root)
+		if err != nil {
+			return nil, err
+		}
+		if len(offers) < 1 {
+			return nil, errors.New("Failed to find file")
+		}
+		offer := offers[0]
+		ref := &api.FileRef{
+			Path:  "/data/" + root.String(),
+			IsCAR: false,
+		}
+		if err := a.ClientRetrieve(ctx, offer.Order(payer), ref); err != nil {
+			return nil, err
+		}
+		fileResps = append(fileResps, api.FileResp{
+			Status:1,
+			Root:root,
+			Url:ref.Path,
+		})
+	}
+	return fileResps, nil
+}

@@ -122,6 +122,7 @@ type FullNodeStruct struct {
 		ClientCalcCommP       func(ctx context.Context, inpath string, miner address.Address) (*api.CommPRet, error)               `perm:"read"`
 		ClientGenCar          func(ctx context.Context, ref api.FileRef, outpath string) error                                     `perm:"write"`
 		ClientRemove          func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
+		ClientQuery           func(ctx context.Context, roots []cid.Cid) ([]api.FileResp, error)								   `perm:"read"`
 
 		StateNetworkName                  func(context.Context) (dtypes.NetworkName, error)                                                                   `perm:"read"`
 		StateMinerSectors                 func(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*api.ChainSectorInfo, error)        `perm:"read"`
@@ -386,6 +387,10 @@ func (c *FullNodeStruct) ClientGenCar(ctx context.Context, ref api.FileRef, outp
 
 func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
 	return c.Internal.ClientRemove(ctx, root, wallet)
+}
+
+func (c *FullNodeStruct) ClientQuery(ctx context.Context, roots []cid.Cid) ([]api.FileResp, error) {
+	return c.Internal.ClientQuery(ctx, roots)
 }
 
 func (c *FullNodeStruct) MpoolPending(ctx context.Context, tsk types.TipSetKey) ([]*types.SignedMessage, error) {
