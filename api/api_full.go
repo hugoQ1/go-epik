@@ -189,10 +189,11 @@ type FullNode interface {
 	// retrieval markets as a client
 
 	// ClientImport imports file under the specified path into filestore.
-	ClientImport(ctx context.Context, params *ImportParams) (cid.Cid, error)
-	//ClientImport(ctx context.Context, ref FileRef) (cid.Cid, error)
+	ClientImport(ctx context.Context, ref FileRef) (cid.Cid, error)
 	// ClientStartDeal proposes a deal with a miner.
 	ClientStartDeal(ctx context.Context, params *StartDealParams) (*cid.Cid, error)
+	// ClientImportAndDeal imports file and deal with all miners found.
+	ClientImportAndDeal(ctx context.Context, ref FileRef) (cid.Cid, error)
 	// ClientGetDealInfo returns the latest information about a given deal.
 	ClientGetDealInfo(context.Context, cid.Cid) (*DealInfo, error)
 	// ClientListDeals returns information about the deals made by the local client.
@@ -521,11 +522,6 @@ type InvocResult struct {
 type MethodCall struct {
 	types.MessageReceipt
 	Error string
-}
-
-type ImportParams struct {
-	Wallet            address.Address
-	FileRef           FileRef
 }
 
 type StartDealParams struct {

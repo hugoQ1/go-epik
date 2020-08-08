@@ -260,11 +260,27 @@ func (a *API) makeRetrievalQuery(ctx context.Context, rp rm.RetrievalPeer, paylo
 	}
 }
 
-func (a *API) ClientImport(ctx context.Context, params *api.ImportParams) (cid.Cid, error) {
+func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
 
 	bufferedDS := ipld.NewBufferedDAG(ctx, a.LocalDAG)
-	nd, err := a.clientImport(params.FileRef, bufferedDS)
+	nd, err := a.clientImport(ref, bufferedDS)
 
+	if err != nil {
+		return cid.Undef, err
+	}
+	return nd, nil
+}
+
+func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
+
+	bufferedDS := ipld.NewBufferedDAG(ctx, a.LocalDAG)
+	nd, err := a.clientImport(ref, bufferedDS)
+
+	if err != nil {
+		return cid.Undef, err
+	}
+
+	payer, err := a.WalletDefaultAddress(ctx)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -280,7 +296,7 @@ func (a *API) ClientImport(ctx context.Context, params *api.ImportParams) (cid.C
 	for _, miner := range miners {
 		params := &api.StartDealParams{
 			Data: &storagemarket.DataRef{Root: nd},
-			Wallet: params.Wallet,
+			Wallet: payer,
 			Miner: miner,
 			EpochPrice: types.NewInt(0),
 			MinBlocksDuration: math.MaxUint64,
@@ -293,6 +309,7 @@ func (a *API) ClientImport(ctx context.Context, params *api.ImportParams) (cid.C
 
 	return nd, nil
 }
+
 
 func (a *API) ClientImportLocal(ctx context.Context, f io.Reader) (cid.Cid, error) {
 	file := files.NewReaderFile(f)
