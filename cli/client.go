@@ -99,7 +99,7 @@ var clientImportCmd = &cli.Command{
 			IsCAR: cctx.Bool("car"),
 		}
 
-		c, err := api.ClientImport(ctx, ref)
+		c, err := api.ClientImportAndDeal(ctx, ref)
 		if err != nil {
 			return err
 		}

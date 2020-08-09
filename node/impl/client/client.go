@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"math"
 
 	"github.com/filecoin-project/go-fil-markets/pieceio"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -299,7 +298,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 			Wallet: payer,
 			Miner: miner,
 			EpochPrice: types.NewInt(0),
-			MinBlocksDuration: math.MaxUint64,
+			MinBlocksDuration: 1000000,
 		}
 		_, err := a.ClientStartDeal(ctx, params)
 		if err != nil {
