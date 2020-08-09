@@ -293,14 +293,28 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 		return cid.Undef, err
 	}
 	for _, miner := range miners {
+		mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
+		if err != nil {
+			return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
+		}
+
+		if peer.ID(mi.PeerId) == peer.ID("SETME") {
+			return cid.Undef, fmt.Errorf("the miner hasn't initialized yet")
+		}
+
+		pid := peer.ID(mi.PeerId)
+		ask, err := a.ClientQueryAsk(ctx, pid, miner)
+		if err != nil {
+			return cid.Undef, err
+		}
 		params := &api.StartDealParams{
 			Data: &storagemarket.DataRef{Root: nd},
 			Wallet: payer,
 			Miner: miner,
-			EpochPrice: types.NewInt(0),
-			MinBlocksDuration: 1000000,
+			EpochPrice: ask.Ask.Price,
+			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
 		}
-		_, err := a.ClientStartDeal(ctx, params)
+		_, err = a.ClientStartDeal(ctx, params)
 		if err != nil {
 			return cid.Undef, err
 		}
