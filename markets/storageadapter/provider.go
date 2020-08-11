@@ -64,6 +64,7 @@ func (n *ProviderNodeAdapter) PublishDeals(ctx context.Context, deal storagemark
 
 	params, err := actors.SerializeParams(&market.PublishStorageDealsParams{
 		Deals: []market.ClientDealProposal{deal.ClientDealProposal},
+		RootCID: deal.Ref.Root,
 	})
 
 	if err != nil {
