@@ -80,6 +80,15 @@ func calcDealExpiration(minDuration uint64, md *miner.DeadlineInfo, startEpoch a
 }
 
 func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error) {
+	offers, err := a.ClientFindData(ctx, params.Data.Root)
+	if err != nil {
+		return nil, err
+	}
+	for _, offer := range offers {
+		if offer.Err == "" {
+			return nil, xerrors.Errorf("file has storaged in miner: %w", offer.Miner)
+		}
+	}
 	exist, err := a.WalletHas(ctx, params.Wallet)
 	if err != nil {
 		return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
@@ -292,6 +301,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 	if err != nil {
 		return cid.Undef, err
 	}
+
+	if len(miners) == 0 {
+		return cid.Undef, xerrors.Errorf("miners not found.")
+	}
+
 	for _, miner := range miners {
 		mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
 		if err != nil {

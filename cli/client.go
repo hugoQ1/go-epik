@@ -546,6 +546,7 @@ var clientQueryAskCmd = &cli.Command{
 		}
 
 		fmt.Printf("Ask: %s\n", maddr)
+		fmt.Printf("Expire: %d\n", ask.Ask.Expiry)
 		fmt.Printf("Price per GiB: %s\n", types.FIL(ask.Ask.Price))
 		fmt.Printf("Max Piece size: %s\n", types.SizeStr(types.NewInt(uint64(ask.Ask.MaxPieceSize))))
 
