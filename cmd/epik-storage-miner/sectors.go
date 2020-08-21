@@ -26,7 +26,7 @@ var sectorsCmd = &cli.Command{
 		sectorsListCmd,
 		sectorsRefsCmd,
 		sectorsUpdateCmd,
-		sectorsPledgeCmd,
+		//sectorsPledgeCmd,
 		sectorsRemoveCmd,
 	},
 }
