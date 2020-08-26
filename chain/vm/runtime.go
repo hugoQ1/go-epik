@@ -83,9 +83,21 @@ func (rt *Runtime) TotalFilCircSupply() abi.TokenAmount {
 		rt.Abortf(exitcode.ErrIllegalState, "failed to get reward actor for computing total supply: %s", err)
 	}
 
+	expert, err := rt.state.GetActor(builtin.ExpertFundsActorAddr)
+	if err != nil {
+		rt.Abortf(exitcode.ErrIllegalState, "failed to get reward actor for computing total supply: %s", err)
+	}
+
+	retrieve, err := rt.state.GetActor(builtin.RetrieveFundsActorAddr)
+	if err != nil {
+		rt.Abortf(exitcode.ErrIllegalState, "failed to get reward actor for computing total supply: %s", err)
+	}
+
 	total = types.BigSub(total, rew.Balance)
 	total = types.BigSub(total, burnt.Balance)
 	total = types.BigSub(total, market.Balance)
+	total = types.BigSub(total, expert.Balance)
+	total = types.BigSub(total, retrieve.Balance)
 
 	var st sapower.State
 	if err := rt.cst.Get(rt.ctx, power.Head, &st); err != nil {

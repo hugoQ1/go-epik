@@ -141,6 +141,8 @@ func (p Processor) storeActorAddresses(ctx context.Context, actors map[cid.Cid]A
 	addressToID[builtin.StorageMarketActorAddr] = builtin.StorageMarketActorAddr
 	addressToID[builtin.VerifiedRegistryActorAddr] = builtin.VerifiedRegistryActorAddr
 	addressToID[builtin.BurntFundsActorAddr] = builtin.BurntFundsActorAddr
+	addressToID[builtin.ExpertFundsActorAddr] = builtin.ExpertFundsActorAddr
+	addressToID[builtin.RetrieveFundsActorAddr] = builtin.RetrieveFundsActorAddr
 	initActor, err := p.node.StateGetActor(ctx, builtin.InitActorAddr, types.EmptyTSK)
 	if err != nil {
 		return err

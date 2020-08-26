@@ -187,6 +187,26 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, xerrors.Errorf("set burnt funds account actor: %w", err)
 	}
 
+	// Setup expert-funds
+	err = state.SetActor(builtin.ExpertFundsActorAddr, &types.Actor{
+		Code:    builtin.AccountActorCodeID,
+		Balance: types.NewInt(0),
+		Head:    emptyobject,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("set burnt funds account actor: %w", err)
+	}
+
+	// Setup retrieve-funds
+	err = state.SetActor(builtin.RetrieveFundsActorAddr, &types.Actor{
+		Code:    builtin.AccountActorCodeID,
+		Balance: types.NewInt(0),
+		Head:    emptyobject,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("set burnt funds account actor: %w", err)
+	}
+
 	// Create accounts
 	for id, info := range template.Accounts {
 		if info.Type != genesis.TAccount {
