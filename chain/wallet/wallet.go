@@ -195,11 +195,51 @@ func GenerateKey(typ crypto.SigType) (*Key, error) {
 	return NewKey(ki)
 }
 
+func GenerateKeyFromSeed(typ crypto.SigType, seed []byte) (*Key, error) {
+	pk, err := sigs.GenerateFromSeed(typ, seed)
+	if err != nil {
+		return nil, err
+	}
+	ki := types.KeyInfo{
+		Type:       kstoreSigType(typ),
+		PrivateKey: pk,
+	}
+	return NewKey(ki)
+}
+
 func (w *Wallet) GenerateKey(typ crypto.SigType) (address.Address, error) {
 	w.lk.Lock()
 	defer w.lk.Unlock()
 
 	k, err := GenerateKey(typ)
+	if err != nil {
+		return address.Undef, err
+	}
+
+	if err := w.keystore.Put(KNamePrefix+k.Address.String(), k.KeyInfo); err != nil {
+		return address.Undef, xerrors.Errorf("saving to keystore: %w", err)
+	}
+	w.keys[k.Address] = k
+
+	_, err = w.keystore.Get(KDefault)
+	if err != nil {
+		if !xerrors.Is(err, types.ErrKeyInfoNotFound) {
+			return address.Undef, err
+		}
+
+		if err := w.keystore.Put(KDefault, k.KeyInfo); err != nil {
+			return address.Undef, xerrors.Errorf("failed to set new key as default: %w", err)
+		}
+	}
+
+	return k.Address, nil
+}
+
+func (w *Wallet) GenerateKeyFromSeed(typ crypto.SigType, seed []byte) (address.Address, error) {
+	w.lk.Lock()
+	defer w.lk.Unlock()
+
+	k, err := GenerateKeyFromSeed(typ, seed)
 	if err != nil {
 		return address.Undef, err
 	}

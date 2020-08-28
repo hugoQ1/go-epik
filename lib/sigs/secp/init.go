@@ -1,6 +1,7 @@
 package secp
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/filecoin-project/go-address"
@@ -15,6 +16,17 @@ type secpSigner struct{}
 
 func (secpSigner) GenPrivate() ([]byte, error) {
 	priv, err := crypto.GenerateKey()
+	if err != nil {
+		return nil, err
+	}
+	return priv, nil
+}
+
+func (secpSigner) GenPrivateFromSeed(seed []byte) ([]byte, error) {
+	if len(seed) != 32 {
+		return nil, fmt.Errorf("secp256k1 signature need 32 bytes seed ")
+	}
+	priv, err := crypto.GenerateKeyFromSeed(bytes.NewReader(seed))
 	if err != nil {
 		return nil, err
 	}

@@ -58,6 +58,15 @@ func Generate(sigType crypto.SigType) ([]byte, error) {
 	return sv.GenPrivate()
 }
 
+func GenerateFromSeed(sigType crypto.SigType, seed []byte) ([]byte, error) {
+	sv, ok := sigs[sigType]
+	if !ok {
+		return nil, fmt.Errorf("cannot generate private key of unsupported type: %v", sigType)
+	}
+
+	return sv.GenPrivateFromSeed(seed)
+}
+
 // ToPublic converts private key to public key
 func ToPublic(sigType crypto.SigType, pk []byte) ([]byte, error) {
 	sv, ok := sigs[sigType]
@@ -96,6 +105,7 @@ func CheckBlockSignature(ctx context.Context, blk *types.BlockHeader, worker add
 // SigShim is used for introducing signature functions
 type SigShim interface {
 	GenPrivate() ([]byte, error)
+	GenPrivateFromSeed(seed []byte) ([]byte, error)
 	ToPublic(pk []byte) ([]byte, error)
 	Sign(pk []byte, msg []byte) ([]byte, error)
 	Verify(sig []byte, a address.Address, msg []byte) error
