@@ -62,12 +62,21 @@ var (
 		return v
 	}()
 
+	//DrandConfig = dtypes.DrandConfig{
+	//	Servers: []string{
+	//		"https://pl-eu.testnet.drand.sh",
+	//		"https://pl-us.testnet.drand.sh",
+	//		"https://pl-sin.testnet.drand.sh",
+	//	},
+	//	ChainInfoJSON: `{"public_key":"922a2e93828ff83345bae533f5172669a26c02dc76d6bf59c80892e12ab1455c229211886f35bb56af6d5bea981024df","period":25,"genesis_time":1590445175,"hash":"138a324aa6540f93d0dad002aa89454b1bec2b6e948682cde6bd4db40f4b7c9b"}`,
+	//}
+
 	DrandConfig = dtypes.DrandConfig{
 		Servers: []string{
-			"https://pl-eu.testnet.drand.sh",
-			"https://pl-us.testnet.drand.sh",
-			"https://pl-sin.testnet.drand.sh",
+			"https://api.drand.sh",
+			"https://api2.drand.sh",
+			"https://api3.drand.sh",
 		},
-		ChainInfoJSON: `{"public_key":"922a2e93828ff83345bae533f5172669a26c02dc76d6bf59c80892e12ab1455c229211886f35bb56af6d5bea981024df","period":25,"genesis_time":1590445175,"hash":"138a324aa6540f93d0dad002aa89454b1bec2b6e948682cde6bd4db40f4b7c9b"}`,
+		ChainInfoJSON: `{"public_key":"868f005eb8e6e4ca0a47c8a77ceaa5309a47978a7c71bc5cce96366b5d7a569937c529eeda66c7293784a9402801af31","period":30,"genesis_time":1595431050,"hash":"8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce","groupHash":"176f93498eac9ca337150b46d21dd58673ea4e3581185f869672e59fa4cb390a"}`,
 	}
 )
