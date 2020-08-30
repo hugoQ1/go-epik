@@ -150,7 +150,22 @@ func (w *Wallet) GetDefault() (address.Address, error) {
 
 	ki, err := w.keystore.Get(KDefault)
 	if err != nil {
-		return address.Undef, xerrors.Errorf("failed to get default key: %w", err)
+		if xerrors.Is(err, types.ErrKeyInfoNotFound) {
+			list, lerr := w.ListAddrs()
+			if lerr != nil {
+				return address.Undef, xerrors.Errorf("failed to get list: %w", lerr)
+			}
+			if len(list) > 0 {
+				if err := w.SetDefault(list[0]); err != nil {
+					return address.Undef, xerrors.Errorf("failed to set default: %w", err)
+				}
+				return list[0], nil
+			} else {
+				return address.Undef, xerrors.Errorf("failed to get default key: %w", err)
+			}
+		} else {
+			return address.Undef, xerrors.Errorf("failed to get default key: %w", err)
+		}
 	}
 
 	k, err := NewKey(ki)
