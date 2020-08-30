@@ -25,7 +25,7 @@ type StorageMiner interface {
 	MiningBase(context.Context) (*types.TipSet, error)
 
 	// Temp api for testing
-	PledgeSector(context.Context) error
+	//PledgeSector(context.Context) error
 
 	// Get the status of a given sector by ID
 	SectorsStatus(context.Context, abi.SectorNumber) (SectorInfo, error)

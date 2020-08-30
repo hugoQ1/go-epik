@@ -31,20 +31,20 @@ var sectorsCmd = &cli.Command{
 	},
 }
 
-var sectorsPledgeCmd = &cli.Command{
-	Name:  "pledge",
-	Usage: "store random data in a sector",
-	Action: func(cctx *cli.Context) error {
-		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-		ctx := lcli.ReqContext(cctx)
-
-		return nodeApi.PledgeSector(ctx)
-	},
-}
+//var sectorsPledgeCmd = &cli.Command{
+//	Name:  "pledge",
+//	Usage: "store random data in a sector",
+//	Action: func(cctx *cli.Context) error {
+//		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
+//		if err != nil {
+//			return err
+//		}
+//		defer closer()
+//		ctx := lcli.ReqContext(cctx)
+//
+//		return nodeApi.PledgeSector(ctx)
+//	},
+//}
 
 var sectorsStatusCmd = &cli.Command{
 	Name:      "status",

@@ -89,9 +89,9 @@ func (sm *StorageMinerAPI) ActorSectorSize(ctx context.Context, addr address.Add
 	return mi.SectorSize, nil
 }
 
-func (sm *StorageMinerAPI) PledgeSector(ctx context.Context) error {
-	return sm.Miner.PledgeSector()
-}
+//func (sm *StorageMinerAPI) PledgeSector(ctx context.Context) error {
+//	return sm.Miner.PledgeSector()
+//}
 
 func (sm *StorageMinerAPI) SectorsStatus(ctx context.Context, sid abi.SectorNumber) (api.SectorInfo, error) {
 	info, err := sm.Miner.GetSectorInfo(sid)
