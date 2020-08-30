@@ -46,7 +46,7 @@ var sendCmd = &cli.Command{
 			return err
 		}
 
-		val, err := types.ParseFIL(cctx.Args().Get(1))
+		val, err := types.ParseEPK(cctx.Args().Get(1))
 		if err != nil {
 			return err
 		}

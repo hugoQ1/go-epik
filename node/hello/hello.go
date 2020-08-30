@@ -21,7 +21,7 @@ import (
 	cborutil "github.com/filecoin-project/go-cbor-util"
 )
 
-const ProtocolID = "/fil/hello/1.0.0"
+const ProtocolID = "/epk/hello/1.0.0"
 
 var log = logging.Logger("hello")
 

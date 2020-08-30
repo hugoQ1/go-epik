@@ -388,7 +388,7 @@ var statePledgeCollateralCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Println(types.FIL(coll))
+		fmt.Println(types.EPK(coll))
 		return nil
 	},
 }
@@ -570,7 +570,7 @@ var stateGetActorCmd = &cli.Command{
 		}
 
 		fmt.Printf("Address:\t%s\n", addr)
-		fmt.Printf("Balance:\t%s\n", types.FIL(a.Balance))
+		fmt.Printf("Balance:\t%s\n", types.EPK(a.Balance))
 		fmt.Printf("Nonce:\t\t%d\n", a.Nonce)
 		fmt.Printf("Code:\t\t%s\n", a.Code)
 		fmt.Printf("Head:\t\t%s\n", a.Head)
@@ -989,7 +989,7 @@ var compStateMsg = `
  </a>
  </div>
 
- <div><b>{{.Msg.From}}</b> -&gt; <b>{{.Msg.To}}</b> ({{ToFil .Msg.Value}} FIL), M{{.Msg.Method}}</div>
+ <div><b>{{.Msg.From}}</b> -&gt; <b>{{.Msg.To}}</b> ({{ToFil .Msg.Value}} EPK), M{{.Msg.Method}}</div>
  {{if not .Subcall}}<div><small>Msg CID: {{.Msg.Cid}}</small></div>{{end}}
  {{if gt (len .Msg.Params) 0}}
   <div><pre class="params">{{JsonParams ($code) (.Msg.Method) (.Msg.Params) | html}}</pre></div>
@@ -1146,8 +1146,8 @@ func getMethod(code cid.Cid, method abi.MethodNum) string {
 	return stmgr.MethodsMap[code][method].Name
 }
 
-func toFil(f types.BigInt) types.FIL {
-	return types.FIL(f)
+func toFil(f types.BigInt) types.EPK {
+	return types.EPK(f)
 }
 
 func isSlow(t time.Duration) bool {
@@ -1354,7 +1354,7 @@ var stateCallCmd = &cli.Command{
 			return fmt.Errorf("must pass method as a number")
 		}
 
-		value, err := types.ParseFIL(cctx.String("value"))
+		value, err := types.ParseEPK(cctx.String("value"))
 		if err != nil {
 			return fmt.Errorf("failed to parse 'value': %s", err)
 		}
@@ -1411,7 +1411,7 @@ func formatOutput(t string, val []byte) (string, error) {
 		bi := types.BigFromBytes(val)
 		return bi.String(), nil
 	case "fil":
-		bi := types.FIL(types.BigFromBytes(val))
+		bi := types.EPK(types.BigFromBytes(val))
 		return bi.String(), nil
 	case "pid", "peerid", "peer":
 		pid, err := peer.IDFromBytes(val)

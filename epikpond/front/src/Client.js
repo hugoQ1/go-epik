@@ -191,18 +191,18 @@ class Client extends React.Component {
                 <b>{deal.Duration}</b>Blocks
               </li>
               <li>
-                Total: <b>{deal.TotalPrice}</b>FIL; Per Block:{' '}
+                Total: <b>{deal.TotalPrice}</b>EPK; Per Block:{' '}
                 <b>
                   {Math.round((deal.TotalPrice / deal.Duration) * 100) / 100}
                 </b>
-                FIL; PerMbyteByteBlock:{' '}
+                EPK; PerMbyteByteBlock:{' '}
                 <b>
                   {Math.round(
                     (deal.TotalPrice / deal.Duration / (deal.Size / 1000000)) *
                       100
                   ) / 100}
                 </b>
-                FIL
+                EPK
               </li>
             </ul>
           </li>

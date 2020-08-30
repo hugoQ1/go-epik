@@ -153,7 +153,7 @@ var setAskCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.Uint64Flag{
 			Name:     "price",
-			Usage:    "Set the price of the ask (specified as FIL / GiB / Epoch) to `PRICE`",
+			Usage:    "Set the price of the ask (specified as EPK / GiB / Epoch) to `PRICE`",
 			Required: true,
 		},
 		&cli.StringFlag{

@@ -114,9 +114,9 @@ var walletBalance = &cli.Command{
 		}
 
 		if balance.Equals(types.NewInt(0)) {
-			fmt.Printf("%s (warning: may display 0 if chain sync in progress)\n", types.FIL(balance))
+			fmt.Printf("%s (warning: may display 0 if chain sync in progress)\n", types.EPK(balance))
 		} else {
-			fmt.Printf("%s\n", types.FIL(balance))
+			fmt.Printf("%s\n", types.EPK(balance))
 		}
 
 		return nil

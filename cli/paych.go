@@ -29,7 +29,7 @@ var paychGetCmd = &cli.Command{
 	ArgsUsage: "[fromAddress toAddress amount]",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 3 {
-			return fmt.Errorf("must pass three arguments: <from> <to> <available funds in FIL>")
+			return fmt.Errorf("must pass three arguments: <from> <to> <available funds in EPK>")
 		}
 
 		from, err := address.NewFromString(cctx.Args().Get(0))
@@ -42,9 +42,9 @@ var paychGetCmd = &cli.Command{
 			return fmt.Errorf("failed to parse to address: %s", err)
 		}
 
-		amt, err := types.ParseFIL(cctx.Args().Get(2))
+		amt, err := types.ParseEPK(cctx.Args().Get(2))
 		if err != nil {
-			return fmt.Errorf("parsing amount as whole FIL failed: %s", err)
+			return fmt.Errorf("parsing amount as whole EPK failed: %s", err)
 		}
 
 		api, closer, err := GetFullNodeAPI(cctx)

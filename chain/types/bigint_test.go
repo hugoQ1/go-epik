@@ -43,11 +43,11 @@ func TestBigIntSerializationRoundTrip(t *testing.T) {
 
 func TestFilRoundTrip(t *testing.T) {
 	testValues := []string{
-		"0 FIL", "1 FIL", "1.001 FIL", "100.10001 FIL", "101100 FIL", "5000.01 FIL", "5000 FIL",
+		"0 EPK", "1 EPK", "1.001 EPK", "100.10001 EPK", "101100 EPK", "5000.01 EPK", "5000 EPK",
 	}
 
 	for _, v := range testValues {
-		fval, err := ParseFIL(v)
+		fval, err := ParseEPK(v)
 		if err != nil {
 			t.Fatal(err)
 		}

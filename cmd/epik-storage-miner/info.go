@@ -138,22 +138,22 @@ var infoCmd = &cli.Command{
 
 		fmt.Println()
 
-		fmt.Printf("Miner Balance: %s\n", color.YellowString("%s", types.FIL(mact.Balance)))
-		fmt.Printf("\tPreCommit:   %s\n", types.FIL(mas.PreCommitDeposits))
-		fmt.Printf("\tLocked:      %s\n", types.FIL(mas.LockedFunds))
-		color.Green("\tAvailable:   %s", types.FIL(types.BigSub(mact.Balance, types.BigAdd(mas.LockedFunds, mas.PreCommitDeposits))))
+		fmt.Printf("Miner Balance: %s\n", color.YellowString("%s", types.EPK(mact.Balance)))
+		fmt.Printf("\tPreCommit:   %s\n", types.EPK(mas.PreCommitDeposits))
+		fmt.Printf("\tLocked:      %s\n", types.EPK(mas.LockedFunds))
+		color.Green("\tAvailable:   %s", types.EPK(types.BigSub(mact.Balance, types.BigAdd(mas.LockedFunds, mas.PreCommitDeposits))))
 		wb, err := api.WalletBalance(ctx, mi.Worker)
 		if err != nil {
 			return xerrors.Errorf("getting worker balance: %w", err)
 		}
-		color.Cyan("Worker Balance: %s", types.FIL(wb))
+		color.Cyan("Worker Balance: %s", types.EPK(wb))
 
 		mb, err := api.StateMarketBalance(ctx, maddr, types.EmptyTSK)
 		if err != nil {
 			return xerrors.Errorf("getting market balance: %w", err)
 		}
-		fmt.Printf("Market (Escrow):  %s\n", types.FIL(mb.Escrow))
-		fmt.Printf("Market (Locked):  %s\n", types.FIL(mb.Locked))
+		fmt.Printf("Market (Escrow):  %s\n", types.EPK(mb.Escrow))
+		fmt.Printf("Market (Locked):  %s\n", types.EPK(mb.Locked))
 
 		fmt.Println()
 

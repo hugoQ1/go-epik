@@ -394,7 +394,7 @@ func (mp *MessagePool) addTs(m *types.SignedMessage, curTs *types.TipSet) error 
 	}
 
 	if balance.LessThan(m.Message.RequiredFunds()) {
-		return xerrors.Errorf("not enough funds (required: %s, balance: %s): %w", types.FIL(m.Message.RequiredFunds()), types.FIL(balance), ErrNotEnoughFunds)
+		return xerrors.Errorf("not enough funds (required: %s, balance: %s): %w", types.EPK(m.Message.RequiredFunds()), types.EPK(balance), ErrNotEnoughFunds)
 	}
 
 	mp.lk.Lock()

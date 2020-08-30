@@ -106,7 +106,7 @@ var msigCreateCmd = &cli.Command{
 		}
 
 		val := cctx.String("value")
-		filval, err := types.ParseFIL(val)
+		filval, err := types.ParseEPK(val)
 		if err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ var msigInspectCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("Balance: %sfil\n", types.FIL(act.Balance))
+		fmt.Printf("Balance: %sfil\n", types.EPK(act.Balance))
 		fmt.Printf("Threshold: %d / %d\n", mstate.NumApprovalsThreshold, len(mstate.Signers))
 		fmt.Println("Signers:")
 		for _, s := range mstate.Signers {
@@ -215,7 +215,7 @@ var msigInspectCmd = &cli.Command{
 			fmt.Fprintf(w, "ID\tState\tTo\tValue\tMethod\tParams\n")
 			for _, txid := range txids {
 				tx := pending[txid]
-				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%d\t%x\n", txid, state(tx), tx.To, types.FIL(tx.Value), tx.Method, tx.Params)
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%d\t%x\n", txid, state(tx), tx.To, types.EPK(tx.Value), tx.Method, tx.Params)
 			}
 			if err := w.Flush(); err != nil {
 				return xerrors.Errorf("flushing output: %+v", err)
@@ -304,7 +304,7 @@ var msigProposeCmd = &cli.Command{
 			return err
 		}
 
-		value, err := types.ParseFIL(cctx.Args().Get(2))
+		value, err := types.ParseEPK(cctx.Args().Get(2))
 		if err != nil {
 			return err
 		}
@@ -420,7 +420,7 @@ var msigApproveCmd = &cli.Command{
 			return err
 		}
 
-		value, err := types.ParseFIL(cctx.Args().Get(4))
+		value, err := types.ParseEPK(cctx.Args().Get(4))
 		if err != nil {
 			return err
 		}

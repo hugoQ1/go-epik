@@ -37,7 +37,7 @@ import (
 
 var log = logging.Logger("main")
 
-var sendPerRequest, _ = types.ParseFIL("50")
+var sendPerRequest, _ = types.ParseEPK("50")
 
 var supportedSectors struct {
 	SectorSizes []struct {

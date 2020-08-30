@@ -10,7 +10,7 @@ epik-storage-miner set-price <price>
 ```
 
 This command will set up your miner to accept deal proposals that meet the input price.
-The price is inputted in FIL per GiB per epoch, and the default is 0.0000000005. 
+The price is inputted in EPK per GiB per epoch, and the default is 0.0000000005. 
 
 ## Ensure you can be discovered
 

@@ -133,7 +133,7 @@ class Address extends React.Component {
 
     let transfer = <span/>
     if(this.props.transfer) {
-      transfer = <span>&nbsp;<Fil>{this.props.transfer}</Fil>FIL</span>
+      transfer = <span>&nbsp;<Fil>{this.props.transfer}</Fil>EPK</span>
     }
 
     let minerInfo = <span/>

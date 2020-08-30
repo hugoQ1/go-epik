@@ -194,7 +194,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		Head:    emptyobject,
 	})
 	if err != nil {
-		return nil, xerrors.Errorf("set burnt funds account actor: %w", err)
+		return nil, xerrors.Errorf("set expert funds account actor: %w", err)
 	}
 
 	// Setup retrieve-funds
@@ -204,7 +204,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		Head:    emptyobject,
 	})
 	if err != nil {
-		return nil, xerrors.Errorf("set burnt funds account actor: %w", err)
+		return nil, xerrors.Errorf("set retrieve funds account actor: %w", err)
 	}
 
 	// Create accounts

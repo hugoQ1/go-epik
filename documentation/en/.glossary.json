@@ -13,10 +13,10 @@
   },
   "attofil": {
     "title": "attoFIL",
-    "value": "AttoFIL is a word used to describe 10^-18 FIL. The word atto comes from the Norwegian and Danish term: atten eighteen."
+    "value": "AttoFIL is a word used to describe 10^-18 EPK. The word atto comes from the Norwegian and Danish term: atten eighteen."
   },
   "fil": {
-    "title": "FIL",
+    "title": "EPK",
     "value": "A ticker symbol is an abbreviation used to uniquely identify Filecoin when it is used in a wallet exchange or a cryptocurrency exchange."
   },
   "epost": {
@@ -81,7 +81,7 @@
   },
   "filecoin-distributed-storage-network": {
     "title": "Filecoin Distributed Storage Network",
-    "value": "Filecoin is a distributed storage network based on a blockchain mechanism. Filecoin miners can elect to provide storage capacity for the network, and thereby earn units of the Filecoin cryptocurrency (FIL) by periodically producing cryptographic proofs that certify that they are providing the capacity specified."
+    "value": "Filecoin is a distributed storage network based on a blockchain mechanism. Filecoin miners can elect to provide storage capacity for the network, and thereby earn units of the Filecoin cryptocurrency (EPK) by periodically producing cryptographic proofs that certify that they are providing the capacity specified."
   },
   "epik-node": {
     "title": "epik Node",
@@ -89,7 +89,7 @@
   },
   "block-rewards": {
     "title": "Block Reward",
-    "value": "Over the entire lifetime of the protocol, 1,400,000,000 FIL (TotalIssuance) will be given out to miners. The rate at which the funds are given out is set to halve every six years, smoothly (not a fixed jump like in Bitcoin)."
+    "value": "Over the entire lifetime of the protocol, 1,400,000,000 EPK (TotalIssuance) will be given out to miners. The rate at which the funds are given out is set to halve every six years, smoothly (not a fixed jump like in Bitcoin)."
   },
   "block-producer-miner": {
     "title": "Miner (Block Producer)",

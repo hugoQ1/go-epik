@@ -24,7 +24,7 @@ var log = logging.Logger("blocksync")
 
 type NewStreamFunc func(context.Context, peer.ID, ...protocol.ID) (inet.Stream, error)
 
-const BlockSyncProtocolID = "/fil/sync/blk/0.0.1"
+const BlockSyncProtocolID = "/epk/sync/blk/0.0.1"
 
 const BlockSyncMaxRequestLength = 800
 

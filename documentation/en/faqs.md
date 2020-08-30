@@ -83,7 +83,7 @@ Testnet is a live network of epik Nodes run by the
 community for testing purposes.
  It has 2 PiB of storage (and growing!) dedicated to it.
 
-### Is FIL on the Testnet worth anything?
+### Is EPK on the Testnet worth anything?
 
 Nothing at all! Real-world incentives may be provided in a future phase of Testnet, but this is 
 yet to be confirmed.

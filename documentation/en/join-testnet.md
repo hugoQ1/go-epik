@@ -63,7 +63,7 @@ t1aswwvjsae63tcrniz6x5ykvsuotlgkvlulnqpsi
 
 ## Check wallet address balance
 
-Wallet balances in the epik Testnet are in **FIL**, the smallest denomination of FIL is an **attoFil**, where 1 attoFil = 10^-18 FIL.
+Wallet balances in the epik Testnet are in **EPK**, the smallest denomination of EPK is an **attoFil**, where 1 attoFil = 10^-18 EPK.
 
 ```sh
 epik wallet balance <YOUR_NEW_ADDRESS>
@@ -71,9 +71,9 @@ epik wallet balance <YOUR_NEW_ADDRESS>
 
 You will not see any attoFIL in your wallet if your **chain** is not fully synced.
 
-## Send FIL to another wallet
+## Send EPK to another wallet
 
-To send FIL to another wallet from your default account, use this command:
+To send EPK to another wallet from your default account, use this command:
 
 ```
 epik send <target> <amount>

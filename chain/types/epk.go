@@ -8,17 +8,17 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 )
 
-type FIL BigInt
+type EPK BigInt
 
-func (f FIL) String() string {
+func (f EPK) String() string {
 	r := new(big.Rat).SetFrac(f.Int, big.NewInt(int64(build.FilecoinPrecision)))
 	if r.Sign() == 0 {
-		return "0 FIL"
+		return "0 tEPK"
 	}
-	return strings.TrimRight(strings.TrimRight(r.FloatString(18), "0"), ".") + " FIL"
+	return strings.TrimRight(strings.TrimRight(r.FloatString(18), "0"), ".") + " tEPK"
 }
 
-func (f FIL) Format(s fmt.State, ch rune) {
+func (f EPK) Format(s fmt.State, ch rune) {
 	switch ch {
 	case 's', 'v':
 		fmt.Fprint(s, f.String())
@@ -27,37 +27,37 @@ func (f FIL) Format(s fmt.State, ch rune) {
 	}
 }
 
-func ParseFIL(s string) (FIL, error) {
+func ParseEPK(s string) (EPK, error) {
 	suffix := strings.TrimLeft(s, ".1234567890")
 	s = s[:len(s)-len(suffix)]
-	var attofil bool
+	var attoepk bool
 	if suffix != "" {
 		norm := strings.ToLower(strings.TrimSpace(suffix))
 		switch norm {
-		case "", "fil":
-		case "attofil", "afil":
-			attofil = true
+		case "", "tepk", "epk":
+		case "attoepk", "aepk", "attotepk", "atepk":
+			attoepk = true
 		default:
-			return FIL{}, fmt.Errorf("unrecognized suffix: %q", suffix)
+			return EPK{}, fmt.Errorf("unrecognized suffix: %q", suffix)
 		}
 	}
 
 	r, ok := new(big.Rat).SetString(s)
 	if !ok {
-		return FIL{}, fmt.Errorf("failed to parse %q as a decimal number", s)
+		return EPK{}, fmt.Errorf("failed to parse %q as a decimal number", s)
 	}
 
-	if !attofil {
+	if !attoepk {
 		r = r.Mul(r, big.NewRat(int64(build.FilecoinPrecision), 1))
 	}
 
 	if !r.IsInt() {
 		var pref string
-		if attofil {
+		if attoepk {
 			pref = "atto"
 		}
-		return FIL{}, fmt.Errorf("invalid %sFIL value: %q", pref, s)
+		return EPK{}, fmt.Errorf("invalid %stEPK value: %q", pref, s)
 	}
 
-	return FIL{r.Num()}, nil
+	return EPK{r.Num()}, nil
 }
