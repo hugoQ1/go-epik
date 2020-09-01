@@ -23,9 +23,7 @@ func (secpSigner) GenPrivate() ([]byte, error) {
 }
 
 func (secpSigner) GenPrivateFromSeed(seed []byte) ([]byte, error) {
-	if len(seed) != 32 {
-		return nil, fmt.Errorf("secp256k1 signature need 32 bytes seed ")
-	}
+
 	priv, err := crypto.GenerateKeyFromSeed(bytes.NewReader(seed))
 	if err != nil {
 		return nil, err

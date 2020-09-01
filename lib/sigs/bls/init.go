@@ -34,11 +34,11 @@ func (blsSigner) GenPrivate() ([]byte, error) {
 }
 
 func (blsSigner) GenPrivateFromSeed(seed []byte) ([]byte, error) {
-	if len(seed) != 32 {
+	if len(seed) < 32 {
 		return nil, fmt.Errorf("bls signature seed not byte(32)")
 	}
 	// Note private keys seem to be serialized little-endian!
-	pk := blst.KeyGen(seed[:]).ToLEndian()
+	pk := blst.KeyGen(seed[:32]).ToLEndian()
 	return pk, nil
 }
 
