@@ -147,7 +147,12 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 					params = &market.PublishStorageDealsParams{}
 				}
 			}
-			params.RootCID, _ = cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
+			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
+			params.DataRef = market.PublishStorageDataRef{
+				RootCID:	rootCID,
+				Expert: 	"",
+				Bounty:		"",
+			}
 
 			if len(params.Deals) > 0 {
 				if err := publish(params); err != nil {

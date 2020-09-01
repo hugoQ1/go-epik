@@ -147,6 +147,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		params.EpochPrice,
 		big.Zero(),
 		rt,
+		params.Redundancy,
 	)
 
 	if err != nil {
@@ -306,7 +307,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 		return cid.Undef, xerrors.Errorf("miners not found.")
 	}
 
-	for _, miner := range miners {
+	for index, miner := range miners {
 		mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
@@ -327,6 +328,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 			Miner: miner,
 			EpochPrice: ask.Ask.Price,
 			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
+			Redundancy: int64(index),
 		}
 		_, err = a.ClientStartDeal(ctx, params)
 		if err != nil {

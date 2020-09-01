@@ -365,6 +365,9 @@ type FullNode interface {
 type FileRef struct {
 	Path  string
 	IsCAR bool
+
+	Expert string
+	Bounty string
 }
 
 type MinerSectors struct {
@@ -531,6 +534,7 @@ type StartDealParams struct {
 	EpochPrice        types.BigInt
 	MinBlocksDuration uint64
 	DealStartEpoch    abi.ChainEpoch
+	Redundancy        int64
 }
 
 type IpldObject struct {
