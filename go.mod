@@ -133,6 +133,6 @@ replace github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v
 
 replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
 
-replace github.com/filecoin-project/specs-actors => ../go-epik-actors
+replace github.com/filecoin-project/specs-actors => github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200901131717-f442e5e6394f
 
-replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.0.0-20200901160944-23c81c59b3e4
