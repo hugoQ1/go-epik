@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"math/rand"
 
 	"github.com/filecoin-project/go-fil-markets/pieceio"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -85,10 +86,19 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		return nil, err
 	}
 	for _, offer := range offers {
-		if offer.Err == "" {
+		if offer.Miner == params.Miner && offer.Err == "" {
 			return nil, xerrors.Errorf("file has storaged in miner: %w", offer.Miner)
 		}
 	}
+
+	if params.Wallet == address.Undef {
+		dwallet, err := a.WalletDefaultAddress(ctx)
+		if err != nil {
+			return nil, err
+		}
+		params.Wallet = dwallet
+	}
+
 	exist, err := a.WalletHas(ctx, params.Wallet)
 	if err != nil {
 		return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
@@ -322,8 +332,14 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 		if err != nil {
 			return cid.Undef, err
 		}
+
+		dataRef := &storagemarket.DataRef{
+			Root: nd,
+			Expert: ref.Expert,
+			Bounty: ref.Bounty,
+		}
 		params := &api.StartDealParams{
-			Data: &storagemarket.DataRef{Root: nd},
+			Data: dataRef,
 			Wallet: payer,
 			Miner: miner,
 			EpochPrice: ask.Ask.Price,
@@ -686,14 +702,32 @@ func (a *API) ClientQuery(ctx context.Context, roots []cid.Cid) ([]api.FileResp,
 		if len(offers) < 1 {
 			return nil, errors.New("Failed to find file")
 		}
-		offer := offers[0]
+
+		offer := offers[rand.Intn(len(offers))]
 		ref := &api.FileRef{
 			Path:  "/data/" + root.String(),
 			IsCAR: false,
 		}
-		if err := a.ClientRetrieve(ctx, offer.Order(payer), ref); err != nil {
-			return nil, err
+
+		order := offer.Order(payer)
+		if order.Size == 0 {
+			return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")
 		}
+
+		ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
+
+		_, err = a.Retrieval.Retrieve(
+			ctx,
+			order.Root,
+			rm.NewParamsV0(ppb, order.PaymentInterval, order.PaymentIntervalIncrease),
+			order.Total,
+			order.MinerPeerID,
+			order.Client,
+			order.Miner)
+		if err != nil {
+			return nil, xerrors.Errorf("Retrieve failed: %w", err)
+		}
+
 		fileResps = append(fileResps, api.FileResp{
 			Status:1,
 			Root:root,

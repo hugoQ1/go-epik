@@ -48,6 +48,7 @@ func NewMiner(api api.FullNode, epp gen.WinningPoStProver, addr address.Address)
 			return func(bool, error) {}, nil
 		},
 		minedBlockHeights: arc,
+		minerData: 	newMinerData(api, addr),
 	}
 }
 
@@ -66,6 +67,8 @@ type Miner struct {
 	lastWork *MiningBase
 
 	minedBlockHeights *lru.ARCCache
+
+	minerData *MinerData
 }
 
 func (m *Miner) Address() address.Address {
@@ -83,12 +86,18 @@ func (m *Miner) Start(ctx context.Context) error {
 	}
 	m.stop = make(chan struct{})
 	go m.mine(context.TODO())
+
+	m.minerData.Start(ctx)
 	return nil
 }
 
 func (m *Miner) Stop(ctx context.Context) error {
 	m.lk.Lock()
 	defer m.lk.Unlock()
+
+	if err := m.minerData.Stop(ctx); err != nil {
+		return err
+	}
 
 	m.stopping = make(chan struct{})
 	stopping := m.stopping
