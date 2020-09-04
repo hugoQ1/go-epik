@@ -332,27 +332,27 @@ func (h *handler) mkminer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	collateral, err := h.api.StatePledgeCollateral(r.Context(), types.EmptyTSK)
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	smsg, err := h.api.MpoolPushMessage(h.ctx, &types.Message{
-		Value: types.BigInt(sendPerRequest),
-		From:  h.from,
-		To:    owner,
-
-		GasPrice: types.NewInt(0),
-		GasLimit: 10000,
-	})
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("pushfunds: " + err.Error()))
-		return
-	}
-	log.Infof("%s: push funds %s", owner, smsg.Cid())
+	//collateral, err := h.api.StatePledgeCollateral(r.Context(), types.EmptyTSK)
+	//if err != nil {
+	//	w.WriteHeader(400)
+	//	w.Write([]byte(err.Error()))
+	//	return
+	//}
+	//
+	//smsg, err := h.api.MpoolPushMessage(h.ctx, &types.Message{
+	//	Value: types.BigInt(sendPerRequest),
+	//	From:  h.from,
+	//	To:    owner,
+	//
+	//	GasPrice: types.NewInt(0),
+	//	GasLimit: 10000,
+	//})
+	//if err != nil {
+	//	w.WriteHeader(400)
+	//	w.Write([]byte("pushfunds: " + err.Error()))
+	//	return
+	//}
+	//log.Infof("%s: push funds %s", owner, smsg.Cid())
 
 	spt, err := ffiwrapper.SealProofTypeFromSectorSize(abi.SectorSize(ssize))
 	if err != nil {
@@ -376,7 +376,7 @@ func (h *handler) mkminer(w http.ResponseWriter, r *http.Request) {
 	createStorageMinerMsg := &types.Message{
 		To:    builtin.StoragePowerActorAddr,
 		From:  h.from,
-		Value: types.BigAdd(collateral, types.BigDiv(collateral, types.NewInt(100))),
+		Value: types.NewInt(0),
 
 		Method: builtin.MethodsPower.CreateMiner,
 		Params: params,
@@ -394,7 +394,7 @@ func (h *handler) mkminer(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%s: create miner msg: %s", owner, signed.Cid())
 
-	http.Redirect(w, r, fmt.Sprintf("/wait.html?f=%s&m=%s&o=%s", signed.Cid(), smsg.Cid(), owner), 303)
+	http.Redirect(w, r, fmt.Sprintf("/wait.html?f=%s&m=%s&o=%s", signed.Cid(), cid.Undef, owner), 303)
 }
 
 func (h *handler) msgwait(w http.ResponseWriter, r *http.Request) {
