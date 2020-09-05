@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
@@ -11,19 +14,17 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"go.opencensus.io/trace"
-	"sync"
-	"time"
 )
 
 type MinerData struct {
 	api api.FullNode
 
-	lk       sync.Mutex
-	address  address.Address
+	lk      sync.Mutex
+	address address.Address
 
 	stop     chan struct{}
 	stopping chan struct{}
@@ -39,9 +40,9 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 		panic(err)
 	}
 	return &MinerData{
-		api: 		api,
-		address: 	addr,
-		dataRefs: 	arc,
+		api:      api,
+		address:  addr,
+		dataRefs: arc,
 	}
 }
 
@@ -98,6 +99,7 @@ func (m *MinerData) syncData(ctx context.Context) {
 		if needCheck {
 			if err := m.checkChainData(ctx); err != nil {
 				log.Errorf("failed to check chain data: %s", err)
+				m.niceSleep(time.Second * 5)
 			}
 		} else {
 			m.niceSleep(time.Second * 5)
@@ -105,10 +107,12 @@ func (m *MinerData) syncData(ctx context.Context) {
 
 		if err := m.retrieveChainData(ctx); err != nil {
 			log.Errorf("failed to retrieve data: %s", err)
+			m.niceSleep(time.Second * 5)
 		}
 
 		if err := m.dealChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
+			m.niceSleep(time.Second * 5)
 		}
 	}
 }
@@ -156,7 +160,8 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 		}
 		messages, err := m.api.ChainGetParentMessages(ctx, tipset.Cids()[0])
 		for _, msg := range messages {
-			if msg.Message.Method == builtin.MethodsMarket.PublishStorageDeals {
+			if msg.Message.To == builtin.StorageMarketActorAddr &&
+				msg.Message.Method == builtin.MethodsMarket.PublishStorageDeals {
 				var params market.PublishStorageDealsParams
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
 					return err
@@ -189,7 +194,6 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			if has {
 				continue
 			}
-
 
 			if _, err := m.api.ClientQuery(ctx, []cid.Cid{dataRef.RootCID}); err != nil {
 				return err
@@ -242,17 +246,17 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			}
 
 			stData := &storagemarket.DataRef{
-				Root: dataRef.RootCID,
+				Root:   dataRef.RootCID,
 				Expert: dataRef.Expert,
 				Bounty: dataRef.Bounty,
 			}
 			params := &api.StartDealParams{
-				Data: stData,
-				Wallet: address.Undef,
-				Miner: m.address,
-				EpochPrice: ask.Ask.Price,
+				Data:              stData,
+				Wallet:            address.Undef,
+				Miner:             m.address,
+				EpochPrice:        ask.Ask.Price,
 				MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-				Redundancy: int64(len(offers)),
+				Redundancy:        int64(len(offers)),
 			}
 			_, err = m.api.ClientStartDeal(ctx, params)
 			if err != nil {
@@ -263,5 +267,3 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 	}
 	return nil
 }
-
-
