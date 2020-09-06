@@ -259,10 +259,12 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 				MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
 				Redundancy:        int64(len(offers)),
 			}
-			_, err = m.api.ClientStartDeal(ctx, params)
+			dealId, err := m.api.ClientStartDeal(ctx, params)
 			if err != nil {
-				return err
+				log.Errorf("failed to start deal: %s", err)
+				continue
 			}
+			log.Warnf("start miner:%s deal: %s", m.address, dealId.String())
 			m.dataRefs.Remove(dataRef.RootCID.String())
 		}
 	}
