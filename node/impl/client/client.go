@@ -34,6 +34,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"go.uber.org/fx"
 
+	logging "github.com/ipfs/go-log"
+
 	"github.com/filecoin-project/go-address"
 	rm "github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -53,6 +55,8 @@ import (
 )
 
 const dealStartBuffer abi.ChainEpoch = 10000 // TODO: allow setting
+
+var log = logging.Logger("client")
 
 type API struct {
 	fx.In
@@ -330,10 +334,12 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 		pid := peer.ID(mi.PeerId)
 		ask, err := a.ClientQueryAsk(ctx, pid, miner)
 		if err != nil {
-			return cid.Undef, err
+			log.Errorf("failed to query miner:%s, ask: %s", miner, err)
+			continue
 		}
 
 		dataRef := &storagemarket.DataRef{
+			TransferType: storagemarket.TTGraphsync,
 			Root: nd,
 			Expert: ref.Expert,
 			Bounty: ref.Bounty,
@@ -346,10 +352,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
 			Redundancy: int64(index),
 		}
-		_, err = a.ClientStartDeal(ctx, params)
+		dealId, err := a.ClientStartDeal(ctx, params)
 		if err != nil {
 			return cid.Undef, err
 		}
+		log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
 	}
 
 	return nd, nil
