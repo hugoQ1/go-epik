@@ -246,6 +246,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			}
 
 			stData := &storagemarket.DataRef{
+				TransferType: storagemarket.TTGraphsync,
 				Root:   dataRef.RootCID,
 				Expert: dataRef.Expert,
 				Bounty: dataRef.Bounty,
