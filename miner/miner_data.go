@@ -92,28 +92,23 @@ func (m *MinerData) syncData(ctx context.Context) {
 		needCheck, err := m.needCheckData(ctx)
 		if err != nil {
 			log.Errorf("failed to call need data: %s", err)
-			m.niceSleep(time.Second * 5)
 			continue
 		}
 
 		if needCheck {
 			if err := m.checkChainData(ctx); err != nil {
 				log.Errorf("failed to check chain data: %s", err)
-				m.niceSleep(time.Second * 5)
 			}
-		} else {
-			m.niceSleep(time.Second * 5)
 		}
 
 		if err := m.retrieveChainData(ctx); err != nil {
 			log.Errorf("failed to retrieve data: %s", err)
-			m.niceSleep(time.Second * 5)
 		}
 
 		if err := m.dealChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
-			m.niceSleep(time.Second * 5)
 		}
+		m.niceSleep(time.Second * 5)
 	}
 }
 
@@ -181,92 +176,88 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 }
 
 func (m *MinerData) retrieveChainData(ctx context.Context) error {
-	for m.dataRefs.Len() > 0 {
-		keys := m.dataRefs.Keys()
-		for _, rk := range keys {
-			data, _ := m.dataRefs.Get(rk)
-			dataRef := data.(market.PublishStorageDataRef)
+	keys := m.dataRefs.Keys()
+	for _, rk := range keys {
+		data, _ := m.dataRefs.Get(rk)
+		dataRef := data.(market.PublishStorageDataRef)
 
-			has, err := m.api.ClientHasLocal(ctx, dataRef.RootCID)
-			if err != nil {
-				return err
-			}
-			if has {
-				continue
-			}
+		has, err := m.api.ClientHasLocal(ctx, dataRef.RootCID)
+		if err != nil {
+			return err
+		}
+		if has {
+			continue
+		}
 
-			if _, err := m.api.ClientQuery(ctx, []cid.Cid{dataRef.RootCID}); err != nil {
-				return err
-			}
+		if _, err := m.api.ClientQuery(ctx, []cid.Cid{dataRef.RootCID}); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 func (m *MinerData) dealChainData(ctx context.Context) error {
-	for m.dataRefs.Len() > 0 {
-		keys := m.dataRefs.Keys()
-		for _, rk := range keys {
-			data, _ := m.dataRefs.Get(rk)
-			dataRef := data.(market.PublishStorageDataRef)
+	keys := m.dataRefs.Keys()
+	for _, rk := range keys {
+		data, _ := m.dataRefs.Get(rk)
+		dataRef := data.(market.PublishStorageDataRef)
 
-			has, err := m.api.ClientHasLocal(ctx, dataRef.RootCID)
-			if err != nil {
-				return err
-			}
-
-			// if data not found local, go to next one
-			if !has {
-				continue
-			}
-
-			ts, err := m.api.ChainHead(ctx)
-			if err != nil {
-				return err
-			}
-
-			mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
-			if err != nil {
-				return err
-			}
-
-			if peer.ID(mi.PeerId) == peer.ID("SETME") {
-				return fmt.Errorf("the miner hasn't initialized yet")
-			}
-
-			pid := peer.ID(mi.PeerId)
-			ask, err := m.api.ClientQueryAsk(ctx, pid, m.address)
-			if err != nil {
-				return err
-			}
-
-			offers, err := m.api.ClientFindData(ctx, dataRef.RootCID)
-			if err != nil {
-				return err
-			}
-
-			stData := &storagemarket.DataRef{
-				TransferType: storagemarket.TTGraphsync,
-				Root:   dataRef.RootCID,
-				Expert: dataRef.Expert,
-				Bounty: dataRef.Bounty,
-			}
-			params := &api.StartDealParams{
-				Data:              stData,
-				Wallet:            address.Undef,
-				Miner:             m.address,
-				EpochPrice:        ask.Ask.Price,
-				MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-				Redundancy:        int64(len(offers)),
-			}
-			dealId, err := m.api.ClientStartDeal(ctx, params)
-			if err != nil {
-				log.Errorf("failed to start deal: %s", err)
-				continue
-			}
-			log.Warnf("start miner:%s deal: %s", m.address, dealId.String())
-			m.dataRefs.Remove(dataRef.RootCID.String())
+		has, err := m.api.ClientHasLocal(ctx, dataRef.RootCID)
+		if err != nil {
+			return err
 		}
+
+		// if data not found local, go to next one
+		if !has {
+			continue
+		}
+
+		ts, err := m.api.ChainHead(ctx)
+		if err != nil {
+			return err
+		}
+
+		mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		if peer.ID(mi.PeerId) == peer.ID("SETME") {
+			return fmt.Errorf("the miner hasn't initialized yet")
+		}
+
+		pid := peer.ID(mi.PeerId)
+		ask, err := m.api.ClientQueryAsk(ctx, pid, m.address)
+		if err != nil {
+			return err
+		}
+
+		offers, err := m.api.ClientFindData(ctx, dataRef.RootCID)
+		if err != nil {
+			return err
+		}
+
+		stData := &storagemarket.DataRef{
+			TransferType: storagemarket.TTGraphsync,
+			Root:   dataRef.RootCID,
+			Expert: dataRef.Expert,
+			Bounty: dataRef.Bounty,
+		}
+		params := &api.StartDealParams{
+			Data:              stData,
+			Wallet:            address.Undef,
+			Miner:             m.address,
+			EpochPrice:        ask.Ask.Price,
+			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
+			Redundancy:        int64(len(offers)),
+		}
+		dealId, err := m.api.ClientStartDeal(ctx, params)
+		if err != nil {
+			log.Errorf("failed to start deal: %s", err)
+			continue
+		}
+		log.Warnf("start miner:%s deal: %s", m.address, dealId.String())
+		m.dataRefs.Remove(dataRef.RootCID.String())
 	}
 	return nil
 }

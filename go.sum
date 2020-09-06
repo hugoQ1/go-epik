@@ -44,6 +44,7 @@ github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200901131717-f442e5e6394f h1:
 github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200901131717-f442e5e6394f/go.mod h1:ppIYDlWQvcfzDW0zxar53Z1Ag69er4BmFvJAtV1uDMI=
 github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200901155400-6872e448d58b h1:5Bw62NTGb2wXuc56IbSIjeQNPGBaEFeUSRf+KTMkTVc=
 github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200901155400-6872e448d58b/go.mod h1:ppIYDlWQvcfzDW0zxar53Z1Ag69er4BmFvJAtV1uDMI=
+github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200906131910-09b08c73fc31 h1:c8BIqscIgKbCd/+yBvLLPccRp3eVDBNF28txWiqBU/I=
 github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20200906131910-09b08c73fc31/go.mod h1:ppIYDlWQvcfzDW0zxar53Z1Ag69er4BmFvJAtV1uDMI=
 github.com/EpiK-Protocol/go-epik-markets v0.0.0-20200901160944-23c81c59b3e4 h1:QxA3wOhdMuHJEu3LSobgwNrzoh6QQ4/7fTtOVOHapnE=
 github.com/EpiK-Protocol/go-epik-markets v0.0.0-20200901160944-23c81c59b3e4/go.mod h1:0hzRWjeTHGj5xRJQPgJH62Qs2pztsEYeNRbfFVxxWvE=
