@@ -695,51 +695,54 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return smsg.Cid(), nil
 }
 
-func (a *API) ClientQuery(ctx context.Context, roots []cid.Cid) ([]api.FileResp, error) {
+func (a *API) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, error) {
+	has, err := a.ClientHasLocal(ctx, root)
+	if err != nil {
+		return nil, err
+	}
+
+	if has {
+		return &api.QueryResp{ Root:root, Status:api.QuerySuccess}, nil
+	}
+
+
+	// TODO(larry): check if it has Retrieve
 	payer, err := a.WalletDefaultAddress(ctx)
 	if err != nil {
 		return nil, err
 	}
-	fileResps := make([]api.FileResp, 0)
-	for _, root := range roots {
-		offers, err := a.ClientFindData(ctx, root)
-		if err != nil {
-			return nil, err
-		}
-		if len(offers) < 1 {
-			return nil, errors.New("Failed to find file")
-		}
 
-		offer := offers[rand.Intn(len(offers))]
-		ref := &api.FileRef{
-			Path:  "/data/" + root.String(),
-			IsCAR: false,
-		}
-
-		order := offer.Order(payer)
-		if order.Size == 0 {
-			return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")
-		}
-
-		ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
-
-		_, err = a.Retrieval.Retrieve(
-			ctx,
-			order.Root,
-			rm.NewParamsV0(ppb, order.PaymentInterval, order.PaymentIntervalIncrease),
-			order.Total,
-			order.MinerPeerID,
-			order.Client,
-			order.Miner)
-		if err != nil {
-			return nil, xerrors.Errorf("Retrieve failed: %w", err)
-		}
-
-		fileResps = append(fileResps, api.FileResp{
-			Status:1,
-			Root:root,
-			Url:ref.Path,
-		})
+	offers, err := a.ClientFindData(ctx, root)
+	if err != nil {
+		return nil, err
 	}
-	return fileResps, nil
+	if len(offers) < 1 {
+		return nil, errors.New("Failed to find file")
+	}
+
+	offer := offers[rand.Intn(len(offers))]
+	order := offer.Order(payer)
+	if order.Size == 0 {
+		return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")
+	}
+
+	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
+
+	dealId, err := a.Retrieval.Retrieve(
+		ctx,
+		order.Root,
+		rm.NewParamsV0(ppb, order.PaymentInterval, order.PaymentIntervalIncrease),
+		order.Total,
+		order.MinerPeerID,
+		order.Client,
+		order.Miner)
+	if err != nil {
+		return nil, xerrors.Errorf("Retrieve failed: %w", err)
+	}
+
+	return &api.QueryResp{
+		Root:root,
+		Status:api.QueryPending,
+		DealId: uint64(dealId),
+	}, nil
 }

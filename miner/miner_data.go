@@ -15,7 +15,6 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"go.opencensus.io/trace"
 )
@@ -32,17 +31,29 @@ type MinerData struct {
 	checkHeight abi.ChainEpoch
 
 	dataRefs *lru.ARCCache
+	retrievals *lru.ARCCache
+	deals *lru.ARCCache
 }
 
 func newMinerData(api api.FullNode, addr address.Address) *MinerData {
-	arc, err := lru.NewARC(10000)
+	data, err := lru.NewARC(10000)
+	if err != nil {
+		panic(err)
+	}
+	retrievals, err := lru.NewARC(10000)
+	if err != nil {
+		panic(err)
+	}
+	deals, err := lru.NewARC(10000)
 	if err != nil {
 		panic(err)
 	}
 	return &MinerData{
 		api:      api,
 		address:  addr,
-		dataRefs: arc,
+		dataRefs: data,
+		retrievals:retrievals,
+		deals:deals,
 	}
 }
 
@@ -102,7 +113,7 @@ func (m *MinerData) syncData(ctx context.Context) {
 		}
 
 		if err := m.retrieveChainData(ctx); err != nil {
-			log.Errorf("failed to retrieve data: %s", err)
+			log.Warnf("failed to retrieve data: %s", err)
 		}
 
 		if err := m.dealChainData(ctx); err != nil {
@@ -161,13 +172,21 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
 					return err
 				}
-				offer, err := m.api.ClientMinerQueryOffer(ctx, params.DataRef.RootCID, m.address)
-				if err != nil {
-					return err
+
+				isSelfDeal := func(deals []market.ClientDealProposal) bool {
+					for _, deal := range params.Deals {
+						if deal.Proposal.Provider == m.address {
+							return true
+						}
+					}
+					return false
 				}
-				if offer.Err != "" {
-					m.dataRefs.Add(params.DataRef.RootCID.String(), params.DataRef)
+
+				if isSelfDeal(params.Deals) {
+					continue
 				}
+
+				m.dataRefs.Add(params.DataRef.RootCID.String(), params.DataRef)
 			}
 		}
 		m.checkHeight++
@@ -185,12 +204,28 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+
 		if has {
+			m.retrievals.Remove(dataRef.RootCID.String())
 			continue
 		}
 
-		if _, err := m.api.ClientQuery(ctx, []cid.Cid{dataRef.RootCID}); err != nil {
-			return err
+		if m.retrievals.Contains(dataRef.RootCID.String()) {
+			continue
+		}
+
+		resp, err := m.api.ClientQuery(ctx, dataRef.RootCID)
+		if err != nil {
+			return fmt.Errorf("failed to query data:%s,err:%s", dataRef.RootCID, err)
+		}
+		if resp.Status == api.QuerySuccess {
+			m.retrievals.Remove(dataRef.RootCID.String())
+		} else {
+			m.retrievals.Add(dataRef.RootCID.String(), resp)
+		}
+
+		if m.retrievals.Len() > 3 {
+			break
 		}
 	}
 	return nil
@@ -209,6 +244,22 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		// if data not found local, go to next one
 		if !has {
+			continue
+		}
+
+		offer, err := m.api.ClientMinerQueryOffer(ctx, dataRef.RootCID, m.address)
+		if err != nil {
+			return err
+		}
+		// if miner has sealed the data, go to next one
+		if offer.Err == "" {
+			m.dataRefs.Remove(dataRef.RootCID.String())
+			m.deals.Remove(dataRef.RootCID.String())
+			continue
+		}
+
+		// if miner is dealing, go to next one
+		if m.deals.Contains(dataRef.RootCID.String()) {
 			continue
 		}
 
@@ -257,7 +308,12 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 		log.Warnf("start miner:%s deal: %s", m.address, dealId.String())
-		m.dataRefs.Remove(dataRef.RootCID.String())
+
+		m.deals.Add(dataRef.RootCID.String(), dealId)
+
+		if m.deals.Len() > 3 {
+			break
+		}
 	}
 	return nil
 }
