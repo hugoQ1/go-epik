@@ -115,7 +115,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 				DecayToZero:   pubsub.DefaultDecayToZero,
 
 				// this retains non-positive scores for 6 hours
-				RetainScore: 6 * time.Hour,
+				RetainScore: 3 * time.Hour,
 
 				// topic parameters
 				Topics: map[string]*pubsub.TopicScoreParams{

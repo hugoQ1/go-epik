@@ -200,9 +200,9 @@ func New(api Provider, ds dtypes.MetadataDS, netName dtypes.NetworkName) (*Messa
 		netName:       netName,
 	}
 
-	if err := mp.loadLocal(); err != nil {
-		log.Errorf("loading local messages: %+v", err)
-	}
+	//if err := mp.loadLocal(); err != nil {
+	//	log.Errorf("loading local messages: %+v", err)
+	//}
 
 	go mp.repubLocal()
 
