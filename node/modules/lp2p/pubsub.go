@@ -241,7 +241,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 			&pubsub.PeerScoreThresholds{
 				GossipThreshold:             -500,
 				PublishThreshold:            -1000,
-				GraylistThreshold:           -2500,
+				GraylistThreshold:           -250000,
 				AcceptPXThreshold:           1000,
 				OpportunisticGraftThreshold: 5,
 			},
