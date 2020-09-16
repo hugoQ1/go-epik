@@ -117,12 +117,12 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 	}
 
 	heaviest := a.Chain.GetHeaviestTipSet()
-	blkTs, err := a.Chain.GetTipsetByHeight(ctx, b.Height, heaviest, false)
+	next, err := a.Chain.GetTipsetByHeight(ctx, b.Height+1, heaviest, false)
 	if err != nil {
 		return nil, err
 	}
-	if blkTs.Height() != b.Height {
-		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", blkTs.Height(), b.Height)
+	if next.Height() != b.Height+1 {
+		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", next.Height(), b.Height+1)
 	}
 
 	// gas reward
@@ -133,7 +133,7 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 
 	gasReward := big.Zero()
 	for _, m := range bmsgs {
-		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), blkTs)
+		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), next)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +142,7 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 
 	for _, sm := range smsgs {
 		m := sm.Message
-		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), blkTs)
+		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), next)
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +178,7 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 		return &rewardActorState, nil
 	}
 
-	prev, err := a.Chain.GetTipsetByHeight(ctx, b.Height-1, blkTs, false)
+	prev, err := a.Chain.GetTipsetByHeight(ctx, b.Height-1, next, false)
 	if err != nil {
 		return nil, err
 	}
