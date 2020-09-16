@@ -38,6 +38,7 @@ var chainCmd = &cli.Command{
 		chainHeadCmd,
 		chainGetBlock,
 		chainBlockRewards,
+		chainEpochCmd,
 		chainReadObjCmd,
 		chainStatObjCmd,
 		chainGetMsgCmd,
@@ -105,6 +106,42 @@ var chainBlockRewards = &cli.Command{
 		}
 
 		fmt.Println(string(out))
+		return nil
+	},
+}
+
+var chainEpochCmd = &cli.Command{
+	Name:      "epoch",
+	Usage:     "Print chain epoch",
+	ArgsUsage: "[epoch]",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		if !cctx.Args().Present() {
+			return fmt.Errorf("must pass height to print")
+		}
+
+		height, err := strconv.Atoi(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		ts, err := api.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(height), types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		if ts.Height() == abi.ChainEpoch(height) {
+			for _, c := range ts.Cids() {
+				fmt.Println(c)
+			}
+		}
+
 		return nil
 	},
 }
