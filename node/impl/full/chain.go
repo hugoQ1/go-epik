@@ -13,6 +13,9 @@ import (
 	"github.com/filecoin-project/go-amt-ipld/v2"
 	commcid "github.com/filecoin-project/go-fil-commcid"
 	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin/reward"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 	"github.com/ipfs/go-blockservice"
@@ -33,9 +36,11 @@ import (
 	"github.com/filecoin-project/go-address"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 var log = logging.Logger("fullnode")
@@ -98,6 +103,99 @@ func (a *ChainAPI) ChainGetBlockMessages(ctx context.Context, msg cid.Cid) (*api
 		BlsMessages:   bmsgs,
 		SecpkMessages: smsgs,
 		Cids:          cids,
+	}, nil
+}
+
+func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api.BlockRewards, error) {
+	b, err := a.Chain.GetBlock(bcid)
+	if err != nil {
+		return nil, err
+	}
+
+	if b.Height == 0 {
+		return &api.BlockRewards{}, nil
+	}
+
+	heaviest := a.Chain.GetHeaviestTipSet()
+	blkTs, err := a.Chain.GetTipsetByHeight(ctx, b.Height, heaviest, false)
+	if err != nil {
+		return nil, err
+	}
+	if blkTs.Height() != b.Height {
+		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", blkTs.Height(), b.Height)
+	}
+
+	// gas reward
+	bmsgs, smsgs, err := a.Chain.MessagesForBlock(b)
+	if err != nil {
+		return nil, err
+	}
+
+	gasReward := big.Zero()
+	for _, m := range bmsgs {
+		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), blkTs)
+		if err != nil {
+			return nil, err
+		}
+		gasReward = types.BigAdd(gasReward, types.BigMul(m.GasPrice, types.NewInt(uint64(receipt.GasUsed))))
+	}
+
+	for _, sm := range smsgs {
+		m := sm.Message
+		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), blkTs)
+		if err != nil {
+			return nil, err
+		}
+		gasReward = types.BigAdd(gasReward, types.BigMul(m.GasPrice, types.NewInt(uint64(receipt.GasUsed))))
+	}
+
+	// block reward
+	getRewardActorState := func(ts *types.TipSet) (*reward.State, error) {
+		st, _, err := a.StateManager.TipSetState(ctx, ts)
+		if err != nil {
+			return nil, err
+		}
+		buf := bufbstore.NewBufferedBstore(a.Chain.Blockstore())
+		cst := cbor.NewCborStore(buf)
+		state, err := state.LoadStateTree(cst, st)
+		if err != nil {
+			return nil, err
+		}
+		actor, err := state.GetActor(builtin.RewardActorAddr)
+		if err != nil {
+			return nil, err
+		}
+
+		blk, err := a.Chain.Blockstore().Get(actor.Head)
+		if err != nil {
+			return nil, xerrors.Errorf("blockstore get: %w", err)
+		}
+
+		var rewardActorState reward.State
+		if err := rewardActorState.UnmarshalCBOR(bytes.NewReader(blk.RawData())); err != nil {
+			return nil, err
+		}
+		return &rewardActorState, nil
+	}
+
+	prev, err := a.Chain.GetTipsetByHeight(ctx, b.Height-1, blkTs, false)
+	if err != nil {
+		return nil, err
+	}
+	if prev.Height() != b.Height-1 {
+		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", prev.Height(), b.Height-1)
+	}
+	st, err := getRewardActorState(prev)
+	if err != nil {
+		return nil, err
+	}
+	blockReward := big.Div(st.LastPerEpochReward, big.NewInt(builtin.ExpectedLeadersPerEpoch))
+	minerReward := big.Div(big.Mul(blockReward, big.NewInt(9)), big.NewInt(10))
+
+	return &api.BlockRewards{
+		Cid:         bcid,
+		MinerReward: minerReward,
+		GasReward:   gasReward,
 	}, nil
 }
 

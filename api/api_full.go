@@ -48,6 +48,9 @@ type FullNode interface {
 	// ChainGetBlockMessages returns messages stored in the specified block.
 	ChainGetBlockMessages(ctx context.Context, blockCid cid.Cid) (*BlockMessages, error)
 
+	// ChainGetBlockRewards returns rewards of specified block.
+	ChainGetBlockRewards(ctx context.Context, blockCid cid.Cid) (*BlockRewards, error)
+
 	// ChainGetParentReceipts returns receipts for messages in parent tipset of
 	// the specified block.
 	ChainGetParentReceipts(ctx context.Context, blockCid cid.Cid) ([]*types.MessageReceipt, error)
@@ -411,6 +414,12 @@ type BlockMessages struct {
 	Cids []cid.Cid
 }
 
+type BlockRewards struct {
+	Cid         cid.Cid // block cid
+	MinerReward types.BigInt
+	GasReward   types.BigInt
+}
+
 type Message struct {
 	Cid     cid.Cid
 	Message *types.Message
@@ -638,7 +647,7 @@ const (
 )
 
 type QueryResp struct {
-	Root cid.Cid
+	Root   cid.Cid
 	Status QueryStatus
 	DealId uint64
 }
