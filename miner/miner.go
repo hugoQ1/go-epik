@@ -183,32 +183,6 @@ func (m *Miner) mine(ctx context.Context) {
 					time.Sleep(time.Until(btime))
 				}
 			} else {
-				skip, err := m.maxAllowedSkip(ctx, btime, base)
-				if err != nil {
-					log.Errorf("compute skipped epoch failed: %+v", err)
-					m.niceSleep(time.Second)
-					continue
-				}
-				if skip > 0 {
-					base.NullRounds += skip
-					log.Warnw("skip null rounds", "base-height", base.TipSet.Height(),
-						"skip", skip, "null-rounds", base.NullRounds,
-						"time", time.Now(), "duration", time.Since(btime),
-					)
-
-					nextRound := time.Unix(int64(base.TipSet.MinTimestamp()+build.BlockDelaySecs*uint64(base.NullRounds))+int64(build.PropagationDelaySecs), 0)
-					select {
-					case <-time.After(time.Until(nextRound)):
-					case <-m.stop:
-						stopping := m.stopping
-						m.stop = nil
-						m.stopping = nil
-						close(stopping)
-						return
-					}
-					continue
-				}
-
 				log.Warnw("mined block in the past", "block-time", btime,
 					"null-rounds", base.NullRounds, "time", time.Now(), "duration", time.Since(btime))
 			}
