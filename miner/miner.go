@@ -9,6 +9,7 @@ import (
 
 	address "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	lru "github.com/hashicorp/golang-lru"
@@ -182,8 +183,34 @@ func (m *Miner) mine(ctx context.Context) {
 					time.Sleep(time.Until(btime))
 				}
 			} else {
+				skip, err := m.maxAllowedSkip(ctx, btime, base)
+				if err != nil {
+					log.Errorf("compute skipped epoch failed: %+v", err)
+					m.niceSleep(time.Second)
+					continue
+				}
+				if skip > 0 {
+					base.NullRounds += skip
+					log.Warnw("skip null rounds", "base-height", base.TipSet.Height(),
+						"skip", skip, "null-rounds", base.NullRounds,
+						"time", time.Now(), "duration", time.Since(btime),
+					)
+
+					nextRound := time.Unix(int64(base.TipSet.MinTimestamp()+build.BlockDelaySecs*uint64(base.NullRounds))+int64(build.PropagationDelaySecs), 0)
+					select {
+					case <-time.After(time.Until(nextRound)):
+					case <-m.stop:
+						stopping := m.stopping
+						m.stop = nil
+						m.stopping = nil
+						close(stopping)
+						return
+					}
+					continue
+				}
+
 				log.Warnw("mined block in the past", "block-time", btime,
-					"time", time.Now(), "duration", time.Since(btime))
+					"null-rounds", base.NullRounds, "time", time.Now(), "duration", time.Since(btime))
 			}
 
 			// TODO: should do better 'anti slash' protection here
@@ -217,6 +244,36 @@ func (m *Miner) mine(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (m *Miner) maxAllowedSkip(ctx context.Context, btime time.Time, base *MiningBase) (abi.ChainEpoch, error) {
+	duration := time.Now().Sub(btime)
+	skip := abi.ChainEpoch(duration / (time.Duration(build.BlockDelaySecs) * time.Second))
+	if skip == 0 || miner.ChainFinalityish/2 <= base.NullRounds {
+		return 0, nil
+	}
+	skip++
+
+	min := func(a, b abi.ChainEpoch) abi.ChainEpoch {
+		if a <= b {
+			return a
+		}
+		return b
+	}
+	maxNull := miner.ChainFinalityish / 2
+	md, err := m.api.StateMinerProvingDeadline(ctx, m.address, base.TipSet.Key())
+	if err != nil {
+		return 0, err
+	}
+	if !md.PeriodStarted() {
+		maxNull = min(maxNull, md.PeriodStart-1-base.TipSet.Height())
+	} else {
+		maxNull = min(maxNull, md.Close-1-base.TipSet.Height())
+	}
+	if maxNull <= base.NullRounds {
+		return 0, nil
+	}
+	return min(skip, maxNull-base.NullRounds), nil
 }
 
 type MiningBase struct {

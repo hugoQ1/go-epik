@@ -15,6 +15,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/reward"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
@@ -117,12 +118,23 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 	}
 
 	heaviest := a.Chain.GetHeaviestTipSet()
-	next, err := a.Chain.GetTipsetByHeight(ctx, b.Height+1, heaviest, false)
-	if err != nil {
-		return nil, err
+	var next, bts *types.TipSet
+	for dis := abi.ChainEpoch(0); dis < miner.WPoStChallengeWindow; dis++ {
+		next, err := a.Chain.GetTipsetByHeight(ctx, b.Height+dis, heaviest, true)
+		if err != nil {
+			return nil, err
+		}
+		if dis == 0 {
+			bts = next
+			if bts.Height() != b.Height {
+				return nil, xerrors.Errorf("got incorrect tipset height %d(expect %d)", bts.Height(), b.Height)
+			}
+			continue
+		}
+		break
 	}
-	if next.Height() != b.Height+1 {
-		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", next.Height(), b.Height+1)
+	if next.Parents() != bts.Key() {
+		return nil, xerrors.Errorf("unexpected next, parents is %s(expect %s)", next.Parents(), bts.Key())
 	}
 
 	// gas reward
@@ -177,13 +189,9 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 		}
 		return &rewardActorState, nil
 	}
-
-	prev, err := a.Chain.GetTipsetByHeight(ctx, b.Height-1, next, false)
+	prev, err := a.Chain.LoadTipSet(bts.Parents())
 	if err != nil {
 		return nil, err
-	}
-	if prev.Height() != b.Height-1 {
-		return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", prev.Height(), b.Height-1)
 	}
 	st, err := getRewardActorState(prev)
 	if err != nil {
