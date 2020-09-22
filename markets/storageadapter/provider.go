@@ -9,6 +9,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
@@ -66,8 +67,8 @@ func (n *ProviderNodeAdapter) PublishDeals(ctx context.Context, deal storagemark
 		Deals: []market.ClientDealProposal{deal.ClientDealProposal},
 		DataRef: market.PublishStorageDataRef{
 			RootCID: deal.Ref.Root,
-			Expert: deal.Ref.Expert,
-			Bounty: deal.Ref.Bounty,
+			Expert:  deal.Ref.Expert,
+			Bounty:  deal.Ref.Bounty,
 		},
 	})
 
@@ -150,6 +151,41 @@ func (n *ProviderNodeAdapter) GetMinerWorkerAddress(ctx context.Context, miner a
 		return address.Address{}, err
 	}
 	return mi.Worker, nil
+}
+
+func (n *ProviderNodeAdapter) GetMinerInfo(ctx context.Context, addr address.Address, tok shared.TipSetToken) (*storagemarket.StorageProviderInfo, error) {
+	tsk, err := types.TipSetKeyFromBytes(tok)
+	if err != nil {
+		return nil, err
+	}
+
+	mi, err := n.StateMinerInfo(ctx, addr, tsk)
+	if err != nil {
+		return nil, err
+	}
+	multiaddrs := make([]multiaddr.Multiaddr, 0, len(mi.Multiaddrs))
+	for _, a := range mi.Multiaddrs {
+		maddr, err := multiaddr.NewMultiaddrBytes(a)
+		if err != nil {
+			return nil, err
+		}
+		multiaddrs = append(multiaddrs, maddr)
+	}
+
+	sectors, err := n.StateMinerSectorCount(ctx, addr, tsk)
+	if err != nil {
+		return nil, err
+	}
+
+	actor, err := n.StateGetActor(ctx, addr, tsk)
+	if err != nil {
+		return nil, err
+	}
+
+	out := utils.NewStorageProviderInfo(addr, mi.Worker, mi.SectorSize, mi.PeerId, multiaddrs)
+	out.SectorCount = sectors.Sset
+	out.Balance = actor.Balance
+	return &out, nil
 }
 
 func (n *ProviderNodeAdapter) SignBytes(ctx context.Context, signer address.Address, b []byte) (*crypto.Signature, error) {
