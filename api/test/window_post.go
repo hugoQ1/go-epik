@@ -3,11 +3,12 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/EpiK-Protocol/go-epik/api"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/EpiK-Protocol/go-epik/api"
 
 	"github.com/stretchr/testify/require"
 

@@ -421,8 +421,9 @@ func rpcBuilder(t *testing.T, nFull int, storage []test.StorageMiner) ([]test.Te
 
 	for i, a := range fullApis {
 		rpcServer := jsonrpc.NewServer()
-		rpcServer.Register("Filecoin", a)
-		testServ := httptest.NewServer(rpcServer) //  todo: close
+		rpcServer.Register("EpiK", a)
+		testServ := httptest.NewServer(rpcServer)
+		rpcBuilderCloser[t.Name()] = append(rpcBuilderCloser[t.Name()], testServ)
 
 		var err error
 		fulls[i].FullNode, _, err = client.NewFullNodeRPC("ws://"+testServ.Listener.Addr().String(), nil)
@@ -433,8 +434,9 @@ func rpcBuilder(t *testing.T, nFull int, storage []test.StorageMiner) ([]test.Te
 
 	for i, a := range storaApis {
 		rpcServer := jsonrpc.NewServer()
-		rpcServer.Register("Filecoin", a)
-		testServ := httptest.NewServer(rpcServer) //  todo: close
+		rpcServer.Register("EpiK", a)
+		testServ := httptest.NewServer(rpcServer)
+		rpcBuilderCloser[t.Name()] = append(rpcBuilderCloser[t.Name()], testServ)
 
 		var err error
 		storers[i].StorageMiner, _, err = client.NewStorageMinerRPC("ws://"+testServ.Listener.Addr().String(), nil)
@@ -447,7 +449,21 @@ func rpcBuilder(t *testing.T, nFull int, storage []test.StorageMiner) ([]test.Te
 	return fulls, storers
 }
 
+var rpcBuilderCloser map[string][]*httptest.Server
+
 func TestAPIRPC(t *testing.T) {
+	rpcBuilderCloser = make(map[string][]*httptest.Server)
+	defer func() {
+		count := 0
+		for _, sl := range rpcBuilderCloser {
+			for _, srv := range sl {
+				srv.Close()
+				count++
+			}
+		}
+		rpcBuilderCloser = make(map[string][]*httptest.Server)
+		t.Logf("%d test servers closed", count)
+	}()
 	test.TestApis(t, rpcBuilder)
 }
 
