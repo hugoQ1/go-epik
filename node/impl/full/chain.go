@@ -120,21 +120,28 @@ func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api
 	heaviest := a.Chain.GetHeaviestTipSet()
 	var next, bts *types.TipSet
 	for dis := abi.ChainEpoch(0); dis < miner.WPoStChallengeWindow; dis++ {
-		next, err := a.Chain.GetTipsetByHeight(ctx, b.Height+dis, heaviest, true)
+		if b.Height+dis > heaviest.Height() {
+			break
+		}
+		tmp, err := a.Chain.GetTipsetByHeight(ctx, b.Height+dis, heaviest, false)
 		if err != nil {
 			return nil, err
 		}
 		if dis == 0 {
-			bts = next
-			if bts.Height() != b.Height {
-				return nil, xerrors.Errorf("got incorrect tipset height %d(expect %d)", bts.Height(), b.Height)
+			if tmp.Height() != b.Height {
+				return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", tmp.Height(), b.Height)
 			}
+			bts = tmp
 			continue
 		}
+		if tmp.Parents() != bts.Key() {
+			continue
+		}
+		next = tmp
 		break
 	}
-	if next.Parents() != bts.Key() {
-		return nil, xerrors.Errorf("unexpected next, parents is %s(expect %s)", next.Parents(), bts.Key())
+	if next == nil {
+		return nil, xerrors.Errorf("failed to get child tipset of block %s", bcid)
 	}
 
 	// gas reward
