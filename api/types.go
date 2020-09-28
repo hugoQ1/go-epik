@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -74,4 +76,19 @@ func NewApiMinerInfo(info miner.MinerInfo) MinerInfo {
 	}
 
 	return mi
+}
+
+func NewApiExpertInfo(info expert.ExpertInfo) *ExpertInfo {
+	ex := ExpertInfo{
+		Owner:      info.Owner,
+		PeerId:     peer.ID(info.PeerId),
+		Multiaddrs: info.Multiaddrs,
+	}
+	return &ex
+}
+
+type ExpertInfo struct {
+	Owner      address.Address // Must be an ID-address.
+	PeerId     peer.ID
+	Multiaddrs []abi.Multiaddrs
 }

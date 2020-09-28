@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
+
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"math/rand"
 
 	"github.com/filecoin-project/go-fil-markets/pieceio"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -328,40 +329,62 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 		}
 
 		if peer.ID(mi.PeerId) == peer.ID("SETME") {
-			return cid.Undef, fmt.Errorf("the miner hasn't initialized yet")
+			log.Warnf("the miner hasn't initialized yet")
+			continue
 		}
 
 		pid := peer.ID(mi.PeerId)
 		ask, err := a.ClientQueryAsk(ctx, pid, miner)
 		if err != nil {
-			log.Errorf("failed to query miner:%s, ask: %s", miner, err)
+			log.Warnf("failed to query miner:%s, ask: %s", miner, err)
 			continue
 		}
 
 		dataRef := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
-			Root: nd,
-			Expert: ref.Expert,
-			Bounty: ref.Bounty,
+			Root:         nd,
+			Expert:       ref.Expert,
+			Bounty:       ref.Bounty,
 		}
 		params := &api.StartDealParams{
-			Data: dataRef,
-			Wallet: payer,
-			Miner: miner,
-			EpochPrice: ask.Ask.Price,
+			Data:              dataRef,
+			Wallet:            payer,
+			Miner:             miner,
+			EpochPrice:        ask.Ask.Price,
 			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-			Redundancy: int64(index),
+			Redundancy:        int64(index),
 		}
 		dealId, err := a.ClientStartDeal(ctx, params)
 		if err != nil {
 			return cid.Undef, err
 		}
 		log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
+
+		// payer, err := a.WalletDefaultAddress(ctx)
+		// if err != nil {
+		// 	return cid.Undef, err
+		// }
+		// expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{})
+		// if err != nil {
+		// 	return cid.Undef, xerrors.Errorf("serializing params failed: ", err)
+		// }
+		// smsg, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		// 	To:       builtin.ExpertFundsActorAddr,
+		// 	From:     payer,
+		// 	Value:    types.NewInt(0),
+		// 	GasPrice: types.NewInt(0),
+		// 	GasLimit: 1000000,
+		// 	Method:   builtin.MethodsExpert.ImportData,
+		// 	Params:   expertParams,
+		// })
+		// if serr != nil {
+		// 	return cid.Undef, serr
+		// }
+		break
 	}
 
 	return nd, nil
 }
-
 
 func (a *API) ClientImportLocal(ctx context.Context, f io.Reader) (cid.Cid, error) {
 	file := files.NewReaderFile(f)
@@ -702,9 +725,8 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, er
 	}
 
 	if has {
-		return &api.QueryResp{ Root:root, Status:api.QuerySuccess}, nil
+		return &api.QueryResp{Root: root, Status: api.QuerySuccess}, nil
 	}
-
 
 	// TODO(larry): check if it has Retrieve
 	payer, err := a.WalletDefaultAddress(ctx)
@@ -741,8 +763,19 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, er
 	}
 
 	return &api.QueryResp{
-		Root:root,
-		Status:api.QueryPending,
+		Root:   root,
+		Status: api.QueryPending,
 		DealId: uint64(dealId),
 	}, nil
+}
+
+func (a *API) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
+	_, err := a.WalletDefaultAddress(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// experts, err := a.StateListExperts(ctx, types.EmptyTSK)
+
+	return &api.ExpertInfo{}, nil
 }

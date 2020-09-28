@@ -20,6 +20,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/account"
 	"github.com/filecoin-project/specs-actors/actors/builtin/cron"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	init_ "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
@@ -274,6 +275,26 @@ func StateMinerInfo(ctx context.Context, sm *StateManager, ts *types.TipSet, mad
 	return mas.Info, nil
 }
 
+func StateExpertInfo(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (expert.ExpertInfo, error) {
+	var mas expert.State
+	_, err := sm.LoadActorStateRaw(ctx, maddr, &mas, ts.ParentState())
+	if err != nil {
+		return expert.ExpertInfo{}, xerrors.Errorf("(get ssize) failed to load expert actor state: %w", err)
+	}
+
+	return mas.Info, nil
+}
+
+func StateExpertDatas(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address, filter *abi.BitField, filterOut bool) ([]*expert.DataOnChainInfo, error) {
+	var mas expert.State
+	_, err := sm.LoadActorState(ctx, maddr, &mas, ts)
+	if err != nil {
+		return nil, xerrors.Errorf("(get sset) failed to load expert actor state: %w", err)
+	}
+
+	return LoadExpertDatas(ctx, sm.ChainStore().Blockstore(), mas.Datas, filter, filterOut)
+}
+
 func GetMinerSlashed(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (bool, error) {
 	var mas miner.State
 	_, err := sm.LoadActorState(ctx, maddr, &mas, ts)
@@ -402,6 +423,33 @@ func ListMinerActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([
 	return miners, nil
 }
 
+func ListExpertActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([]address.Address, error) {
+	var state power.State
+	if _, err := sm.LoadActorState(ctx, builtin.ExpertFundsActorAddr, &state, ts); err != nil {
+		return nil, err
+	}
+
+	m, err := adt.AsMap(sm.cs.Store(ctx), state.Claims)
+	if err != nil {
+		return nil, err
+	}
+
+	var experts []address.Address
+	err = m.ForEach(nil, func(k string) error {
+		a, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		experts = append(experts, a)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return experts, nil
+}
+
 func LoadSectorsFromSet(ctx context.Context, bs blockstore.Blockstore, ssc cid.Cid, filter *abi.BitField, filterOut bool) ([]*api.ChainSectorInfo, error) {
 	a, err := amt.LoadAMT(ctx, cbor.NewCborStore(bs), ssc)
 	if err != nil {
@@ -428,6 +476,37 @@ func LoadSectorsFromSet(ctx context.Context, bs blockstore.Blockstore, ssc cid.C
 			Info: oci,
 			ID:   abi.SectorNumber(i),
 		})
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return sset, nil
+}
+
+func LoadExpertDatas(ctx context.Context, bs blockstore.Blockstore, ssc cid.Cid, filter *abi.BitField, filterOut bool) ([]*expert.DataOnChainInfo, error) {
+	a, err := amt.LoadAMT(ctx, cbor.NewCborStore(bs), ssc)
+	if err != nil {
+		return nil, err
+	}
+
+	var sset []*expert.DataOnChainInfo
+	if err := a.ForEach(ctx, func(i uint64, v *cbg.Deferred) error {
+		if filter != nil {
+			set, err := filter.IsSet(i)
+			if err != nil {
+				return xerrors.Errorf("filter check error: %w", err)
+			}
+			if set == filterOut {
+				return nil
+			}
+		}
+
+		var oci expert.DataOnChainInfo
+		if err := cbor.DecodeInto(v.Raw, &oci); err != nil {
+			return err
+		}
+		sset = append(sset, &oci)
 		return nil
 	}); err != nil {
 		return nil, err

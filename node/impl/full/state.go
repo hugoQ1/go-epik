@@ -19,6 +19,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	samsig "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
@@ -839,4 +840,34 @@ func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address
 	}
 
 	return types.BigAdd(st.GetAvailableBalance(act.Balance), vested), nil
+}
+
+func (a *StateAPI) StateListExperts(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+	return stmgr.ListExpertActors(ctx, a.StateManager, ts)
+}
+
+func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return &api.ExpertInfo{}, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
+	ex, err := stmgr.StateExpertInfo(ctx, a.StateManager, ts, addr)
+	if err != nil {
+		return &api.ExpertInfo{}, err
+	}
+	return api.NewApiExpertInfo(ex), nil
+}
+
+func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *abi.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
+	return stmgr.StateExpertDatas(ctx, a.StateManager, ts, addr, filter, filterOut)
 }

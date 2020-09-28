@@ -17,6 +17,7 @@ import (
 	"github.com/filecoin-project/sector-storage/storiface"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
 	"github.com/filecoin-project/specs-actors/actors/crypto"
@@ -125,6 +126,7 @@ type FullNodeStruct struct {
 		ClientGenCar          func(ctx context.Context, ref api.FileRef, outpath string) error                                     `perm:"write"`
 		ClientRemove          func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
 		ClientQuery           func(ctx context.Context, cid cid.Cid) (*api.QueryResp, error)                                       `perm:"read"`
+		ClientExpert          func(ctx context.Context) (*api.ExpertInfo, error)                                                   `perm:"read"`
 
 		StateNetworkName                  func(context.Context) (dtypes.NetworkName, error)                                                                   `perm:"read"`
 		StateMinerSectors                 func(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*api.ChainSectorInfo, error)        `perm:"read"`
@@ -160,6 +162,9 @@ type FullNodeStruct struct {
 		StateMinerSectorCount             func(context.Context, address.Address, types.TipSetKey) (api.MinerSectors, error)                                   `perm:"read"`
 		StateListMessages                 func(ctx context.Context, match *types.Message, tsk types.TipSetKey, toht abi.ChainEpoch) ([]cid.Cid, error)        `perm:"read"`
 		StateCompute                      func(context.Context, abi.ChainEpoch, []*types.Message, types.TipSetKey) (*api.ComputeStateOutput, error)           `perm:"read"`
+		StateListExperts                  func(context.Context, types.TipSetKey) ([]address.Address, error)                                                   `perm:"read"`
+		StateExpertInfo                   func(context.Context, address.Address, types.TipSetKey) (*api.ExpertInfo, error)                                    `perm:"read"`
+		StateExpertDatas                  func(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)     `perm:"read"`
 
 		MsigGetAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                                                    `perm:"read"`
 		MsigCreate              func(context.Context, int64, []address.Address, abi.ChainEpoch, types.BigInt, address.Address, types.BigInt) (cid.Cid, error)                    `perm:"sign"`
@@ -398,6 +403,10 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 
 func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, error) {
 	return c.Internal.ClientQuery(ctx, root)
+}
+
+func (c *FullNodeStruct) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
+	return c.Internal.ClientExpert(ctx)
 }
 
 func (c *FullNodeStruct) MpoolPending(ctx context.Context, tsk types.TipSetKey) ([]*types.SignedMessage, error) {
@@ -710,6 +719,18 @@ func (c *FullNodeStruct) StateListMessages(ctx context.Context, match *types.Mes
 
 func (c *FullNodeStruct) StateCompute(ctx context.Context, height abi.ChainEpoch, msgs []*types.Message, tsk types.TipSetKey) (*api.ComputeStateOutput, error) {
 	return c.Internal.StateCompute(ctx, height, msgs, tsk)
+}
+
+func (c *FullNodeStruct) StateListExperts(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error) {
+	return c.Internal.StateListExperts(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
+	return c.Internal.StateExpertInfo(ctx, addr, tsk)
+}
+
+func (c *FullNodeStruct) StateExpertDatas(ctx context.Context, addr address.Address, filter *abi.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
+	return c.Internal.StateExpertDatas(ctx, addr, filter, filterOut, tsk)
 }
 
 func (c *FullNodeStruct) MsigGetAvailableBalance(ctx context.Context, a address.Address, tsk types.TipSetKey) (types.BigInt, error) {

@@ -12,6 +12,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
@@ -230,6 +231,9 @@ type FullNode interface {
 	// ClientQuery query file status by file root or retrieve id
 	ClientQuery(ctx context.Context, root cid.Cid) (*QueryResp, error)
 
+	// ClientExpert returns expert
+	ClientExpert(ctx context.Context) (*ExpertInfo, error)
+
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// All methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.
@@ -309,6 +313,12 @@ type FullNode interface {
 	// StateCompute is a flexible command that applies the given messages on the given tipset.
 	// The messages are run as though the VM were at the provided height.
 	StateCompute(context.Context, abi.ChainEpoch, []*types.Message, types.TipSetKey) (*ComputeStateOutput, error)
+	// StateListExperts returns the addresses of every expert.
+	StateListExperts(context.Context, types.TipSetKey) ([]address.Address, error)
+	// StateExpertInfo returns info about the indicated expert.
+	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*ExpertInfo, error)
+	// StateExpertInfo returns expert's data info
+	StateExpertDatas(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
