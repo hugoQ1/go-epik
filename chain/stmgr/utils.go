@@ -188,9 +188,6 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 		return nil, xerrors.Errorf("failed to load deadlines: %w", err)
 	}
 
-	// TODO: larry temp change for mining
-	mas.Faults = abi.NewBitField()
-
 	notProving, err := abi.BitFieldUnion(mas.Faults, mas.Recoveries)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to union faults and recoveries: %w", err)
