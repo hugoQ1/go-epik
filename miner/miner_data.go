@@ -30,9 +30,9 @@ type MinerData struct {
 
 	checkHeight abi.ChainEpoch
 
-	dataRefs *lru.ARCCache
+	dataRefs   *lru.ARCCache
 	retrievals *lru.ARCCache
-	deals *lru.ARCCache
+	deals      *lru.ARCCache
 }
 
 func newMinerData(api api.FullNode, addr address.Address) *MinerData {
@@ -49,11 +49,11 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 		panic(err)
 	}
 	return &MinerData{
-		api:      api,
-		address:  addr,
-		dataRefs: data,
-		retrievals:retrievals,
-		deals:deals,
+		api:        api,
+		address:    addr,
+		dataRefs:   data,
+		retrievals: retrievals,
+		deals:      deals,
 	}
 }
 
@@ -247,6 +247,10 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
+		if m.deals.Contains(dataRef.RootCID.String()) {
+			continue
+		}
+
 		offer, err := m.api.ClientMinerQueryOffer(ctx, dataRef.RootCID, m.address)
 		if err != nil {
 			return err
@@ -290,9 +294,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		stData := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
-			Root:   dataRef.RootCID,
-			Expert: dataRef.Expert,
-			Bounty: dataRef.Bounty,
+			Root:         dataRef.RootCID,
+			Expert:       dataRef.Expert,
+			Bounty:       dataRef.Bounty,
 		}
 		params := &api.StartDealParams{
 			Data:              stData,
