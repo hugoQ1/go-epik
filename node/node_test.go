@@ -349,7 +349,7 @@ func mockSbBuilder(t *testing.T, nFull int, storage []test.StorageMiner) ([]test
 	templ := &genesis.Template{
 		Accounts:  genaccs,
 		Miners:    genms,
-		Timestamp: uint64(time.Now().Unix()) - (build.BlockDelaySecs * 20000),
+		Timestamp: uint64(time.Now().Unix()) - (build.BlockDelaySecs * 40000),
 	}
 
 	// END PRESEAL SECTION
@@ -396,7 +396,18 @@ func mockSbBuilder(t *testing.T, nFull int, storage []test.StorageMiner) ([]test
 
 		storers[i] = testStorageNode(ctx, t, genms[i].Worker, maddrs[i], pidKeys[i], f, mn, node.Options(
 			node.Override(new(sectorstorage.SectorManager), func() (sectorstorage.SectorManager, error) {
-				return mock.NewMockSectorMgr(build.DefaultSectorSize()), nil
+				var genesisSectors []abi.SectorID
+				mid, err := address.IDFromAddress(maddrs[i])
+				if err != nil {
+					return nil, err
+				}
+				for i := 0; i < test.GenesisPreseals; i++ {
+					genesisSectors = append(genesisSectors, abi.SectorID{
+						Miner:  abi.ActorID(mid),
+						Number: abi.SectorNumber(i + 1),
+					})
+				}
+				return mock.NewMockSectorMgr(build.DefaultSectorSize(), genesisSectors), nil
 			}),
 			node.Override(new(ffiwrapper.Verifier), mock.MockVerifier),
 			node.Unset(new(*sectorstorage.Manager)),
@@ -529,4 +540,5 @@ func TestWindowedPost(t *testing.T) {
 	logging.SetLogLevel("storageminer", "ERROR")
 
 	test.TestWindowPost(t, mockSbBuilder, 5*time.Millisecond, 10)
+	test.TestSectorsDist(t, mockSbBuilder, 5*time.Millisecond, 10)
 }

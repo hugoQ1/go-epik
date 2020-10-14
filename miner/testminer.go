@@ -16,12 +16,32 @@ func NewTestMiner(nextCh <-chan func(bool, error), addr address.Address) func(ap
 			panic(err)
 		}
 
+		data, err := lru.NewARC(1000)
+		if err != nil {
+			panic(err)
+		}
+		retrievals, err := lru.NewARC(1000)
+		if err != nil {
+			panic(err)
+		}
+		deals, err := lru.NewARC(1000)
+		if err != nil {
+			panic(err)
+		}
+
 		m := &Miner{
 			api:               api,
 			waitFunc:          chanWaiter(nextCh),
 			epp:               epp,
 			minedBlockHeights: arc,
 			address:           addr,
+			minerData: &MinerData{
+				api:        api,
+				address:    addr,
+				dataRefs:   data,
+				retrievals: retrievals,
+				deals:      deals,
+			},
 		}
 
 		if err := m.Start(context.TODO()); err != nil {

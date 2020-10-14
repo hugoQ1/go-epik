@@ -132,6 +132,10 @@ func (m *Miner) runPreflightChecks(ctx context.Context) error {
 	return nil
 }
 
+func (m *Miner) ISectorManager() interface{} {
+	return m.sealer
+}
+
 type StorageWpp struct {
 	prover   storage.Prover
 	verifier ffiwrapper.Verifier
