@@ -462,12 +462,16 @@ func TestAPIRPC(t *testing.T) {
 	test.TestApis(t, rpcBuilder)
 }
 
+func setLogLevel(level string) {
+	logging.SetLogLevel("miner", level)
+	logging.SetLogLevel("chainstore", level)
+	logging.SetLogLevel("chain", level)
+	logging.SetLogLevel("sub", level)
+	logging.SetLogLevel("storageminer", level)
+}
+
 func TestAPIDealFlow(t *testing.T) {
-	logging.SetLogLevel("miner", "ERROR")
-	logging.SetLogLevel("chainstore", "ERROR")
-	logging.SetLogLevel("chain", "ERROR")
-	logging.SetLogLevel("sub", "ERROR")
-	logging.SetLogLevel("storageminer", "ERROR")
+	setLogLevel("ERROR")
 
 	t.Run("TestDealFlow", func(t *testing.T) {
 		test.TestDealFlow(t, mockSbBuilder, 10*time.Millisecond, false)
@@ -485,31 +489,18 @@ func TestAPIDealFlowReal(t *testing.T) {
 		t.Skip("skipping test in short mode")
 	}
 	epiklog.SetupLogLevels()
-	logging.SetLogLevel("miner", "ERROR")
-	logging.SetLogLevel("chainstore", "ERROR")
-	logging.SetLogLevel("chain", "ERROR")
-	logging.SetLogLevel("sub", "ERROR")
-	logging.SetLogLevel("storageminer", "ERROR")
+	setLogLevel("ERROR")
 
 	test.TestDealFlow(t, builder, time.Second, false)
 }
 
 func TestDealMining(t *testing.T) {
-	logging.SetLogLevel("miner", "ERROR")
-	logging.SetLogLevel("chainstore", "ERROR")
-	logging.SetLogLevel("chain", "ERROR")
-	logging.SetLogLevel("sub", "ERROR")
-	logging.SetLogLevel("storageminer", "ERROR")
-
+	setLogLevel("ERROR")
 	test.TestDealMining(t, mockSbBuilder, 50*time.Millisecond, false)
 }
 
 func TestPledgeSectors(t *testing.T) {
-	logging.SetLogLevel("miner", "ERROR")
-	logging.SetLogLevel("chainstore", "ERROR")
-	logging.SetLogLevel("chain", "ERROR")
-	logging.SetLogLevel("sub", "ERROR")
-	logging.SetLogLevel("storageminer", "ERROR")
+	setLogLevel("ERROR")
 
 	t.Run("1", func(t *testing.T) {
 		test.TestPledgeSector(t, mockSbBuilder, 50*time.Millisecond, 1)
@@ -532,13 +523,11 @@ func TestWindowedPost(t *testing.T) {
 	if os.Getenv("EPIK_TEST_WINDOW_POST") != "1" {
 		t.Skip("this takes a few minutes, set EPIK_TEST_WINDOW_POST=1 to run")
 	}
-
-	logging.SetLogLevel("miner", "ERROR")
-	logging.SetLogLevel("chainstore", "ERROR")
-	logging.SetLogLevel("chain", "ERROR")
-	logging.SetLogLevel("sub", "ERROR")
-	logging.SetLogLevel("storageminer", "ERROR")
-
+	setLogLevel("ERROR")
 	test.TestWindowPost(t, mockSbBuilder, 5*time.Millisecond, 10)
+}
+
+func TestSectorsDist(t *testing.T) {
+	setLogLevel("ERROR")
 	test.TestSectorsDist(t, mockSbBuilder, 5*time.Millisecond, 10)
 }

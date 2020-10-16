@@ -103,7 +103,7 @@ var sealBenchCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "sector-size",
-			Value: "512MiB",
+			Value: "8MiB",
 			Usage: "size of the sectors in bytes, i.e. 32GiB",
 		},
 		&cli.BoolFlag{
