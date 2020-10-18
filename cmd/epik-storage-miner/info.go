@@ -120,7 +120,7 @@ var infoCmd = &cli.Command{
 				faultyPercentage)
 		}
 
-		if pow.MinerPower.RawBytePower.LessThan(power.ConsensusMinerMinPower) {
+		if pow.MinerPower.RawBytePower.LessThanEqual(power.ConsensusMinerMinPower) { // <= 0 power
 			fmt.Print("Below minimum power threshold, no blocks will be won")
 		} else {
 			expWinChance := float64(types.BigMul(qpercI, types.NewInt(build.BlocksPerEpoch)).Int64()) / 1000000

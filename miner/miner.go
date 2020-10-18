@@ -293,7 +293,7 @@ func (m *Miner) hasPower(ctx context.Context, addr address.Address, ts *types.Ti
 		return false, err
 	}
 
-	return mpower.MinerPower.QualityAdjPower.GreaterThanEqual(power.ConsensusMinerMinPower), nil
+	return mpower.MinerPower.QualityAdjPower.GreaterThan(power.ConsensusMinerMinPower), nil // > 0 power
 }
 
 // mineOne attempts to mine a single block, and does so synchronously, if and
