@@ -22,7 +22,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type dealData struct {
+type DealData struct {
 	dealID  abi.DealID
 	deal    market.DealProposal
 	dataRef market.PublishStorageDataRef
@@ -192,7 +192,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					if ok, _ := m.isMinerDealed(ctx, params.DataRef.RootCID, &deal.Proposal, localDeals); ok {
 						continue
 					}
-					dealData := &dealData{
+					dealData := &DealData{
 						deal:    deal.Proposal,
 						dataRef: params.DataRef,
 					}
@@ -216,7 +216,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					if !ok {
 						return fmt.Errorf("the deal data not found:%s", deal.Proposal.PieceCID.String())
 					}
-					dealData := data.(dealData)
+					dealData := data.(*DealData)
 					dealData.dealID = did
 					dealData.state = deal.State
 				}
@@ -260,7 +260,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(dealData)
+		dealData := data.(*DealData)
 
 		if dealData.dealID > 0 && dealData.state.SectorStartEpoch > 0 {
 			has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
@@ -282,6 +282,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 				log.Warnf("failed to query data:%s,err:%s", dealData.dataRef.RootCID, err)
 				continue
 			}
+			log.Warnf("client query data:%s,resp:%s", dealData.dataRef.RootCID, resp)
 			if resp.Status == api.QuerySuccess {
 				m.retrievals.Remove(rk)
 			} else {
@@ -300,7 +301,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(dealData)
+		dealData := data.(*DealData)
 
 		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
 		if err != nil {
@@ -376,7 +377,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			log.Errorf("failed to start deal: %s", err)
 			continue
 		}
-		log.Warnf("start miner:%s deal: %s", m.address, dealID.String())
+		log.Warnf("start deal with miner:%s deal: %s", m.address, dealID.String())
 
 		m.deals.Add(rk, dealID.String())
 
