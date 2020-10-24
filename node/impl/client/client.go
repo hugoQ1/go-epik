@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
@@ -718,7 +717,7 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return smsg.Cid(), nil
 }
 
-func (a *API) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, error) {
+func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
 	has, err := a.ClientHasLocal(ctx, root)
 	if err != nil {
 		return nil, err
@@ -734,15 +733,19 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, er
 		return nil, err
 	}
 
-	offers, err := a.ClientFindData(ctx, root)
+	// offers, err := a.ClientFindData(ctx, root)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(offers) < 1 {
+	// 	return nil, errors.New("Failed to find file")
+	// }
+	// offer := offers[rand.Intn(len(offers))]
+	offer, err := a.ClientMinerQueryOffer(ctx, root, miner)
 	if err != nil {
 		return nil, err
 	}
-	if len(offers) < 1 {
-		return nil, errors.New("Failed to find file")
-	}
 
-	offer := offers[rand.Intn(len(offers))]
 	order := offer.Order(payer)
 	if order.Size == 0 {
 		return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")

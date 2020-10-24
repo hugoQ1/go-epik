@@ -277,12 +277,12 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 				continue
 			}
 
-			resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID)
+			resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Provider)
 			if err != nil {
-				log.Warnf("failed to query data:%s,err:%s", dealData.dataRef.RootCID, err)
+				log.Warnf("failed to retrieve data:%s,err:%s", dealData.dataRef.RootCID, err)
 				continue
 			}
-			log.Warnf("client query data:%s,resp:%s", dealData.dataRef.RootCID, resp)
+			log.Warnf("client retrieve data:%s,resp:%s", dealData.dataRef.RootCID, resp)
 			if resp.Status == api.QuerySuccess {
 				m.retrievals.Remove(rk)
 			} else {
@@ -290,7 +290,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			}
 		}
 
-		if m.retrievals.Len() > 3 {
+		if m.retrievals.Len() > 2 {
 			break
 		}
 	}
@@ -353,11 +353,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			return err
 		}
 
-		offers, err := m.api.ClientFindData(ctx, dealData.dataRef.RootCID)
-		if err != nil {
-			return err
-		}
-
 		stData := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
 			Root:         dealData.dataRef.RootCID,
@@ -370,7 +365,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			Miner:             m.address,
 			EpochPrice:        ask.Ask.Price,
 			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-			Redundancy:        int64(len(offers)),
+			Redundancy:        int64(1),
 		}
 		dealID, err := m.api.ClientStartDeal(ctx, params)
 		if err != nil {
@@ -381,7 +376,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		m.deals.Add(rk, dealID.String())
 
-		if m.deals.Len() > 3 {
+		if m.deals.Len() > 2 {
 			break
 		}
 	}

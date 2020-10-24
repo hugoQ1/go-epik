@@ -229,7 +229,7 @@ type FullNode interface {
 	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
 
 	// ClientQuery query file status by file root or retrieve id
-	ClientQuery(ctx context.Context, root cid.Cid) (*QueryResp, error)
+	ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*QueryResp, error)
 
 	// ClientExpert returns expert
 	ClientExpert(ctx context.Context) (*ExpertInfo, error)

@@ -125,7 +125,7 @@ type FullNodeStruct struct {
 		ClientCalcCommP       func(ctx context.Context, inpath string, miner address.Address) (*api.CommPRet, error)               `perm:"read"`
 		ClientGenCar          func(ctx context.Context, ref api.FileRef, outpath string) error                                     `perm:"write"`
 		ClientRemove          func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
-		ClientQuery           func(ctx context.Context, cid cid.Cid) (*api.QueryResp, error)                                       `perm:"read"`
+		ClientQuery           func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                `perm:"read"`
 		ClientExpert          func(ctx context.Context) (*api.ExpertInfo, error)                                                   `perm:"read"`
 
 		StateNetworkName                  func(context.Context) (dtypes.NetworkName, error)                                                                   `perm:"read"`
@@ -401,8 +401,8 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 	return c.Internal.ClientRemove(ctx, root, wallet)
 }
 
-func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid) (*api.QueryResp, error) {
-	return c.Internal.ClientQuery(ctx, root)
+func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
+	return c.Internal.ClientQuery(ctx, root, miner)
 }
 
 func (c *FullNodeStruct) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
