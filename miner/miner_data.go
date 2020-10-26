@@ -22,6 +22,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	//LoopWaitingSeconds data check loop waiting seconds
+	LoopWaitingSeconds = time.Second * 10
+	// RetrieveParallelNum num
+	RetrieveParallelNum = 2
+	// DealParallelNum deal thread parallel num
+	DealParallelNum = 2
+)
+
 type DealData struct {
 	dealID  abi.DealID
 	deal    market.DealProposal
@@ -46,15 +55,15 @@ type MinerData struct {
 }
 
 func newMinerData(api api.FullNode, addr address.Address) *MinerData {
-	data, err := lru.NewARC(10000)
+	data, err := lru.NewARC(100000)
 	if err != nil {
 		panic(err)
 	}
-	retrievals, err := lru.NewARC(10000)
+	retrievals, err := lru.NewARC(100000)
 	if err != nil {
 		panic(err)
 	}
-	deals, err := lru.NewARC(10000)
+	deals, err := lru.NewARC(100000)
 	if err != nil {
 		panic(err)
 	}
@@ -129,7 +138,7 @@ func (m *MinerData) syncData(ctx context.Context) {
 		if err := m.dealChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
 		}
-		m.niceSleep(time.Second * 5)
+		m.niceSleep(LoopWaitingSeconds)
 	}
 }
 
@@ -231,16 +240,6 @@ func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, deal *marke
 	if deal.Provider == m.address {
 		return true, nil
 	}
-	if root != cid.Undef {
-		offer, err := m.api.ClientMinerQueryOffer(ctx, root, m.address)
-		if err != nil {
-			return false, err
-		}
-		// if miner has sealed the data, return true
-		if offer.Err == "" {
-			return true, nil
-		}
-	}
 
 	for _, lDeal := range localDeals {
 		if lDeal.PieceCID == deal.PieceCID &&
@@ -257,6 +256,24 @@ func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, deal *marke
 }
 
 func (m *MinerData) retrieveChainData(ctx context.Context) error {
+	retrieveKeys := m.retrievals.Keys()
+	for _, rk := range retrieveKeys {
+		data, _ := m.dataRefs.Get(rk)
+		dealData := data.(*DealData)
+
+		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
+		if err != nil {
+			return err
+		}
+		if has {
+			m.retrievals.Remove(rk)
+		}
+	}
+	if m.retrievals.Len() > RetrieveParallelNum {
+		log.Infof("wait for retrieval:%d", m.retrievals.Len())
+		return nil
+	}
+
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		data, _ := m.dataRefs.Get(rk)
@@ -288,16 +305,37 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			} else {
 				m.retrievals.Add(rk, resp)
 			}
-		}
 
-		if m.retrievals.Len() > 2 {
-			break
+			if m.retrievals.Len() > RetrieveParallelNum {
+				log.Infof("wait for retrieval:%d", m.retrievals.Len())
+				break
+			}
 		}
 	}
 	return nil
 }
 
 func (m *MinerData) dealChainData(ctx context.Context) error {
+	dealKeys := m.deals.Keys()
+	for _, rk := range dealKeys {
+		data, _ := m.dataRefs.Get(rk)
+		dealData := data.(*DealData)
+
+		offer, err := m.api.ClientMinerQueryOffer(ctx, dealData.dataRef.RootCID, m.address)
+		if err != nil {
+			return err
+		}
+		// if miner has sealed the data, go to next one
+		if offer.Err == "" {
+			m.dataRefs.Remove(rk)
+			m.deals.Remove(rk)
+		}
+	}
+	if m.deals.Len() > DealParallelNum {
+		log.Infof("wait for deal:%d", m.deals.Len())
+		return nil
+	}
+
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		data, _ := m.dataRefs.Get(rk)
@@ -314,17 +352,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 
 		if m.deals.Contains(rk) {
-			continue
-		}
-
-		offer, err := m.api.ClientMinerQueryOffer(ctx, dealData.dataRef.RootCID, m.address)
-		if err != nil {
-			return err
-		}
-		// if miner has sealed the data, go to next one
-		if offer.Err == "" {
-			m.dataRefs.Remove(rk)
-			m.deals.Remove(rk)
 			continue
 		}
 
@@ -376,7 +403,8 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		m.deals.Add(rk, dealID.String())
 
-		if m.deals.Len() > 2 {
+		if m.deals.Len() > DealParallelNum {
+			log.Infof("wait for deal:%d", m.deals.Len())
 			break
 		}
 	}
