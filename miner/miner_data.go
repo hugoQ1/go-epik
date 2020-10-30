@@ -55,15 +55,15 @@ type MinerData struct {
 }
 
 func newMinerData(api api.FullNode, addr address.Address) *MinerData {
-	data, err := lru.NewARC(100000)
+	data, err := lru.NewARC(1000000)
 	if err != nil {
 		panic(err)
 	}
-	retrievals, err := lru.NewARC(100000)
+	retrievals, err := lru.NewARC(1000000)
 	if err != nil {
 		panic(err)
 	}
-	deals, err := lru.NewARC(100000)
+	deals, err := lru.NewARC(1000000)
 	if err != nil {
 		panic(err)
 	}
@@ -318,16 +318,20 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 func (m *MinerData) dealChainData(ctx context.Context) error {
 	dealKeys := m.deals.Keys()
 	for _, rk := range dealKeys {
-		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(*DealData)
-
-		offer, err := m.api.ClientMinerQueryOffer(ctx, dealData.dataRef.RootCID, m.address)
+		id, _ := m.deals.Get(rk)
+		dealID := id.(cid.Cid)
+		lDeal, err := m.api.ClientGetDealInfo(ctx, dealID)
 		if err != nil {
 			return err
 		}
-		// if miner has sealed the data, go to next one
-		if offer.Err == "" {
+		if lDeal.State == storagemarket.StorageDealActive {
 			m.dataRefs.Remove(rk)
+			m.deals.Remove(rk)
+		} else if lDeal.State == storagemarket.StorageDealProposalNotFound &&
+			lDeal.State == storagemarket.StorageDealNotFound &&
+			lDeal.State == storagemarket.StorageDealProposalRejected &&
+			lDeal.State == storagemarket.StorageDealFailing &&
+			lDeal.State == storagemarket.StorageDealError {
 			m.deals.Remove(rk)
 		}
 	}
