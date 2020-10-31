@@ -17,6 +17,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/account"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
@@ -605,6 +606,8 @@ var chainGetCmd = &cli.Command{
 			cbu = new(power.State)
 		case "market-state":
 			cbu = new(market.State)
+		case "expert-state":
+			cbu = new(expert.State)
 		default:
 			return fmt.Errorf("unknown type: %q", t)
 		}

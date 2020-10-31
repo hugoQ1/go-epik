@@ -23,6 +23,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	miner2 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/multisig"
@@ -1459,6 +1460,8 @@ func parseParamsForMethod(act cid.Cid, method uint64, args []string) ([]byte, er
 		f = multisig.Actor{}.Exports()[method]
 	case builtin.PaymentChannelActorCodeID:
 		f = paych.Actor{}.Exports()[method]
+	case builtin.ExpertActorCodeID:
+		f = expert.Actor{}.Exports()[method]
 	default:
 		return nil, fmt.Errorf("the lazy devs didnt add support for that actor to this call yet")
 	}

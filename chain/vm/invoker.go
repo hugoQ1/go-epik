@@ -17,6 +17,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/cron"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	init_ "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
@@ -58,6 +59,7 @@ func NewInvoker() *Invoker {
 	inv.Register(builtin.PaymentChannelActorCodeID, paych.Actor{}, paych.State{})
 	inv.Register(builtin.VerifiedRegistryActorCodeID, verifreg.Actor{}, verifreg.State{})
 	inv.Register(builtin.AccountActorCodeID, account.Actor{}, account.State{})
+	inv.Register(builtin.ExpertActorCodeID, expert.Actor{}, expert.State{})
 
 	return inv
 }

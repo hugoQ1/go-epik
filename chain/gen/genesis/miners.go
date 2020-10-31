@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/multiformats/go-multihash"
 	"math/rand"
+
+	"github.com/multiformats/go-multihash"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -57,6 +58,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.New("no genesis miners")
 	}
 
+	// var eaddr address.Address
 	for i, m := range miners {
 		// Create miner through power actor
 		i := i
@@ -92,6 +94,25 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return cid.Undef, xerrors.Errorf("miner assigned wrong address: %s != %s", ma.IDAddress, expma)
 			}
 			maddr = ma.IDAddress
+		}
+
+		// Add expert
+		if i == 0 {
+			expertCreateParams := &power.ExpertConstructorParams{
+				Owner:  m.Owner,
+				PeerId: []byte(m.PeerId),
+			}
+			params := mustEnc(expertCreateParams)
+			rval, err := doExecValue(ctx, vm, builtin.StoragePowerActorAddr, m.Owner, big.Zero(), builtin.MethodsPower.CreateExpert, params)
+			if err != nil {
+				return cid.Undef, xerrors.Errorf("failed to create genesis expert: %w", err)
+			}
+			var ma power.CreateExpertReturn
+			if err := ma.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {
+				return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
+			}
+			// eaddr = ma.IDAddress
+			fmt.Printf("create genesis expert: %s\n", ma.IDAddress)
 		}
 
 		// Add market funds
@@ -149,9 +170,9 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			}
 			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
 			params.DataRef = market.PublishStorageDataRef{
-				RootCID:	rootCID,
-				Expert: 	"",
-				Bounty:		"",
+				RootCID: rootCID,
+				Expert:  "",
+				Bounty:  "",
 			}
 
 			if len(params.Deals) > 0 {

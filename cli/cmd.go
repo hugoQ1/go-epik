@@ -225,6 +225,7 @@ var Commands = []*cli.Command{
 	withCategory("basic", clientCmd),
 	withCategory("basic", multisigCmd),
 	withCategory("basic", paychCmd),
+	withCategory("basic", expertCmd),
 	withCategory("developer", authCmd),
 	withCategory("developer", mpoolCmd),
 	withCategory("developer", stateCmd),

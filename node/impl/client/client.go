@@ -42,6 +42,7 @@ import (
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -101,6 +102,51 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 			return nil, err
 		}
 		params.Wallet = dwallet
+	}
+
+	// check expert
+	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
+		PieceID: params.Data.Root,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("serializing params failed: ", err)
+	}
+	eaddr, err := address.NewFromString(params.Data.Expert)
+	if err != nil {
+		return nil, xerrors.Errorf("serializing expert failed: ", err)
+	}
+
+	expertInfo, err := a.StateExpertInfo(ctx, eaddr, types.EmptyTSK)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expert info: ", err)
+	}
+	from, err := a.StateAccountKey(ctx, expertInfo.Owner, types.EmptyTSK)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expert key: ", err)
+	}
+	if params.Wallet.String() == from.String() {
+		data, err := a.StateExpertDatas(ctx, eaddr, nil, true, types.EmptyTSK)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to get expert data: ", err)
+		}
+		for _, d := range data {
+			if d.PieceID == params.Data.Root {
+				return nil, xerrors.Errorf("duplicated expert data: ", params.Data.Root)
+			}
+		}
+
+		_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+			To:       eaddr,
+			From:     expertInfo.Owner,
+			Value:    types.NewInt(0),
+			GasPrice: types.NewInt(0),
+			GasLimit: 1000000,
+			Method:   builtin.MethodsExpert.ImportData,
+			Params:   expertParams,
+		})
+		if serr != nil {
+			return nil, serr
+		}
 	}
 
 	exist, err := a.WalletHas(ctx, params.Wallet)
@@ -358,27 +404,6 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 			return cid.Undef, err
 		}
 		log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
-
-		// payer, err := a.WalletDefaultAddress(ctx)
-		// if err != nil {
-		// 	return cid.Undef, err
-		// }
-		// expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{})
-		// if err != nil {
-		// 	return cid.Undef, xerrors.Errorf("serializing params failed: ", err)
-		// }
-		// smsg, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-		// 	To:       builtin.ExpertFundsActorAddr,
-		// 	From:     payer,
-		// 	Value:    types.NewInt(0),
-		// 	GasPrice: types.NewInt(0),
-		// 	GasLimit: 1000000,
-		// 	Method:   builtin.MethodsExpert.ImportData,
-		// 	Params:   expertParams,
-		// })
-		// if serr != nil {
-		// 	return cid.Undef, serr
-		// }
 		break
 	}
 
@@ -778,6 +803,7 @@ func (a *API) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
 		return nil, err
 	}
 
+	//TODO:
 	// experts, err := a.StateListExperts(ctx, types.EmptyTSK)
 
 	return &api.ExpertInfo{}, nil

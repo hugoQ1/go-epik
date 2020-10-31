@@ -2,6 +2,7 @@ package genesis
 
 import (
 	"context"
+
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
@@ -31,6 +32,8 @@ func SetupStoragePowerActor(bs bstore.Blockstore) (*types.Actor, error) {
 		LastEpochTick:            0,
 		Claims:                   emptyhamt,
 		NumMinersMeetingMinPower: 0,
+		ExpertCount:              0,
+		Experts:                  emptyhamt,
 	}
 
 	stcid, err := cst.Put(ctx, sms)

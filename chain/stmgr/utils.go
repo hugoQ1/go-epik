@@ -289,7 +289,15 @@ func StateExpertDatas(ctx context.Context, sm *StateManager, ts *types.TipSet, m
 		return nil, xerrors.Errorf("(get sset) failed to load expert actor state: %w", err)
 	}
 
-	return LoadExpertDatas(ctx, sm.ChainStore().Blockstore(), mas.Datas, filter, filterOut)
+	store := sm.cs.Store(ctx)
+	var sset []*expert.DataOnChainInfo
+	err = mas.ForEachData(store, func(doci *expert.DataOnChainInfo) {
+		sset = append(sset, doci)
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to for each expert actor state: %w", err)
+	}
+	return sset, nil
 }
 
 func GetMinerSlashed(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (bool, error) {
@@ -422,11 +430,11 @@ func ListMinerActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([
 
 func ListExpertActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([]address.Address, error) {
 	var state power.State
-	if _, err := sm.LoadActorState(ctx, builtin.ExpertFundsActorAddr, &state, ts); err != nil {
+	if _, err := sm.LoadActorState(ctx, builtin.StoragePowerActorAddr, &state, ts); err != nil {
 		return nil, err
 	}
 
-	m, err := adt.AsMap(sm.cs.Store(ctx), state.Claims)
+	m, err := adt.AsMap(sm.cs.Store(ctx), state.Experts)
 	if err != nil {
 		return nil, err
 	}
@@ -473,37 +481,6 @@ func LoadSectorsFromSet(ctx context.Context, bs blockstore.Blockstore, ssc cid.C
 			Info: oci,
 			ID:   abi.SectorNumber(i),
 		})
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return sset, nil
-}
-
-func LoadExpertDatas(ctx context.Context, bs blockstore.Blockstore, ssc cid.Cid, filter *abi.BitField, filterOut bool) ([]*expert.DataOnChainInfo, error) {
-	a, err := amt.LoadAMT(ctx, cbor.NewCborStore(bs), ssc)
-	if err != nil {
-		return nil, err
-	}
-
-	var sset []*expert.DataOnChainInfo
-	if err := a.ForEach(ctx, func(i uint64, v *cbg.Deferred) error {
-		if filter != nil {
-			set, err := filter.IsSet(i)
-			if err != nil {
-				return xerrors.Errorf("filter check error: %w", err)
-			}
-			if set == filterOut {
-				return nil
-			}
-		}
-
-		var oci expert.DataOnChainInfo
-		if err := cbor.DecodeInto(v.Raw, &oci); err != nil {
-			return err
-		}
-		sset = append(sset, &oci)
 		return nil
 	}); err != nil {
 		return nil, err
@@ -687,6 +664,7 @@ func init() {
 		builtin.MultisigActorCodeID:         {builtin.MethodsMultisig, multisig.Actor{}},
 		builtin.RewardActorCodeID:           {builtin.MethodsReward, reward.Actor{}},
 		builtin.VerifiedRegistryActorCodeID: {builtin.MethodsVerifiedRegistry, verifreg.Actor{}},
+		builtin.ExpertActorCodeID:           {builtin.MethodsExpert, expert.Actor{}},
 	}
 
 	for c, m := range cidToMethods {

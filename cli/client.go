@@ -75,6 +75,16 @@ var clientImportCmd = &cli.Command{
 			Name:  "car",
 			Usage: "import from a car file instead of a regular file",
 		},
+		&cli.StringFlag{
+			Name:  "expert",
+			Usage: "specify the data submit expert",
+			Value: "",
+		},
+		&cli.StringFlag{
+			Name:  "bounty",
+			Usage: "specify the data bounty",
+			Value: "",
+		},
 		&CidBaseFlag,
 	},
 	Action: func(cctx *cli.Context) error {
@@ -95,8 +105,10 @@ var clientImportCmd = &cli.Command{
 		}
 
 		ref := lapi.FileRef{
-			Path:  absPath,
-			IsCAR: cctx.Bool("car"),
+			Path:   absPath,
+			IsCAR:  cctx.Bool("car"),
+			Expert: cctx.String("expert"),
+			Bounty: cctx.String("bounty"),
 		}
 
 		c, err := api.ClientImportAndDeal(ctx, ref)
