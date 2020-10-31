@@ -405,7 +405,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 		log.Warnf("start deal with miner:%s deal: %s", m.address, dealID.String())
 
-		m.deals.Add(rk, dealID.String())
+		m.deals.Add(rk, *dealID)
 
 		if m.deals.Len() > DealParallelNum {
 			log.Infof("wait for deal:%d", m.deals.Len())
