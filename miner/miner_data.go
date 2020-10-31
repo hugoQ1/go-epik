@@ -26,9 +26,9 @@ var (
 	//LoopWaitingSeconds data check loop waiting seconds
 	LoopWaitingSeconds = time.Second * 10
 	// RetrieveParallelNum num
-	RetrieveParallelNum = 2
+	RetrieveParallelNum = 16
 	// DealParallelNum deal thread parallel num
-	DealParallelNum = 2
+	DealParallelNum = 16
 )
 
 type DealData struct {
