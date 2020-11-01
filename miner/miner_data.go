@@ -19,7 +19,6 @@ import (
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"go.opencensus.io/trace"
-	"golang.org/x/xerrors"
 )
 
 var (
@@ -189,7 +188,9 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				msg.Message.Method == builtin.MethodsMarket.PublishStorageDeals {
 				var params market.PublishStorageDealsParams
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
-					return err
+					// return err
+					log.Warnf("height:%d unmarshal publish: %w", m.checkHeight, err)
+					continue
 				}
 
 				for _, deal := range params.Deals {
@@ -205,7 +206,9 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			} else if msg.Message.Method == builtin.MethodsMiner.PreCommitSector {
 				var params minerActor.SectorPreCommitInfo
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
-					return xerrors.Errorf("unmarshal pre commit: %w", err)
+					// return xerrors.Errorf("unmarshal pre commit: %w", err)
+					log.Warnf("height:%d unmarshal pre commit: %w", m.checkHeight, err)
+					continue
 				}
 
 				for _, did := range params.DealIDs {
