@@ -86,16 +86,6 @@ func calcDealExpiration(minDuration uint64, md *miner.DeadlineInfo, startEpoch a
 }
 
 func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error) {
-	offers, err := a.ClientFindData(ctx, params.Data.Root)
-	if err != nil {
-		return nil, err
-	}
-	for _, offer := range offers {
-		if offer.Miner == params.Miner && offer.Err == "" {
-			return nil, xerrors.Errorf("file has storaged in miner: %w", offer.Miner)
-		}
-	}
-
 	if params.Wallet == address.Undef {
 		dwallet, err := a.WalletDefaultAddress(ctx)
 		if err != nil {
@@ -105,12 +95,6 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	}
 
 	// check expert
-	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-		PieceID: params.Data.Root,
-	})
-	if err != nil {
-		return nil, xerrors.Errorf("serializing params failed: ", err)
-	}
 	eaddr, err := address.NewFromString(params.Data.Expert)
 	if err != nil {
 		return nil, xerrors.Errorf("serializing expert failed: ", err)
@@ -129,23 +113,35 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		if err != nil {
 			return nil, xerrors.Errorf("failed to get expert data: ", err)
 		}
+		exist := false
 		for _, d := range data {
-			if d.PieceID == params.Data.Root {
-				return nil, xerrors.Errorf("duplicated expert data: ", params.Data.Root)
+			if d.PieceID == params.Data.Root.String() {
+				exist = true
+				break
 			}
 		}
 
-		_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-			To:       eaddr,
-			From:     expertInfo.Owner,
-			Value:    types.NewInt(0),
-			GasPrice: types.NewInt(0),
-			GasLimit: 1000000,
-			Method:   builtin.MethodsExpert.ImportData,
-			Params:   expertParams,
-		})
-		if serr != nil {
-			return nil, serr
+		if !exist {
+			expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
+				PieceID: params.Data.Root,
+				Bounty:  params.Data.Bounty,
+			})
+			if err != nil {
+				return nil, xerrors.Errorf("serializing params failed: ", err)
+			}
+
+			_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+				To:       eaddr,
+				From:     expertInfo.Owner,
+				Value:    types.NewInt(0),
+				GasPrice: types.NewInt(0),
+				GasLimit: 1000000,
+				Method:   builtin.MethodsExpert.ImportData,
+				Params:   expertParams,
+			})
+			if serr != nil {
+				return nil, serr
+			}
 		}
 	}
 

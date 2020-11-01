@@ -18,6 +18,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/abi/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
@@ -58,7 +59,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.New("no genesis miners")
 	}
 
-	// var eaddr address.Address
+	var eaddr address.Address
 	for i, m := range miners {
 		// Create miner through power actor
 		i := i
@@ -111,7 +112,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			if err := ma.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {
 				return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
 			}
-			// eaddr = ma.IDAddress
+			eaddr = ma.IDAddress
 			fmt.Printf("create genesis expert: %s\n", ma.IDAddress)
 		}
 
@@ -169,9 +170,16 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				}
 			}
 			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
+
+			{
+				_, err := doExecValue(ctx, vm, eaddr, m.Worker, big.Zero(), builtin.MethodsExpert.ImportData, mustEnc(&expert.ExpertDataParams{PieceID: rootCID}))
+				if err != nil {
+					return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
+				}
+			}
 			params.DataRef = market.PublishStorageDataRef{
 				RootCID: rootCID,
-				Expert:  "",
+				Expert:  eaddr.String(),
 				Bounty:  "",
 			}
 

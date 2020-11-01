@@ -37,6 +37,7 @@ require (
 	github.com/filecoin-project/specs-storage v0.1.1-0.20200622113353-88a9704877ea
 	github.com/filecoin-project/storage-fsm v0.0.0-20200625160832-379a4655b044
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-beta.1
+	github.com/go-delve/delve v1.5.0 // indirect
 	github.com/go-kit/kit v0.10.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.1.1
@@ -136,6 +137,6 @@ replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
 
 replace github.com/filecoin-project/sector-storage => github.com/EpiK-Protocol/epik-sector-storage v0.0.0-20201014120520-328522f8d36c
 
-replace github.com/filecoin-project/specs-actors => github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20201031174644-670aa3e3c310
+replace github.com/filecoin-project/specs-actors => github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20201101151210-d0359e6c9eca
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.3.2-0.20201031124322-3cc32a3bdbe0
