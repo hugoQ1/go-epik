@@ -119,16 +119,8 @@ func (m *MinerData) syncData(ctx context.Context) {
 		default:
 		}
 
-		needCheck, err := m.needCheckData(ctx)
-		if err != nil {
-			log.Errorf("failed to call need data: %s", err)
-			continue
-		}
-
-		if needCheck {
-			if err := m.checkChainData(ctx); err != nil {
-				log.Errorf("failed to check chain data: %s", err)
-			}
+		if err := m.checkChainData(ctx); err != nil {
+			log.Errorf("failed to check chain data: %s", err)
 		}
 
 		if err := m.retrieveChainData(ctx); err != nil {
@@ -184,6 +176,9 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 	}
 
 	for m.checkHeight < head.Height() {
+		if m.stopping != nil {
+			break
+		}
 		tipset, err := m.api.ChainGetTipSetByHeight(ctx, m.checkHeight, types.EmptyTSK)
 		if err != nil {
 			return err
