@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/EpiK-Protocol/go-epik/build"
 
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
@@ -115,9 +115,7 @@ func PreSeal(maddr address.Address, spt abi.RegisteredSealProof, offset abi.Sect
 		}
 	}
 
-	powerBalance := big.Mul(big.NewInt(builtin.InitialPledgeMeetsPerGiB), big.NewInt(int64(build.FilecoinPrecision)))
-	sectorSizeInt := int64(1 << 30)
-	powerBalance = big.Div(big.Mul(powerBalance, big.NewInt(int64(sectors)*int64(ssize))), big.NewInt(sectorSizeInt))
+	powerBalance := big.Mul(big.NewInt(1000), big.NewInt(int64(build.FilecoinPrecision)))
 
 	miner := &genesis.Miner{
 		Owner:         minerAddr.Address,
