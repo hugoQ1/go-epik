@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -28,13 +29,21 @@ var (
 	RetrieveParallelNum = 16
 	// DealParallelNum deal thread parallel num
 	DealParallelNum = 16
+	// RetrieveTryCountMax retrieve try count max
+	RetrieveTryCountMax = 50
 )
 
 type DealData struct {
-	dealID  abi.DealID
-	deal    market.DealProposal
-	dataRef market.PublishStorageDataRef
-	state   market.DealState
+	dealID   abi.DealID
+	deal     market.DealProposal
+	dataRef  market.PublishStorageDataRef
+	state    market.DealState
+	tryCount int
+}
+
+type PieceData struct {
+	pieceID   cid.Cid
+	dealDatas []*DealData
 }
 
 type MinerData struct {
@@ -201,7 +210,26 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 						deal:    deal.Proposal,
 						dataRef: params.DataRef,
 					}
-					m.dataRefs.Add(dealData.deal.PieceCID.String(), dealData)
+					datas := &PieceData{
+						pieceID:   deal.Proposal.PieceCID,
+						dealDatas: []*DealData{},
+					}
+					datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
+					if ok {
+						datas = datasObj.(*PieceData)
+					}
+					found := false
+					for _, d := range datas.dealDatas {
+						if d.deal.Provider == dealData.deal.Provider &&
+							d.deal.Client == dealData.deal.Client {
+							found = true
+							break
+						}
+					}
+					if !found {
+						datas.dealDatas = append(datas.dealDatas, dealData)
+					}
+					m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
 				}
 			} else if msg.Message.Method == builtin.MethodsMiner.PreCommitSector {
 				var params minerActor.SectorPreCommitInfo
@@ -219,13 +247,17 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					if ok, _ := m.isMinerDealed(ctx, cid.Undef, &deal.Proposal, localDeals); ok {
 						continue
 					}
-					data, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
+					datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
 					if !ok {
 						return fmt.Errorf("the deal data not found:%s", deal.Proposal.PieceCID.String())
 					}
-					dealData := data.(*DealData)
-					dealData.dealID = did
-					dealData.state = deal.State
+					datas := datasObj.(*PieceData)
+					for _, d := range datas.dealDatas {
+						if d.deal.Provider == msg.Message.To {
+							d.dealID = did
+							d.state = deal.State
+						}
+					}
 				}
 			}
 		}
@@ -274,40 +306,59 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
-		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(*DealData)
+		dataObj, _ := m.dataRefs.Get(rk)
+		datas := dataObj.(*PieceData)
 
-		if dealData.dealID > 0 && dealData.state.SectorStartEpoch > 0 {
-			has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
-			if err != nil {
-				return err
+		dealDatas := []*DealData{}
+		for _, d := range datas.dealDatas {
+			if d.dealID > 0 && d.state.SectorStartEpoch > 0 {
+				dealDatas = append(dealDatas, d)
 			}
+		}
+		if len(dealDatas) == 0 {
+			continue
+		}
+		dealData := dealDatas[rand.Intn(len(dealDatas))]
 
-			if has {
-				m.retrievals.Remove(rk)
-				continue
-			}
+		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
+		if err != nil {
+			return err
+		}
 
-			if m.retrievals.Contains(dealData.deal.PieceCID.String()) {
-				continue
-			}
+		if has {
+			m.retrievals.Remove(rk)
+			continue
+		}
 
-			resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Provider)
-			if err != nil {
-				log.Warnf("failed to retrieve data:%s,err:%s", dealData.dataRef.RootCID, err)
-				continue
-			}
-			log.Warnf("client retrieve data:%s,resp:%s", dealData.dataRef.RootCID, resp)
-			if resp.Status == api.QuerySuccess {
-				m.retrievals.Remove(rk)
-			} else {
-				m.retrievals.Add(rk, resp)
-			}
+		if m.retrievals.Contains(dealData.deal.PieceCID.String()) {
+			continue
+		}
 
-			if m.retrievals.Len() > RetrieveParallelNum {
-				log.Infof("wait for retrieval:%d", m.retrievals.Len())
-				break
+		resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Provider)
+		if err != nil {
+			dealData.tryCount++
+			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", dealData.deal.Provider, dealData.dataRef.RootCID, dealData.tryCount, err)
+			if dealData.tryCount > RetrieveTryCountMax {
+				for index, d := range datas.dealDatas {
+					if d.deal.Provider == dealData.deal.Provider {
+						datas.dealDatas = append(datas.dealDatas[:index], datas.dealDatas[index+1:]...)
+						break
+					}
+				}
+				m.dataRefs.Add(rk, datas)
 			}
+			continue
+		}
+		log.Warnf("client retrieve miner:%s, data:%s", dealData.deal.Provider, dealData.dataRef.RootCID)
+		if resp.Status == api.QuerySuccess {
+			m.retrievals.Remove(rk)
+		} else {
+			m.retrievals.Add(rk, resp)
+		}
+
+		if m.retrievals.Len() > RetrieveParallelNum {
+			log.Infof("wait for retrieval:%d", m.retrievals.Len())
+			break
 		}
 	}
 	return nil
@@ -340,8 +391,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
-		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(*DealData)
+		dataObj, _ := m.dataRefs.Get(rk)
+		data := dataObj.(*PieceData)
+		dealData := data.dealDatas[0]
 
 		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
 		if err != nil {
