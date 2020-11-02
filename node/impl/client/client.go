@@ -336,7 +336,7 @@ func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (cid.Cid, error
 	return nd, nil
 }
 
-func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
+func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (cid.Cid, error) {
 
 	bufferedDS := ipld.NewBufferedDAG(ctx, a.LocalDAG)
 	nd, err := a.clientImport(ref, bufferedDS)
@@ -354,54 +354,52 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed getting chain height: %w", err)
 	}
-	miners, err := a.StateListMiners(ctx, ts.Key())
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	if len(miners) == 0 {
-		return cid.Undef, xerrors.Errorf("miners not found.")
-	}
-
-	for index, miner := range miners {
-		mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
-		if err != nil {
-			return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
-		}
-
-		if peer.ID(mi.PeerId) == peer.ID("SETME") {
-			log.Warnf("the miner hasn't initialized yet")
-			continue
-		}
-
-		pid := peer.ID(mi.PeerId)
-		ask, err := a.ClientQueryAsk(ctx, pid, miner)
-		if err != nil {
-			log.Warnf("failed to query miner:%s, ask: %s", miner, err)
-			continue
-		}
-
-		dataRef := &storagemarket.DataRef{
-			TransferType: storagemarket.TTGraphsync,
-			Root:         nd,
-			Expert:       ref.Expert,
-			Bounty:       ref.Bounty,
-		}
-		params := &api.StartDealParams{
-			Data:              dataRef,
-			Wallet:            payer,
-			Miner:             miner,
-			EpochPrice:        ask.Ask.Price,
-			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-			Redundancy:        int64(index),
-		}
-		dealId, err := a.ClientStartDeal(ctx, params)
+	if miner == address.Undef {
+		miners, err := a.StateListMiners(ctx, ts.Key())
 		if err != nil {
 			return cid.Undef, err
 		}
-		log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
-		break
+
+		if len(miners) == 0 {
+			return cid.Undef, xerrors.Errorf("miners not found.")
+		}
+		miner = miners[0]
 	}
+
+	mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
+	}
+
+	if peer.ID(mi.PeerId) == peer.ID("SETME") {
+		return cid.Undef, xerrors.Errorf("the miner hasn't initialized yet")
+	}
+
+	pid := peer.ID(mi.PeerId)
+	ask, err := a.ClientQueryAsk(ctx, pid, miner)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
+	}
+
+	dataRef := &storagemarket.DataRef{
+		TransferType: storagemarket.TTGraphsync,
+		Root:         nd,
+		Expert:       ref.Expert,
+		Bounty:       ref.Bounty,
+	}
+	params := &api.StartDealParams{
+		Data:              dataRef,
+		Wallet:            payer,
+		Miner:             miner,
+		EpochPrice:        ask.Ask.Price,
+		MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
+		Redundancy:        int64(1),
+	}
+	dealId, err := a.ClientStartDeal(ctx, params)
+	if err != nil {
+		return cid.Undef, err
+	}
+	log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
 
 	return nd, nil
 }

@@ -85,6 +85,11 @@ var clientImportCmd = &cli.Command{
 			Usage: "specify the data bounty",
 			Value: "",
 		},
+		&cli.StringFlag{
+			Name:  "miner",
+			Usage: "specify the data deal miner",
+			Value: "",
+		},
 		&CidBaseFlag,
 	},
 	Action: func(cctx *cli.Context) error {
@@ -111,7 +116,17 @@ var clientImportCmd = &cli.Command{
 			Bounty: cctx.String("bounty"),
 		}
 
-		c, err := api.ClientImportAndDeal(ctx, ref)
+		miner := address.Undef
+		minerStr := cctx.String("miner")
+		if minerStr != "" {
+			m, err := address.NewFromString(minerStr)
+			if err != nil {
+				return xerrors.Errorf("failed to parse 'miner' address: %w", err)
+			}
+			miner = m
+		}
+
+		c, err := api.ClientImportAndDeal(ctx, ref, miner)
 		if err != nil {
 			return err
 		}

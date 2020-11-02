@@ -117,7 +117,7 @@ type FullNodeStruct struct {
 		ClientFindData        func(ctx context.Context, root cid.Cid) ([]api.QueryOffer, error)                                    `perm:"read"`
 		ClientMinerQueryOffer func(ctx context.Context, root cid.Cid, miner address.Address) (api.QueryOffer, error)               `perm:"read"`
 		ClientStartDeal       func(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)                             `perm:"admin"`
-		ClientImportAndDeal   func(ctx context.Context, ref api.FileRef) (cid.Cid, error)                                          `perm:"admin"`
+		ClientImportAndDeal   func(ctx context.Context, ref api.FileRef, miner address.Address) (cid.Cid, error)                   `perm:"admin"`
 		ClientGetDealInfo     func(context.Context, cid.Cid) (*api.DealInfo, error)                                                `perm:"read"`
 		ClientListDeals       func(ctx context.Context) ([]api.DealInfo, error)                                                    `perm:"write"`
 		ClientRetrieve        func(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error                          `perm:"admin"`
@@ -370,8 +370,8 @@ func (c *FullNodeStruct) ClientStartDeal(ctx context.Context, params *api.StartD
 	return c.Internal.ClientStartDeal(ctx, params)
 }
 
-func (c *FullNodeStruct) ClientImportAndDeal(ctx context.Context, ref api.FileRef) (cid.Cid, error) {
-	return c.Internal.ClientImportAndDeal(ctx, ref)
+func (c *FullNodeStruct) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (cid.Cid, error) {
+	return c.Internal.ClientImportAndDeal(ctx, ref, miner)
 }
 
 func (c *FullNodeStruct) ClientGetDealInfo(ctx context.Context, deal cid.Cid) (*api.DealInfo, error) {
