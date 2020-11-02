@@ -288,8 +288,9 @@ func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, deal *marke
 func (m *MinerData) retrieveChainData(ctx context.Context) error {
 	retrieveKeys := m.retrievals.Keys()
 	for _, rk := range retrieveKeys {
-		data, _ := m.dataRefs.Get(rk)
-		dealData := data.(*DealData)
+		dataObj, _ := m.dataRefs.Get(rk)
+		data := dataObj.(*PieceData)
+		dealData := data.dealDatas[0]
 
 		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
 		if err != nil {
@@ -411,6 +412,15 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		// if miner is dealing, go to next one
 		if m.deals.Contains(rk) {
+			continue
+		}
+
+		offer, err := m.api.ClientMinerQueryOffer(ctx, dealData.dataRef.RootCID, m.address)
+		if err != nil {
+			return err
+		}
+		if offer.Err == "" {
+			m.dataRefs.Remove(rk)
 			continue
 		}
 
