@@ -19,7 +19,6 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -102,10 +101,11 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		i := i
 		m := m
 
-		spt, err := ffiwrapper.SealProofTypeFromSectorSize(m.SectorSize)
-		if err != nil {
-			return cid.Undef, err
+		if len(m.Sectors) == 0 {
+			return cid.Undef, xerrors.Errorf("genesis miners must have at least 1 presealed sector")
 		}
+
+		spt := m.Sectors[0].ProofType
 
 		{
 			constructorParams := &power2.CreateMinerParams{

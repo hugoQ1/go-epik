@@ -6,16 +6,16 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/siddontang/go/log"
 
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
 )
 
 // TODO: For now we handle this by halting state execution, when we get jsonrpc reconnecting
@@ -166,23 +166,14 @@ func (m *Sealing) checkCommit(ctx context.Context, si SectorInfo, proof []byte, 
 		return &ErrBadSeed{xerrors.Errorf("seed has changed")}
 	}
 
-	ss, err := m.api.StateMinerSectorSize(ctx, m.maddr, tok)
-	if err != nil {
-		return &ErrApi{err}
-	}
-	spt, err := ffiwrapper.SealProofTypeFromSectorSize(ss)
-	if err != nil {
-		return err
-	}
-
 	if *si.CommR != pci.Info.SealedCID {
 		log.Warn("on-chain sealed CID doesn't match!")
 	}
 
 	ok, err := m.verif.VerifySeal(proof2.SealVerifyInfo{
-		SectorID:              m.minerSector(si.SectorNumber),
+		SectorID:              m.minerSectorID(si.SectorNumber),
 		SealedCID:             pci.Info.SealedCID,
-		SealProof:             spt,
+		SealProof:             pci.Info.SealProof,
 		Proof:                 proof,
 		Randomness:            si.TicketValue,
 		InteractiveRandomness: si.SeedValue,

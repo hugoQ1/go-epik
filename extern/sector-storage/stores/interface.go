@@ -7,10 +7,11 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
+	"github.com/filecoin-project/specs-storage/storage"
 )
 
 type Store interface {
-	AcquireSector(ctx context.Context, s abi.SectorID, ssize abi.SectorSize, existing storiface.SectorFileType, allocate storiface.SectorFileType, sealing storiface.PathType, op storiface.AcquireMode) (paths storiface.SectorPaths, stores storiface.SectorPaths, err error)
+	AcquireSector(ctx context.Context, s storage.SectorRef, existing storiface.SectorFileType, allocate storiface.SectorFileType, sealing storiface.PathType, op storiface.AcquireMode) (paths storiface.SectorPaths, stores storiface.SectorPaths, err error)
 	Remove(ctx context.Context, s abi.SectorID, types storiface.SectorFileType, force bool) error
 
 	// like remove, but doesn't remove the primary sector copy, nor the last
@@ -18,7 +19,7 @@ type Store interface {
 	RemoveCopies(ctx context.Context, s abi.SectorID, types storiface.SectorFileType) error
 
 	// move sectors into storage
-	MoveStorage(ctx context.Context, s abi.SectorID, ssize abi.SectorSize, types storiface.SectorFileType) error
+	MoveStorage(ctx context.Context, s storage.SectorRef, types storiface.SectorFileType) error
 
 	FsStat(ctx context.Context, id ID) (fsutil.FsStat, error)
 }

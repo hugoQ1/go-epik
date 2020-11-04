@@ -45,7 +45,6 @@ import (
 	"github.com/filecoin-project/go-multistore"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -242,6 +241,87 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 
 	// return &result.ProposalCid, nil
 	return nil, nil
+	// var storeID *multistore.StoreID
+	// if params.Data.TransferType == storagemarket.TTGraphsync {
+	// 	importIDs := a.imgr().List()
+	// 	for _, importID := range importIDs {
+	// 		info, err := a.imgr().Info(importID)
+	// 		if err != nil {
+	// 			continue
+	// 		}
+	// 		if info.Labels[importmgr.LRootCid] == "" {
+	// 			continue
+	// 		}
+	// 		c, err := cid.Parse(info.Labels[importmgr.LRootCid])
+	// 		if err != nil {
+	// 			continue
+	// 		}
+	// 		if c.Equals(params.Data.Root) {
+	// 			storeID = &importID //nolint
+	// 			break
+	// 		}
+	// 	}
+	// }
+
+	// walletKey, err := a.StateAccountKey(ctx, params.Wallet, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed resolving params.Wallet addr: %w", params.Wallet)
+	// }
+
+	// exist, err := a.WalletHas(ctx, walletKey)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
+	// }
+	// if !exist {
+	// 	return nil, xerrors.Errorf("provided address doesn't exist in wallet")
+	// }
+
+	// mi, err := a.StateMinerInfo(ctx, params.Miner, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting peer ID: %w", err)
+	// }
+
+	// md, err := a.StateMinerProvingDeadline(ctx, params.Miner, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
+	// }
+
+	// if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
+	// 	return nil, xerrors.New("data doesn't fit in a sector")
+	// }
+
+	// providerInfo := utils.NewStorageProviderInfo(params.Miner, mi.Worker, mi.SectorSize, *mi.PeerId, mi.Multiaddrs)
+
+	// dealStart := params.DealStartEpoch
+	// if dealStart <= 0 { // unset, or explicitly 'epoch undefined'
+	// 	ts, err := a.ChainHead(ctx)
+	// 	if err != nil {
+	// 		return nil, xerrors.Errorf("failed getting chain height: %w", err)
+	// 	}
+
+	// 	blocksPerHour := 60 * 60 / build.BlockDelaySecs
+	// 	dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
+	// }
+
+	// result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
+	// 	Addr:          params.Wallet,
+	// 	Info:          &providerInfo,
+	// 	Data:          params.Data,
+	// 	StartEpoch:    dealStart,
+	// 	EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
+	// 	Price:         params.EpochPrice,
+	// 	Collateral:    params.ProviderCollateral,
+	// 	Rt:            abi.RegisteredSealProof_StackedDrg32GiBV1_1, // all proof types have the same D tree
+	// 	FastRetrieval: params.FastRetrieval,
+	// 	VerifiedDeal:  params.VerifiedDeal,
+	// 	StoreID:       storeID,
+	// })
+
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed to start deal: %w", err)
+	// }
+
+	// return &result.ProposalCid, nil
 }
 
 func (a *API) ClientListDeals(ctx context.Context) ([]api.DealInfo, error) {
@@ -772,7 +852,7 @@ func (a *API) ClientQueryAsk(ctx context.Context, p peer.ID, miner address.Addre
 
 func (a *API) ClientCalcCommP(ctx context.Context, inpath string) (*api.CommPRet, error) {
 
-	// Hard-code the sector size to 32GiB, because:
+	// Hard-code the sector type to 32GiBV1_1, because:
 	// - pieceio.GeneratePieceCommitment requires a RegisteredSealProof
 	// - commP itself is sector-size independent, with rather low probability of that changing
 	//   ( note how the final rust call is identical for every RegSP type )
@@ -780,12 +860,7 @@ func (a *API) ClientCalcCommP(ctx context.Context, inpath string) (*api.CommPRet
 	//
 	// IF/WHEN this changes in the future we will have to be able to calculate
 	// "old style" commP, and thus will need to introduce a version switch or similar
-	arbitrarySectorSize := abi.SectorSize(32 << 30)
-
-	rt, err := ffiwrapper.SealProofTypeFromSectorSize(arbitrarySectorSize)
-	if err != nil {
-		return nil, xerrors.Errorf("bad sector size: %w", err)
-	}
+	arbitraryProofType := abi.RegisteredSealProof_StackedDrg32GiBV1_1
 
 	rdr, err := os.Open(inpath)
 	if err != nil {
@@ -798,7 +873,7 @@ func (a *API) ClientCalcCommP(ctx context.Context, inpath string) (*api.CommPRet
 		return nil, err
 	}
 
-	commP, pieceSize, err := pieceio.GeneratePieceCommitment(rt, rdr, uint64(stat.Size()))
+	commP, pieceSize, err := pieceio.GeneratePieceCommitment(arbitraryProofType, rdr, uint64(stat.Size()))
 
 	if err != nil {
 		return nil, xerrors.Errorf("computing commP failed: %w", err)

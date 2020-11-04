@@ -199,12 +199,7 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 		return nil, xerrors.Errorf("getting miner info: %w", err)
 	}
 
-	spt, err := ffiwrapper.SealProofTypeFromSectorSize(info.SectorSize)
-	if err != nil {
-		return nil, xerrors.Errorf("getting seal proof type: %w", err)
-	}
-
-	wpt, err := spt.RegisteredWinningPoStProof()
+	wpt, err := info.SealProofType.RegisteredWinningPoStProof()
 	if err != nil {
 		return nil, xerrors.Errorf("getting window proof type: %w", err)
 	}
@@ -244,7 +239,7 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 	out := make([]builtin.SectorInfo, len(sectors))
 	for i, sinfo := range sectors {
 		out[i] = builtin.SectorInfo{
-			SealProof:    spt,
+			SealProof:    sinfo.SealProof,
 			SectorNumber: sinfo.SectorNumber,
 			SealedCID:    sinfo.SealedCID,
 		}
