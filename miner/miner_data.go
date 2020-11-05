@@ -339,15 +339,15 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		if err != nil {
 			dealData.tryCount++
 			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", dealData.deal.Provider, dealData.dataRef.RootCID, dealData.tryCount, err)
-			if dealData.tryCount > RetrieveTryCountMax {
-				for index, d := range datas.dealDatas {
-					if d.deal.Provider == dealData.deal.Provider {
-						datas.dealDatas = append(datas.dealDatas[:index], datas.dealDatas[index+1:]...)
-						break
-					}
-				}
-				m.dataRefs.Add(rk, datas)
-			}
+			// if dealData.tryCount > RetrieveTryCountMax {
+			// 	for index, d := range datas.dealDatas {
+			// 		if d.deal.Provider == dealData.deal.Provider {
+			// 			datas.dealDatas = append(datas.dealDatas[:index], datas.dealDatas[index+1:]...)
+			// 			break
+			// 		}
+			// 	}
+			// 	m.dataRefs.Add(rk, datas)
+			// }
 			continue
 		}
 		log.Warnf("client retrieve miner:%s, data:%s", dealData.deal.Provider, dealData.dataRef.RootCID)
