@@ -32,7 +32,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
@@ -356,11 +355,6 @@ var runCmd = &cli.Command{
 		}
 
 		// Setup remote sector store
-		spt, err := ffiwrapper.SealProofTypeFromSectorSize(ssize)
-		if err != nil {
-			return xerrors.Errorf("getting proof type: %w", err)
-		}
-
 		sminfo, err := lcli.GetAPIInfo(cctx, repo.StorageMiner)
 		if err != nil {
 			return xerrors.Errorf("could not get api info: %w", err)
@@ -374,7 +368,6 @@ var runCmd = &cli.Command{
 
 		workerApi := &worker{
 			LocalWorker: sectorstorage.NewLocalWorker(sectorstorage.WorkerConfig{
-				SealProof: spt,
 				TaskTypes: taskTypes,
 				NoSwap:    cctx.Bool("no-swap"),
 			}, remote, localStore, nodeApi, nodeApi, wsts),
