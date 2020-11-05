@@ -40,7 +40,7 @@ require (
 	github.com/filecoin-project/go-statestore v0.1.0
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
 	github.com/filecoin-project/specs-actors/v2 v2.3.3
-	github.com/filecoin-project/specs-storage v0.1.1-0.20201104202311-4d056083cd27
+	github.com/filecoin-project/specs-storage v0.1.1-0.20201105051918-5188d9774506
 	github.com/filecoin-project/test-vectors/schema v0.0.5
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-beta.1
 	github.com/go-kit/kit v0.10.0
@@ -119,6 +119,7 @@ require (
 	github.com/polydawn/refmt v0.0.0-20190809202753-05966cbd336a
 	github.com/prometheus/client_golang v1.6.0
 	github.com/raulk/clock v1.1.0
+	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
 	github.com/stretchr/testify v1.6.1
 	github.com/supranational/blst v0.1.1
 	github.com/syndtr/goleveldb v1.0.0
