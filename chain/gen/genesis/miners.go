@@ -101,11 +101,10 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		i := i
 		m := m
 
-		if len(m.Sectors) == 0 {
-			return cid.Undef, xerrors.Errorf("genesis miners must have at least 1 presealed sector")
+		spt, err := miner.SealProofTypeFromSectorSize(m.SectorSize, GenesisNetworkVersion)
+		if err != nil {
+			return cid.Undef, err
 		}
-
-		spt := m.Sectors[0].ProofType
 
 		{
 			constructorParams := &power2.CreateMinerParams{
