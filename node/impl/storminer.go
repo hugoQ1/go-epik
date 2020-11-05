@@ -23,7 +23,6 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
@@ -37,12 +36,10 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/storage"
 	"github.com/EpiK-Protocol/go-epik/storage/sectorblocks"
-)
 
 type StorageMinerAPI struct {
 	common.CommonAPI
 
-	ProofsConfig *ffiwrapper.Config
 	SectorBlocks *sectorblocks.SectorBlocks
 
 	PieceStore        dtypes.ProviderPieceStore

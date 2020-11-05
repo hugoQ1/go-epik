@@ -15,6 +15,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/node/hello"
 
+	"github.com/filecoin-project/go-state-types/abi"
 	logging "github.com/ipfs/go-log/v2"
 	ci "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -55,7 +56,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
@@ -264,8 +264,6 @@ func Online() Option {
 			Override(new(api.WalletAPI), From(new(wallet.MultiWallet))),
 			Override(new(*messagesigner.MessageSigner), messagesigner.NewMessageSigner),
 
-			Override(new(dtypes.ChainGCLocker), blockstore.NewGCLocker),
-			Override(new(dtypes.ChainGCBlockstore), modules.ChainGCBlockstore),
 			Override(new(dtypes.ChainBitswap), modules.ChainBitswap),
 			Override(new(dtypes.ChainBlockService), modules.ChainBlockService),
 
@@ -342,7 +340,7 @@ func Online() Option {
 			Override(new(stores.SectorIndex), From(new(*stores.Index))),
 			Override(new(dtypes.MinerID), modules.MinerID),
 			Override(new(dtypes.MinerAddress), modules.MinerAddress),
-			Override(new(*ffiwrapper.Config), modules.ProofsConfig),
+			Override(new(abi.RegisteredSealProof), modules.SealProofType),
 			Override(new(stores.LocalStorage), From(new(repo.LockedRepo))),
 			Override(new(sealing.SectorIDCounter), modules.SectorIDCounter),
 			Override(new(*sectorstorage.Manager), modules.SectorStorage),
