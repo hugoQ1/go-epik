@@ -9,9 +9,8 @@ services:
     ports:
       - '1234:1234'
       - '1347:1347'
-      - '2345:2345'
     volumes:
       - .:/go-epik
     environment:
-      - REGION=China
-    command: bash docker/scripts/epik.sh
+      - MINER_INIT=false
+    command: bash docker/scripts/node.sh
