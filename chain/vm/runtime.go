@@ -49,7 +49,7 @@ func (m *Message) ValueReceived() abi.TokenAmount {
 }
 
 // EnableGasTracing, if true, outputs gas tracing in execution traces.
-var EnableGasTracing = false
+var EnableGasTracing = true
 
 type Runtime struct {
 	rt2.Message
