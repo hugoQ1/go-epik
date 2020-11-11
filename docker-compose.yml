@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  
+  node:
+    image: epik/go-epik
+    build:
+      context: ./docker
+    ports:
+      - '1234:1234'
+      - '1347:1347'
+    volumes:
+      - .:/go-epik
+    environment:
+      - MINER_INIT=false
+    command: bash docker/scripts/node.sh
