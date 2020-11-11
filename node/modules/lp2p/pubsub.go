@@ -69,6 +69,10 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 	}
 
 	isBootstrapNode := in.Cfg.Bootstrapper
+	ipWhitelist := make(map[string]struct{})
+	for _, ip := range in.Cfg.IPColocationWhitelist {
+		ipWhitelist[ip] = struct{}{}
+	}
 	drandTopic, err := getDrandTopic(in.Dr.ChainInfoJSON)
 	if err != nil {
 		return nil, err
@@ -102,10 +106,11 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 				AppSpecificWeight: 1,
 
 				// This sets the IP colocation threshold to 1 peer per
-				IPColocationFactorThreshold: 1,
-				IPColocationFactorWeight:    -100,
+				// IPColocationFactorThreshold: 5,
+				// Disable
+				// IPColocationFactorWeight:    -100,
 				// TODO we want to whitelist IPv6 /64s that belong to datacenters etc
-				// IPColocationFactorWhitelist: map[string]struct{}{},
+				IPColocationFactorWhitelist: ipWhitelist,
 
 				// P7: behavioural penalties, decay after 1hr
 				BehaviourPenaltyWeight: -10,
@@ -129,9 +134,9 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 						TimeInMeshCap:     1,
 
 						// deliveries decay after 1 hour, cap at 100 blocks
-						FirstMessageDeliveriesWeight: 5, // max value is 500
+						FirstMessageDeliveriesWeight: 5, // max value is 125
 						FirstMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(time.Hour),
-						FirstMessageDeliveriesCap:    100, // 100 blocks in an hour
+						FirstMessageDeliveriesCap:    25, // 100 blocks in an hour
 
 						// Mesh Delivery Failure is currently turned off for blocks
 						// This is on purpose as
@@ -203,7 +208,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 					},
 					build.MessagesTopic(in.Nn): {
 						// expected > 1 tx/second
-						TopicWeight: 0.05, // max is 25, max mesh penalty is -5, single invalid message is -100
+						TopicWeight: 0.1, // max is 25, max mesh penalty is -5, single invalid message is -100
 
 						// 1 tick per second, maxes at 1 hour
 						TimeInMeshWeight:  0.0002778, // ~1/3600
@@ -214,7 +219,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 						FirstMessageDeliveriesWeight: 0.5, // max value is 500
 						FirstMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(10 * time.Minute),
 						//FirstMessageDeliveriesCap:    1000,
-						FirstMessageDeliveriesCap: 1, // we can't yet properly validate them so only confer a tiny boost from delivery
+						FirstMessageDeliveriesCap: 100, // we can't yet properly validate them so only confer a tiny boost from delivery
 
 						// Mesh Delivery Failure is currently turned off for messages
 						// This is on purpose as the network is still too small, which results in
@@ -233,17 +238,17 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 						// MeshFailurePenaltyDecay:  pubsub.ScoreParameterDecay(5 * time.Minute),
 
 						// invalid messages decay after 1 hour
-						InvalidMessageDeliveriesWeight: -2000,
+						InvalidMessageDeliveriesWeight: -1000,
 						InvalidMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(time.Hour),
 					},
 				},
 			},
 			&pubsub.PeerScoreThresholds{
-				GossipThreshold:             -500,
-				PublishThreshold:            -1000,
+				GossipThreshold:             -800,
+				PublishThreshold:            -1500,
 				GraylistThreshold:           -250000,
 				AcceptPXThreshold:           1000,
-				OpportunisticGraftThreshold: 5,
+				OpportunisticGraftThreshold: 3.5,
 			},
 		),
 		pubsub.WithPeerScoreInspect(in.Sk.Update, 10*time.Second),
@@ -257,8 +262,8 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 		pubsub.GossipSubDlo = 0
 		pubsub.GossipSubDhi = 0
 		pubsub.GossipSubDout = 0
-		pubsub.GossipSubDlazy = 1024
-		pubsub.GossipSubGossipFactor = 0.5
+		pubsub.GossipSubDlazy = 128
+		pubsub.GossipSubGossipFactor = 0.25
 		// turn on PX
 		options = append(options, pubsub.WithPeerExchange(true))
 	}

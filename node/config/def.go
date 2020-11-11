@@ -62,9 +62,10 @@ type Libp2p struct {
 }
 
 type Pubsub struct {
-	Bootstrapper bool
-	DirectPeers  []string
-	RemoteTracer string
+	Bootstrapper          bool
+	DirectPeers           []string
+	RemoteTracer          string
+	IPColocationWhitelist []string
 }
 
 // // Full Node
@@ -99,9 +100,10 @@ func defCommon() Common {
 			ConnMgrGrace: Duration(20 * time.Second),
 		},
 		Pubsub: Pubsub{
-			Bootstrapper: false,
-			DirectPeers:  nil,
-			RemoteTracer: "/ip4/147.75.67.199/tcp/4001/p2p/QmTd6UvR47vUidRNZ1ZKXHrAFhqTJAD27rKL9XYghEKgKX",
+			Bootstrapper:          false,
+			DirectPeers:           []string{},
+			RemoteTracer:          "/ip4/147.75.67.199/tcp/4001/p2p/QmTd6UvR47vUidRNZ1ZKXHrAFhqTJAD27rKL9XYghEKgKX",
+			IPColocationWhitelist: []string{},
 		},
 	}
 
