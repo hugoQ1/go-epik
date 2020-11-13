@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
@@ -60,7 +61,10 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 		return xerrors.Errorf("could not listen: %w", err)
 	}
 
-	srv := &http.Server{Handler: http.DefaultServeMux}
+	srv := &http.Server{
+		Handler:     http.DefaultServeMux,
+		IdleTimeout: 10 * time.Minute,
+	}
 
 	sigCh := make(chan os.Signal, 2)
 	shutdownDone := make(chan struct{})
