@@ -5,6 +5,12 @@ import (
 	"errors"
 	"time"
 
+	"github.com/filecoin-project/go-state-types/network"
+
+	"github.com/filecoin-project/go-state-types/dline"
+
+	"github.com/filecoin-project/go-bitfield"
+
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	logging "github.com/ipfs/go-log/v2"
@@ -12,60 +18,88 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	sectorstorage "github.com/filecoin-project/sector-storage"
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	"github.com/filecoin-project/specs-actors/actors/crypto"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/crypto"
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
+	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
-	sealing "github.com/filecoin-project/storage-fsm"
 )
 
 var log = logging.Logger("storageminer")
 
 type Miner struct {
 	api    storageMinerApi
+	feeCfg config.MinerFeeConfig
 	h      host.Host
 	sealer sectorstorage.SectorManager
 	ds     datastore.Batching
 	sc     sealing.SectorIDCounter
 	verif  ffiwrapper.Verifier
 
-	maddr  address.Address
-	worker address.Address
+	maddr address.Address
 
-	sealing *sealing.Sealing
+	getSealConfig dtypes.GetSealingConfigFunc
+	sealing       *sealing.Sealing
+
+	sealingEvtType journal.EventType
+
+	journal journal.Journal
+}
+
+// SealingStateEvt is a journal event that records a sector state transition.
+type SealingStateEvt struct {
+	SectorNumber abi.SectorNumber
+	SectorType   abi.RegisteredSealProof
+	From         sealing.SectorState
+	After        sealing.SectorState
+	Error        string
 }
 
 type storageMinerApi interface {
 	// Call a read only method on actors (no interaction with the chain required)
 	StateCall(context.Context, *types.Message, types.TipSetKey) (*api.InvocResult, error)
-	StateMinerDeadlines(ctx context.Context, maddr address.Address, tok types.TipSetKey) (*miner.Deadlines, error)
-	StateMinerSectors(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*api.ChainSectorInfo, error)
+	StateMinerSectors(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error)
 	StateSectorPreCommitInfo(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error)
 	StateSectorGetInfo(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorOnChainInfo, error)
-	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (api.MinerInfo, error)
-	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*miner.DeadlineInfo, error)
-	StateMinerInitialPledgeCollateral(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (types.BigInt, error)
+	StateSectorPartition(ctx context.Context, maddr address.Address, sectorNumber abi.SectorNumber, tok types.TipSetKey) (*miner.SectorLocation, error)
+	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
+	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)
+	StateMinerPartitions(context.Context, address.Address, uint64, types.TipSetKey) ([]api.Partition, error)
+	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
+	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
+	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
+	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)
+	StateSearchMsg(context.Context, cid.Cid) (*api.MsgLookup, error)
 	StateWaitMsg(ctx context.Context, cid cid.Cid, confidence uint64) (*api.MsgLookup, error) // TODO: removeme eventually
 	StateGetActor(ctx context.Context, actor address.Address, ts types.TipSetKey) (*types.Actor, error)
 	StateGetReceipt(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)
 	StateMarketStorageDeal(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)
-	StateMinerFaults(context.Context, address.Address, types.TipSetKey) (*abi.BitField, error)
-	StateMinerRecoveries(context.Context, address.Address, types.TipSetKey) (*abi.BitField, error)
+	StateMinerFaults(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
+	StateMinerRecoveries(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
+	StateAccountKey(context.Context, address.Address, types.TipSetKey) (address.Address, error)
+	StateNetworkVersion(context.Context, types.TipSetKey) (network.Version, error)
 
-	MpoolPushMessage(context.Context, *types.Message) (*types.SignedMessage, error)
+	MpoolPushMessage(context.Context, *types.Message, *api.MessageSendSpec) (*types.SignedMessage, error)
+
+	GasEstimateMessageGas(context.Context, *types.Message, *api.MessageSendSpec, types.TipSetKey) (*types.Message, error)
 
 	ChainHead(context.Context) (*types.TipSet, error)
 	ChainNotify(context.Context) (<-chan []*api.HeadChange, error)
-	ChainGetRandomness(ctx context.Context, tsk types.TipSetKey, personalization crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainGetRandomnessFromTickets(ctx context.Context, tsk types.TipSetKey, personalization crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainGetRandomnessFromBeacon(ctx context.Context, tsk types.TipSetKey, personalization crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
 	ChainGetTipSetByHeight(context.Context, abi.ChainEpoch, types.TipSetKey) (*types.TipSet, error)
 	ChainGetBlockMessages(context.Context, cid.Cid) (*api.BlockMessages, error)
 	ChainGetBlockRewards(context.Context, cid.Cid) (*api.BlockRewards, error)
@@ -78,17 +112,20 @@ type storageMinerApi interface {
 	WalletHas(context.Context, address.Address) (bool, error)
 }
 
-func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier) (*Miner, error) {
+func NewMiner(api storageMinerApi, maddr address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, journal journal.Journal) (*Miner, error) {
 	m := &Miner{
 		api:    api,
+		feeCfg: feeCfg,
 		h:      h,
 		sealer: sealer,
 		ds:     ds,
 		sc:     sc,
 		verif:  verif,
 
-		maddr:  maddr,
-		worker: worker,
+		maddr:          maddr,
+		getSealConfig:  gsd,
+		journal:        journal,
+		sealingEvtType: journal.RegisterEventType("storage", "sealing_states"),
 	}
 
 	return m, nil
@@ -104,14 +141,32 @@ func (m *Miner) Run(ctx context.Context) error {
 		return xerrors.Errorf("getting miner info: %w", err)
 	}
 
+	fc := sealing.FeeConfig{
+		MaxPreCommitGasFee: abi.TokenAmount(m.feeCfg.MaxPreCommitGasFee),
+		MaxCommitGasFee:    abi.TokenAmount(m.feeCfg.MaxCommitGasFee),
+	}
+
 	evts := events.NewEvents(ctx, m.api)
 	adaptedAPI := NewSealingAPIAdapter(m.api)
-	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, 10000000, md.PeriodStart%miner.WPoStProvingPeriod)
-	m.sealing = sealing.New(adaptedAPI, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp)
+	// TODO: Maybe we update this policy after actor upgrades?
+	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, policy.GetMaxSectorExpirationExtension()-(md.WPoStProvingPeriod*2), md.PeriodStart%md.WPoStProvingPeriod)
+	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig), m.handleSealingNotifications)
 
 	go m.sealing.Run(ctx) //nolint:errcheck // logged intside the function
 
 	return nil
+}
+
+func (m *Miner) handleSealingNotifications(before, after sealing.SectorInfo) {
+	m.journal.RecordEvent(m.sealingEvtType, func() interface{} {
+		return SealingStateEvt{
+			SectorNumber: before.SectorNumber,
+			SectorType:   before.SectorType,
+			From:         before.State,
+			After:        after.State,
+			Error:        after.LastErr,
+		}
+	})
 }
 
 func (m *Miner) Stop(ctx context.Context) error {
@@ -119,7 +174,17 @@ func (m *Miner) Stop(ctx context.Context) error {
 }
 
 func (m *Miner) runPreflightChecks(ctx context.Context) error {
-	has, err := m.api.WalletHas(ctx, m.worker)
+	mi, err := m.api.StateMinerInfo(ctx, m.maddr, types.EmptyTSK)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve miner info: %w", err)
+	}
+
+	workerKey, err := m.api.StateAccountKey(ctx, mi.Worker, types.EmptyTSK)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve worker key: %w", err)
+	}
+
+	has, err := m.api.WalletHas(ctx, workerKey)
 	if err != nil {
 		return xerrors.Errorf("failed to check wallet for worker key: %w", err)
 	}
@@ -128,7 +193,7 @@ func (m *Miner) runPreflightChecks(ctx context.Context) error {
 		return errors.New("key for worker not found in local wallet")
 	}
 
-	log.Infof("starting up miner %s, worker addr %s", m.maddr, m.worker)
+	log.Infof("starting up miner %s, worker addr %s", m.maddr, workerKey)
 	return nil
 }
 
@@ -164,13 +229,19 @@ func NewWinningPoStProver(api api.FullNode, prover storage.Prover, verifier ffiw
 		return nil, err
 	}
 
+	if build.InsecurePoStValidation {
+		log.Warn("*****************************************************************************")
+		log.Warn(" Generating fake PoSt proof! You should only see this while running tests! ")
+		log.Warn("*****************************************************************************")
+	}
+
 	return &StorageWpp{prover, verifier, abi.ActorID(miner), wpt}, nil
 }
 
 var _ gen.WinningPoStProver = (*StorageWpp)(nil)
 
 func (wpp *StorageWpp) GenerateCandidates(ctx context.Context, randomness abi.PoStRandomness, eligibleSectorCount uint64) ([]uint64, error) {
-	start := time.Now()
+	start := build.Clock.Now()
 
 	cds, err := wpp.verifier.GenerateWinningPoStSectorChallenge(ctx, wpp.winnRpt, wpp.miner, randomness, eligibleSectorCount)
 	if err != nil {
@@ -180,15 +251,14 @@ func (wpp *StorageWpp) GenerateCandidates(ctx context.Context, randomness abi.Po
 	return cds, nil
 }
 
-func (wpp *StorageWpp) ComputeProof(ctx context.Context, ssi []abi.SectorInfo, rand abi.PoStRandomness) ([]abi.PoStProof, error) {
+func (wpp *StorageWpp) ComputeProof(ctx context.Context, ssi []builtin.SectorInfo, rand abi.PoStRandomness) ([]builtin.PoStProof, error) {
 	if build.InsecurePoStValidation {
-		log.Warn("Generating fake EPost proof! You should only see this while running tests!")
-		return []abi.PoStProof{{ProofBytes: []byte("valid proof")}}, nil
+		return []builtin.PoStProof{{ProofBytes: []byte("valid proof")}}, nil
 	}
 
 	log.Infof("Computing WinningPoSt ;%+v; %v", ssi, rand)
 
-	start := time.Now()
+	start := build.Clock.Now()
 	proof, err := wpp.prover.GenerateWinningPoSt(ctx, wpp.miner, ssi, rand)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -13,7 +14,9 @@ import (
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr/net"
+	promclient "github.com/prometheus/client_golang/prometheus"
+	"go.opencensus.io/tag"
 	"golang.org/x/xerrors"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -23,6 +26,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
@@ -31,7 +35,7 @@ var log = logging.Logger("main")
 
 func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shutdownCh <-chan struct{}) error {
 	rpcServer := jsonrpc.NewServer()
-	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(a))
+	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(metrics.MetricedFullAPI(a)))
 
 	ah := &auth.Handler{
 		Verify: a.AuthVerify,
@@ -47,7 +51,16 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 
 	http.Handle("/rest/v0/import", importAH)
 
+	// Prometheus globals are exposed as interfaces, but the prometheus
+	// OpenCensus exporter expects a concrete *Registry. The concrete type of
+	// the globals are actually *Registry, so we downcast them, staying
+	// defensive in case things change under the hood.
+	registry, ok := promclient.DefaultRegisterer.(*promclient.Registry)
+	if !ok {
+		log.Warnf("failed to export default prometheus registry; some metrics will be unavailable; unexpected type: %T", promclient.DefaultRegisterer)
+	}
 	exporter, err := prometheus.NewExporter(prometheus.Options{
+		Registry:  registry,
 		Namespace: "EpiK",
 	})
 	if err != nil {
@@ -62,16 +75,21 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 	}
 
 	srv := &http.Server{
-		Handler:     http.DefaultServeMux,
-		IdleTimeout: 10 * time.Minute,
+		Handler: http.DefaultServeMux,
+		BaseContext: func(listener net.Listener) context.Context {
+			ctx, _ := tag.New(context.Background(), tag.Upsert(metrics.APIInterface, "epik-daemon"))
+			return ctx
+		},
 	}
 
 	sigCh := make(chan os.Signal, 2)
 	shutdownDone := make(chan struct{})
 	go func() {
 		select {
-		case <-sigCh:
+		case sig := <-sigCh:
+			log.Warnw("received shutdown", "signal", sig)
 		case <-shutdownCh:
+			log.Warn("received shutdown")
 		}
 
 		log.Warn("Shutting down...")

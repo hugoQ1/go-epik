@@ -7,12 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/filecoin-project/specs-actors/actors/crypto"
-
+	"github.com/filecoin-project/go-address"
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
-	"github.com/filecoin-project/go-address"
 
 	"github.com/urfave/cli/v2"
 )
@@ -60,7 +59,7 @@ var runCmd = &cli.Command{
 func sendSmallFundsTxs(ctx context.Context, api api.FullNode, from address.Address, rate int) error {
 	var sendSet []address.Address
 	for i := 0; i < 20; i++ {
-		naddr, err := api.WalletNew(ctx, crypto.SigTypeSecp256k1)
+		naddr, err := api.WalletNew(ctx, types.KTSecp256k1)
 		if err != nil {
 			return err
 		}
@@ -68,19 +67,17 @@ func sendSmallFundsTxs(ctx context.Context, api api.FullNode, from address.Addre
 		sendSet = append(sendSet, naddr)
 	}
 
-	tick := time.NewTicker(time.Second / time.Duration(rate))
+	tick := build.Clock.Ticker(time.Second / time.Duration(rate))
 	for {
 		select {
 		case <-tick.C:
 			msg := &types.Message{
-				From:     from,
-				To:       sendSet[rand.Intn(20)],
-				Value:    types.NewInt(1),
-				GasLimit: 100000,
-				GasPrice: types.NewInt(0),
+				From:  from,
+				To:    sendSet[rand.Intn(20)],
+				Value: types.NewInt(1),
 			}
 
-			smsg, err := api.MpoolPushMessage(ctx, msg)
+			smsg, err := api.MpoolPushMessage(ctx, msg, nil)
 			if err != nil {
 				return err
 			}
@@ -89,6 +86,4 @@ func sendSmallFundsTxs(ctx context.Context, api api.FullNode, from address.Addre
 			return nil
 		}
 	}
-
-	return nil
 }

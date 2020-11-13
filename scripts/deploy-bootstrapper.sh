@@ -9,16 +9,18 @@ host=$1
 log "> Deploying bootstrap node $host"
 log "Stopping epik daemon"
 
+log "Stopping epik daemon"
+
 ssh "$host" 'systemctl stop epik-daemon' &
-ssh "$host" 'systemctl stop epik-storage-miner' &
+ssh "$host" 'systemctl stop epik-miner' &
 
 wait
 
 ssh "$host" 'rm -rf .epik' &
-ssh "$host" 'rm -rf .epikstorage' &
+ssh "$host" 'rm -rf .epikminer' &
 
 scp -C epik "${host}":/usr/local/bin/epik &
-scp -C epik-storage-miner "${host}":/usr/local/bin/epik-storage-miner &
+scp -C epik-miner "${host}":/usr/local/bin/epik-miner &
 
 wait
 

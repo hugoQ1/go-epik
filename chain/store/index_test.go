@@ -5,13 +5,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	datastore "github.com/ipfs/go-datastore"
 	syncds "github.com/ipfs/go-datastore/sync"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,8 +30,8 @@ func TestIndexSeeks(t *testing.T) {
 
 	ctx := context.TODO()
 
-	nbs := blockstore.NewBlockstore(syncds.MutexWrap(datastore.NewMapDatastore()))
-	cs := store.NewChainStore(nbs, syncds.MutexWrap(datastore.NewMapDatastore()), nil)
+	nbs := blockstore.NewTemporarySync()
+	cs := store.NewChainStore(nbs, nbs, syncds.MutexWrap(datastore.NewMapDatastore()), nil, nil)
 
 	_, err = cs.Import(bytes.NewReader(gencar))
 	if err != nil {
@@ -42,7 +42,7 @@ func TestIndexSeeks(t *testing.T) {
 	if err := cs.PutTipSet(ctx, mock.TipSet(gen)); err != nil {
 		t.Fatal(err)
 	}
-	cs.SetGenesis(gen)
+	assert.NoError(t, cs.SetGenesis(gen))
 
 	// Put 113 blocks from genesis
 	for i := 0; i < 113; i++ {

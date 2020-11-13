@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/sector-storage/stores"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 )
 
 func StorageFromFile(path string, def *stores.StorageConfig) (*stores.StorageConfig, error) {

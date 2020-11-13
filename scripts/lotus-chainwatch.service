@@ -1,0 +1,15 @@
+[Unit]
+Description=Chainwatch
+After=epik-daemon.service
+Requires=epik-daemon.service
+
+[Service]
+Environment=GOLOG_FILE="/var/log/epik/chainwatch.log"
+Environment=GOLOG_LOG_FMT="json"
+Environment=EPIK_DB=""
+Environment=EPIK_PATH="%h/.epik"
+EnvironmentFile=-/etc/epik/chainwatch.env
+ExecStart=/usr/local/bin/epik-chainwatch run
+
+[Install]
+WantedBy=multi-user.target

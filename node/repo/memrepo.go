@@ -15,8 +15,10 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/config"
-	"github.com/filecoin-project/sector-storage/stores"
 )
 
 type MemRepo struct {
@@ -29,8 +31,9 @@ type MemRepo struct {
 	repoLock chan struct{}
 	token    *byte
 
-	datastore datastore.Datastore
-	keystore  map[string]types.KeyInfo
+	datastore  datastore.Datastore
+	keystore   map[string]types.KeyInfo
+	blockstore blockstore.Blockstore
 
 	// given a repo type, produce the default config
 	configF func(t RepoType) interface{}
@@ -77,8 +80,16 @@ func (lmem *lockedMemRepo) SetStorage(c func(*stores.StorageConfig)) error {
 	return nil
 }
 
-func (lmem *lockedMemRepo) Stat(path string) (stores.FsStat, error) {
-	return stores.Stat(path)
+func (lmem *lockedMemRepo) Stat(path string) (fsutil.FsStat, error) {
+	return fsutil.Statfs(path)
+}
+
+func (lmem *lockedMemRepo) DiskUsage(path string) (int64, error) {
+	si, err := fsutil.FileSize(path)
+	if err != nil {
+		return 0, err
+	}
+	return si.OnDisk, nil
 }
 
 func (lmem *lockedMemRepo) Path() string {
@@ -148,11 +159,11 @@ func NewMemory(opts *MemRepoOptions) *MemRepo {
 	}
 
 	return &MemRepo{
-		repoLock: make(chan struct{}, 1),
-
-		datastore: opts.Ds,
-		configF:   opts.ConfigF,
-		keystore:  opts.KeyStore,
+		repoLock:   make(chan struct{}, 1),
+		blockstore: blockstore.WrapIDStore(blockstore.NewTemporarySync()),
+		datastore:  opts.Ds,
+		configF:    opts.ConfigF,
+		keystore:   opts.KeyStore,
 	}
 }
 
@@ -231,6 +242,22 @@ func (lmem *lockedMemRepo) Datastore(ns string) (datastore.Batching, error) {
 	}
 
 	return namespace.Wrap(lmem.mem.datastore, datastore.NewKey(ns)), nil
+}
+
+func (lmem *lockedMemRepo) Blockstore(domain BlockstoreDomain) (blockstore.Blockstore, error) {
+	if domain != BlockstoreChain {
+		return nil, ErrInvalidBlockstoreDomain
+	}
+	return lmem.mem.blockstore, nil
+}
+
+func (lmem *lockedMemRepo) ListDatastores(ns string) ([]int64, error) {
+	return nil, nil
+}
+
+func (lmem *lockedMemRepo) DeleteDatastore(ns string) error {
+	/** poof **/
+	return nil
 }
 
 func (lmem *lockedMemRepo) Config() (interface{}, error) {

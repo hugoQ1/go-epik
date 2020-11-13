@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	xerrors "golang.org/x/xerrors"
 
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -19,6 +20,11 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
 	cborutil "github.com/filecoin-project/go-cbor-util"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
 )
 
 const ProtocolID = "/epk/hello/1.0.0"
@@ -32,8 +38,8 @@ type HelloMessage struct {
 	GenesisHash          cid.Cid
 }
 type LatencyMessage struct {
-	TArrial int64
-	TSent   int64
+	TArrival int64
+	TSent    int64
 }
 
 type NewStreamFunc func(context.Context, peer.ID, ...protocol.ID) (inet.Stream, error)
@@ -67,7 +73,7 @@ func (hs *Service) HandleStream(s inet.Stream) {
 		_ = s.Conn().Close()
 		return
 	}
-	arrived := time.Now()
+	arrived := build.Clock.Now()
 
 	log.Debugw("genesis from hello",
 		"tipset", hmsg.HeaviestTipSet,
@@ -82,10 +88,10 @@ func (hs *Service) HandleStream(s inet.Stream) {
 	go func() {
 		defer s.Close() //nolint:errcheck
 
-		sent := time.Now()
+		sent := build.Clock.Now()
 		msg := &LatencyMessage{
-			TArrial: arrived.UnixNano(),
-			TSent:   sent.UnixNano(),
+			TArrival: arrived.UnixNano(),
+			TSent:    sent.UnixNano(),
 		}
 		if err := cborutil.WriteCborRPC(s, msg); err != nil {
 			log.Debugf("error while responding to latency: %v", err)
@@ -99,7 +105,11 @@ func (hs *Service) HandleStream(s inet.Stream) {
 	if len(protos) == 0 {
 		log.Warn("other peer hasnt completed libp2p identify, waiting a bit")
 		// TODO: this better
-		time.Sleep(time.Millisecond * 300)
+		build.Clock.Sleep(time.Millisecond * 300)
+	}
+
+	if hs.pmgr != nil {
+		hs.pmgr.AddFilecoinPeer(s.Conn().RemotePeer())
 	}
 
 	ts, err := hs.syncer.FetchTipSet(context.Background(), s.Conn().RemotePeer(), types.NewTipSetKey(hmsg.HeaviestTipSet...))
@@ -112,11 +122,8 @@ func (hs *Service) HandleStream(s inet.Stream) {
 		hs.h.ConnManager().TagPeer(s.Conn().RemotePeer(), "fcpeer", 10)
 
 		// don't bother informing about genesis
-		log.Infof("Got new tipset through Hello: %s from %s", ts.Cids(), s.Conn().RemotePeer())
+		log.Debugf("Got new tipset through Hello: %s from %s", ts.Cids(), s.Conn().RemotePeer())
 		hs.syncer.InformNewHead(s.Conn().RemotePeer(), ts)
-	}
-	if hs.pmgr != nil {
-		hs.pmgr.AddFilecoinPeer(s.Conn().RemotePeer())
 	}
 
 }
@@ -124,7 +131,7 @@ func (hs *Service) HandleStream(s inet.Stream) {
 func (hs *Service) SayHello(ctx context.Context, pid peer.ID) error {
 	s, err := hs.h.NewStream(ctx, pid, ProtocolID)
 	if err != nil {
-		return err
+		return xerrors.Errorf("error opening stream: %w", err)
 	}
 
 	hts := hs.cs.GetHeaviestTipSet()
@@ -146,22 +153,22 @@ func (hs *Service) SayHello(ctx context.Context, pid peer.ID) error {
 	}
 	log.Debug("Sending hello message: ", hts.Cids(), hts.Height(), gen.Cid())
 
-	t0 := time.Now()
+	t0 := build.Clock.Now()
 	if err := cborutil.WriteCborRPC(s, hmsg); err != nil {
-		return err
+		return xerrors.Errorf("writing rpc to peer: %w", err)
 	}
 
 	go func() {
 		defer s.Close() //nolint:errcheck
 
 		lmsg := &LatencyMessage{}
-		_ = s.SetReadDeadline(time.Now().Add(10 * time.Second))
+		_ = s.SetReadDeadline(build.Clock.Now().Add(10 * time.Second))
 		err := cborutil.ReadCborRPC(s, lmsg)
 		if err != nil {
-			log.Infow("reading latency message", "error", err)
+			log.Debugw("reading latency message", "error", err)
 		}
 
-		t3 := time.Now()
+		t3 := build.Clock.Now()
 		lat := t3.Sub(t0)
 		// add to peer tracker
 		if hs.pmgr != nil {
@@ -169,12 +176,14 @@ func (hs *Service) SayHello(ctx context.Context, pid peer.ID) error {
 		}
 
 		if err == nil {
-			if lmsg.TArrial != 0 && lmsg.TSent != 0 {
-				t1 := time.Unix(0, lmsg.TArrial)
+			if lmsg.TArrival != 0 && lmsg.TSent != 0 {
+				t1 := time.Unix(0, lmsg.TArrival)
 				t2 := time.Unix(0, lmsg.TSent)
 				offset := t0.Sub(t1) + t3.Sub(t2)
 				offset /= 2
-				log.Infow("time offset", "offset", offset.Seconds(), "peerid", pid.String())
+				if offset > 5*time.Second || offset < -5*time.Second {
+					log.Infow("time offset", "offset", offset.Seconds(), "peerid", pid.String())
+				}
 			}
 		}
 	}()

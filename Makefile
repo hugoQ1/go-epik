@@ -58,10 +58,10 @@ deps: $(BUILD_DEPS)
 .PHONY: deps
 
 debug: GOFLAGS+=-tags=debug
-debug: epik epik-storage-miner epik-seal-worker epik-seed
+debug: epik epik-miner epik-worker epik-seed
 
 2k: GOFLAGS+=-tags=2k
-2k: epik epik-storage-miner epik-seal-worker epik-seed
+2k: epik epik-miner epik-worker epik-seed
 
 epik: $(BUILD_DEPS)
 	rm -f epik
@@ -71,19 +71,19 @@ epik: $(BUILD_DEPS)
 .PHONY: epik
 BINS+=epik
 
-epik-storage-miner: $(BUILD_DEPS)
-	rm -f epik-storage-miner
-	go build $(GOFLAGS) -o epik-storage-miner ./cmd/epik-storage-miner
-	go run github.com/GeertJohan/go.rice/rice append --exec epik-storage-miner -i ./build
-.PHONY: epik-storage-miner
-BINS+=epik-storage-miner
+epik-miner: $(BUILD_DEPS)
+	rm -f epik-miner
+	go build $(GOFLAGS) -o epik-miner ./cmd/epik-storage-miner
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-miner -i ./build
+.PHONY: epik-miner
+BINS+=epik-miner
 
-epik-seal-worker: $(BUILD_DEPS)
-	rm -f epik-seal-worker
-	go build $(GOFLAGS) -o epik-seal-worker ./cmd/epik-seal-worker
-	go run github.com/GeertJohan/go.rice/rice append --exec epik-seal-worker -i ./build
-.PHONY: epik-seal-worker
-BINS+=epik-seal-worker
+epik-worker: $(BUILD_DEPS)
+	rm -f epik-worker
+	go build $(GOFLAGS) -o epik-worker ./cmd/epik-seal-worker
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-worker -i ./build
+.PHONY: epik-worker
+BINS+=epik-worker
 
 epik-shed: $(BUILD_DEPS)
 	rm -f epik-shed
@@ -92,31 +92,28 @@ epik-shed: $(BUILD_DEPS)
 .PHONY: epik-shed
 BINS+=epik-shed
 
-build: epik epik-storage-miner epik-seal-worker
+epik-gateway: $(BUILD_DEPS)
+	rm -f epik-gateway
+	go build $(GOFLAGS) -o epik-gateway ./cmd/epik-gateway
+.PHONY: epik-gateway
+BINS+=epik-gateway
+
+build: epik epik-miner epik-worker
 	@[[ $$(type -P "epik") ]] && echo "Caution: you have \
 an existing epik binary in your PATH. This may cause problems if you don't run 'sudo make install'" || true
 
 .PHONY: build
 
-install:
+install: install-daemon install-miner install-worker
+
+install-daemon:
 	install -C ./epik /usr/local/bin/epik
-	install -C ./epik-storage-miner /usr/local/bin/epik-storage-miner
-	install -C ./epik-seal-worker /usr/local/bin/epik-seal-worker
 
-install-services: install
-	mkdir -p /usr/local/lib/systemd/system
-	mkdir -p /var/log/epik
-	install -C -m 0644 ./scripts/epik-daemon.service /usr/local/lib/systemd/system/epik-daemon.service
-	install -C -m 0644 ./scripts/epik-miner.service /usr/local/lib/systemd/system/epik-miner.service
-	systemctl daemon-reload
-	@echo
-	@echo "epik-daemon and epik-miner services installed. Don't forget to 'systemctl enable epik-daemon|epik-miner' for it to be enabled on startup."
+install-miner:
+	install -C ./epik-miner /usr/local/bin/epik-miner
 
-clean-services:
-	rm -f /usr/local/lib/systemd/system/epik-daemon.service
-	rm -f /usr/local/lib/systemd/system/epik-miner.service
-	rm -f /usr/local/lib/systemd/system/chainwatch.service
-	systemctl daemon-reload
+install-worker:
+	install -C ./epik-worker /usr/local/bin/epik-worker
 
 # TOOLS
 
@@ -134,67 +131,142 @@ benchmarks:
 	@curl -X POST 'http://benchmark.kittyhawk.wtf/benchmark' -d '@bench.json' -u "${benchmark_http_cred}"
 .PHONY: benchmarks
 
-pond: 2k
-	go build -o pond ./epikpond
+epik-pond: 2k
+	go build -o epik-pond ./epikpond
+.PHONY: epik-pond
+BINS+=epik-pond
+
+epik-pond-front:
 	(cd epikpond/front && npm i && CI=false npm run build)
-.PHONY: pond
-BINS+=pond
+.PHONY: epik-pond-front
 
-townhall:
-	rm -f townhall
-	go build -o townhall ./cmd/epik-townhall
+epik-pond-app: epik-pond-front epik-pond
+.PHONY: epik-pond-app
+
+epik-townhall:
+	rm -f epik-townhall
+	go build -o epik-townhall ./cmd/epik-townhall
+.PHONY: epik-townhall
+BINS+=epik-townhall
+
+epik-townhall-front:
 	(cd ./cmd/epik-townhall/townhall && npm i && npm run build)
-	go run github.com/GeertJohan/go.rice/rice append --exec townhall -i ./cmd/epik-townhall -i ./build
-.PHONY: townhall
-BINS+=townhall
+.PHONY: epik-townhall-front
 
-fountain:
-	rm -f fountain
-	go build -o fountain ./cmd/epik-fountain
-	go run github.com/GeertJohan/go.rice/rice append --exec fountain -i ./cmd/epik-fountain -i ./build
-.PHONY: fountain
-BINS+=fountain
+epik-townhall-app: epik-touch epik-townhall-front
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-townhall -i ./cmd/epik-townhall -i ./build
+.PHONY: epik-townhall-app
 
-chainwatch:
-	rm -f chainwatch
-	go build -o chainwatch ./cmd/epik-chainwatch
-.PHONY: chainwatch
-BINS+=chainwatch
+epik-fountain:
+	rm -f epik-fountain
+	go build -o epik-fountain ./cmd/epik-fountain
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-fountain -i ./cmd/epik-fountain -i ./build
+.PHONY: epik-fountain
+BINS+=epik-fountain
 
-install-chainwatch-service: chainwatch
-	install -C ./chainwatch /usr/local/bin/chainwatch
-	install -C -m 0644 ./scripts/chainwatch.service /usr/local/lib/systemd/system/chainwatch.service
-	systemctl daemon-reload
-	@echo
-	@echo "chainwatch installed. Don't forget to 'systemctl enable chainwatch' for it to be enabled on startup."
+epik-chainwatch:
+	rm -f epik-chainwatch
+	go build $(GOFLAGS) -o epik-chainwatch ./cmd/epik-chainwatch
+.PHONY: epik-chainwatch
+BINS+=epik-chainwatch
 
-bench:
-	rm -f bench
-	go build -o bench ./cmd/epik-bench
-	go run github.com/GeertJohan/go.rice/rice append --exec bench -i ./build
-.PHONY: bench
-BINS+=bench
+epik-bench:
+	rm -f epik-bench
+	go build -o epik-bench ./cmd/epik-bench
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-bench -i ./build
+.PHONY: epik-bench
+BINS+=epik-bench
 
-stats:
-	rm -f stats
-	go build -o stats ./tools/stats
-	go run github.com/GeertJohan/go.rice/rice append --exec stats -i ./build
-.PHONY: stats
-BINS+=stats
+epik-stats:
+	rm -f epik-stats
+	go build $(GOFLAGS) -o epik-stats ./cmd/epik-stats
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-stats -i ./build
+.PHONY: epik-stats
+BINS+=epik-stats
 
-health:
+epik-pcr:
+	rm -f epik-pcr
+	go build $(GOFLAGS) -o epik-pcr ./cmd/epik-pcr
+	go run github.com/GeertJohan/go.rice/rice append --exec epik-pcr -i ./build
+.PHONY: epik-pcr
+BINS+=epik-pcr
+
+epik-health:
 	rm -f epik-health
 	go build -o epik-health ./cmd/epik-health
 	go run github.com/GeertJohan/go.rice/rice append --exec epik-health -i ./build
+.PHONY: epik-health
+BINS+=epik-health
 
-.PHONY: health
-BINS+=health
+epik-wallet:
+	rm -f epik-wallet
+	go build -o epik-wallet ./cmd/epik-wallet
+.PHONY: epik-wallet
+BINS+=epik-wallet
 
 testground:
 	go build -tags testground -o /dev/null ./cmd/epik
-
 .PHONY: testground
 BINS+=testground
+
+install-chainwatch: epik-chainwatch
+	install -C ./epik-chainwatch /usr/local/bin/epik-chainwatch
+
+# SYSTEMD
+
+install-daemon-service: install-daemon
+	mkdir -p /etc/systemd/system
+	mkdir -p /var/log/epik
+	install -C -m 0644 ./scripts/epik-daemon.service /etc/systemd/system/epik-daemon.service
+	systemctl daemon-reload
+	@echo
+	@echo "epik-daemon service installed. Don't forget to run 'sudo systemctl start epik-daemon' to start it and 'sudo systemctl enable epik-daemon' for it to be enabled on startup."
+
+install-miner-service: install-miner install-daemon-service
+	mkdir -p /etc/systemd/system
+	mkdir -p /var/log/epik
+	install -C -m 0644 ./scripts/epik-miner.service /etc/systemd/system/epik-miner.service
+	systemctl daemon-reload
+	@echo
+	@echo "epik-miner service installed. Don't forget to run 'sudo systemctl start epik-miner' to start it and 'sudo systemctl enable epik-miner' for it to be enabled on startup."
+
+install-chainwatch-service: install-chainwatch install-daemon-service
+	mkdir -p /etc/systemd/system
+	mkdir -p /var/log/epik
+	install -C -m 0644 ./scripts/epik-chainwatch.service /etc/systemd/system/epik-chainwatch.service
+	systemctl daemon-reload
+	@echo
+	@echo "chainwatch service installed. Don't forget to run 'sudo systemctl start epik-chainwatch' to start it and 'sudo systemctl enable epik-chainwatch' for it to be enabled on startup."
+
+install-main-services: install-miner-service
+
+install-all-services: install-main-services install-chainwatch-service
+
+install-services: install-main-services
+
+clean-daemon-service: clean-miner-service clean-chainwatch-service
+	-systemctl stop epik-daemon
+	-systemctl disable epik-daemon
+	rm -f /etc/systemd/system/epik-daemon.service
+	systemctl daemon-reload
+
+clean-miner-service:
+	-systemctl stop epik-miner
+	-systemctl disable epik-miner
+	rm -f /etc/systemd/system/epik-miner.service
+	systemctl daemon-reload
+
+clean-chainwatch-service:
+	-systemctl stop epik-chainwatch
+	-systemctl disable epik-chainwatch
+	rm -f /etc/systemd/system/epik-chainwatch.service
+	systemctl daemon-reload
+
+clean-main-services: clean-daemon-service
+
+clean-all-services: clean-main-services
+
+clean-services: clean-all-services
 
 # MISC
 
@@ -202,15 +274,15 @@ buildall: $(BINS)
 
 completions:
 	./scripts/make-completions.sh epik
-	./scripts/make-completions.sh epik-storage-miner
+	./scripts/make-completions.sh epik-miner
 .PHONY: completions
 
 install-completions:
 	mkdir -p /usr/share/bash-completion/completions /usr/local/share/zsh/site-functions/
 	install -C ./scripts/bash-completion/epik /usr/share/bash-completion/completions/epik
-	install -C ./scripts/bash-completion/epik-storage-miner /usr/share/bash-completion/completions/epik-storage-miner
+	install -C ./scripts/bash-completion/epik-miner /usr/share/bash-completion/completions/epik-miner
 	install -C ./scripts/zsh-completion/epik /usr/local/share/zsh/site-functions/_epik
-	install -C ./scripts/zsh-completion/epik-storage-miner /usr/local/share/zsh/site-functions/_epik-storage-miner
+	install -C ./scripts/zsh-completion/epik-miner /usr/local/share/zsh/site-functions/_epik-miner
 
 clean:
 	rm -rf $(CLEAN) $(BINS)
@@ -224,11 +296,17 @@ dist-clean:
 
 type-gen:
 	go run ./gen/main.go
+	go generate ./...
 
 method-gen:
 	(cd ./epikpond/front/src/chain && go run ./methodgen.go)
 
 gen: type-gen method-gen
+
+docsgen:
+	go run ./api/docgen "api/api_full.go" "FullNode" > documentation/en/api-methods.md
+	go run ./api/docgen "api/api_storage.go" "StorageMiner" > documentation/en/api-methods-miner.md
+	go run ./api/docgen "api/api_worker.go" "WorkerAPI" > documentation/en/api-methods-worker.md
 
 print-%:
 	@echo $*=$($*)

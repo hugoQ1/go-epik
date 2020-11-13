@@ -3,23 +3,19 @@ package gen
 import (
 	"context"
 
-	amt "github.com/filecoin-project/go-amt-ipld/v2"
-	"github.com/filecoin-project/specs-actors/actors/crypto"
+	"github.com/filecoin-project/go-state-types/crypto"
+	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
 	cid "github.com/ipfs/go-cid"
-	cbor "github.com/ipfs/go-ipld-cbor"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 )
 
-func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w *wallet.Wallet, bt *api.BlockTemplate) (*types.FullBlock, error) {
+func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w api.WalletAPI, bt *api.BlockTemplate) (*types.FullBlock, error) {
 
 	pts, err := sm.ChainStore().LoadTipSet(bt.Parents)
 	if err != nil {
@@ -31,7 +27,12 @@ func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w *wallet.Wal
 		return nil, xerrors.Errorf("failed to load tipset state: %w", err)
 	}
 
-	worker, err := stmgr.GetMinerWorkerRaw(ctx, sm, st, bt.Miner)
+	_, lbst, err := stmgr.GetLookbackTipSetForRound(ctx, sm, pts, bt.Epoch)
+	if err != nil {
+		return nil, xerrors.Errorf("getting lookback miner actor state: %w", err)
+	}
+
+	worker, err := stmgr.GetMinerWorkerRaw(ctx, sm, lbst, bt.Miner)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get miner worker: %w", err)
 	}
@@ -78,17 +79,17 @@ func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w *wallet.Wal
 		}
 	}
 
-	bs := cbor.NewCborStore(sm.ChainStore().Blockstore())
-	blsmsgroot, err := amt.FromArray(ctx, bs, toIfArr(blsMsgCids))
+	store := sm.ChainStore().Store(ctx)
+	blsmsgroot, err := toArray(store, blsMsgCids)
 	if err != nil {
 		return nil, xerrors.Errorf("building bls amt: %w", err)
 	}
-	secpkmsgroot, err := amt.FromArray(ctx, bs, toIfArr(secpkMsgCids))
+	secpkmsgroot, err := toArray(store, secpkMsgCids)
 	if err != nil {
 		return nil, xerrors.Errorf("building secpk amt: %w", err)
 	}
 
-	mmcid, err := bs.Put(ctx, &types.MsgMeta{
+	mmcid, err := store.Put(store.Context(), &types.MsgMeta{
 		BlsMessages:   blsmsgroot,
 		SecpkMessages: secpkmsgroot,
 	})
@@ -109,23 +110,20 @@ func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w *wallet.Wal
 	}
 	next.ParentWeight = pweight
 
-	cst := cbor.NewCborStore(sm.ChainStore().Blockstore())
-	tree, err := state.LoadStateTree(cst, st)
+	baseFee, err := sm.ChainStore().ComputeBaseFee(ctx, pts)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load state tree: %w", err)
+		return nil, xerrors.Errorf("computing base fee: %w", err)
 	}
-
-	waddr, err := vm.ResolveToKeyAddr(tree, cst, worker)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to resolve miner address to key address: %w", err)
-	}
+	next.ParentBaseFee = baseFee
 
 	nosigbytes, err := next.SigningBytes()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get signing bytes for block: %w", err)
 	}
 
-	sig, err := w.Sign(ctx, waddr, nosigbytes)
+	sig, err := w.WalletSign(ctx, worker, nosigbytes, api.MsgMeta{
+		Type: api.MTBlock,
+	})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to sign new block: %w", err)
 	}
@@ -174,11 +172,13 @@ func aggregateSignatures(sigs []crypto.Signature) (*crypto.Signature, error) {
 	}, nil
 }
 
-func toIfArr(cids []cid.Cid) []cbg.CBORMarshaler {
-	out := make([]cbg.CBORMarshaler, 0, len(cids))
-	for _, c := range cids {
+func toArray(store blockadt.Store, cids []cid.Cid) (cid.Cid, error) {
+	arr := blockadt.MakeEmptyArray(store)
+	for i, c := range cids {
 		oc := cbg.CborCid(c)
-		out = append(out, &oc)
+		if err := arr.Set(uint64(i), &oc); err != nil {
+			return cid.Undef, err
+		}
 	}
-	return out
+	return arr.Root()
 }

@@ -1,13 +1,13 @@
 [Unit]
-Description=epik Storage Miner
+Description=Epik Miner
 After=network.target
 After=epik-daemon.service
-Requires=epik-daemon.service
+Wants=epik-daemon.service
 
 [Service]
-ExecStart=/usr/local/bin/epik-storage-miner run
+ExecStart=/usr/local/bin/epik-miner run
 Environment=GOLOG_FILE="/var/log/epik/miner.log"
 Environment=GOLOG_LOG_FMT="json"
 
 [Install]
-WantedBy=multiuser.target
+WantedBy=multi-user.target

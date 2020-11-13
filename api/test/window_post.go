@@ -3,30 +3,31 @@ package test
 import (
 	"context"
 	"fmt"
-	"os"
+	"sync/atomic"
+
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/EpiK-Protocol/go-epik/api"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/sector-storage/mock"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	miner2 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	sealing "github.com/filecoin-project/storage-fsm"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/mock"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	bminer "github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
 
 func TestPledgeSector(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int) {
-	os.Setenv("BELLMAN_NO_GPU", "1")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	ctx := context.Background()
-	n, sn := b(t, 1, oneMiner)
+	n, sn := b(t, OneFull, OneMiner)
 	client := n[0].FullNode.(*impl.FullNodeAPI)
 	miner := sn[0]
 
@@ -38,41 +39,46 @@ func TestPledgeSector(t *testing.T, b APIBuilder, blocktime time.Duration, nSect
 	if err := miner.NetConnect(ctx, addrinfo); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(time.Second)
+	build.Clock.Sleep(time.Second)
 
-	mine := true
+	mine := int64(1)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		for mine {
-			time.Sleep(blocktime)
-			if err := sn[0].MineOne(ctx, func(bool, error) {}); err != nil {
+		for atomic.LoadInt64(&mine) != 0 {
+			build.Clock.Sleep(blocktime)
+			if err := sn[0].MineOne(ctx, bminer.MineReq{Done: func(bool, abi.ChainEpoch, error) {
+
+			}}); err != nil {
 				t.Error(err)
 			}
 		}
 	}()
 
-	pledgeSectors(t, ctx, miner, nSectors)
+	pledgeSectors(t, ctx, miner, nSectors, 0, nil)
 
-	mine = false
+	atomic.StoreInt64(&mine, 0)
 	<-done
 }
 
-func pledgeSectors(t *testing.T, ctx context.Context, miner TestStorageNode, n int) {
+func pledgeSectors(t *testing.T, ctx context.Context, miner TestStorageNode, n, existing int, blockNotif <-chan struct{}) {
 	for i := 0; i < n; i++ {
 		err := miner.PledgeSector(ctx)
 		require.NoError(t, err)
+		if i%3 == 0 && blockNotif != nil {
+			<-blockNotif
+		}
 	}
 
 	for {
 		s, err := miner.SectorsList(ctx) // Note - the test builder doesn't import genesis sectors into FSM
 		require.NoError(t, err)
 		fmt.Printf("Sectors: %d\n", len(s))
-		if len(s) >= n {
+		if len(s) >= n+existing {
 			break
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		build.Clock.Sleep(100 * time.Millisecond)
 	}
 
 	fmt.Printf("All sectors is fsm\n")
@@ -87,7 +93,7 @@ func pledgeSectors(t *testing.T, ctx context.Context, miner TestStorageNode, n i
 
 	for len(toCheck) > 0 {
 		for n := range toCheck {
-			st, err := miner.SectorsStatus(ctx, n)
+			st, err := miner.SectorsStatus(ctx, n, false)
 			require.NoError(t, err)
 			if st.State == api.SectorState(sealing.Proving) {
 				delete(toCheck, n)
@@ -97,16 +103,31 @@ func pledgeSectors(t *testing.T, ctx context.Context, miner TestStorageNode, n i
 			}
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		build.Clock.Sleep(100 * time.Millisecond)
 		fmt.Printf("WaitSeal: %d\n", len(s))
 	}
 }
 
 func TestWindowPost(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int) {
-	os.Setenv("BELLMAN_NO_GPU", "1")
+	for _, height := range []abi.ChainEpoch{
+		1,    // before
+		162,  // while sealing
+		5000, // while proving
+	} {
+		height := height // copy to satisfy lints
+		t.Run(fmt.Sprintf("upgrade-%d", height), func(t *testing.T) {
+			testWindowPostUpgrade(t, b, blocktime, nSectors, height)
+		})
+	}
 
-	ctx := context.Background()
-	n, sn := b(t, 1, oneMiner)
+}
+func testWindowPostUpgrade(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int,
+	upgradeHeight abi.ChainEpoch) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	n, sn := b(t, []FullNodeOpts{FullNodeWithUpgradeAt(upgradeHeight)}, OneMiner)
+
 	client := n[0].FullNode.(*impl.FullNodeAPI)
 	miner := sn[0]
 
@@ -118,201 +139,198 @@ func TestWindowPost(t *testing.T, b APIBuilder, blocktime time.Duration, nSector
 	if err := miner.NetConnect(ctx, addrinfo); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(time.Second)
+	build.Clock.Sleep(time.Second)
 
-	mine := true
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		for mine {
-			time.Sleep(blocktime)
-			if err := sn[0].MineOne(ctx, func(bool, error) {}); err != nil {
+		for ctx.Err() == nil {
+			build.Clock.Sleep(blocktime)
+			if err := sn[0].MineOne(ctx, MineNext); err != nil {
+				if ctx.Err() != nil {
+					// context was canceled, ignore the error.
+					return
+				}
 				t.Error(err)
 			}
 		}
 	}()
+	defer func() {
+		cancel()
+		<-done
+	}()
+
+	pledgeSectors(t, ctx, miner, nSectors, 0, nil)
 
 	maddr, err := miner.ActorAddress(ctx)
+	require.NoError(t, err)
+
+	di, err := client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
 	require.NoError(t, err)
 
 	mid, err := address.IDFromAddress(maddr)
 	require.NoError(t, err)
 
-	ssz, err := miner.ActorSectorSize(ctx, maddr)
-	require.NoError(t, err)
+	fmt.Printf("Running one proving period\n")
+	fmt.Printf("End for head.Height > %d\n", di.PeriodStart+di.WPoStProvingPeriod+2)
 
-	pledgeSectors(t, ctx, miner, nSectors)
+	for {
+		head, err := client.ChainHead(ctx)
+		require.NoError(t, err)
+
+		if head.Height() > di.PeriodStart+di.WPoStProvingPeriod+2 {
+			fmt.Printf("Now head.Height = %d\n", head.Height())
+			break
+		}
+		build.Clock.Sleep(blocktime)
+	}
 
 	p, err := client.StateMinerPower(ctx, maddr, types.EmptyTSK)
 	require.NoError(t, err)
-	fmt.Println("power@init", p)
+
+	ssz, err := miner.ActorSectorSize(ctx, maddr)
+	require.NoError(t, err)
+
 	require.Equal(t, p.MinerPower, p.TotalPower)
 	require.Equal(t, p.MinerPower.RawBytePower, types.NewInt(uint64(ssz)*uint64(nSectors+GenesisPreseals)))
 
-	di, err := client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+	fmt.Printf("Drop some sectors\n")
+
+	// Drop 2 sectors from deadline 2 partition 0 (full partition / deadline)
+	{
+		parts, err := client.StateMinerPartitions(ctx, maddr, 2, types.EmptyTSK)
+		require.NoError(t, err)
+		require.Greater(t, len(parts), 0)
+
+		secs := parts[0].AllSectors
+		n, err := secs.Count()
+		require.NoError(t, err)
+		require.Equal(t, uint64(2), n)
+
+		// Drop the partition
+		err = secs.ForEach(func(sid uint64) error {
+			return miner.StorageMiner.(*impl.StorageMinerAPI).IStorageMgr.(*mock.SectorMgr).MarkCorrupted(abi.SectorID{
+				Miner:  abi.ActorID(mid),
+				Number: abi.SectorNumber(sid),
+			}, true)
+		})
+		require.NoError(t, err)
+	}
+
+	var s abi.SectorID
+
+	// Drop 1 sectors from deadline 3 partition 0
+	{
+		parts, err := client.StateMinerPartitions(ctx, maddr, 3, types.EmptyTSK)
+		require.NoError(t, err)
+		require.Greater(t, len(parts), 0)
+
+		secs := parts[0].AllSectors
+		n, err := secs.Count()
+		require.NoError(t, err)
+		require.Equal(t, uint64(2), n)
+
+		// Drop the sector
+		sn, err := secs.First()
+		require.NoError(t, err)
+
+		all, err := secs.All(2)
+		require.NoError(t, err)
+		fmt.Println("the sectors", all)
+
+		s = abi.SectorID{
+			Miner:  abi.ActorID(mid),
+			Number: abi.SectorNumber(sn),
+		}
+
+		err = miner.StorageMiner.(*impl.StorageMinerAPI).IStorageMgr.(*mock.SectorMgr).MarkFailed(s, true)
+		require.NoError(t, err)
+	}
+
+	di, err = client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
 	require.NoError(t, err)
 
-	fmt.Printf("Running one proving periods\n")
+	fmt.Printf("Go through another PP, wait for sectors to become faulty\n")
+	fmt.Printf("End for head.Height > %d\n", di.PeriodStart+di.WPoStProvingPeriod+2)
 
-	makeFailed := false
-	mocksm := miner.StorageMiner.(*impl.StorageMinerAPI).Miner.ISectorManager().(*mock.SectorMgr)
 	for {
 		head, err := client.ChainHead(ctx)
 		require.NoError(t, err)
 
-		if head.Height() > di.PeriodStart+(miner2.WPoStProvingPeriod)+2 {
+		if head.Height() > di.PeriodStart+(di.WPoStProvingPeriod)+2 {
+			fmt.Printf("Now head.Height = %d\n", head.Height())
 			break
 		}
 
-		// Drop sector 3&4 from deadline 1 partition 0
-		if !makeFailed && head.Height() > di.PeriodStart+miner2.WPoStChallengeWindow+2 {
-			makeFailed = true
-			err = mocksm.MarkFailed(abi.SectorID{
-				Miner:  abi.ActorID(mid),
-				Number: abi.SectorNumber(3),
-			}, true)
-			require.NoError(t, err)
-			err = mocksm.MarkFailed(abi.SectorID{
-				Miner:  abi.ActorID(mid),
-				Number: abi.SectorNumber(4),
-			}, true)
-			require.NoError(t, err)
-
-			for {
-				head, err := client.ChainHead(ctx)
-				require.NoError(t, err)
-				if head.Height() > di.PeriodStart+miner2.WPoStChallengeWindow*2+2 {
-					break
-				}
-				if head.Height()%100 == 0 {
-					fmt.Printf("After dropping sector 3 @%d\n", head.Height())
-				}
-				time.Sleep(blocktime)
-			}
-		}
-
-		if head.Height()%1000 == 0 {
-			fmt.Printf("@%d\n", head.Height())
-		}
-		time.Sleep(blocktime)
+		build.Clock.Sleep(blocktime)
 	}
 
 	p, err = client.StateMinerPower(ctx, maddr, types.EmptyTSK)
 	require.NoError(t, err)
-	fmt.Println("power@drop(sector[3 4])", p)
-	require.Equal(t, p.MinerPower, p.TotalPower)
-	require.Equal(t, types.NewInt(uint64(ssz)*uint64(nSectors+GenesisPreseals-2)), p.MinerPower.RawBytePower)
 
-	// Recover sector 4
-	err = mocksm.MarkFailed(abi.SectorID{
-		Miner:  abi.ActorID(mid),
-		Number: abi.SectorNumber(4),
-	}, false)
+	require.Equal(t, p.MinerPower, p.TotalPower)
+
+	sectors := p.MinerPower.RawBytePower.Uint64() / uint64(ssz)
+	require.Equal(t, nSectors+GenesisPreseals-3, int(sectors)) // -3 just removed sectors
+
+	fmt.Printf("Recover one sector\n")
+
+	err = miner.StorageMiner.(*impl.StorageMinerAPI).IStorageMgr.(*mock.SectorMgr).MarkFailed(s, false)
 	require.NoError(t, err)
+
+	di, err = client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+	require.NoError(t, err)
+
+	fmt.Printf("End for head.Height > %d\n", di.PeriodStart+di.WPoStProvingPeriod+2)
 
 	for {
 		head, err := client.ChainHead(ctx)
 		require.NoError(t, err)
-		if head.Height() > di.PeriodStart+miner2.WPoStProvingPeriod+miner2.WPoStChallengeWindow*2+2 {
+
+		if head.Height() > di.PeriodStart+di.WPoStProvingPeriod+2 {
+			fmt.Printf("Now head.Height = %d\n", head.Height())
 			break
 		}
-		if head.Height()%100 == 0 {
-			fmt.Printf("After recovering sector 4 @%d\n", head.Height())
-		}
-		time.Sleep(blocktime)
+
+		build.Clock.Sleep(blocktime)
 	}
 
 	p, err = client.StateMinerPower(ctx, maddr, types.EmptyTSK)
 	require.NoError(t, err)
-	fmt.Println("power@recover4", p)
+
 	require.Equal(t, p.MinerPower, p.TotalPower)
-	require.Equal(t, types.NewInt(uint64(ssz)*uint64(nSectors+GenesisPreseals-1)), p.MinerPower.RawBytePower)
 
-	mine = false
-	<-done
-}
+	sectors = p.MinerPower.RawBytePower.Uint64() / uint64(ssz)
+	require.Equal(t, nSectors+GenesisPreseals-2, int(sectors)) // -2 not recovered sectors
 
-func TestSectorsDist(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int) {
-	// os.Setenv("BELLMAN_NO_GPU", "1")
+	// pledge a sector after recovery
 
-	ctx := context.Background()
-	n, sn := b(t, 1, oneMiner)
-	client := n[0].FullNode.(*impl.FullNodeAPI)
-	miner := sn[0]
+	pledgeSectors(t, ctx, miner, 1, nSectors, nil)
 
-	addrinfo, err := client.NetAddrsListen(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := miner.NetConnect(ctx, addrinfo); err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(time.Second)
-
-	mine := true
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for mine {
-			time.Sleep(blocktime)
-			if err := sn[0].MineOne(ctx, func(bool, error) {}); err != nil {
-				t.Error(err)
-			}
-		}
-	}()
-
-	maddr, err := miner.ActorAddress(ctx)
-	require.NoError(t, err)
-
-	pledgeSectors(t, ctx, miner, nSectors)
-
-	di, err := client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
-	require.NoError(t, err)
-
-	for {
-		head, err := client.ChainHead(ctx)
+	{
+		// Wait until proven.
+		di, err = client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
 		require.NoError(t, err)
 
-		if head.Height() >= di.PeriodStart {
+		waitUntil := di.PeriodStart + di.WPoStProvingPeriod + 2
+		fmt.Printf("End for head.Height > %d\n", waitUntil)
 
-			fmt.Printf("First proving start %d, current head %d\n", di.PeriodStart, head.Height())
-
-			deadlines, err := client.StateMinerDeadlines(ctx, maddr, types.EmptyTSK)
+		for {
+			head, err := client.ChainHead(ctx)
 			require.NoError(t, err)
 
-			nonZeroDeadline := 0
-			sectors := make(map[uint64]int)
-			for index, due := range deadlines.Due {
-				cnt, err := due.Count()
-				require.NoError(t, err)
-				if cnt == 0 {
-					continue
-				}
-				require.Greater(t, index, 0) // first deadline is left empty
-				nonZeroDeadline++
-
-				ds, err := due.All(uint64(nSectors+GenesisPreseals) * 2)
-				require.NoError(t, err)
-				fmt.Printf("deadline %d, sectors %v\n", index, ds)
-				for _, sid := range ds {
-					if prev, ok := sectors[sid]; ok {
-						t.Fatalf("duplicated sector %d (prev deadline %d, current %d)", sid, prev, index)
-					}
-					sectors[sid] = index
-				}
+			if head.Height() > waitUntil {
+				fmt.Printf("Now head.Height = %d\n", head.Height())
+				break
 			}
-			require.Equal(t, len(sectors), nSectors+GenesisPreseals)
-			require.GreaterOrEqual(t, nonZeroDeadline, (nSectors+GenesisPreseals)/2) //
-			break
 		}
-
-		if head.Height()%300 == 0 {
-			fmt.Printf("@%d\n", head.Height())
-		}
-		time.Sleep(blocktime)
 	}
 
-	mine = false
-	<-done
+	p, err = client.StateMinerPower(ctx, maddr, types.EmptyTSK)
+	require.NoError(t, err)
+
+	require.Equal(t, p.MinerPower, p.TotalPower)
+
+	sectors = p.MinerPower.RawBytePower.Uint64() / uint64(ssz)
+	require.Equal(t, nSectors+GenesisPreseals-2+1, int(sectors)) // -2 not recovered sectors + 1 just pledged
 }

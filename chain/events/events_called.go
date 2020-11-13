@@ -5,7 +5,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
@@ -307,7 +307,10 @@ func (e *hcEvents) onHeadChanged(check CheckFunc, hnd EventHandler, rev RevertHa
 	defer e.lk.Unlock()
 
 	// Check if the event has already occurred
-	ts := e.tsc.best()
+	ts, err := e.tsc.best()
+	if err != nil {
+		return 0, xerrors.Errorf("error getting best tipset: %w", err)
+	}
 	done, more, err := check(ts)
 	if err != nil {
 		return 0, xerrors.Errorf("called check error (h: %d): %w", ts.Height(), err)
@@ -456,7 +459,7 @@ type messageEvents struct {
 	hcAPI headChangeAPI
 
 	lk       sync.RWMutex
-	matchers map[triggerID][]MsgMatchFunc
+	matchers map[triggerID]MsgMatchFunc
 }
 
 func newMessageEvents(ctx context.Context, hcAPI headChangeAPI, cs eventAPI) messageEvents {
@@ -464,7 +467,7 @@ func newMessageEvents(ctx context.Context, hcAPI headChangeAPI, cs eventAPI) mes
 		ctx:      ctx,
 		cs:       cs,
 		hcAPI:    hcAPI,
-		matchers: map[triggerID][]MsgMatchFunc{},
+		matchers: make(map[triggerID]MsgMatchFunc),
 	}
 }
 
@@ -479,28 +482,23 @@ func (me *messageEvents) checkNewCalls(ts *types.TipSet) (map[triggerID]eventDat
 	me.lk.RLock()
 	defer me.lk.RUnlock()
 
+	// For each message in the tipset
 	res := make(map[triggerID]eventData)
 	me.messagesForTs(pts, func(msg *types.Message) {
 		// TODO: provide receipts
 
-		for tid, matchFns := range me.matchers {
-			var matched bool
-			for _, matchFn := range matchFns {
-				ok, err := matchFn(msg)
-				if err != nil {
-					log.Errorf("event matcher failed: %s", err)
-					continue
-				}
-				matched = ok
-
-				if matched {
-					break
-				}
+		// Run each trigger's matcher against the message
+		for tid, matchFn := range me.matchers {
+			matched, err := matchFn(msg)
+			if err != nil {
+				log.Errorf("event matcher failed: %s", err)
+				continue
 			}
 
+			// If there was a match, include the message in the results for the
+			// trigger
 			if matched {
 				res[tid] = msg
-				break
 			}
 		}
 	})
@@ -548,7 +546,7 @@ func (me *messageEvents) messagesForTs(ts *types.TipSet, consume func(*types.Mes
 // `curH`-`ts.Height` = `confidence`
 type MsgHandler func(msg *types.Message, rec *types.MessageReceipt, ts *types.TipSet, curH abi.ChainEpoch) (more bool, err error)
 
-type MsgMatchFunc func(msg *types.Message) (bool, error)
+type MsgMatchFunc func(msg *types.Message) (matched bool, err error)
 
 // Called registers a callback which is triggered when a specified method is
 //  called on an actor, or a timeout is reached.
@@ -600,7 +598,7 @@ func (me *messageEvents) Called(check CheckFunc, msgHnd MsgHandler, rev RevertHa
 
 	me.lk.Lock()
 	defer me.lk.Unlock()
-	me.matchers[id] = append(me.matchers[id], mf)
+	me.matchers[id] = mf
 
 	return nil
 }

@@ -1,37 +1,43 @@
 package dtypes
 
 import (
-	"github.com/filecoin-project/go-fil-markets/storagemarket/impl/requestvalidation"
 	bserv "github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-datastore"
-	"github.com/ipfs/go-filestore"
 	"github.com/ipfs/go-graphsync"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	exchange "github.com/ipfs/go-ipfs-exchange-interface"
 	format "github.com/ipfs/go-ipld-format"
+
+	"github.com/filecoin-project/go-fil-markets/storagemarket/impl/requestvalidation"
+	"github.com/filecoin-project/go-multistore"
 
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-fil-markets/piecestore"
 	"github.com/filecoin-project/go-statestore"
+
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
+	"github.com/EpiK-Protocol/go-epik/node/repo/retrievalstoremgr"
 )
 
 // MetadataDS stores metadata
 // dy default it's namespaced under /metadata in main repo datastore
 type MetadataDS datastore.Batching
 
-type ChainBlockstore blockstore.Blockstore
+type ChainRawBlockstore blockstore.Blockstore
+type ChainBlockstore blockstore.Blockstore // optionally bitswap backed
 
 type ChainGCLocker blockstore.GCLocker
 type ChainGCBlockstore blockstore.GCBlockstore
-type ChainExchange exchange.Interface
+type ChainBitswap exchange.Interface
 type ChainBlockService bserv.BlockService
 
-type ClientFilestore *filestore.Filestore
+type ClientMultiDstore *multistore.MultiStore
+type ClientImportMgr *importmgr.Mgr
 type ClientBlockstore blockstore.Blockstore
-type ClientDAG format.DAGService
 type ClientDealStore *statestore.StateStore
 type ClientRequestValidator *requestvalidation.UnifiedRequestValidator
 type ClientDatastore datastore.Batching
+type ClientRetrievalStoreManager retrievalstoremgr.RetrievalStoreManager
 
 type Graphsync graphsync.GraphExchange
 
@@ -48,3 +54,4 @@ type ProviderDataTransfer datatransfer.Manager
 type StagingDAG format.DAGService
 type StagingBlockstore blockstore.Blockstore
 type StagingGraphsync graphsync.GraphExchange
+type StagingMultiDstore *multistore.MultiStore

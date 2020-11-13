@@ -17,18 +17,27 @@ A brief description of the problem you encountered while proving (sealing) a sec
 
 Including what commands you ran, and a description of your setup, is very helpful.
 
-**Sectors list**
-
-The output of `./epik-storage-miner sectors list`.
-
 **Sectors status**
 
-The output of `./epik-storage-miner sectors status --log <sectorId>` for the failed sector(s).
+The output of `epik-miner sectors status --log <sectorId>` for the failed sector(s).
 
-**epik storage miner logs**
+**Epik miner logs**
 
-Please go through the logs of your storage miner, and include screenshots of any error-like messages you find.
+Please go through the logs of your miner, and include screenshots of any error-like messages you find.
+
+Alternatively please upload full log files and share a link here
+
+**Epik miner diagnostic info**
+
+Please collect the following diagnostic information, and share a link here
+
+* epik-miner diagnostic info `epik-miner info all > allinfo`
+
+** Code modifications **
+
+If you have modified parts of epik, please describe which areas were modified,
+and the scope of those modifications
 
 **Version**
 
-The output of `./epik --version`.
+The output of `epik --version`.

@@ -42,8 +42,8 @@ SCRIPTDIR="\$( cd "\$( dirname "\${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 pushd \$SCRIPTDIR/../build
 
 pwd
-env RUSTFLAGS="-C target-cpu=native -g" FFI_BUILD_FROM_SOURCE=1 make clean deps epik epik-storage-miner epik-shed
-cp epik epik-storage-miner epik-shed ../bin/
+env RUSTFLAGS="-C target-cpu=native -g" FFI_BUILD_FROM_SOURCE=1 make clean deps epik epik-miner epik-shed
+cp epik epik-miner epik-shed ../bin/
 
 popd
 EOF
@@ -51,13 +51,13 @@ EOF
 cat > "${BASEDIR}/scripts/env.fish" <<EOF
 set -x PATH ${BASEDIR}/bin \$PATH
 set -x EPIK_PATH ${BASEDIR}/.epik
-set -x EPIK_STORAGE_PATH ${BASEDIR}/.epikstorage
+set -x EPIK_MINER_PATH ${BASEDIR}/.epikminer
 EOF
 
 cat > "${BASEDIR}/scripts/env.bash" <<EOF
 export PATH=${BASEDIR}/bin:\$PATH
 export EPIK_PATH=${BASEDIR}/.epik
-export EPIK_STORAGE_PATH=${BASEDIR}/.epikstorage
+export EPIK_MINER_PATH=${BASEDIR}/.epikminer
 EOF
 
 cat > "${BASEDIR}/scripts/create_miner.bash" <<EOF
@@ -65,7 +65,7 @@ cat > "${BASEDIR}/scripts/create_miner.bash" <<EOF
 set -x
 
 epik wallet import ~/.genesis-sectors/pre-seal-t01000.key
-epik-storage-miner init --genesis-miner --actor=t01000 --sector-size=2KiB --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync
+epik-miner init --genesis-miner --actor=t01000 --sector-size=2KiB --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync
 EOF
 
 cat > "${BASEDIR}/scripts/pledge_sectors.bash" <<EOF
@@ -73,26 +73,26 @@ cat > "${BASEDIR}/scripts/pledge_sectors.bash" <<EOF
 
 set -x
 
-while [ ! -d ${BASEDIR}/.epikstorage ]; do
+while [ ! -d ${BASEDIR}/.epikminer ]; do
   sleep 5
 done
 
-while [ ! -f ${BASEDIR}/.epikstorage/api ]; do
+while [ ! -f ${BASEDIR}/.epikminer/api ]; do
   sleep 5
 done
 
 sleep 30
 
-sector=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
+sector=\$(epik-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
 current="\$sector"
 
 while true; do
-  if (( \$(epik-storage-miner sectors list | wc -l) > ${PLEDGE_COUNT} )); then
+  if (( \$(epik-miner sectors list | wc -l) > ${PLEDGE_COUNT} )); then
     break
   fi
 
   while true; do
-    state=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$2}')
+    state=\$(epik-miner sectors list | tail -n1 | awk '{print \$2}')
 
     if [ -z "\$state" ]; then
       break
@@ -102,15 +102,15 @@ while true; do
       PreCommit1 | PreCommit2 | Packing | Unsealed | PreCommitting | Committing | CommitWait | FinalizeSector ) sleep 30 ;;
       WaitSeed | Proving ) break ;;
       * ) echo "Unknown Sector State: \$state"
-          epik-storage-miner sectors status --log \$current
+          epik-miner sectors status --log \$current
           break ;;
     esac
   done
 
-  epik-storage-miner sectors pledge
+  epik-miner sectors pledge
 
   while [ "\$current" == "\$sector" ]; do
-    sector=\$(epik-storage-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
+    sector=\$(epik-miner sectors list | tail -n1 | awk '{print \$1}' | tr -d ':')
     sleep 5
   done
 
@@ -127,13 +127,13 @@ while true; do
 
   echo
   echo
-  echo Storage Miner Info
-  epik-storage-miner info
+  echo Miner Info
+  epik-miner info
 
   echo
   echo
   echo Sector List
-  epik-storage-miner sectors list | tail -n4
+  epik-miner sectors list | tail -n4
 
   sleep 25
 
@@ -151,7 +151,7 @@ if [ "$BUILD" == "yes" ]; then
   bash "${BASEDIR}/scripts/build.bash"
 else
   cp ./epik ${BASEDIR}/bin/
-  cp ./epik-storage-miner ${BASEDIR}/bin/
+  cp ./epik-miner ${BASEDIR}/bin/
   cp ./epik-seed ${BASEDIR}/bin/
   cp ./epik-shed ${BASEDIR}/bin/
 fi
@@ -186,7 +186,7 @@ export EPIK_PATH="${BASEDIR}/.epik"
 ${BASEDIR}/bin/epik wait-api
 
 tmux send-keys -t $session:$wminer   "${BASEDIR}/scripts/create_miner.bash" C-m
-tmux send-keys -t $session:$wminer   "epik-storage-miner run --api 48020 --nosync 2>&1 | tee -a ${BASEDIR}/miner.log" C-m
+tmux send-keys -t $session:$wminer   "epik-miner run --api 48020 --nosync 2>&1 | tee -a ${BASEDIR}/miner.log" C-m
 tmux send-keys -t $session:$wcli     "${BASEDIR}/scripts/monitor.bash" C-m
 tmux send-keys -t $session:$wpleding "${BASEDIR}/scripts/pledge_sectors.bash" C-m
 

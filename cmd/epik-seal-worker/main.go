@@ -9,58 +9,77 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"syscall"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/ipfs/go-datastore/namespace"
 	logging "github.com/ipfs/go-log/v2"
+	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/urfave/cli/v2"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/go-jsonrpc/auth"
 	paramfetch "github.com/filecoin-project/go-paramfetch"
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
+	"github.com/filecoin-project/go-statestore"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
 	"github.com/EpiK-Protocol/go-epik/build"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
+	"github.com/EpiK-Protocol/go-epik/lib/rpcenc"
+	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
-	sectorstorage "github.com/filecoin-project/sector-storage"
-	"github.com/filecoin-project/sector-storage/sealtasks"
-	"github.com/filecoin-project/sector-storage/stores"
 )
 
 var log = logging.Logger("main")
 
-const FlagStorageRepo = "workerrepo"
+const FlagWorkerRepo = "worker-repo"
+
+// TODO remove after deprecation period
+const FlagWorkerRepoDeprecation = "workerrepo"
 
 func main() {
-	epiklog.SetupLogLevels()
+	build.RunningNodeType = build.NodeWorker
 
-	log.Info("Starting epik worker")
+	epiklog.SetupLogLevels()
 
 	local := []*cli.Command{
 		runCmd,
+		infoCmd,
+		storageCmd,
+		setCmd,
+		waitQuietCmd,
 	}
 
 	app := &cli.App{
-		Name:    "epik-seal-worker",
-		Usage:   "Remote storage miner worker",
+		Name:    "epik-worker",
+		Usage:   "Remote miner worker",
 		Version: build.UserVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    FlagStorageRepo,
-				EnvVars: []string{"WORKER_PATH"},
+				Name:    FlagWorkerRepo,
+				Aliases: []string{FlagWorkerRepoDeprecation},
+				EnvVars: []string{"EPIK_WORKER_PATH", "WORKER_PATH"},
 				Value:   "~/.epikworker", // TODO: Consider XDG_DATA_HOME
+				Usage:   fmt.Sprintf("Specify worker repo path. flag %s and env WORKER_PATH are DEPRECATION, will REMOVE SOON", FlagWorkerRepoDeprecation),
 			},
 			&cli.StringFlag{
-				Name:    "storagerepo",
-				EnvVars: []string{"EPIK_STORAGE_PATH"},
-				Value:   "~/.epikstorage", // TODO: Consider XDG_DATA_HOME
+				Name:    "miner-repo",
+				Aliases: []string{"storagerepo"},
+				EnvVars: []string{"EPIK_MINER_PATH", "EPIK_STORAGE_PATH"},
+				Value:   "~/.epikminer", // TODO: Consider XDG_DATA_HOME
+				Usage:   fmt.Sprintf("Specify miner repo path. flag storagerepo and env EPIK_STORAGE_PATH are DEPRECATION, will REMOVE SOON"),
 			},
 			&cli.BoolFlag{
 				Name:  "enable-gpu-proving",
@@ -85,16 +104,36 @@ var runCmd = &cli.Command{
 	Usage: "Start epik worker",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "address",
-			Usage: "Locally reachable address",
+			Name:  "listen",
+			Usage: "host address and port the worker api will listen on",
+			Value: "0.0.0.0:3456",
+		},
+		&cli.StringFlag{
+			Name:   "address",
+			Hidden: true,
 		},
 		&cli.BoolFlag{
 			Name:  "no-local-storage",
 			Usage: "don't use storageminer repo for sector storage",
 		},
 		&cli.BoolFlag{
+			Name:  "no-swap",
+			Usage: "don't use swap",
+			Value: false,
+		},
+		&cli.BoolFlag{
+			Name:  "addpiece",
+			Usage: "enable addpiece",
+			Value: true,
+		},
+		&cli.BoolFlag{
 			Name:  "precommit1",
 			Usage: "enable precommit1 (32G sectors: 1 core, 128GiB Memory)",
+			Value: true,
+		},
+		&cli.BoolFlag{
+			Name:  "unseal",
+			Usage: "enable unsealing (32G sectors: 1 core, 128GiB Memory)",
 			Value: true,
 		},
 		&cli.BoolFlag{
@@ -107,26 +146,49 @@ var runCmd = &cli.Command{
 			Usage: "enable commit (32G sectors: all cores or GPUs, 128GiB Memory + 64GiB swap)",
 			Value: true,
 		},
+		&cli.IntFlag{
+			Name:  "parallel-fetch-limit",
+			Usage: "maximum fetch operations to run in parallel",
+			Value: 5,
+		},
+		&cli.StringFlag{
+			Name:  "timeout",
+			Usage: "used when 'listen' is unspecified. must be a valid duration recognized by golang's time.ParseDuration function",
+			Value: "30m",
+		},
+	},
+	Before: func(cctx *cli.Context) error {
+		if cctx.IsSet("address") {
+			log.Warnf("The '--address' flag is deprecated, it has been replaced by '--listen'")
+			if err := cctx.Set("listen", cctx.String("address")); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	},
 	Action: func(cctx *cli.Context) error {
+		log.Info("Starting epik worker")
+
 		if !cctx.Bool("enable-gpu-proving") {
 			if err := os.Setenv("BELLMAN_NO_GPU", "true"); err != nil {
 				return xerrors.Errorf("could not set no-gpu env: %+v", err)
 			}
 		}
 
-		if cctx.String("address") == "" {
-			return xerrors.Errorf("--address flag is required")
-		}
-
 		// Connect to storage-miner
+		ctx := lcli.ReqContext(cctx)
+
 		var nodeApi api.StorageMiner
 		var closer func()
 		var err error
 		for {
-			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx)
+			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx, lcli.StorageMinerUseHttp)
 			if err == nil {
-				break
+				_, err = nodeApi.Version(ctx)
+				if err == nil {
+					break
+				}
 			}
 			fmt.Printf("\r\x1b[0KConnecting to miner API... (%s)", err)
 			time.Sleep(time.Second)
@@ -134,20 +196,24 @@ var runCmd = &cli.Command{
 		}
 
 		defer closer()
-		ctx := lcli.ReqContext(cctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
+
+		// Register all metric views
+		if err := view.Register(
+			metrics.DefaultViews...,
+		); err != nil {
+			log.Fatalf("Cannot register the view: %v", err)
+		}
 
 		v, err := nodeApi.Version(ctx)
 		if err != nil {
 			return err
 		}
-		if v.APIVersion != build.APIVersion {
-			return xerrors.Errorf("epik-storage-miner API version doesn't match: local: ", api.Version{APIVersion: build.APIVersion})
+		if v.APIVersion != build.MinerAPIVersion {
+			return xerrors.Errorf("epik-miner API version doesn't match: expected: %s", api.Version{APIVersion: build.MinerAPIVersion})
 		}
 		log.Infof("Remote version %s", v)
-
-		watchMinerConn(ctx, cctx, nodeApi)
 
 		// Check params
 
@@ -170,8 +236,14 @@ var runCmd = &cli.Command{
 
 		taskTypes = append(taskTypes, sealtasks.TTFetch, sealtasks.TTCommit1, sealtasks.TTFinalize)
 
+		if cctx.Bool("addpiece") {
+			taskTypes = append(taskTypes, sealtasks.TTAddPiece)
+		}
 		if cctx.Bool("precommit1") {
 			taskTypes = append(taskTypes, sealtasks.TTPreCommit1)
+		}
+		if cctx.Bool("unseal") {
+			taskTypes = append(taskTypes, sealtasks.TTUnseal)
 		}
 		if cctx.Bool("precommit2") {
 			taskTypes = append(taskTypes, sealtasks.TTPreCommit2)
@@ -186,7 +258,7 @@ var runCmd = &cli.Command{
 
 		// Open repo
 
-		repoPath := cctx.String(FlagStorageRepo)
+		repoPath := cctx.String(FlagWorkerRepo)
 		r, err := repo.NewFS(repoPath)
 		if err != nil {
 			return err
@@ -236,7 +308,7 @@ var runCmd = &cli.Command{
 
 			{
 				// init datastore for r.Exists
-				_, err := lr.Datastore("/")
+				_, err := lr.Datastore("/metadata")
 				if err != nil {
 					return err
 				}
@@ -250,10 +322,35 @@ var runCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
+		defer func() {
+			if err := lr.Close(); err != nil {
+				log.Error("closing repo", err)
+			}
+		}()
+		ds, err := lr.Datastore("/metadata")
+		if err != nil {
+			return err
+		}
 
 		log.Info("Opening local storage; connecting to master")
+		const unspecifiedAddress = "0.0.0.0"
+		address := cctx.String("listen")
+		addressSlice := strings.Split(address, ":")
+		if ip := net.ParseIP(addressSlice[0]); ip != nil {
+			if ip.String() == unspecifiedAddress {
+				timeout, err := time.ParseDuration(cctx.String("timeout"))
+				if err != nil {
+					return err
+				}
+				rip, err := extractRoutableIP(timeout)
+				if err != nil {
+					return err
+				}
+				address = rip + ":" + addressSlice[1]
+			}
+		}
 
-		localStore, err := stores.NewLocal(ctx, lr, nodeApi, []string{"http://" + cctx.String("address") + "/remote"})
+		localStore, err := stores.NewLocal(ctx, lr, nodeApi, []string{"http://" + address + "/remote"})
 		if err != nil {
 			return err
 		}
@@ -269,25 +366,32 @@ var runCmd = &cli.Command{
 			return xerrors.Errorf("could not get api info: %w", err)
 		}
 
-		remote := stores.NewRemote(localStore, nodeApi, sminfo.AuthHeader())
+		remote := stores.NewRemote(localStore, nodeApi, sminfo.AuthHeader(), cctx.Int("parallel-fetch-limit"))
 
 		// Create / expose the worker
+
+		wsts := statestore.New(namespace.Wrap(ds, modules.WorkerCallsPrefix))
 
 		workerApi := &worker{
 			LocalWorker: sectorstorage.NewLocalWorker(sectorstorage.WorkerConfig{
 				SealProof: spt,
 				TaskTypes: taskTypes,
-			}, remote, localStore, nodeApi),
+				NoSwap:    cctx.Bool("no-swap"),
+			}, remote, localStore, nodeApi, nodeApi, wsts),
+			localStore: localStore,
+			ls:         lr,
 		}
 
 		mux := mux.NewRouter()
 
-		log.Info("Setting up control endpoint at " + cctx.String("address"))
+		log.Info("Setting up control endpoint at " + address)
 
-		rpcServer := jsonrpc.NewServer()
-		rpcServer.Register("EpiK", apistruct.PermissionedWorkerAPI(workerApi))
+		readerHandler, readerServerOpt := rpcenc.ReaderParamDecoder()
+		rpcServer := jsonrpc.NewServer(readerServerOpt)
+		rpcServer.Register("EpiK", apistruct.PermissionedWorkerAPI(metrics.MetricedWorkerAPI(workerApi)))
 
 		mux.Handle("/rpc/v0", rpcServer)
+		mux.Handle("/rpc/streams/v0/push/{uuid}", readerHandler)
 		mux.PathPrefix("/remote").HandlerFunc((&stores.FetchHandler{Local: localStore}).ServeHTTP)
 		mux.PathPrefix("/").Handler(http.DefaultServeMux) // pprof
 
@@ -299,6 +403,7 @@ var runCmd = &cli.Command{
 		srv := &http.Server{
 			Handler: ah,
 			BaseContext: func(listener net.Listener) context.Context {
+				ctx, _ := tag.New(context.Background(), tag.Upsert(metrics.APIInterface, "epik-worker"))
 				return ctx
 			},
 		}
@@ -312,18 +417,111 @@ var runCmd = &cli.Command{
 			log.Warn("Graceful shutdown successful")
 		}()
 
-		nl, err := net.Listen("tcp", cctx.String("address"))
+		nl, err := net.Listen("tcp", address)
 		if err != nil {
 			return err
 		}
 
-		log.Info("Waiting for tasks")
+		{
+			a, err := net.ResolveTCPAddr("tcp", address)
+			if err != nil {
+				return xerrors.Errorf("parsing address: %w", err)
+			}
+
+			ma, err := manet.FromNetAddr(a)
+			if err != nil {
+				return xerrors.Errorf("creating api multiaddress: %w", err)
+			}
+
+			if err := lr.SetAPIEndpoint(ma); err != nil {
+				return xerrors.Errorf("setting api endpoint: %w", err)
+			}
+
+			ainfo, err := lcli.GetAPIInfo(cctx, repo.StorageMiner)
+			if err != nil {
+				return xerrors.Errorf("could not get miner API info: %w", err)
+			}
+
+			// TODO: ideally this would be a token with some permissions dropped
+			if err := lr.SetAPIToken(ainfo.Token); err != nil {
+				return xerrors.Errorf("setting api token: %w", err)
+			}
+		}
+
+		minerSession, err := nodeApi.Session(ctx)
+		if err != nil {
+			return xerrors.Errorf("getting miner session: %w", err)
+		}
+
+		waitQuietCh := func() chan struct{} {
+			out := make(chan struct{})
+			go func() {
+				workerApi.LocalWorker.WaitQuiet()
+				close(out)
+			}()
+			return out
+		}
 
 		go func() {
-			if err := nodeApi.WorkerConnect(ctx, "ws://"+cctx.String("address")+"/rpc/v0"); err != nil {
-				log.Errorf("Registering worker failed: %+v", err)
-				cancel()
-				return
+			heartbeats := time.NewTicker(stores.HeartbeatInterval)
+			defer heartbeats.Stop()
+
+			var redeclareStorage bool
+			var readyCh chan struct{}
+			for {
+				// If we're reconnecting, redeclare storage first
+				if redeclareStorage {
+					log.Info("Redeclaring local storage")
+
+					if err := localStore.Redeclare(ctx); err != nil {
+						log.Errorf("Redeclaring local storage failed: %+v", err)
+
+						select {
+						case <-ctx.Done():
+							return // graceful shutdown
+						case <-heartbeats.C:
+						}
+						continue
+					}
+				}
+
+				// TODO: we could get rid of this, but that requires tracking resources for restarted tasks correctly
+				if readyCh == nil {
+					log.Info("Making sure no local tasks are running")
+					readyCh = waitQuietCh()
+				}
+
+				for {
+					curSession, err := nodeApi.Session(ctx)
+					if err != nil {
+						log.Errorf("heartbeat: checking remote session failed: %+v", err)
+					} else {
+						if curSession != minerSession {
+							minerSession = curSession
+							break
+						}
+					}
+
+					select {
+					case <-readyCh:
+						if err := nodeApi.WorkerConnect(ctx, "http://"+address+"/rpc/v0"); err != nil {
+							log.Errorf("Registering worker failed: %+v", err)
+							cancel()
+							return
+						}
+
+						log.Info("Worker registered successfully, waiting for tasks")
+
+						readyCh = nil
+					case <-heartbeats.C:
+					case <-ctx.Done():
+						return // graceful shutdown
+					}
+				}
+
+				log.Errorf("EPIK-MINER CONNECTION LOST")
+
+				redeclareStorage = true
 			}
 		}()
 
@@ -331,41 +529,26 @@ var runCmd = &cli.Command{
 	},
 }
 
-func watchMinerConn(ctx context.Context, cctx *cli.Context, nodeApi api.StorageMiner) {
-	go func() {
-		closing, err := nodeApi.Closing(ctx)
-		if err != nil {
-			log.Errorf("failed to get remote closing channel: %+v", err)
+func extractRoutableIP(timeout time.Duration) (string, error) {
+	minerMultiAddrKey := "MINER_API_INFO"
+	deprecatedMinerMultiAddrKey := "STORAGE_API_INFO"
+	env, ok := os.LookupEnv(minerMultiAddrKey)
+	if !ok {
+		// TODO remove after deprecation period
+		_, ok = os.LookupEnv(deprecatedMinerMultiAddrKey)
+		if ok {
+			log.Warnf("Using a deprecated env(%s) value, please use env(%s) instead.", deprecatedMinerMultiAddrKey, minerMultiAddrKey)
 		}
+		return "", xerrors.New("MINER_API_INFO environment variable required to extract IP")
+	}
+	minerAddr := strings.Split(env, "/")
+	conn, err := net.DialTimeout("tcp", minerAddr[2]+":"+minerAddr[4], timeout)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close() //nolint:errcheck
 
-		select {
-		case <-closing:
-		case <-ctx.Done():
-		}
+	localAddr := conn.LocalAddr().(*net.TCPAddr)
 
-		if ctx.Err() != nil {
-			return // graceful shutdown
-		}
-
-		log.Warnf("Connection with miner node lost, restarting")
-
-		exe, err := os.Executable()
-		if err != nil {
-			log.Errorf("getting executable for auto-restart: %+v", err)
-		}
-
-		log.Sync()
-
-		// TODO: there are probably cleaner/more graceful ways to restart,
-		//  but this is good enough for now (FSM can recover from the mess this creates)
-		if err := syscall.Exec(exe, []string{exe, "run",
-			fmt.Sprintf("--address=%s", cctx.String("address")),
-			fmt.Sprintf("--no-local-storage=%t", cctx.Bool("no-local-storage")),
-			fmt.Sprintf("--precommit1=%t", cctx.Bool("precommit1")),
-			fmt.Sprintf("--precommit2=%t", cctx.Bool("precommit2")),
-			fmt.Sprintf("--commit=%t", cctx.Bool("commit")),
-		}, os.Environ()); err != nil {
-			fmt.Println(err)
-		}
-	}()
+	return strings.Split(localAddr.IP.String(), ":")[0], nil
 }

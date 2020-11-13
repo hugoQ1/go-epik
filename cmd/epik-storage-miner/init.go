@@ -15,6 +15,7 @@ import (
 	"github.com/docker/go-units"
 	"github.com/google/uuid"
 	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/namespace"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/mitchellh/go-homedir"
@@ -24,33 +25,39 @@ import (
 	"github.com/filecoin-project/go-address"
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	paramfetch "github.com/filecoin-project/go-paramfetch"
-	sectorstorage "github.com/filecoin-project/sector-storage"
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
-	"github.com/filecoin-project/sector-storage/stores"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/builtin/market"
-	miner2 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	"github.com/filecoin-project/specs-actors/actors/builtin/power"
-	crypto2 "github.com/filecoin-project/specs-actors/actors/crypto"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-statestore"
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
+
+	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
+	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
+	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/chain/gen/slashfilter"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/genesis"
-	"github.com/EpiK-Protocol/go-epik/miner"
+	"github.com/EpiK-Protocol/go-epik/journal"
+	storageminer "github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node/modules"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/EpiK-Protocol/go-epik/storage"
-	sealing "github.com/filecoin-project/storage-fsm"
 )
 
 var initCmd = &cli.Command{
 	Name:  "init",
-	Usage: "Initialize a epik storage miner repo",
+	Usage: "Initialize a epik miner repo",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "actor",
@@ -78,7 +85,7 @@ var initCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:  "sector-size",
 			Usage: "specify sector size to use",
-			Value: units.BytesSize(float64(build.DefaultSectorSize())),
+			Value: units.BytesSize(float64(policy.GetDefaultSectorSize())),
 		},
 		&cli.StringSliceFlag{
 			Name:  "pre-sealed-sectors",
@@ -101,13 +108,20 @@ var initCmd = &cli.Command{
 			Usage: "don't use storageminer repo for sector storage",
 		},
 		&cli.StringFlag{
-			Name:  "gas-price",
-			Usage: "set gas price for initialization messages in AttoFIL",
+			Name:  "gas-premium",
+			Usage: "set gas premium for initialization messages in AttoFIL",
 			Value: "0",
 		},
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "select which address to send actor creation message from",
+		},
+	},
+	Subcommands: []*cli.Command{
+		initRestoreCmd,
 	},
 	Action: func(cctx *cli.Context) error {
-		log.Info("Initializing epik storage miner")
+		log.Info("Initializing epik miner")
 
 		sectorSizeInt, err := units.RAMInBytes(cctx.String("sector-size"))
 		if err != nil {
@@ -115,7 +129,7 @@ var initCmd = &cli.Command{
 		}
 		ssize := abi.SectorSize(sectorSizeInt)
 
-		gasPrice, err := types.BigFromString(cctx.String("gas-price"))
+		gasPrice, err := types.BigFromString(cctx.String("gas-premium"))
 		if err != nil {
 			return xerrors.Errorf("failed to parse gas-price flag: %s", err)
 		}
@@ -144,14 +158,14 @@ var initCmd = &cli.Command{
 		log.Info("Checking full node sync status")
 
 		if !cctx.Bool("genesis-miner") && !cctx.Bool("nosync") {
-			if err := lcli.SyncWait(ctx, api); err != nil {
+			if err := lcli.SyncWait(ctx, api, false); err != nil {
 				return xerrors.Errorf("sync wait: %w", err)
 			}
 		}
 
 		log.Info("Checking if repo exists")
 
-		repoPath := cctx.String(FlagStorageRepo)
+		repoPath := cctx.String(FlagMinerRepo)
 		r, err := repo.NewFS(repoPath)
 		if err != nil {
 			return err
@@ -162,7 +176,7 @@ var initCmd = &cli.Command{
 			return err
 		}
 		if ok {
-			return xerrors.Errorf("repo at '%s' is already initialized", cctx.String(FlagStorageRepo))
+			return xerrors.Errorf("repo at '%s' is already initialized", cctx.String(FlagMinerRepo))
 		}
 
 		log.Info("Checking full node version")
@@ -172,8 +186,8 @@ var initCmd = &cli.Command{
 			return err
 		}
 
-		if !v.APIVersion.EqMajorMinor(build.APIVersion) {
-			return xerrors.Errorf("Remote API version didn't match (local %s, remote %s)", build.APIVersion, v.APIVersion)
+		if !v.APIVersion.EqMajorMinor(build.FullAPIVersion) {
+			return xerrors.Errorf("Remote API version didn't match (expected %s, remote %s)", build.FullAPIVersion, v.APIVersion)
 		}
 
 		log.Info("Initializing repo")
@@ -236,7 +250,7 @@ var initCmd = &cli.Command{
 		}
 
 		if err := storageMinerInit(ctx, cctx, api, r, ssize, gasPrice); err != nil {
-			log.Errorf("Failed to initialize epik-storage-miner: %+v", err)
+			log.Errorf("Failed to initialize epik-miner: %+v", err)
 			path, err := homedir.Expand(repoPath)
 			if err != nil {
 				return err
@@ -249,7 +263,7 @@ var initCmd = &cli.Command{
 		}
 
 		// TODO: Point to setting storage price, maybe do it interactively or something
-		log.Info("Storage miner successfully created, you can now start it with 'epik-storage-miner run'")
+		log.Info("Miner successfully created, you can now start it with 'epik-miner run'")
 
 		return nil
 	},
@@ -364,7 +378,7 @@ func migratePreSealMeta(ctx context.Context, api lapi.FullNode, metadata string,
 	return mds.Put(datastore.NewKey(modules.StorageCounterDSPrefix), buf[:size])
 }
 
-func findMarketDealID(ctx context.Context, api lapi.FullNode, deal market.DealProposal) (abi.DealID, error) {
+func findMarketDealID(ctx context.Context, api lapi.FullNode, deal market2.DealProposal) (abi.DealID, error) {
 	// TODO: find a better way
 	//  (this is only used by genesis miners)
 
@@ -434,9 +448,19 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				return err
 			}
 
+			wsts := statestore.New(namespace.Wrap(mds, modules.WorkerCallsPrefix))
+			smsts := statestore.New(namespace.Wrap(mds, modules.ManagerWorkPrefix))
+
 			smgr, err := sectorstorage.New(ctx, lr, stores.NewIndex(), &ffiwrapper.Config{
 				SealProofType: spt,
-			}, sectorstorage.SealerConfig{true, true, true, true}, nil, sa)
+			}, sectorstorage.SealerConfig{
+				ParallelFetchLimit: 10,
+				AllowAddPiece:      true,
+				AllowPreCommit1:    true,
+				AllowPreCommit2:    true,
+				AllowCommit:        true,
+				AllowUnseal:        true,
+			}, nil, sa, wsts, smsts)
 			if err != nil {
 				return err
 			}
@@ -445,7 +469,12 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				return err
 			}
 
-			m := miner.NewMiner(api, epp, a)
+			j, err := journal.OpenFSJournal(lr, journal.EnvDisabledEvents())
+			if err != nil {
+				return fmt.Errorf("failed to open filesystem journal: %w", err)
+			}
+
+			m := storageminer.NewMiner(api, epp, a, slashfilter.New(mds), j)
 			{
 				if err := m.Start(ctx); err != nil {
 					return xerrors.Errorf("failed to start up genesis miner: %w", err)
@@ -454,11 +483,11 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				cerr := configureStorageMiner(ctx, api, a, peerid, gasPrice)
 
 				if err := m.Stop(ctx); err != nil {
-					log.Error("failed to shut down storage miner: ", err)
+					log.Error("failed to shut down miner: ", err)
 				}
 
 				if cerr != nil {
-					return xerrors.Errorf("failed to configure storage miner: %w", cerr)
+					return xerrors.Errorf("failed to configure miner: %w", cerr)
 				}
 			}
 
@@ -492,7 +521,7 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		}
 
 		if err := configureStorageMiner(ctx, api, a, peerid, gasPrice); err != nil {
-			return xerrors.Errorf("failed to configure storage miner: %w", err)
+			return xerrors.Errorf("failed to configure miner: %w", err)
 		}
 
 		addr = a
@@ -505,7 +534,7 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		addr = a
 	}
 
-	log.Infof("Created new storage miner: %s", addr)
+	log.Infof("Created new miner: %s", addr)
 	if err := mds.Put(datastore.NewKey("miner-address"), addr.Bytes()); err != nil {
 		return err
 	}
@@ -551,16 +580,15 @@ func configureStorageMiner(ctx context.Context, api lapi.FullNode, addr address.
 	}
 
 	msg := &types.Message{
-		To:       addr,
-		From:     mi.Worker,
-		Method:   builtin.MethodsMiner.ChangePeerID,
-		Params:   enc,
-		Value:    types.NewInt(0),
-		GasPrice: gasPrice,
-		GasLimit: 99999999,
+		To:         addr,
+		From:       mi.Worker,
+		Method:     miner.Methods.ChangePeerID,
+		Params:     enc,
+		Value:      types.NewInt(0),
+		GasPremium: gasPrice,
 	}
 
-	smsg, err := api.MpoolPushMessage(ctx, msg)
+	smsg, err := api.MpoolPushMessage(ctx, msg, nil)
 	if err != nil {
 		return err
 	}
@@ -579,8 +607,6 @@ func configureStorageMiner(ctx context.Context, api lapi.FullNode, addr address.
 }
 
 func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPrice types.BigInt, cctx *cli.Context) (address.Address, error) {
-	log.Info("Creating StorageMarket.CreateStorageMiner message")
-
 	var err error
 	var owner address.Address
 	if cctx.String("owner") != "" {
@@ -601,16 +627,34 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 	if cctx.String("worker") != "" {
 		worker, err = address.NewFromString(cctx.String("worker"))
 	} else if cctx.Bool("create-worker-key") { // TODO: Do we need to force this if owner is Secpk?
-		worker, err = api.WalletNew(ctx, crypto2.SigTypeBLS)
+		worker, err = api.WalletNew(ctx, types.KTBLS)
 	}
-	// TODO: Transfer some initial funds to worker
 	if err != nil {
-		return address.Undef, err
+		return address.Address{}, err
 	}
 
-	collateral, err := api.StatePledgeCollateral(ctx, types.EmptyTSK)
+	// make sure the worker account exists on chain
+	_, err = api.StateLookupID(ctx, worker, types.EmptyTSK)
 	if err != nil {
-		return address.Undef, err
+		signed, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:  owner,
+			To:    worker,
+			Value: types.NewInt(0),
+		}, nil)
+		if err != nil {
+			return address.Undef, xerrors.Errorf("push worker init: %w", err)
+		}
+
+		log.Infof("Initializing worker account %s, message: %s", worker, signed.Cid())
+		log.Infof("Waiting for confirmation")
+
+		mw, err := api.StateWaitMsg(ctx, signed.Cid(), build.MessageConfidence)
+		if err != nil {
+			return address.Undef, xerrors.Errorf("waiting for worker init: %w", err)
+		}
+		if mw.Receipt.ExitCode != 0 {
+			return address.Undef, xerrors.Errorf("initializing worker account failed: exit code %d", mw.Receipt.ExitCode)
+		}
 	}
 
 	spt, err := ffiwrapper.SealProofTypeFromSectorSize(abi.SectorSize(ssize))
@@ -618,7 +662,7 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 		return address.Undef, err
 	}
 
-	params, err := actors.SerializeParams(&power.CreateMinerParams{
+	params, err := actors.SerializeParams(&power2.CreateMinerParams{
 		Owner:         owner,
 		Worker:        worker,
 		SealProofType: spt,
@@ -628,40 +672,49 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 		return address.Undef, err
 	}
 
-	createStorageMinerMsg := &types.Message{
-		To:    builtin.StoragePowerActorAddr,
-		From:  owner,
-		Value: types.BigAdd(collateral, types.BigDiv(collateral, types.NewInt(100))),
+	sender := owner
+	if fromstr := cctx.String("from"); fromstr != "" {
+		faddr, err := address.NewFromString(fromstr)
+		if err != nil {
+			return address.Undef, fmt.Errorf("could not parse from address: %w", err)
+		}
+		sender = faddr
+	}
 
-		Method: builtin.MethodsPower.CreateMiner,
+	createStorageMinerMsg := &types.Message{
+		To:    power.Address,
+		From:  sender,
+		Value: big.Zero(),
+
+		Method: power.Methods.CreateMiner,
 		Params: params,
 
-		GasLimit: 10000000,
-		GasPrice: gasPrice,
+		GasLimit:   0,
+		GasPremium: gasPrice,
 	}
 
-	signed, err := api.MpoolPushMessage(ctx, createStorageMinerMsg)
+	signed, err := api.MpoolPushMessage(ctx, createStorageMinerMsg, nil)
 	if err != nil {
-		return address.Undef, err
+		return address.Undef, xerrors.Errorf("pushing createMiner message: %w", err)
 	}
 
-	log.Infof("Pushed StorageMarket.CreateStorageMiner, %s to Mpool", signed.Cid())
+	log.Infof("Pushed CreateMiner message: %s", signed.Cid())
 	log.Infof("Waiting for confirmation")
 
 	mw, err := api.StateWaitMsg(ctx, signed.Cid(), build.MessageConfidence)
 	if err != nil {
-		return address.Undef, err
+		return address.Undef, xerrors.Errorf("waiting for createMiner message: %w", err)
 	}
 
 	if mw.Receipt.ExitCode != 0 {
-		return address.Undef, xerrors.Errorf("create storage miner failed: exit code %d", mw.Receipt.ExitCode)
+		return address.Undef, xerrors.Errorf("create miner failed: exit code %d", mw.Receipt.ExitCode)
 	}
 
-	var retval power.CreateMinerReturn
+	var retval power2.CreateMinerReturn
 	if err := retval.UnmarshalCBOR(bytes.NewReader(mw.Receipt.Return)); err != nil {
 		return address.Undef, err
 	}
 
-	log.Infof("New storage miners address is: %s (%s)", retval.IDAddress, retval.RobustAddress)
+	log.Infof("New miners address is: %s (%s)", retval.IDAddress, retval.RobustAddress)
 	return retval.IDAddress, nil
 }

@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
+	saproof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
+
 	"github.com/docker/go-units"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/minio/blake2b-simd"
@@ -21,15 +23,16 @@ import (
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/filecoin-project/go-address"
 	paramfetch "github.com/filecoin-project/go-paramfetch"
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
-	"github.com/filecoin-project/sector-storage/ffiwrapper/basicfs"
-	"github.com/filecoin-project/sector-storage/stores"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
+	"github.com/filecoin-project/go-state-types/abi"
+	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper/basicfs"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
@@ -73,8 +76,6 @@ func main() {
 	logging.SetLogLevel("*", "INFO")
 
 	log.Info("Starting epik-bench")
-
-	miner.SupportedProofTypes[abi.RegisteredSealProof_StackedDrg2KiBV1] = struct{}{}
 
 	app := &cli.App{
 		Name:    "epik-bench",
@@ -145,6 +146,8 @@ var sealBenchCmd = &cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
+		policy.AddSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
+
 		if c.Bool("no-gpu") {
 			err := os.Setenv("BELLMAN_NO_GPU", "1")
 			if err != nil {
@@ -235,7 +238,7 @@ var sealBenchCmd = &cli.Command{
 		}
 
 		var sealTimings []SealingResult
-		var sealedSectors []abi.SectorInfo
+		var sealedSectors []saproof2.SectorInfo
 
 		if robench == "" {
 			var err error
@@ -278,7 +281,7 @@ var sealBenchCmd = &cli.Command{
 			}
 
 			for _, s := range genm.Sectors {
-				sealedSectors = append(sealedSectors, abi.SectorInfo{
+				sealedSectors = append(sealedSectors, saproof2.SectorInfo{
 					SealedCID:    s.CommR,
 					SectorNumber: s.SectorID,
 					SealProof:    s.ProofType,
@@ -303,7 +306,7 @@ var sealBenchCmd = &cli.Command{
 				return err
 			}
 
-			candidates := make([]abi.SectorInfo, len(fcandidates))
+			candidates := make([]saproof2.SectorInfo, len(fcandidates))
 			for i, fcandidate := range fcandidates {
 				candidates[i] = sealedSectors[fcandidate]
 			}
@@ -326,7 +329,7 @@ var sealBenchCmd = &cli.Command{
 
 			winnningpost2 := time.Now()
 
-			pvi1 := abi.WinningPoStVerifyInfo{
+			pvi1 := saproof2.WinningPoStVerifyInfo{
 				Randomness:        abi.PoStRandomness(challenge[:]),
 				Proofs:            proof1,
 				ChallengedSectors: candidates,
@@ -342,7 +345,7 @@ var sealBenchCmd = &cli.Command{
 
 			verifyWinningPost1 := time.Now()
 
-			pvi2 := abi.WinningPoStVerifyInfo{
+			pvi2 := saproof2.WinningPoStVerifyInfo{
 				Randomness:        abi.PoStRandomness(challenge[:]),
 				Proofs:            proof2,
 				ChallengedSectors: candidates,
@@ -374,7 +377,7 @@ var sealBenchCmd = &cli.Command{
 
 			windowpost2 := time.Now()
 
-			wpvi1 := abi.WindowPoStVerifyInfo{
+			wpvi1 := saproof2.WindowPoStVerifyInfo{
 				Randomness:        challenge[:],
 				Proofs:            wproof1,
 				ChallengedSectors: sealedSectors,
@@ -385,12 +388,12 @@ var sealBenchCmd = &cli.Command{
 				return err
 			}
 			if !ok {
-				log.Error("post verification failed")
+				log.Error("window post verification failed")
 			}
 
 			verifyWindowpost1 := time.Now()
 
-			wpvi2 := abi.WindowPoStVerifyInfo{
+			wpvi2 := saproof2.WindowPoStVerifyInfo{
 				Randomness:        challenge[:],
 				Proofs:            wproof2,
 				ChallengedSectors: sealedSectors,
@@ -401,7 +404,7 @@ var sealBenchCmd = &cli.Command{
 				return err
 			}
 			if !ok {
-				log.Error("post verification failed")
+				log.Error("window post verification failed")
 			}
 
 			verifyWindowpost2 := time.Now()
@@ -462,10 +465,10 @@ type ParCfg struct {
 	Commit     int
 }
 
-func runSeals(sb *ffiwrapper.Sealer, sbfs *basicfs.Provider, numSectors int, par ParCfg, mid abi.ActorID, sectorSize abi.SectorSize, ticketPreimage []byte, saveC2inp string, skipc2, skipunseal bool) ([]SealingResult, []abi.SectorInfo, error) {
+func runSeals(sb *ffiwrapper.Sealer, sbfs *basicfs.Provider, numSectors int, par ParCfg, mid abi.ActorID, sectorSize abi.SectorSize, ticketPreimage []byte, saveC2inp string, skipc2, skipunseal bool) ([]SealingResult, []saproof2.SectorInfo, error) {
 	var pieces []abi.PieceInfo
 	sealTimings := make([]SealingResult, numSectors)
-	sealedSectors := make([]abi.SectorInfo, numSectors)
+	sealedSectors := make([]saproof2.SectorInfo, numSectors)
 
 	preCommit2Sema := make(chan struct{}, par.PreCommit2)
 	commitSema := make(chan struct{}, par.Commit)
@@ -535,7 +538,7 @@ func runSeals(sb *ffiwrapper.Sealer, sbfs *basicfs.Provider, numSectors int, par
 					precommit2 := time.Now()
 					<-preCommit2Sema
 
-					sealedSectors[ix] = abi.SectorInfo{
+					sealedSectors[ix] = saproof2.SectorInfo{
 						SealProof:    sb.SealProofType(),
 						SectorNumber: i,
 						SealedCID:    cids.Sealed,
@@ -587,7 +590,7 @@ func runSeals(sb *ffiwrapper.Sealer, sbfs *basicfs.Provider, numSectors int, par
 					<-commitSema
 
 					if !skipc2 {
-						svi := abi.SealVerifyInfo{
+						svi := saproof2.SealVerifyInfo{
 							SectorID:              abi.SectorID{Miner: mid, Number: i},
 							SealedCID:             cids.Sealed,
 							SealProof:             sb.SealProofType(),
@@ -612,7 +615,7 @@ func runSeals(sb *ffiwrapper.Sealer, sbfs *basicfs.Provider, numSectors int, par
 					if !skipunseal {
 						log.Infof("[%d] Unsealing sector", i)
 						{
-							p, done, err := sbfs.AcquireSector(context.TODO(), abi.SectorID{Miner: mid, Number: 1}, stores.FTUnsealed, stores.FTNone, true)
+							p, done, err := sbfs.AcquireSector(context.TODO(), abi.SectorID{Miner: mid, Number: 1}, storiface.FTUnsealed, storiface.FTNone, storiface.PathSealing)
 							if err != nil {
 								return xerrors.Errorf("acquire unsealed sector for removing: %w", err)
 							}
@@ -743,5 +746,5 @@ func bps(data abi.SectorSize, d time.Duration) string {
 	bdata := new(big.Int).SetUint64(uint64(data))
 	bdata = bdata.Mul(bdata, big.NewInt(time.Second.Nanoseconds()))
 	bps := bdata.Div(bdata, big.NewInt(d.Nanoseconds()))
-	return types.SizeStr(types.BigInt{bps}) + "/s"
+	return types.SizeStr(types.BigInt{Int: bps}) + "/s"
 }

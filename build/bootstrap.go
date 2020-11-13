@@ -38,17 +38,3 @@ func BuiltinBootstrap() ([]peer.AddrInfo, error) {
 	})
 	return out, err
 }
-
-func DrandBootstrap() ([]peer.AddrInfo, error) {
-	//addrs := []string{
-	//	"/dnsaddr/pl-eu.testnet.drand.sh/",
-	//	"/dnsaddr/pl-us.testnet.drand.sh/",
-	//	"/dnsaddr/pl-sin.testnet.drand.sh/",
-	//}
-	addrs := []string{
-		"/dnsaddr/api.drand.sh/",
-		"/dnsaddr/api2.drand.sh/",
-		"/dnsaddr/api3.drand.sh/",
-	}
-	return addrutil.ParseAddresses(context.TODO(), addrs)
-}
