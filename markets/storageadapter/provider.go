@@ -200,6 +200,19 @@ func (n *ProviderNodeAdapter) GetMinerInfo(ctx context.Context, addr address.Add
 	return &out, nil
 }
 
+func (n *ProviderNodeAdapter) GetProofType(ctx context.Context, miner address.Address, tok shared.TipSetToken) (abi.RegisteredSealProof, error) {
+	tsk, err := types.TipSetKeyFromBytes(tok)
+	if err != nil {
+		return 0, err
+	}
+
+	mi, err := n.StateMinerInfo(ctx, miner, tsk)
+	if err != nil {
+		return 0, err
+	}
+	return mi.SealProofType, nil
+}
+
 func (n *ProviderNodeAdapter) SignBytes(ctx context.Context, signer address.Address, b []byte) (*crypto.Signature, error) {
 	signer, err := n.StateAccountKey(ctx, signer, types.EmptyTSK)
 	if err != nil {
