@@ -208,23 +208,35 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	}
 
 	// Setup expert-funds
-	err = state.SetActor(builtin.ExpertFundsActorAddr, &types.Actor{
-		Code:    builtin.AccountActorCodeID,
-		Balance: types.NewInt(0),
-		Head:    emptyobject,
+	expertRoot, err := cst.Put(ctx, &account0.State{
+		Address: builtin0.ExpertFundsActorAddr,
 	})
 	if err != nil {
-		return nil, xerrors.Errorf("set expert funds account actor: %w", err)
+		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
+	}
+	err = state.SetActor(builtin.ExpertFundsActorAddr, &types.Actor{
+		Code:    builtin0.AccountActorCodeID,
+		Balance: types.NewInt(0),
+		Head:    expertRoot,
+	})
+	if err != nil {
+		return nil, nil, xerrors.Errorf("set expert funds account actor: %w", err)
 	}
 
 	// Setup retrieve-funds
-	err = state.SetActor(builtin.RetrieveFundsActorAddr, &types.Actor{
-		Code:    builtin.AccountActorCodeID,
-		Balance: types.NewInt(0),
-		Head:    emptyobject,
+	retrieveRoot, err := cst.Put(ctx, &account0.State{
+		Address: builtin0.RetrieveFundsActorAddr,
 	})
 	if err != nil {
-		return nil, xerrors.Errorf("set retrieve funds account actor: %w", err)
+		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
+	}
+	err = state.SetActor(builtin.RetrieveFundsActorAddr, &types.Actor{
+		Code:    builtin0.AccountActorCodeID,
+		Balance: types.NewInt(0),
+		Head:    retrieveRoot,
+	})
+	if err != nil {
+		return nil, nil, xerrors.Errorf("set retrieve funds account actor: %w", err)
 	}
 
 	// Create accounts

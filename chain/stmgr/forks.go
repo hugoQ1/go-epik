@@ -398,7 +398,7 @@ func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, cb ExecCal
 				Amt:  mfunds,
 			})
 
-			// Now make sure to give each miner who had power at the lookback some FIL
+			// Now make sure to give each miner who had power at the lookback some EPK
 			lbact, err := lbtree.GetActor(addr)
 			if err == nil {
 				var lbst miner0.State

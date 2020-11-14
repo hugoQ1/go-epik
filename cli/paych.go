@@ -356,7 +356,7 @@ var paychVoucherCreateCmd = &cli.Command{
 			return err
 		}
 
-		amt, err := types.ParseFIL(cctx.Args().Get(1))
+		amt, err := types.ParseEPK(cctx.Args().Get(1))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("parsing amount failed: %s", err))
 		}

@@ -67,15 +67,15 @@ var genesisVerifyCmd = &cli.Command{
 
 		sm := stmgr.NewStateManager(cs)
 
-		total, err := stmgr.CheckTotalFIL(context.TODO(), sm, ts)
+		total, err := stmgr.CheckTotalEPK(context.TODO(), sm, ts)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Genesis: ", ts.Key())
-		expFIL := big.Mul(big.NewInt(int64(build.FilBase)), big.NewInt(int64(build.FilecoinPrecision)))
-		fmt.Printf("Total FIL: %s", types.EPK(total))
-		if !expFIL.Equals(total) {
+		expEPK := big.Mul(big.NewInt(int64(build.FilBase)), big.NewInt(int64(build.FilecoinPrecision)))
+		fmt.Printf("Total EPK: %s", types.EPK(total))
+		if !expEPK.Equals(total) {
 			color.Red("  INCORRECT!")
 		}
 		fmt.Println()

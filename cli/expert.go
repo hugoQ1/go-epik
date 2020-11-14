@@ -9,8 +9,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -37,7 +37,7 @@ var expertInitCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "gas-price",
-			Usage: "set gas price for initialization messages in AttoFIL",
+			Usage: "set gas price for initialization messages in AttoEPK",
 			Value: "0",
 		},
 		&cli.BoolFlag{

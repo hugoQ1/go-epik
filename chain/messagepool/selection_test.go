@@ -97,7 +97,7 @@ func TestMessageChains(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
 
 	// test chain aggregations
 
@@ -336,7 +336,7 @@ func TestMessageChainSkipping(t *testing.T) {
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 	baseFee := types.NewInt(0)
 
-	tma.setBalance(a1, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
 	tma.setStateNonce(a1, 10)
 
 	mset := make(map[uint64]*types.SignedMessage)
@@ -412,8 +412,8 @@ func TestBasicMessageSelection(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	// we create 10 messages from each actor to another, with the first actor paying higher
 	// gas prices than the second; we expect message selection to order his messages first
@@ -556,8 +556,8 @@ func TestMessageSelectionTrimming(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	// make many small chains for the two actors
 	nMessages := int((build.BlockGasLimit / gasLimit) + 1)
@@ -619,8 +619,8 @@ func TestPriorityMessageSelection(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	mp.cfg.PriorityAddrs = []address.Address{a1}
 
@@ -698,8 +698,8 @@ func TestPriorityMessageSelection2(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	mp.cfg.PriorityAddrs = []address.Address{a1}
 
@@ -767,8 +767,8 @@ func TestPriorityMessageSelection3(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	mp.cfg.PriorityAddrs = []address.Address{a1}
 
@@ -864,8 +864,8 @@ func TestOptimalMessageSelection1(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	nMessages := int(10 * build.BlockGasLimit / gasLimit)
 	for i := 0; i < nMessages; i++ {
@@ -931,8 +931,8 @@ func TestOptimalMessageSelection2(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
-	tma.setBalance(a2, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
+	tma.setBalance(a2, 1) // in EPK
 
 	nMessages := int(5 * build.BlockGasLimit / gasLimit)
 	for i := 0; i < nMessages; i++ {
@@ -1010,7 +1010,7 @@ func TestOptimalMessageSelection3(t *testing.T) {
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
 	for _, a := range actors {
-		tma.setBalance(a, 1) // in FIL
+		tma.setBalance(a, 1) // in EPK
 	}
 
 	nMessages := int(build.BlockGasLimit/gasLimit) + 1
@@ -1091,7 +1091,7 @@ func testCompetitiveMessageSelection(t *testing.T, rng *rand.Rand, getPremium fu
 	baseFee := types.NewInt(0)
 
 	for _, a := range actors {
-		tma.setBalance(a, 1) // in FIL
+		tma.setBalance(a, 1) // in EPK
 	}
 
 	nMessages := 10 * int(build.BlockGasLimit/gasLimit)

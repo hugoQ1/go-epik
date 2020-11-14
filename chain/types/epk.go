@@ -11,13 +11,11 @@ import (
 
 type EPK BigInt
 
-type FIL BigInt
-
-func (f FIL) String() string {
-	return f.Unitless() + " FIL"
+func (f EPK) String() string {
+	return f.Unitless() + " EPK"
 }
 
-func (f FIL) Unitless() string {
+func (f EPK) Unitless() string {
 	r := new(big.Rat).SetFrac(f.Int, big.NewInt(int64(build.FilecoinPrecision)))
 	if r.Sign() == 0 {
 		return "0"
@@ -34,12 +32,12 @@ func (f EPK) Format(s fmt.State, ch rune) {
 	}
 }
 
-func (f FIL) MarshalText() (text []byte, err error) {
+func (f EPK) MarshalText() (text []byte, err error) {
 	return []byte(f.String()), nil
 }
 
-func (f FIL) UnmarshalText(text []byte) error {
-	p, err := ParseFIL(string(text))
+func (f EPK) UnmarshalText(text []byte) error {
+	p, err := ParseEPK(string(text))
 	if err != nil {
 		return err
 	}
@@ -48,7 +46,7 @@ func (f FIL) UnmarshalText(text []byte) error {
 	return nil
 }
 
-func ParseFIL(s string) (FIL, error) {
+func ParseEPK(s string) (EPK, error) {
 	suffix := strings.TrimLeft(s, ".1234567890")
 	s = s[:len(s)-len(suffix)]
 	var attoepk bool
@@ -64,7 +62,7 @@ func ParseFIL(s string) (FIL, error) {
 	}
 
 	if len(s) > 50 {
-		return FIL{}, fmt.Errorf("string length too large: %d", len(s))
+		return EPK{}, fmt.Errorf("string length too large: %d", len(s))
 	}
 
 	r, ok := new(big.Rat).SetString(s)
@@ -87,8 +85,8 @@ func ParseFIL(s string) (FIL, error) {
 	return EPK{r.Num()}, nil
 }
 
-func MustParseFIL(s string) FIL {
-	n, err := ParseFIL(s)
+func MustParseEPK(s string) EPK {
+	n, err := ParseEPK(s)
 	if err != nil {
 		panic(err)
 	}
@@ -96,5 +94,5 @@ func MustParseFIL(s string) FIL {
 	return n
 }
 
-var _ encoding.TextMarshaler = (*FIL)(nil)
-var _ encoding.TextUnmarshaler = (*FIL)(nil)
+var _ encoding.TextMarshaler = (*EPK)(nil)
+var _ encoding.TextUnmarshaler = (*EPK)(nil)

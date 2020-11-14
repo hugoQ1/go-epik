@@ -474,7 +474,7 @@ type FullNode interface {
 	MsigGetAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	// MsigGetVestingSchedule returns the vesting details of a given multisig.
 	MsigGetVestingSchedule(context.Context, address.Address, types.TipSetKey) (MsigVesting, error)
-	// MsigGetVested returns the amount of FIL that vested in a multisig in a certain period.
+	// MsigGetVested returns the amount of EPK that vested in a multisig in a certain period.
 	// It takes the following params: <multisig address>, <start epoch>, <end epoch>
 	MsigGetVested(context.Context, address.Address, types.TipSetKey, types.TipSetKey) (types.BigInt, error)
 	// MsigCreate creates a multisig wallet

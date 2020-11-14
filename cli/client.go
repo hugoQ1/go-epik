@@ -701,7 +701,7 @@ uiLoop:
 			state = "find-budget"
 		case "find-budget":
 			afmt.Printf("Proposing from %s, Current Balance: %s\n", a, types.EPK(fromBal))
-			afmt.Print("Maximum budget (FIL): ") // TODO: Propose some default somehow?
+			afmt.Print("Maximum budget (EPK): ") // TODO: Propose some default somehow?
 
 			_budgetStr, _, err := rl.ReadLine()
 			budgetStr := string(_budgetStr)
@@ -710,9 +710,9 @@ uiLoop:
 				continue
 			}
 
-			budget, err = types.ParseFIL(budgetStr)
+			budget, err = types.ParseEPK(budgetStr)
 			if err != nil {
-				printErr(xerrors.Errorf("parsing FIL: %w", err))
+				printErr(xerrors.Errorf("parsing EPK: %w", err))
 				continue uiLoop
 			}
 
@@ -993,7 +993,7 @@ var clientRetrieveCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "maxPrice",
-			Usage: fmt.Sprintf("maximum price the client is willing to consider (default: %d FIL)", DefaultMaxRetrievePrice),
+			Usage: fmt.Sprintf("maximum price the client is willing to consider (default: %d EPK)", DefaultMaxRetrievePrice),
 		},
 		&cli.StringFlag{
 			Name:  "pieceCid",
@@ -1095,7 +1095,7 @@ var clientRetrieveCmd = &cli.Command{
 		maxPrice := types.FromFil(DefaultMaxRetrievePrice)
 
 		if cctx.String("maxPrice") != "" {
-			maxPriceFil, err := types.ParseFIL(cctx.String("maxPrice"))
+			maxPriceFil, err := types.ParseEPK(cctx.String("maxPrice"))
 			if err != nil {
 				return xerrors.Errorf("parsing maxPrice: %w", err)
 			}

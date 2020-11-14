@@ -166,7 +166,7 @@ var retrievalSetAskCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "price",
-			Usage: "Set the price of the ask for retrievals (FIL/GiB)",
+			Usage: "Set the price of the ask for retrievals (EPK/GiB)",
 		},
 		&cli.StringFlag{
 			Name:  "unseal-price",
@@ -198,7 +198,7 @@ var retrievalSetAskCmd = &cli.Command{
 		}
 
 		if cctx.IsSet("price") {
-			v, err := types.ParseFIL(cctx.String("price"))
+			v, err := types.ParseEPK(cctx.String("price"))
 			if err != nil {
 				return err
 			}
@@ -206,7 +206,7 @@ var retrievalSetAskCmd = &cli.Command{
 		}
 
 		if cctx.IsSet("unseal-price") {
-			v, err := types.ParseFIL(cctx.String("unseal-price"))
+			v, err := types.ParseEPK(cctx.String("unseal-price"))
 			if err != nil {
 				return err
 			}

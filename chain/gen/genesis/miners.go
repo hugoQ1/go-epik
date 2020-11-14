@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	market0 "github.com/filecoin-project/specs-actors/actors/builtin/market"
+	"github.com/multiformats/go-multihash"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
@@ -19,11 +20,11 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 
 	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	miner0 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
@@ -96,6 +97,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		dealIDs []abi.DealID
 	}, len(miners))
 
+	var eaddr address.Address
 	for i, m := range miners {
 		// Create miner through power actor
 		i := i
@@ -162,8 +164,6 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			fmt.Printf("create genesis expert: %s\n", ma.IDAddress)
 		}
 
-		
-
 		// Add market funds
 
 		if m.MarketBalance.GreaterThan(big.Zero()) {
@@ -213,12 +213,12 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
 
 			{
-				_, err := doExecValue(ctx, vm, eaddr, m.Worker, big.Zero(), builtin.MethodsExpert.ImportData, mustEnc(&expert.ExpertDataParams{PieceID: rootCID}))
+				_, err := doExecValue(ctx, vm, eaddr, m.Worker, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{PieceID: rootCID}))
 				if err != nil {
 					return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
 				}
 			}
-			params.DataRef = market.PublishStorageDataRef{
+			params.DataRef = market2.PublishStorageDataRef{
 				RootCID: rootCID,
 				Expert:  eaddr.String(),
 				Bounty:  "",

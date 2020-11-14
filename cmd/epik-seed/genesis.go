@@ -260,7 +260,7 @@ func parseMultisigCsv(csvf string) ([]GenAccountEntry, error) {
 			addrs = append(addrs, addr)
 		}
 
-		balance, err := types.ParseFIL(strings.TrimSpace(e[2]))
+		balance, err := types.ParseEPK(strings.TrimSpace(e[2]))
 		if err != nil {
 			return nil, xerrors.Errorf("failed to parse account balance: %w", err)
 		}

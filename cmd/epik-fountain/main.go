@@ -70,7 +70,7 @@ var runCmd = &cli.Command{
 		},
 	},
 	Action: func(cctx *cli.Context) error {
-		sendPerRequest, err := types.ParseFIL(cctx.String("amount"))
+		sendPerRequest, err := types.ParseEPK(cctx.String("amount"))
 		if err != nil {
 			return err
 		}

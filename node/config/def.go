@@ -149,7 +149,7 @@ func defCommon() Common {
 
 }
 
-var DefaultDefaultMaxFee = types.MustParseFIL("0.007")
+var DefaultDefaultMaxFee = types.MustParseEPK("0.007")
 
 // DefaultFullNode returns the default config
 func DefaultFullNode() *FullNode {
@@ -195,11 +195,11 @@ func DefaultStorageMiner() *StorageMiner {
 		},
 
 		Fees: MinerFeeConfig{
-			MaxPreCommitGasFee:     types.MustParseFIL("0.025"),
-			MaxCommitGasFee:        types.MustParseFIL("0.05"),
-			MaxWindowPoStGasFee:    types.MustParseFIL("5"),
-			MaxPublishDealsFee:     types.MustParseFIL("0.05"),
-			MaxMarketBalanceAddFee: types.MustParseFIL("0.007"),
+			MaxPreCommitGasFee:     types.MustParseEPK("0.025"),
+			MaxCommitGasFee:        types.MustParseEPK("0.05"),
+			MaxWindowPoStGasFee:    types.MustParseEPK("5"),
+			MaxPublishDealsFee:     types.MustParseEPK("0.05"),
+			MaxMarketBalanceAddFee: types.MustParseEPK("0.007"),
 		},
 	}
 	cfg.Common.API.ListenAddress = "/ip4/127.0.0.1/tcp/2345/http"

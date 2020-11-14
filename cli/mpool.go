@@ -340,7 +340,7 @@ var mpoolReplaceCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "max-fee",
-			Usage: "Spend up to X FIL for this message (applicable for auto mode)",
+			Usage: "Spend up to X EPK for this message (applicable for auto mode)",
 		},
 	},
 	ArgsUsage: "<from nonce> | <message-cid>",

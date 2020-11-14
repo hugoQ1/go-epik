@@ -14,11 +14,6 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-jsonrpc"
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/go-storedcounter"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/client"
 	"github.com/EpiK-Protocol/go-epik/api/test"
@@ -40,9 +35,15 @@ import (
 	epikminer "github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/modules"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	testing2 "github.com/EpiK-Protocol/go-epik/node/modules/testing"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/EpiK-Protocol/go-epik/storage/mockstorage"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-storedcounter"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	"github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -411,6 +412,9 @@ func mockSbBuilderOpts(t *testing.T, fullOpts []test.FullNodeOpts, storage []tes
 			node.Test(),
 
 			node.Override(new(ffiwrapper.Verifier), mock.MockVerifier),
+
+			// so that we subscribe to pubsub topics immediately
+			node.Override(new(dtypes.Bootstrapper), dtypes.Bootstrapper(true)),
 
 			genesis,
 

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/EpiK-Protocol/go-epik/api/test"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
 	"github.com/stretchr/testify/require"
 	lcli "github.com/urfave/cli/v2"
 )
@@ -74,7 +74,7 @@ func RunMultisigTest(t *testing.T, cmds []*lcli.Command, clientNode test.TestNod
 	fmt.Println(out)
 
 	// Expect correct balance
-	require.Regexp(t, regexp.MustCompile("Balance: 0.000000000000001 FIL"), out)
+	require.Regexp(t, regexp.MustCompile("Balance: 0.000000000000001 EPK"), out)
 	// Expect 1 transaction
 	require.Regexp(t, regexp.MustCompile(`Transactions:\s*1`), out)
 	// Expect transaction to be "AddSigner"

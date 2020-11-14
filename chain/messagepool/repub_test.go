@@ -52,7 +52,7 @@ func TestRepubMessages(t *testing.T) {
 
 	gasLimit := gasguess.Costs[gasguess.CostKey{Code: builtin2.StorageMarketActorCodeID, M: 2}]
 
-	tma.setBalance(a1, 1) // in FIL
+	tma.setBalance(a1, 1) // in EPK
 
 	for i := 0; i < 10; i++ {
 		m := makeTestMessage(w1, a1, a2, uint64(i), gasLimit, uint64(i+1))

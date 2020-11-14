@@ -190,7 +190,7 @@ var actorSetPeeridCmd = &cli.Command{
 var actorWithdrawCmd = &cli.Command{
 	Name:      "withdraw",
 	Usage:     "withdraw available balance",
-	ArgsUsage: "[amount (FIL)]",
+	ArgsUsage: "[amount (EPK)]",
 	Action: func(cctx *cli.Context) error {
 		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
 		if err != nil {
@@ -223,7 +223,7 @@ var actorWithdrawCmd = &cli.Command{
 
 		amount := available
 		if cctx.Args().Present() {
-			f, err := types.ParseFIL(cctx.Args().First())
+			f, err := types.ParseEPK(cctx.Args().First())
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
@@ -262,7 +262,7 @@ var actorWithdrawCmd = &cli.Command{
 var actorRepayDebtCmd = &cli.Command{
 	Name:      "repay-debt",
 	Usage:     "pay down a miner's debt",
-	ArgsUsage: "[amount (FIL)]",
+	ArgsUsage: "[amount (EPK)]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "from",
@@ -296,7 +296,7 @@ var actorRepayDebtCmd = &cli.Command{
 
 		var amount abi.TokenAmount
 		if cctx.Args().Present() {
-			f, err := types.ParseFIL(cctx.Args().First())
+			f, err := types.ParseEPK(cctx.Args().First())
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}

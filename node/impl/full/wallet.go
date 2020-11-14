@@ -6,7 +6,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/crypto"
+	"github.com/filecoin-project/go-state-types/crypto"
 
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"

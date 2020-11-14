@@ -12,7 +12,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	minerActor "github.com/filecoin-project/specs-actors/actors/builtin/miner"
@@ -76,11 +76,12 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 		panic(err)
 	}
 	return &MinerData{
-		api:        api,
-		address:    addr,
-		dataRefs:   data,
-		retrievals: retrievals,
-		deals:      deals,
+		api:         api,
+		address:     addr,
+		dataRefs:    data,
+		retrievals:  retrievals,
+		deals:       deals,
+		checkHeight: 10,
 	}
 }
 

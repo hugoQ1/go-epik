@@ -89,7 +89,7 @@ This is an optional release of Epik that upgrades Epik dependencies, and include
 - Use TSK passed to GasEstimateGasLimit (https://github.com/EpiK-Protocol/go-epik/pull/4739)
 - match data type for reward state api (https://github.com/EpiK-Protocol/go-epik/pull/4745)
 - Add `termination-estimate` to get an estimation for how much a termination penalty will be (https://github.com/EpiK-Protocol/go-epik/pull/4617)
-- Restrict `ParseFIL` input length (https://github.com/EpiK-Protocol/go-epik/pull/4780)
+- Restrict `ParseEPK` input length (https://github.com/EpiK-Protocol/go-epik/pull/4780)
 - cmd sectors commitIDs len debug (https://github.com/EpiK-Protocol/go-epik/pull/4786)
 - Add client deal-stats CLI (https://github.com/EpiK-Protocol/go-epik/pull/4788)
 - Modify printf format (https://github.com/EpiK-Protocol/go-epik/pull/4795)
@@ -299,7 +299,7 @@ This release fixes an issue which may cause the actors v2 migration to compute t
 - Add some new endpoints for querying Msig info (https://github.com/EpiK-Protocol/go-epik/pull/4250)
 - Update markets v0.7.1 (https://github.com/EpiK-Protocol/go-epik/pull/4254)
 - Optimize SearchForMessage and GetReceipt (https://github.com/EpiK-Protocol/go-epik/pull/4246)
-- Use FIL instead of attoFIL in CLI more consistently (https://github.com/EpiK-Protocol/go-epik/pull/4249)
+- Use EPK instead of attoEPK in CLI more consistently (https://github.com/EpiK-Protocol/go-epik/pull/4249)
 - fix: clash between daemon --api flag and cli tests (https://github.com/EpiK-Protocol/go-epik/pull/4241)
 - add more info to chain sync lookback failure (https://github.com/EpiK-Protocol/go-epik/pull/4245)
 - Add message counts to inspect chain output (https://github.com/EpiK-Protocol/go-epik/pull/4230)
@@ -686,7 +686,7 @@ This optional release introduces a minor improvement to the sync process, ensuri
 This consensus-breaking release of Epik is designed to test a network upgrade on the space race testnet. The changes that break consensus are:
 
 - Tweaking of some cryptoecon parameters in specs-actors 0.9.7 (https://github.com/filecoin-project/specs-actors/releases/tag/v0.9.7)
-- Rebalancing FIL distribution to make testnet FIL scarce, which prevents base fee spikes and sets better expectations for mainnet
+- Rebalancing EPK distribution to make testnet EPK scarce, which prevents base fee spikes and sets better expectations for mainnet
 
 This release also introduces many improvements to Epik! Among them are a new version of go-fil-markets that supports non-blocking retrieval, various spam reduction measures in the messagepool and p2p logic, and UX improvements to payment channels, dealmaking, and state inspection.
 
@@ -922,8 +922,8 @@ The `Blockheader` structure has one new field, called `ParentBaseFee`.
 Informally speaking,the `ParentBaseFee`
 is increased when blocks are densely packed with messages, and decreased otherwise.
 
-The `ParentBaseFee` is used when calculating how much a sender burns when executing a message. _Burning_ simply refers to sending attoFIL to a dedicated, unreachable account.
-A message causes `ParentBaseFee * GasUsed` attoFIL to be burnt.
+The `ParentBaseFee` is used when calculating how much a sender burns when executing a message. _Burning_ simply refers to sending attoEPK to a dedicated, unreachable account.
+A message causes `ParentBaseFee * GasUsed` attoEPK to be burnt.
 
 #### Real gas values
 

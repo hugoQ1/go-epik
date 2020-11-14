@@ -175,6 +175,7 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davidlazar/go-crypto v0.0.0-20170701192655-dcfb0a7ac018/go.mod h1:rQYf4tfk5sSwFsnDg3qYaBxSjsD9S8+59vW0dKUgme4=
 github.com/davidlazar/go-crypto v0.0.0-20190912175916-7055855a373f h1:BOaYiTvg8p9vBUXpklC22XSK/mifLF7lG9jtmYYi3Tc=
 github.com/davidlazar/go-crypto v0.0.0-20190912175916-7055855a373f/go.mod h1:rQYf4tfk5sSwFsnDg3qYaBxSjsD9S8+59vW0dKUgme4=
+github.com/dchest/blake2b v1.0.0/go.mod h1:U034kXgbJpCle2wSk5ybGIVhOSHCVLMDqOzcPEA0F7s=
 github.com/detailyang/go-fallocate v0.0.0-20180908115635-432fa640bd2e h1:lj77EKYUpYXTd8CD/+QMIf8b6OIOTsfEBSXiAzuEHTU=
 github.com/detailyang/go-fallocate v0.0.0-20180908115635-432fa640bd2e/go.mod h1:3ZQK6DMPSz/QZ73jlWxBtUhNA8xZx7LzUFSq/OfP8vk=
 github.com/dgraph-io/badger v1.5.5-0.20190226225317-8115aed38f8f/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
@@ -286,6 +287,7 @@ github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b/
 github.com/filecoin-project/specs-actors v0.9.4/go.mod h1:BStZQzx5x7TmCkLv0Bpa07U6cPKol6fd3w9KjMPZ6Z4=
 github.com/filecoin-project/specs-actors v0.9.12 h1:iIvk58tuMtmloFNHhAOQHG+4Gci6Lui0n7DYQGi3cJk=
 github.com/filecoin-project/specs-actors v0.9.12/go.mod h1:TS1AW/7LbG+615j4NsjMK1qlpAwaFsG9w0V2tg2gSao=
+github.com/filecoin-project/specs-actors v0.9.13 h1:rUEOQouefi9fuVY/2HOroROJlZbOzWYXXeIh41KF2M4=
 github.com/filecoin-project/specs-actors/v2 v2.0.1/go.mod h1:v2NZVYinNIKA9acEMBm5wWXxqv5+frFEbekBFemYghY=
 github.com/filecoin-project/specs-actors/v2 v2.2.0 h1:IyCICb0NHYeD0sdSqjVGwWydn/7r7xXuxdpvGAcRCGY=
 github.com/filecoin-project/specs-actors/v2 v2.2.0/go.mod h1:rlv5Mx9wUhV8Qsz+vUezZNm+zL4tK08O0HreKKPB2Wc=
@@ -1582,6 +1584,7 @@ golang.org/x/crypto v0.0.0-20190618222545-ea8f1a30c443/go.mod h1:yigFU9vqHzYiE8U
 golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392/go.mod h1:/lpIB1dKB+9EgE3H3cr1v9wB50oz8l4C4h62xy7jSTY=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
+golang.org/x/crypto v0.0.0-20191122220453-ac88ee75c92c/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200117160349-530e935923ad/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=

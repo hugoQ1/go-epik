@@ -518,7 +518,7 @@ var walletMarket = &cli.Command{
 var walletMarketWithdraw = &cli.Command{
 	Name:      "withdraw",
 	Usage:     "Withdraw funds from the Storage Market Actor",
-	ArgsUsage: "[amount (FIL) optional, otherwise will withdraw max available]",
+	ArgsUsage: "[amount (EPK) optional, otherwise will withdraw max available]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
@@ -569,7 +569,7 @@ var walletMarketWithdraw = &cli.Command{
 		amt := avail
 
 		if cctx.Args().Present() {
-			f, err := types.ParseFIL(cctx.Args().First())
+			f, err := types.ParseEPK(cctx.Args().First())
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}

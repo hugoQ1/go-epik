@@ -159,12 +159,12 @@ var setAskCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "price",
-			Usage:    "Set the price of the ask for unverified deals (specified as FIL / GiB / Epoch) to `PRICE`.",
+			Usage:    "Set the price of the ask for unverified deals (specified as EPK / GiB / Epoch) to `PRICE`.",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "verified-price",
-			Usage:    "Set the price of the ask for verified deals (specified as FIL / GiB / Epoch) to `PRICE`",
+			Usage:    "Set the price of the ask for verified deals (specified as EPK / GiB / Epoch) to `PRICE`",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -188,12 +188,12 @@ var setAskCmd = &cli.Command{
 		}
 		defer closer()
 
-		pri, err := types.ParseFIL(cctx.String("price"))
+		pri, err := types.ParseEPK(cctx.String("price"))
 		if err != nil {
 			return err
 		}
 
-		vpri, err := types.ParseFIL(cctx.String("verified-price"))
+		vpri, err := types.ParseEPK(cctx.String("verified-price"))
 		if err != nil {
 			return err
 		}

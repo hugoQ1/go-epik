@@ -136,7 +136,7 @@ var terminateSectorCmd = &cli.Command{
 func findPenaltyInInternalExecutions(prefix string, trace []types.ExecutionTrace) {
 	for _, im := range trace {
 		if im.Msg.To.String() == "f099" /*Burn actor*/ {
-			fmt.Printf("Estimated termination penalty: %s attoFIL\n", im.Msg.Value)
+			fmt.Printf("Estimated termination penalty: %s attoEPK\n", im.Msg.Value)
 			return
 		}
 		findPenaltyInInternalExecutions(prefix+"\t", im.Subcalls)

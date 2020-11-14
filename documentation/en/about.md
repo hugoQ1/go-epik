@@ -4,7 +4,7 @@ Epik is an implementation of the **Filecoin Distributed Storage Network**.
 
 It is written in Go and provides a suite of command-line applications:
 
-- Epik Node (`epik`): a Filecoin Node: validates network transactions, manages a FIL wallet, can perform storage and retrieval deals.
+- Epik Node (`epik`): a Filecoin Node: validates network transactions, manages a EPK wallet, can perform storage and retrieval deals.
 - Epik Miner (`epik-miner`): a Filecoin miner. See the the respective Epik Miner section in the Mine documentation.
 - Epik Worker (`epik-worker`): a worker that assists miners to perform mining-related tasks. See its respective guide for more information.
 

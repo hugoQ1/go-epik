@@ -176,9 +176,9 @@ type FullNodeStruct struct {
 		ClientRestartDataTransfer                 func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
 		ClientCancelDataTransfer                  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
 		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
-		ClientRemove          func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
-		ClientQuery           func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                `perm:"read"`
-		ClientExpert          func(ctx context.Context) (*api.ExpertInfo, error)                                                   `perm:"read"`
+		ClientRemove         					  func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                     `perm:"admin"`
+		ClientQuery           					  func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                `perm:"read"`
+		ClientExpert          					  func(ctx context.Context) (*api.ExpertInfo, error)                                                   `perm:"read"`
 		
 		StateNetworkName                   func(context.Context) (dtypes.NetworkName, error)                                                                   `perm:"read"`
 		StateMinerSectors                  func(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error)     `perm:"read"`

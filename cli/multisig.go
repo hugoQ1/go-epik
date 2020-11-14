@@ -537,7 +537,7 @@ var msigApproveCmd = &cli.Command{
 				return err
 			}
 
-			value, err := types.ParseFIL(cctx.Args().Get(4))
+			value, err := types.ParseEPK(cctx.Args().Get(4))
 			if err != nil {
 				return err
 			}
@@ -1155,7 +1155,7 @@ var msigLockProposeCmd = &cli.Command{
 			return err
 		}
 
-		amount, err := types.ParseFIL(cctx.Args().Get(3))
+		amount, err := types.ParseEPK(cctx.Args().Get(3))
 		if err != nil {
 			return err
 		}
@@ -1252,7 +1252,7 @@ var msigLockApproveCmd = &cli.Command{
 			return err
 		}
 
-		amount, err := types.ParseFIL(cctx.Args().Get(5))
+		amount, err := types.ParseEPK(cctx.Args().Get(5))
 		if err != nil {
 			return err
 		}
@@ -1344,7 +1344,7 @@ var msigLockCancelCmd = &cli.Command{
 			return err
 		}
 
-		amount, err := types.ParseFIL(cctx.Args().Get(4))
+		amount, err := types.ParseEPK(cctx.Args().Get(4))
 		if err != nil {
 			return err
 		}

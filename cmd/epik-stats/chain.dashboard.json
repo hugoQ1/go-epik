@@ -1725,7 +1725,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "postfix": "FIL",
+      "postfix": "EPK",
       "postfixFontSize": "50%",
       "prefix": "",
       "prefixFontSize": "50%",
@@ -2858,7 +2858,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Cost of simple transfer [FIL]",
+      "title": "Cost of simple transfer [EPK]",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2988,7 +2988,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Base Fee[FIL]",
+      "title": "Base Fee[EPK]",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -3161,7 +3161,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Message Gas fees [FIL]",
+      "title": "Message Gas fees [EPK]",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -3369,7 +3369,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Message Gas fees [FIL]",
+      "title": "Message Gas fees [EPK]",
       "tooltip": {
         "shared": true,
         "sort": 0,

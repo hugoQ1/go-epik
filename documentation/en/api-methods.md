@@ -2344,7 +2344,7 @@ Inputs:
 Response: `"0"`
 
 ### MsigGetVested
-MsigGetVested returns the amount of FIL that vested in a multisig in a certain period.
+MsigGetVested returns the amount of EPK that vested in a multisig in a certain period.
 It takes the following params: <multisig address>, <start epoch>, <end epoch>
 
 

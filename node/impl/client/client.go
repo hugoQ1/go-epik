@@ -460,7 +460,6 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 		Miner:             miner,
 		EpochPrice:        ask.Ask.Price,
 		MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-		Redundancy:        int64(1),
 	}
 	dealId, err := a.ClientStartDeal(ctx, params)
 	if err != nil {

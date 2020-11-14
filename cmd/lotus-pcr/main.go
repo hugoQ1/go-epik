@@ -122,7 +122,7 @@ var findMinersCmd = &cli.Command{
    account balances can be included by enabling them through the flags.
 
    Examples
-   Find all miners with an available balance below 100 FIL
+   Find all miners with an available balance below 100 EPK
 
      epik-pcr find-miners --threshold 100
 
@@ -202,7 +202,7 @@ var findMinersCmd = &cli.Command{
 
 var recoverMinersCmd = &cli.Command{
 	Name:  "recover-miners",
-	Usage: "Ensure all miners with a negative available balance have a FIL surplus across accounts",
+	Usage: "Ensure all miners with a negative available balance have a EPK surplus across accounts",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
@@ -227,13 +227,13 @@ var recoverMinersCmd = &cli.Command{
 		&cli.IntFlag{
 			Name:    "miner-recovery-cutoff",
 			EnvVars: []string{"EPIK_PCR_MINER_RECOVERY_CUTOFF"},
-			Usage:   "maximum amount of FIL that can be sent to any one miner before refund percent is applied",
+			Usage:   "maximum amount of EPK that can be sent to any one miner before refund percent is applied",
 			Value:   3000,
 		},
 		&cli.IntFlag{
 			Name:    "miner-recovery-bonus",
 			EnvVars: []string{"EPIK_PCR_MINER_RECOVERY_BONUS"},
-			Usage:   "additional FIL to send to each miner",
+			Usage:   "additional EPK to send to each miner",
 			Value:   5,
 		},
 		&cli.IntFlag{
@@ -393,13 +393,13 @@ var runCmd = &cli.Command{
 		&cli.IntFlag{
 			Name:    "miner-recovery-cutoff",
 			EnvVars: []string{"EPIK_PCR_MINER_RECOVERY_CUTOFF"},
-			Usage:   "maximum amount of FIL that can be sent to any one miner before refund percent is applied",
+			Usage:   "maximum amount of EPK that can be sent to any one miner before refund percent is applied",
 			Value:   3000,
 		},
 		&cli.IntFlag{
 			Name:    "miner-recovery-bonus",
 			EnvVars: []string{"EPIK_PCR_MINER_RECOVERY_BONUS"},
-			Usage:   "additional FIL to send to each miner",
+			Usage:   "additional EPK to send to each miner",
 			Value:   5,
 		},
 		&cli.IntFlag{
@@ -472,12 +472,12 @@ var runCmd = &cli.Command{
 		minerRecoveryCutoff := uint64(cctx.Int("miner-recovery-cutoff"))
 		minerRecoveryBonus := uint64(cctx.Int("miner-recovery-bonus"))
 
-		preFeeCapMax, err := types.ParseFIL(cctx.String("pre-fee-cap-max"))
+		preFeeCapMax, err := types.ParseEPK(cctx.String("pre-fee-cap-max"))
 		if err != nil {
 			return err
 		}
 
-		proveFeeCapMax, err := types.ParseFIL(cctx.String("prove-fee-cap-max"))
+		proveFeeCapMax, err := types.ParseEPK(cctx.String("prove-fee-cap-max"))
 		if err != nil {
 			return err
 		}

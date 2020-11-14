@@ -765,7 +765,7 @@ func MinerEligibleToMine(ctx context.Context, sm *StateManager, addr address.Add
 	return true, nil
 }
 
-func CheckTotalFIL(ctx context.Context, sm *StateManager, ts *types.TipSet) (abi.TokenAmount, error) {
+func CheckTotalEPK(ctx context.Context, sm *StateManager, ts *types.TipSet) (abi.TokenAmount, error) {
 	str, err := state.LoadStateTree(sm.ChainStore().Store(ctx), ts.ParentState())
 	if err != nil {
 		return abi.TokenAmount{}, err
