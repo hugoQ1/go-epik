@@ -14,7 +14,6 @@ import (
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-state-types/network"
 	rtt "github.com/filecoin-project/go-state-types/rt"
-	rt0 "github.com/filecoin-project/specs-actors/actors/runtime"
 	rt2 "github.com/filecoin-project/specs-actors/v2/actors/runtime"
 	"github.com/ipfs/go-cid"
 	ipldcbor "github.com/ipfs/go-ipld-cbor"
@@ -134,7 +133,6 @@ func (rt *Runtime) StorePut(x cbor.Marshaler) cid.Cid {
 	return c
 }
 
-var _ rt0.Runtime = (*Runtime)(nil)
 var _ rt2.Runtime = (*Runtime)(nil)
 
 func (rt *Runtime) shimCall(f func() interface{}) (rval []byte, aerr aerrors.ActorError) {

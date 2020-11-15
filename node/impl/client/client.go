@@ -100,150 +100,148 @@ func (a *API) imgr() *importmgr.Mgr {
 }
 
 func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error) {
-	var storeID *multistore.StoreID
-	if params.Data.TransferType == storagemarket.TTGraphsync {
-		importIDs := a.imgr().List()
-		for _, importID := range importIDs {
-			info, err := a.imgr().Info(importID)
-			if err != nil {
-				continue
-			}
-			if info.Labels[importmgr.LRootCid] == "" {
-				continue
-			}
-			c, err := cid.Parse(info.Labels[importmgr.LRootCid])
-			if err != nil {
-				continue
-			}
-			if c.Equals(params.Data.Root) {
-				storeID = &importID //nolint
-				break
-			}
-		}
-	if params.Wallet == address.Undef {
-		dwallet, err := a.WalletDefaultAddress(ctx)
-		if err != nil {
-			return nil, err
-		}
-		params.Wallet = dwallet
-	}
+	// var storeID *multistore.StoreID
+	// if params.Data.TransferType == storagemarket.TTGraphsync {
+	// 	importIDs := a.imgr().List()
+	// 	for _, importID := range importIDs {
+	// 		info, err := a.imgr().Info(importID)
+	// 		if err != nil {
+	// 			continue
+	// 		}
+	// 		if info.Labels[importmgr.LRootCid] == "" {
+	// 			continue
+	// 		}
+	// 		c, err := cid.Parse(info.Labels[importmgr.LRootCid])
+	// 		if err != nil {
+	// 			continue
+	// 		}
+	// 		if c.Equals(params.Data.Root) {
+	// 			storeID = &importID //nolint
+	// 			break
+	// 		}
+	// 	}
+	// if params.Wallet == address.Undef {
+	// 	dwallet, err := a.WalletDefaultAddress(ctx)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	params.Wallet = dwallet
+	// }
 
-	// check expert
-	eaddr, err := address.NewFromString(params.Data.Expert)
-	if err != nil {
-		return nil, xerrors.Errorf("serializing expert failed: ", err)
-	}
+	// // check expert
+	// eaddr, err := address.NewFromString(params.Data.Expert)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("serializing expert failed: ", err)
+	// }
 
-	expertInfo, err := a.StateExpertInfo(ctx, eaddr, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert info: ", err)
-	}
-	from, err := a.StateAccountKey(ctx, expertInfo.Owner, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert key: ", err)
-	}
-	if params.Wallet.String() == from.String() {
-		data, err := a.StateExpertDatas(ctx, eaddr, nil, true, types.EmptyTSK)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to get expert data: ", err)
-		}
-		exist := false
-		for _, d := range data {
-			if d.PieceID == params.Data.Root.String() {
-				exist = true
-				break
-			}
-		}
+	// expertInfo, err := a.StateExpertInfo(ctx, eaddr, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed to get expert info: ", err)
+	// }
+	// from, err := a.StateAccountKey(ctx, expertInfo.Owner, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed to get expert key: ", err)
+	// }
+	// if params.Wallet.String() == from.String() {
+	// 	data, err := a.StateExpertDatas(ctx, eaddr, nil, true, types.EmptyTSK)
+	// 	if err != nil {
+	// 		return nil, xerrors.Errorf("failed to get expert data: ", err)
+	// 	}
+	// 	exist := false
+	// 	for _, d := range data {
+	// 		if d.PieceID == params.Data.Root.String() {
+	// 			exist = true
+	// 			break
+	// 		}
+	// 	}
 
-		if !exist {
-			expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-				PieceID: params.Data.Root,
-				Bounty:  params.Data.Bounty,
-			})
-			if err != nil {
-				return nil, xerrors.Errorf("serializing params failed: ", err)
-			}
+	// 	if !exist {
+	// 		expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
+	// 			PieceID: params.Data.Root,
+	// 			Bounty:  params.Data.Bounty,
+	// 		})
+	// 		if err != nil {
+	// 			return nil, xerrors.Errorf("serializing params failed: ", err)
+	// 		}
 
-			_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-				To:       eaddr,
-				From:     expertInfo.Owner,
-				Value:    types.NewInt(0),
-				GasPrice: types.NewInt(0),
-				GasLimit: 1000000,
-				Method:   builtin.MethodsExpert.ImportData,
-				Params:   expertParams,
-			})
-			if serr != nil {
-				return nil, serr
-			}
-		}
-	}
+	// 		_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+	// 			To:       eaddr,
+	// 			From:     expertInfo.Owner,
+	// 			Value:    types.NewInt(0),
+	// 			Method:   builtin.MethodsExpert.ImportData,
+	// 			Params:   expertParams,
+	// 		})
+	// 		if serr != nil {
+	// 			return nil, serr
+	// 		}
+	// 	}
+	// }
 
-	exist, err := a.WalletHas(ctx, params.Wallet)
-	walletKey, err := a.StateAccountKey(ctx, params.Wallet, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed resolving params.Wallet addr: %w", params.Wallet)
-	}
+	// walletKey, err := a.StateAccountKey(ctx, params.Wallet, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed resolving params.Wallet addr: %w", params.Wallet)
+	// }
 
-	exist, err := a.WalletHas(ctx, walletKey)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
-	}
-	if !exist {
-		return nil, xerrors.Errorf("provided address doesn't exist in wallet")
-	}
+	// exist, err := a.WalletHas(ctx, walletKey)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
+	// }
+	// if !exist {
+	// 	return nil, xerrors.Errorf("provided address doesn't exist in wallet")
+	// }
 
-	mi, err := a.StateMinerInfo(ctx, params.Miner, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting peer ID: %w", err)
-	}
+	// mi, err := a.StateMinerInfo(ctx, params.Miner, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting peer ID: %w", err)
+	// }
 
-	md, err := a.StateMinerProvingDeadline(ctx, params.Miner, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
-	}
+	// md, err := a.StateMinerProvingDeadline(ctx, params.Miner, types.EmptyTSK)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
+	// }
 
-	rt, err := ffiwrapper.SealProofTypeFromSectorSize(mi.SectorSize)
-	if err != nil {
-		return nil, xerrors.Errorf("bad sector size: %w", err)
-	}
+	// rt, err := ffiwrapper.SealProofTypeFromSectorSize(mi.SectorSize)
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("bad sector size: %w", err)
+	// }
 
-	if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
-		return nil, xerrors.New("data doesn't fit in a sector")
-	}
+	// if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
+	// 	return nil, xerrors.New("data doesn't fit in a sector")
+	// }
 
-	providerInfo := utils.NewStorageProviderInfo(params.Miner, mi.Worker, mi.SectorSize, *mi.PeerId, mi.Multiaddrs)
+	// providerInfo := utils.NewStorageProviderInfo(params.Miner, mi.Worker, mi.SectorSize, *mi.PeerId, mi.Multiaddrs)
 
-	dealStart := params.DealStartEpoch
-	if dealStart <= 0 { // unset, or explicitly 'epoch undefined'
-		ts, err := a.ChainHead(ctx)
-		if err != nil {
-			return nil, xerrors.Errorf("failed getting chain height: %w", err)
-		}
+	// dealStart := params.DealStartEpoch
+	// if dealStart <= 0 { // unset, or explicitly 'epoch undefined'
+	// 	ts, err := a.ChainHead(ctx)
+	// 	if err != nil {
+	// 		return nil, xerrors.Errorf("failed getting chain height: %w", err)
+	// 	}
 
-		blocksPerHour := 60 * 60 / build.BlockDelaySecs
-		dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
-	}
+	// 	blocksPerHour := 60 * 60 / build.BlockDelaySecs
+	// 	dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
+	// }
 
-	result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
-		Addr:          params.Wallet,
-		Info:          &providerInfo,
-		Data:          params.Data,
-		StartEpoch:    dealStart,
-		EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
-		Price:         params.EpochPrice,
-		Collateral:    params.ProviderCollateral,
-		Rt:            rt,
-		FastRetrieval: params.FastRetrieval,
-		VerifiedDeal:  params.VerifiedDeal,
-		StoreID:       storeID,
-	})
+	// result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
+	// 	Addr:          params.Wallet,
+	// 	Info:          &providerInfo,
+	// 	Data:          params.Data,
+	// 	StartEpoch:    dealStart,
+	// 	EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
+	// 	Price:         params.EpochPrice,
+	// 	Collateral:    params.ProviderCollateral,
+	// 	Rt:            rt,
+	// 	FastRetrieval: params.FastRetrieval,
+	// 	VerifiedDeal:  params.VerifiedDeal,
+	// 	StoreID:       storeID,
+	// })
 
-	if err != nil {
-		return nil, xerrors.Errorf("failed to start deal: %w", err)
-	}
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("failed to start deal: %w", err)
+	// }
 
-	return &result.ProposalCid, nil
+	// return &result.ProposalCid, nil
+	return nil, nil
 }
 
 func (a *API) ClientListDeals(ctx context.Context) ([]api.DealInfo, error) {
@@ -400,14 +398,20 @@ func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (*api.ImportRes
 	if err != nil {
 		return nil, err
 	}
-	return nd, nil
+
+	if err := a.imgr().AddLabel(id, importmgr.LRootCid, nd.String()); err != nil {
+		return nil, err
+	}
+
+	return &api.ImportRes{
+		Root:     nd,
+		ImportID: id,
+	}, nil
 }
 
 func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (cid.Cid, error) {
 
-	bufferedDS := ipld.NewBufferedDAG(ctx, a.LocalDAG)
-	nd, err := a.clientImport(ref, bufferedDS)
-
+	res, err := a.ClientImport(ctx, ref)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -438,11 +442,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 		return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
 	}
 
-	if peer.ID(mi.PeerId) == peer.ID("SETME") {
+	if *mi.PeerId == peer.ID("SETME") {
 		return cid.Undef, xerrors.Errorf("the miner hasn't initialized yet")
 	}
 
-	pid := peer.ID(mi.PeerId)
+	pid := *mi.PeerId
 	ask, err := a.ClientQueryAsk(ctx, pid, miner)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
@@ -450,7 +454,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 
 	dataRef := &storagemarket.DataRef{
 		TransferType: storagemarket.TTGraphsync,
-		Root:         nd,
+		Root:         res.Root,
 		Expert:       ref.Expert,
 		Bounty:       ref.Bounty,
 	}
@@ -458,8 +462,8 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 		Data:              dataRef,
 		Wallet:            payer,
 		Miner:             miner,
-		EpochPrice:        ask.Ask.Price,
-		MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
+		EpochPrice:        ask.Price,
+		MinBlocksDuration: uint64(ask.Expiry - ts.Height()),
 	}
 	dealId, err := a.ClientStartDeal(ctx, params)
 	if err != nil {
@@ -467,14 +471,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 	}
 	log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
 
-	if err := a.imgr().AddLabel(id, importmgr.LRootCid, nd.String()); err != nil {
-		return nil, err
-	}
-
-	return &api.ImportRes{
-		Root:     nd,
-		ImportID: id,
-	}, nil
+	return res.Root, nil
 }
 
 func (a *API) ClientRemoveImport(ctx context.Context, importID multistore.StoreID) error {
@@ -1045,31 +1042,33 @@ func (a *API) ClientGetDealStatus(ctx context.Context, statusCode uint64) (strin
 	}
 
 	return ststr, nil
+}
+
 func (a *API) checkRDFFile(ref api.FileRef, r io.Reader) error {
 	//TODO: add rdf file check, only rdf data is be allowed.
 	return nil
 }
 
 func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&miner.RemoveSectorParams{})
+	// params, err := actors.SerializeParams(&miner.RemoveSectorParams{})
 
-	if err != nil {
-		return cid.Undef, xerrors.Errorf("serializing params failed: ", err)
-	}
+	// if err != nil {
+	// 	return cid.Undef, xerrors.Errorf("serializing params failed: ", err)
+	// }
 
-	smsg, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-		To:       builtin.StorageMarketActorAddr,
-		From:     wallet,
-		Value:    types.NewInt(0),
-		GasPrice: types.NewInt(0),
-		GasLimit: 1000000,
-		Method:   builtin.MethodsMiner.RemoveSector,
-		Params:   params,
-	})
-	if serr != nil {
-		return cid.Undef, serr
-	}
-	return smsg.Cid(), nil
+	// smsg, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+	// 	To:       builtin.StorageMarketActorAddr,
+	// 	From:     wallet,
+	// 	Value:    types.NewInt(0),
+	// 	GasPrice: types.NewInt(0),
+	// 	GasLimit: 1000000,
+	// 	Method:   builtin.MethodsMiner.RemoveSector,
+	// 	Params:   params,
+	// })
+	// if serr != nil {
+	// 	return cid.Undef, serr
+	// }
+	return cid.Undef, nil
 }
 
 func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
@@ -1096,7 +1095,7 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 	// 	return nil, errors.New("Failed to find file")
 	// }
 	// offer := offers[rand.Intn(len(offers))]
-	offer, err := a.ClientMinerQueryOffer(ctx, root, miner)
+	offer, err := a.ClientMinerQueryOffer(ctx, miner, root, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1108,14 +1107,30 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	dealId, err := a.Retrieval.Retrieve(
+	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	if err != nil {
+		return nil, xerrors.Errorf("Retrieve failed: %w", err)
+	}
+
+	store, err := a.RetrievalStoreMgr.NewStore()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = a.RetrievalStoreMgr.ReleaseStore(store)
+	}()
+
+	dealID, err := a.Retrieval.Retrieve(
 		ctx,
 		order.Root,
-		rm.NewParamsV0(ppb, order.PaymentInterval, order.PaymentIntervalIncrease),
+		params,
 		order.Total,
-		order.MinerPeerID,
+		order.MinerPeer,
 		order.Client,
-		order.Miner)
+		order.Miner,
+		store.StoreID())
+
 	if err != nil {
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}
@@ -1123,7 +1138,7 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 	return &api.QueryResp{
 		Root:   root,
 		Status: api.QueryPending,
-		DealId: uint64(dealId),
+		DealId: uint64(dealID),
 	}, nil
 }
 

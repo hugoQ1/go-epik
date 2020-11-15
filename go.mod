@@ -156,6 +156,18 @@ replace github.com/filecoin-project/test-vectors => ./extern/test-vectors
 
 replace github.com/supranational/blst => ./extern/blst
 
-replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => ../go-epik-actors
+// replace github.com/filecoin-project/specs-storage => ../go-epik-storage
 
-replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
+// replace github.com/filecoin-project/filecoin-ffi => ../go-epik-ffi
+
+// replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => ../go-epik-actors
+
+// replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
+
+replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20201115130026-9957793d2874
+
+// replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20201116140240-9647d22c3d8e
+
+replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20201116142223-433e9f8f7d12
+
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20201116141736-bf5b14a86fdd

@@ -28,6 +28,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -255,42 +256,18 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 	return out, nil
 }
 
-func StateMinerInfo(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (miner.MinerInfo, error) {
-	var mas miner.State
-	_, err := sm.LoadActorStateRaw(ctx, maddr, &mas, ts.ParentState())
-	if err != nil {
-		return miner.MinerInfo{}, xerrors.Errorf("(get ssize) failed to load miner actor state: %w", err)
-	}
-
-	return mas.Info, nil
-}
-
-func StateExpertInfo(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (expert.ExpertInfo, error) {
-	var mas expert.State
-	_, err := sm.LoadActorStateRaw(ctx, maddr, &mas, ts.ParentState())
-	if err != nil {
-		return expert.ExpertInfo{}, xerrors.Errorf("(get ssize) failed to load expert actor state: %w", err)
-	}
-
-	return mas.Info, nil
-}
-
-func StateExpertDatas(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address, filter *abi.BitField, filterOut bool) ([]*expert.DataOnChainInfo, error) {
-	var mas expert.State
-	_, err := sm.LoadActorState(ctx, maddr, &mas, ts)
+func StateExpertDatas(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address, filter *bitfield.BitField, filterOut bool) ([]*expert.DataOnChainInfo, error) {
+	act, err := sm.LoadActor(ctx, maddr, ts)
 	if err != nil {
 		return nil, xerrors.Errorf("(get sset) failed to load expert actor state: %w", err)
 	}
 
-	store := sm.cs.Store(ctx)
-	var sset []*expert.DataOnChainInfo
-	err = mas.ForEachData(store, func(doci *expert.DataOnChainInfo) {
-		sset = append(sset, doci)
-	})
+	state, err := expert.Load(sm.cs.Store(ctx), act)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to for each expert actor state: %w", err)
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
-	return sset, nil
+
+	return state.Datas()
 }
 
 func GetMinerSlashed(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (bool, error) {
@@ -375,30 +352,16 @@ func ListMinerActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([
 }
 
 func ListExpertActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([]address.Address, error) {
-	var state power.State
-	if _, err := sm.LoadActorState(ctx, builtin.StoragePowerActorAddr, &state, ts); err != nil {
-		return nil, err
-	}
-
-	m, err := adt.AsMap(sm.cs.Store(ctx), state.Experts)
+	act, err := sm.LoadActor(ctx, power.Address, ts)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to load power actor: %w", err)
 	}
 
-	var experts []address.Address
-	err = m.ForEach(nil, func(k string) error {
-		a, err := address.NewFromBytes([]byte(k))
-		if err != nil {
-			return err
-		}
-		experts = append(experts, a)
-		return nil
-	})
+	powState, err := power.Load(sm.cs.Store(ctx), act)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to load power actor state: %w", err)
 	}
-
-	return experts, nil
+	return powState.ListAllExperts()
 }
 
 func ComputeState(ctx context.Context, sm *StateManager, height abi.ChainEpoch, msgs []*types.Message, ts *types.TipSet) (cid.Cid, []*api.InvocResult, error) {

@@ -11,6 +11,10 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
@@ -20,9 +24,6 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/dline"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
@@ -462,9 +463,9 @@ type FullNode interface {
 	// StateListExperts returns the addresses of every expert.
 	StateListExperts(context.Context, types.TipSetKey) ([]address.Address, error)
 	// StateExpertInfo returns info about the indicated expert.
-	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*ExpertInfo, error)
+	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)
 	// StateExpertInfo returns expert's data info
-	StateExpertDatas(context.Context, address.Address, *abi.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
+	StateExpertDatas(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
@@ -981,6 +982,8 @@ type MsigVesting struct {
 type MessageMatch struct {
 	To   address.Address
 	From address.Address
+}
+
 type QueryStatus int
 
 const (

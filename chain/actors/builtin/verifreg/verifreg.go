@@ -7,7 +7,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/cbor"
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -16,9 +15,6 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.VerifiedRegistryActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.VerifiedRegistryActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -31,8 +27,6 @@ var (
 
 func Load(store adt.Store, act *types.Actor) (State, error) {
 	switch act.Code {
-	case builtin0.VerifiedRegistryActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.VerifiedRegistryActorCodeID:
 		return load2(store, act.Head)
 	}

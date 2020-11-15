@@ -9,7 +9,6 @@ import (
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
@@ -183,14 +182,6 @@ func (n *ProviderNodeAdapter) GetMinerInfo(ctx context.Context, addr address.Add
 	if err != nil {
 		return nil, err
 	}
-	multiaddrs := make([]multiaddr.Multiaddr, 0, len(mi.Multiaddrs))
-	for _, a := range mi.Multiaddrs {
-		maddr, err := multiaddr.NewMultiaddrBytes(a)
-		if err != nil {
-			return nil, err
-		}
-		multiaddrs = append(multiaddrs, maddr)
-	}
 
 	sectors, err := n.StateMinerSectorCount(ctx, addr, tsk)
 	if err != nil {
@@ -202,8 +193,8 @@ func (n *ProviderNodeAdapter) GetMinerInfo(ctx context.Context, addr address.Add
 		return nil, err
 	}
 
-	out := utils.NewStorageProviderInfo(addr, mi.Worker, mi.SectorSize, mi.PeerId, multiaddrs)
-	out.SectorCount = sectors.Sset
+	out := utils.NewStorageProviderInfo(addr, mi.Worker, mi.SectorSize, *mi.PeerId, mi.Multiaddrs)
+	out.SectorCount = sectors.Active
 	out.Balance = actor.Balance
 	return &out, nil
 }

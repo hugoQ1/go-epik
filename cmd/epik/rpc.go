@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"

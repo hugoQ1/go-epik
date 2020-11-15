@@ -20,11 +20,11 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
-	account0 "github.com/filecoin-project/specs-actors/actors/builtin/account"
-	multisig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
-	verifreg0 "github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
-	adt0 "github.com/filecoin-project/specs-actors/actors/util/adt"
+	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
+	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
+	verifreg2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/verifreg"
+	adt0 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
@@ -128,7 +128,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.SystemActorAddr, sysact); err != nil {
+	if err := state.SetActor(builtin2.SystemActorAddr, sysact); err != nil {
 		return nil, nil, xerrors.Errorf("set init actor: %w", err)
 	}
 
@@ -138,7 +138,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.InitActorAddr, initact); err != nil {
+	if err := state.SetActor(builtin2.InitActorAddr, initact); err != nil {
 		return nil, nil, xerrors.Errorf("set init actor: %w", err)
 	}
 
@@ -149,7 +149,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
 
-	err = state.SetActor(builtin0.RewardActorAddr, rewact)
+	err = state.SetActor(builtin2.RewardActorAddr, rewact)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("set network account actor: %w", err)
 	}
@@ -159,7 +159,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup cron actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.CronActorAddr, cronact); err != nil {
+	if err := state.SetActor(builtin2.CronActorAddr, cronact); err != nil {
 		return nil, nil, xerrors.Errorf("set cron actor: %w", err)
 	}
 
@@ -168,7 +168,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.StoragePowerActorAddr, spact); err != nil {
+	if err := state.SetActor(builtin2.StoragePowerActorAddr, spact); err != nil {
 		return nil, nil, xerrors.Errorf("set storage market actor: %w", err)
 	}
 
@@ -177,7 +177,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.StorageMarketActorAddr, marketact); err != nil {
+	if err := state.SetActor(builtin2.StorageMarketActorAddr, marketact); err != nil {
 		return nil, nil, xerrors.Errorf("set market actor: %w", err)
 	}
 
@@ -186,20 +186,20 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
 	}
-	if err := state.SetActor(builtin0.VerifiedRegistryActorAddr, verifact); err != nil {
+	if err := state.SetActor(builtin2.VerifiedRegistryActorAddr, verifact); err != nil {
 		return nil, nil, xerrors.Errorf("set market actor: %w", err)
 	}
 
-	burntRoot, err := cst.Put(ctx, &account0.State{
-		Address: builtin0.BurntFundsActorAddr,
+	burntRoot, err := cst.Put(ctx, &account2.State{
+		Address: builtin2.BurntFundsActorAddr,
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
 	}
 
 	// Setup burnt-funds
-	err = state.SetActor(builtin0.BurntFundsActorAddr, &types.Actor{
-		Code:    builtin0.AccountActorCodeID,
+	err = state.SetActor(builtin2.BurntFundsActorAddr, &types.Actor{
+		Code:    builtin2.AccountActorCodeID,
 		Balance: types.NewInt(0),
 		Head:    burntRoot,
 	})
@@ -208,14 +208,14 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	}
 
 	// Setup expert-funds
-	expertRoot, err := cst.Put(ctx, &account0.State{
-		Address: builtin0.ExpertFundsActorAddr,
+	expertRoot, err := cst.Put(ctx, &account2.State{
+		Address: builtin2.ExpertFundsActorAddr,
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
 	}
-	err = state.SetActor(builtin.ExpertFundsActorAddr, &types.Actor{
-		Code:    builtin0.AccountActorCodeID,
+	err = state.SetActor(builtin2.ExpertFundsActorAddr, &types.Actor{
+		Code:    builtin2.AccountActorCodeID,
 		Balance: types.NewInt(0),
 		Head:    expertRoot,
 	})
@@ -224,14 +224,14 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	}
 
 	// Setup retrieve-funds
-	retrieveRoot, err := cst.Put(ctx, &account0.State{
-		Address: builtin0.RetrieveFundsActorAddr,
+	retrieveRoot, err := cst.Put(ctx, &account2.State{
+		Address: builtin2.RetrieveFundsActorAddr,
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
 	}
-	err = state.SetActor(builtin.RetrieveFundsActorAddr, &types.Actor{
-		Code:    builtin0.AccountActorCodeID,
+	err = state.SetActor(builtin2.RetrieveFundsActorAddr, &types.Actor{
+		Code:    builtin2.AccountActorCodeID,
 		Balance: types.NewInt(0),
 		Head:    retrieveRoot,
 	})
@@ -296,13 +296,13 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, err
 	}
 
-	verifierState, err := cst.Put(ctx, &account0.State{Address: verifierAd})
+	verifierState, err := cst.Put(ctx, &account2.State{Address: verifierAd})
 	if err != nil {
 		return nil, nil, err
 	}
 
 	err = state.SetActor(verifierId, &types.Actor{
-		Code:    builtin0.AccountActorCodeID,
+		Code:    builtin2.AccountActorCodeID,
 		Balance: types.NewInt(0),
 		Head:    verifierState,
 	})
@@ -344,7 +344,7 @@ func createAccountActor(ctx context.Context, cst cbor.IpldStore, state *state.St
 	if err := json.Unmarshal(info.Meta, &ainfo); err != nil {
 		return xerrors.Errorf("unmarshaling account meta: %w", err)
 	}
-	st, err := cst.Put(ctx, &account0.State{Address: ainfo.Owner})
+	st, err := cst.Put(ctx, &account2.State{Address: ainfo.Owner})
 	if err != nil {
 		return err
 	}
@@ -355,7 +355,7 @@ func createAccountActor(ctx context.Context, cst cbor.IpldStore, state *state.St
 	}
 
 	err = state.SetActor(ida, &types.Actor{
-		Code:    builtin0.AccountActorCodeID,
+		Code:    builtin2.AccountActorCodeID,
 		Balance: info.Balance,
 		Head:    st,
 	})
@@ -393,12 +393,12 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 			continue
 		}
 
-		st, err := cst.Put(ctx, &account0.State{Address: e})
+		st, err := cst.Put(ctx, &account2.State{Address: e})
 		if err != nil {
 			return err
 		}
 		err = state.SetActor(idAddress, &types.Actor{
-			Code:    builtin0.AccountActorCodeID,
+			Code:    builtin2.AccountActorCodeID,
 			Balance: types.NewInt(0),
 			Head:    st,
 		})
@@ -408,7 +408,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 		signers = append(signers, idAddress)
 	}
 
-	st, err := cst.Put(ctx, &multisig0.State{
+	st, err := cst.Put(ctx, &multisig2.State{
 		Signers:               signers,
 		NumApprovalsThreshold: uint64(ainfo.Threshold),
 		StartEpoch:            abi.ChainEpoch(ainfo.VestingStart),
@@ -420,7 +420,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 		return err
 	}
 	err = state.SetActor(ida, &types.Actor{
-		Code:    builtin0.MultisigActorCodeID,
+		Code:    builtin2.MultisigActorCodeID,
 		Balance: info.Balance,
 		Head:    st,
 	})
@@ -471,7 +471,7 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		return cid.Undef, err
 	}
 
-	_, err = doExecValue(ctx, vm, builtin0.VerifiedRegistryActorAddr, verifregRoot, types.NewInt(0), builtin0.MethodsVerifiedRegistry.AddVerifier, mustEnc(&verifreg0.AddVerifierParams{
+	_, err = doExecValue(ctx, vm, builtin2.VerifiedRegistryActorAddr, verifregRoot, types.NewInt(0), builtin2.MethodsVerifiedRegistry.AddVerifier, mustEnc(&verifreg2.AddVerifierParams{
 
 		Address:   verifier,
 		Allowance: abi.NewStoragePower(int64(sum)), // eh, close enough
@@ -482,7 +482,7 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 	}
 
 	for c, amt := range verifNeeds {
-		_, err := doExecValue(ctx, vm, builtin0.VerifiedRegistryActorAddr, verifier, types.NewInt(0), builtin0.MethodsVerifiedRegistry.AddVerifiedClient, mustEnc(&verifreg0.AddVerifiedClientParams{
+		_, err := doExecValue(ctx, vm, builtin2.VerifiedRegistryActorAddr, verifier, types.NewInt(0), builtin2.MethodsVerifiedRegistry.AddVerifiedClient, mustEnc(&verifreg2.AddVerifiedClientParams{
 			Address:   c,
 			Allowance: abi.NewStoragePower(int64(amt)),
 		}))
@@ -576,7 +576,7 @@ func MakeGenesisBlock(ctx context.Context, j journal.Journal, bs bstore.Blocksto
 	}
 
 	b := &types.BlockHeader{
-		Miner:                 builtin0.SystemActorAddr,
+		Miner:                 builtin2.SystemActorAddr,
 		Ticket:                genesisticket,
 		Parents:               []cid.Cid{filecoinGenesisCid},
 		Height:                0,

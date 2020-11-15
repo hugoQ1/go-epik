@@ -315,36 +315,6 @@ minerLoop:
 	}
 }
 
-func (m *Miner) maxAllowedSkip(ctx context.Context, btime time.Time, base *MiningBase) (abi.ChainEpoch, error) {
-	duration := time.Now().Sub(btime)
-	skip := abi.ChainEpoch(duration / (time.Duration(build.BlockDelaySecs) * time.Second))
-	if skip == 0 || miner.ChainFinalityish/2 <= base.NullRounds {
-		return 0, nil
-	}
-	skip++
-
-	min := func(a, b abi.ChainEpoch) abi.ChainEpoch {
-		if a <= b {
-			return a
-		}
-		return b
-	}
-	maxNull := miner.ChainFinalityish / 2
-	md, err := m.api.StateMinerProvingDeadline(ctx, m.address, base.TipSet.Key())
-	if err != nil {
-		return 0, err
-	}
-	if !md.PeriodStarted() {
-		maxNull = min(maxNull, md.PeriodStart-1-base.TipSet.Height())
-	} else {
-		maxNull = min(maxNull, md.Close-1-base.TipSet.Height())
-	}
-	if maxNull <= base.NullRounds {
-		return 0, nil
-	}
-	return min(skip, maxNull-base.NullRounds), nil
-}
-
 type MiningBase struct {
 	TipSet     *types.TipSet
 	NullRounds abi.ChainEpoch

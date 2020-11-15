@@ -26,6 +26,22 @@ func GenerateKey(typ types.KeyType) (*Key, error) {
 	return NewKey(ki)
 }
 
+func GenerateKeyFromSeed(typ types.KeyType, seed []byte) (*Key, error) {
+	ctyp := ActSigType(typ)
+	if ctyp == crypto.SigTypeUnknown {
+		return nil, xerrors.Errorf("unknown sig type: %s", typ)
+	}
+	pk, err := sigs.GenerateFromSeed(ctyp, seed)
+	if err != nil {
+		return nil, err
+	}
+	ki := types.KeyInfo{
+		Type:       typ,
+		PrivateKey: pk,
+	}
+	return NewKey(ki)
+}
+
 type Key struct {
 	types.KeyInfo
 

@@ -100,6 +100,28 @@ func (s *state2) ListAllMiners() ([]address.Address, error) {
 	return miners, nil
 }
 
+func (s *state2) ListAllExperts() ([]address.Address, error) {
+	expertMap, err := adt2.AsMap(s.store, s.Experts)
+	if err != nil {
+		return nil, err
+	}
+
+	var experts []address.Address
+	err = expertMap.ForEach(nil, func(k string) error {
+		a, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		experts = append(experts, a)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return experts, nil
+}
+
 func (s *state2) ForEachClaim(cb func(miner address.Address, claim Claim) error) error {
 	claims, err := adt2.AsMap(s.store, s.Claims)
 	if err != nil {

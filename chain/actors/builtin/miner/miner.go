@@ -17,15 +17,11 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
-	miner0 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.StorageMinerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.StorageMinerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -34,18 +30,16 @@ func init() {
 var Methods = builtin2.MethodsMiner
 
 // Unchanged between v0 and v2 actors
-var WPoStProvingPeriod = miner0.WPoStProvingPeriod
-var WPoStPeriodDeadlines = miner0.WPoStPeriodDeadlines
-var WPoStChallengeWindow = miner0.WPoStChallengeWindow
-var WPoStChallengeLookback = miner0.WPoStChallengeLookback
-var FaultDeclarationCutoff = miner0.FaultDeclarationCutoff
+var WPoStProvingPeriod = miner2.WPoStProvingPeriod
+var WPoStPeriodDeadlines = miner2.WPoStPeriodDeadlines
+var WPoStChallengeWindow = miner2.WPoStChallengeWindow
+var WPoStChallengeLookback = miner2.WPoStChallengeLookback
+var FaultDeclarationCutoff = miner2.FaultDeclarationCutoff
 
-const MinSectorExpiration = miner0.MinSectorExpiration
+const MinSectorExpiration = miner2.MinSectorExpiration
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin0.StorageMinerActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.StorageMinerActorCodeID:
 		return load2(store, act.Head)
 	}
@@ -118,7 +112,7 @@ type SectorOnChainInfo struct {
 	ExpectedStoragePledge abi.TokenAmount
 }
 
-type SectorPreCommitInfo = miner0.SectorPreCommitInfo
+type SectorPreCommitInfo = miner2.SectorPreCommitInfo
 
 type SectorPreCommitOnChainInfo struct {
 	Info               SectorPreCommitInfo
@@ -128,15 +122,15 @@ type SectorPreCommitOnChainInfo struct {
 	VerifiedDealWeight abi.DealWeight
 }
 
-type PoStPartition = miner0.PoStPartition
-type RecoveryDeclaration = miner0.RecoveryDeclaration
-type FaultDeclaration = miner0.FaultDeclaration
+type PoStPartition = miner2.PoStPartition
+type RecoveryDeclaration = miner2.RecoveryDeclaration
+type FaultDeclaration = miner2.FaultDeclaration
 
 // Params
-type DeclareFaultsParams = miner0.DeclareFaultsParams
-type DeclareFaultsRecoveredParams = miner0.DeclareFaultsRecoveredParams
-type SubmitWindowedPoStParams = miner0.SubmitWindowedPoStParams
-type ProveCommitSectorParams = miner0.ProveCommitSectorParams
+type DeclareFaultsParams = miner2.DeclareFaultsParams
+type DeclareFaultsRecoveredParams = miner2.DeclareFaultsRecoveredParams
+type SubmitWindowedPoStParams = miner2.SubmitWindowedPoStParams
+type ProveCommitSectorParams = miner2.ProveCommitSectorParams
 
 type MinerInfo struct {
 	Owner                      address.Address   // Must be an ID-address.

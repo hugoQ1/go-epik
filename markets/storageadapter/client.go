@@ -336,7 +336,7 @@ func (c *ClientNodeAdapter) SignProposal(ctx context.Context, signer address.Add
 }
 
 func (c *ClientNodeAdapter) GetDefaultWalletAddress(ctx context.Context) (address.Address, error) {
-	addr, err := c.DefWallet.GetDefault()
+	addr, err := c.DefWallet.GetDefault(ctx)
 	return addr, err
 }
 

@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/ipfs/go-cid"
+
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -111,7 +114,7 @@ func NewDataTransferChannel(hostID peer.ID, channelState datatransfer.ChannelSta
 func NewApiExpertInfo(info expert.ExpertInfo) *ExpertInfo {
 	ex := ExpertInfo{
 		Owner:      info.Owner,
-		PeerId:     peer.ID(info.PeerId),
+		PeerId:     *info.PeerId,
 		Multiaddrs: info.Multiaddrs,
 	}
 	return &ex

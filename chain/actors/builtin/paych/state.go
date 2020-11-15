@@ -12,9 +12,8 @@ import (
 	"github.com/ipfs/go-cid"
 	ipldcbor "github.com/ipfs/go-ipld-cbor"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
-	paych0 "github.com/filecoin-project/specs-actors/actors/builtin/paych"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	paych2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -22,9 +21,6 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.PaymentChannelActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.PaymentChannelActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -33,8 +29,6 @@ func init() {
 // Load returns an abstract copy of payment channel state, irregardless of actor version
 func Load(store adt.Store, act *types.Actor) (State, error) {
 	switch act.Code {
-	case builtin0.PaymentChannelActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.PaymentChannelActorCodeID:
 		return load2(store, act.Head)
 	}
@@ -69,8 +63,8 @@ type LaneState interface {
 	Nonce() (uint64, error)
 }
 
-type SignedVoucher = paych0.SignedVoucher
-type ModVerifyParams = paych0.ModVerifyParams
+type SignedVoucher = paych2.SignedVoucher
+type ModVerifyParams = paych2.ModVerifyParams
 
 // DecodeSignedVoucher decodes base64 encoded signed voucher.
 func DecodeSignedVoucher(s string) (*SignedVoucher, error) {

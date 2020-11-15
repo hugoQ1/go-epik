@@ -7,7 +7,7 @@ import (
 	"io"
 
 	address "github.com/filecoin-project/go-address"
-	paych "github.com/filecoin-project/specs-actors/actors/builtin/paych"
+	paych "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
 )

@@ -11,8 +11,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/builtin/power"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
@@ -64,7 +64,7 @@ var expertInitCmd = &cli.Command{
 		log.Info("Checking full node sync status")
 
 		if !cctx.Bool("nosync") {
-			if err := SyncWait(ctx, api); err != nil {
+			if err := SyncWait(ctx, api, false); err != nil {
 				return xerrors.Errorf("sync wait: %w", err)
 			}
 		}
@@ -120,12 +120,9 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 
 		Method: builtin.MethodsPower.CreateExpert,
 		Params: params,
-
-		GasLimit: 10000000,
-		GasPrice: gasPrice,
 	}
 
-	signed, err := api.MpoolPushMessage(ctx, createMessage)
+	signed, err := api.MpoolPushMessage(ctx, createMessage, nil)
 	if err != nil {
 		return address.Undef, err
 	}

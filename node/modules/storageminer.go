@@ -25,7 +25,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
 
-	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/filecoin-project/go-address"
 	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
 	dtnet "github.com/filecoin-project/go-data-transfer/network"

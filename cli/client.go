@@ -111,6 +111,7 @@ var clientImportCmd = &cli.Command{
 			Name:    "quiet",
 			Aliases: []string{"q"},
 			Usage:   "Output root CID only",
+		},
 		&cli.StringFlag{
 			Name:  "expert",
 			Usage: "specify the data submit expert",
@@ -162,20 +163,20 @@ var clientImportCmd = &cli.Command{
 			miner = m
 		}
 
-		c, err := api.ClientImportAndDeal(ctx, ref, miner)
+		_, err = api.ClientImportAndDeal(ctx, ref, miner)
 		if err != nil {
 			return err
 		}
 
-		encoder, err := GetCidEncoder(cctx)
-		if err != nil {
-			return err
-		}
+		// encoder, err := GetCidEncoder(cctx)
+		// if err != nil {
+		// 	return err
+		// }
 
-		if !cctx.Bool("quiet") {
-			fmt.Printf("Import %d, Root ", c.ImportID)
-		}
-		fmt.Println(encoder.Encode(c.Root))
+		// if !cctx.Bool("quiet") {
+		// 	fmt.Printf("Import %d, Root ", c.ImportID)
+		// }
+		// fmt.Println(encoder.Encode(c.Root))
 
 		return nil
 	},

@@ -202,10 +202,6 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 	for _, ip := range in.Cfg.IPColocationWhitelist {
 		ipWhitelist[ip] = struct{}{}
 	}
-	drandTopic, err := getDrandTopic(in.Dr.ChainInfoJSON)
-	if err != nil {
-		return nil, err
-	}
 
 	options := []pubsub.Option{
 		// Gossipsubv1.1 configuration

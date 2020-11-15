@@ -7,7 +7,7 @@ import (
 	"io"
 
 	abi "github.com/filecoin-project/go-state-types/abi"
-	miner "github.com/filecoin-project/specs-actors/actors/builtin/miner"
+	miner "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
 )

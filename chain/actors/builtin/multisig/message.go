@@ -20,10 +20,8 @@ var Methods = builtin2.MethodsMultisig
 
 func Message(version actors.Version, from address.Address) MessageBuilder {
 	switch version {
-	case actors.Version0:
-		return message0{from}
 	case actors.Version2:
-		return message2{message0{from}}
+		return message2{from: from}
 	default:
 		panic(fmt.Sprintf("unsupported actors version: %d", version))
 	}

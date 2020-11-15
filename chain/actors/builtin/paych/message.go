@@ -3,10 +3,10 @@ package paych
 import (
 	"fmt"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
@@ -15,8 +15,6 @@ var Methods = builtin2.MethodsPaych
 
 func Message(version actors.Version, from address.Address) MessageBuilder {
 	switch version {
-	case actors.Version0:
-		return message0{from}
 	case actors.Version2:
 		return message2{from}
 	default:

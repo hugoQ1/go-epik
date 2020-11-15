@@ -2,12 +2,11 @@ package reward
 
 import (
 	"github.com/filecoin-project/go-state-types/abi"
-	reward0 "github.com/filecoin-project/specs-actors/actors/builtin/reward"
+	reward2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/cbor"
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -16,9 +15,6 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.RewardActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.RewardActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -31,8 +27,6 @@ var (
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin0.RewardActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.RewardActorCodeID:
 		return load2(store, act.Head)
 	}
@@ -58,4 +52,4 @@ type State interface {
 	PreCommitDepositForPower(builtin.FilterEstimate, abi.StoragePower) (abi.TokenAmount, error)
 }
 
-type AwardBlockRewardParams = reward0.AwardBlockRewardParams
+type AwardBlockRewardParams = reward2.AwardBlockRewardParams

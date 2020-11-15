@@ -9,9 +9,8 @@ import (
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
-	market0 "github.com/filecoin-project/specs-actors/actors/builtin/market"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -19,9 +18,6 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.StorageMarketActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.StorageMarketActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -34,8 +30,6 @@ var (
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin0.StorageMarketActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.StorageMarketActorCodeID:
 		return load2(store, act.Head)
 	}
@@ -78,12 +72,13 @@ type DealProposals interface {
 	decode(*cbg.Deferred) (*DealProposal, error)
 }
 
-type PublishStorageDealsParams = market0.PublishStorageDealsParams
-type PublishStorageDealsReturn = market0.PublishStorageDealsReturn
-type VerifyDealsForActivationParams = market0.VerifyDealsForActivationParams
-type WithdrawBalanceParams = market0.WithdrawBalanceParams
+type PublishStorageDataRef = market2.PublishStorageDataRef
+type PublishStorageDealsParams = market2.PublishStorageDealsParams
+type PublishStorageDealsReturn = market2.PublishStorageDealsReturn
+type VerifyDealsForActivationParams = market2.VerifyDealsForActivationParams
+type WithdrawBalanceParams = market2.WithdrawBalanceParams
 
-type ClientDealProposal = market0.ClientDealProposal
+type ClientDealProposal = market2.ClientDealProposal
 
 type DealState struct {
 	SectorStartEpoch abi.ChainEpoch // -1 if not yet included in proven sector

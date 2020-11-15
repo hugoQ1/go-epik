@@ -36,8 +36,8 @@ type LocalWallet struct {
 }
 
 type Default interface {
-	GetDefault() (address.Address, error)
-	SetDefault(a address.Address) error
+	GetDefault(ctx context.Context) (address.Address, error)
+	SetDefault(ctx context.Context, a address.Address) error
 }
 
 func NewWallet(keystore types.KeyStore) (*LocalWallet, error) {
@@ -195,14 +195,14 @@ func (w *LocalWallet) WalletList(ctx context.Context) ([]address.Address, error)
 	return out, nil
 }
 
-func (w *LocalWallet) GetDefault() (address.Address, error) {
+func (w *LocalWallet) GetDefault(ctx context.Context) (address.Address, error) {
 	w.lk.Lock()
 	defer w.lk.Unlock()
 
 	ki, err := w.keystore.Get(KDefault)
 	if err != nil {
 		if xerrors.Is(err, types.ErrKeyInfoNotFound) {
-			list, lerr := w.ListAddrs()
+			list, lerr := w.WalletList(ctx)
 			if lerr != nil {
 				return address.Undef, xerrors.Errorf("failed to get list: %w", lerr)
 			}
@@ -232,7 +232,7 @@ func (w *LocalWallet) GetDefault() (address.Address, error) {
 	return k.Address, nil
 }
 
-func (w *LocalWallet) SetDefault(a address.Address) error {
+func (w *LocalWallet) SetDefault(ctx context.Context, a address.Address) error {
 	w.lk.Lock()
 	defer w.lk.Unlock()
 
@@ -252,30 +252,6 @@ func (w *LocalWallet) SetDefault(a address.Address) error {
 	}
 
 	return nil
-}
-
-func GenerateKey(typ crypto.SigType) (*Key, error) {
-	pk, err := sigs.Generate(typ)
-	if err != nil {
-		return nil, err
-	}
-	ki := types.KeyInfo{
-		Type:       kstoreSigType(typ),
-		PrivateKey: pk,
-	}
-	return NewKey(ki)
-}
-
-func GenerateKeyFromSeed(typ crypto.SigType, seed []byte) (*Key, error) {
-	pk, err := sigs.GenerateFromSeed(typ, seed)
-	if err != nil {
-		return nil, err
-	}
-	ki := types.KeyInfo{
-		Type:       kstoreSigType(typ),
-		PrivateKey: pk,
-	}
-	return NewKey(ki)
 }
 
 func (w *LocalWallet) WalletNew(ctx context.Context, typ types.KeyType) (address.Address, error) {
@@ -306,7 +282,7 @@ func (w *LocalWallet) WalletNew(ctx context.Context, typ types.KeyType) (address
 	return k.Address, nil
 }
 
-func (w *LocalWallet) WalletNewFromSeed(typ crypto.SigType, seed []byte) (address.Address, error) {
+func (w *LocalWallet) WalletNewFromSeed(typ types.KeyType, seed []byte) (address.Address, error) {
 	w.lk.Lock()
 	defer w.lk.Unlock()
 
@@ -377,13 +353,13 @@ func (w *LocalWallet) WalletDelete(ctx context.Context, addr address.Address) er
 
 	delete(w.keys, addr)
 
-	def, err := w.GetDefault()
+	def, err := w.GetDefault(ctx)
 	if err != nil {
 		return xerrors.Errorf("getting default address: %w", err)
 	}
 
 	if def == addr {
-		err = w.SetDefault(address.Undef)
+		err = w.SetDefault(ctx, address.Undef)
 		if err != nil {
 			return xerrors.Errorf("unsetting default address: %w", err)
 		}
@@ -415,11 +391,11 @@ func swapMainnetForTestnetPrefix(addr string) (string, error) {
 
 type nilDefault struct{}
 
-func (n nilDefault) GetDefault() (address.Address, error) {
+func (n nilDefault) GetDefault(ctx context.Context) (address.Address, error) {
 	return address.Undef, nil
 }
 
-func (n nilDefault) SetDefault(a address.Address) error {
+func (n nilDefault) SetDefault(ctx context.Context, a address.Address) error {
 	return xerrors.Errorf("not supported; local wallet disabled")
 }
 

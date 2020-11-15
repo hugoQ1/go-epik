@@ -25,12 +25,6 @@ import (
 	lps "github.com/whyrusleeping/pubsub"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs"
-	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/filecoin-project/go-address"
 
 	"github.com/EpiK-Protocol/go-epik/api"

@@ -10,16 +10,17 @@ import (
 	"go.uber.org/fx"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/go-state-types/network"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -1358,24 +1359,34 @@ func (a *StateAPI) StateListExperts(ctx context.Context, tsk types.TipSetKey) ([
 	return stmgr.ListExpertActors(ctx, a.StateManager, ts)
 }
 
-func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
-	ts, err := a.Chain.GetTipSetFromKey(tsk)
+func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*expert.ExpertInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
 	if err != nil {
-		return &api.ExpertInfo{}, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	ex, err := stmgr.StateExpertInfo(ctx, a.StateManager, ts, addr)
+	eas, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
 	if err != nil {
-		return &api.ExpertInfo{}, err
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
-	return api.NewApiExpertInfo(ex), nil
+
+	info, err := eas.Info()
+	if err != nil {
+		return nil, err
+	}
+	return &info, nil
 }
 
-func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *abi.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
-	ts, err := a.Chain.GetTipSetFromKey(tsk)
+func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
 	if err != nil {
-		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	return stmgr.StateExpertDatas(ctx, a.StateManager, ts, addr, filter, filterOut)
+	eas, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
+	}
+
+	return eas.Datas()
 }

@@ -11,14 +11,10 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
 func init() {
-	builtin.RegisterActorState(builtin0.AccountActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load0(store, root)
-	})
 	builtin.RegisterActorState(builtin2.AccountActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
@@ -28,8 +24,6 @@ var Methods = builtin2.MethodsAccount
 
 func Load(store adt.Store, act *types.Actor) (State, error) {
 	switch act.Code {
-	case builtin0.AccountActorCodeID:
-		return load0(store, act.Head)
 	case builtin2.AccountActorCodeID:
 		return load2(store, act.Head)
 	}

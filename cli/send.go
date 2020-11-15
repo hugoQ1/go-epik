@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli/v2"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 

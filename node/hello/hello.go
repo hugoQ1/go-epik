@@ -15,16 +15,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
 
-	"github.com/EpiK-Protocol/go-epik/chain"
-	"github.com/EpiK-Protocol/go-epik/chain/store"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
-	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
+	cborutil "github.com/filecoin-project/go-cbor-util"
 )
 
 const ProtocolID = "/epk/hello/1.0.0"

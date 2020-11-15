@@ -10,12 +10,14 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
+	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
+
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/builtin/market"
-	minerActor "github.com/filecoin-project/specs-actors/actors/builtin/miner"
 	lru "github.com/hashicorp/golang-lru"
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -35,7 +37,7 @@ var (
 
 type DealData struct {
 	dealID   abi.DealID
-	deal     market.DealProposal
+	deal     market.ClientDealProposal
 	dataRef  market.PublishStorageDataRef
 	state    market.DealState
 	tryCount int
@@ -194,8 +196,8 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 		}
 		messages, err := m.api.ChainGetParentMessages(ctx, tipset.Cids()[0])
 		for _, msg := range messages {
-			if msg.Message.To == builtin.StorageMarketActorAddr &&
-				msg.Message.Method == builtin.MethodsMarket.PublishStorageDeals {
+			if msg.Message.To == market.Address &&
+				msg.Message.Method == market.Methods.PublishStorageDeals {
 				var params market.PublishStorageDealsParams
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
 					// return err
@@ -204,11 +206,11 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				}
 
 				for _, deal := range params.Deals {
-					if ok, _ := m.isMinerDealed(ctx, params.DataRef.RootCID, &deal.Proposal, localDeals); ok {
+					if ok, _ := m.isMinerDealed(ctx, params.DataRef.RootCID, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
 						continue
 					}
 					dealData := &DealData{
-						deal:    deal.Proposal,
+						deal:    deal,
 						dataRef: params.DataRef,
 					}
 					datas := &PieceData{
@@ -221,8 +223,8 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					}
 					found := false
 					for _, d := range datas.dealDatas {
-						if d.deal.Provider == dealData.deal.Provider &&
-							d.deal.Client == dealData.deal.Client {
+						if d.deal.Proposal.Provider == dealData.deal.Proposal.Provider &&
+							d.deal.Proposal.Client == dealData.deal.Proposal.Client {
 							found = true
 							break
 						}
@@ -230,10 +232,10 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					if !found {
 						datas.dealDatas = append(datas.dealDatas, dealData)
 					}
-					m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
+					m.dataRefs.Add(dealData.deal.Proposal.PieceCID.String(), datas)
 				}
-			} else if msg.Message.Method == builtin.MethodsMiner.PreCommitSector {
-				var params minerActor.SectorPreCommitInfo
+			} else if msg.Message.Method == builtin2.MethodsMiner.PreCommitSector {
+				var params miner2.SectorPreCommitInfo
 				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
 					// return xerrors.Errorf("unmarshal pre commit: %w", err)
 					log.Warnf("height:%d unmarshal pre commit: %w", m.checkHeight, err)
@@ -245,7 +247,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					if err != nil {
 						return err
 					}
-					if ok, _ := m.isMinerDealed(ctx, cid.Undef, &deal.Proposal, localDeals); ok {
+					if ok, _ := m.isMinerDealed(ctx, cid.Undef, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
 						continue
 					}
 					datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
@@ -254,7 +256,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					}
 					datas := datasObj.(*PieceData)
 					for _, d := range datas.dealDatas {
-						if d.deal.Provider == msg.Message.To {
+						if d.deal.Proposal.Provider == msg.Message.To {
 							d.dealID = did
 							d.state = deal.State
 						}
@@ -267,15 +269,14 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 	return nil
 }
 
-func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, deal *market.DealProposal, localDeals []api.DealInfo) (bool, error) {
-	if deal.Provider == m.address {
+func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, provider address.Address, PieceCID cid.Cid, localDeals []api.DealInfo) (bool, error) {
+	if provider == m.address {
 		return true, nil
 	}
 
 	for _, lDeal := range localDeals {
-		if lDeal.PieceCID == deal.PieceCID &&
+		if lDeal.PieceCID == PieceCID &&
 			lDeal.State != storagemarket.StorageDealProposalNotFound &&
-			lDeal.State != storagemarket.StorageDealNotFound &&
 			lDeal.State != storagemarket.StorageDealProposalRejected &&
 			lDeal.State != storagemarket.StorageDealFailing &&
 			lDeal.State != storagemarket.StorageDealError {
@@ -332,14 +333,14 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		if m.retrievals.Contains(dealData.deal.PieceCID.String()) {
+		if m.retrievals.Contains(dealData.deal.Proposal.PieceCID.String()) {
 			continue
 		}
 
-		resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Provider)
+		resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Proposal.Provider)
 		if err != nil {
 			dealData.tryCount++
-			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", dealData.deal.Provider, dealData.dataRef.RootCID, dealData.tryCount, err)
+			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", dealData.deal.Proposal.Provider, dealData.dataRef.RootCID, dealData.tryCount, err)
 			// if dealData.tryCount > RetrieveTryCountMax {
 			// 	for index, d := range datas.dealDatas {
 			// 		if d.deal.Provider == dealData.deal.Provider {
@@ -351,7 +352,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			// }
 			continue
 		}
-		log.Warnf("client retrieve miner:%s, data:%s", dealData.deal.Provider, dealData.dataRef.RootCID)
+		log.Warnf("client retrieve miner:%s, data:%s", dealData.deal.Proposal.Provider, dealData.dataRef.RootCID)
 		if resp.Status == api.QuerySuccess {
 			m.retrievals.Remove(rk)
 		} else {
@@ -379,7 +380,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			m.dataRefs.Remove(rk)
 			m.deals.Remove(rk)
 		} else if lDeal.State == storagemarket.StorageDealProposalNotFound &&
-			lDeal.State == storagemarket.StorageDealNotFound &&
 			lDeal.State == storagemarket.StorageDealProposalRejected &&
 			lDeal.State == storagemarket.StorageDealFailing &&
 			lDeal.State == storagemarket.StorageDealError {
@@ -416,7 +416,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
-		offer, err := m.api.ClientMinerQueryOffer(ctx, dealData.dataRef.RootCID, m.address)
+		offer, err := m.api.ClientMinerQueryOffer(ctx, m.address, dealData.dataRef.RootCID, nil)
 		if err != nil {
 			return err
 		}
@@ -435,12 +435,11 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			return err
 		}
 
-		if peer.ID(mi.PeerId) == peer.ID("SETME") {
+		if *mi.PeerId == peer.ID("SETME") {
 			return fmt.Errorf("the miner hasn't initialized yet")
 		}
 
-		pid := peer.ID(mi.PeerId)
-		ask, err := m.api.ClientQueryAsk(ctx, pid, m.address)
+		ask, err := m.api.ClientQueryAsk(ctx, *mi.PeerId, m.address)
 		if err != nil {
 			return err
 		}
@@ -455,9 +454,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			Data:              stData,
 			Wallet:            address.Undef,
 			Miner:             m.address,
-			EpochPrice:        ask.Ask.Price,
-			MinBlocksDuration: uint64(ask.Ask.Expiry - ts.Height()),
-			Redundancy:        int64(1),
+			EpochPrice:        ask.Price,
+			MinBlocksDuration: uint64(ask.Expiry - ts.Height()),
+			FastRetrieval:     true,
 		}
 		dealID, err := m.api.ClientStartDeal(ctx, params)
 		if err != nil {

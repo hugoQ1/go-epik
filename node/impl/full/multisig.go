@@ -7,13 +7,10 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 

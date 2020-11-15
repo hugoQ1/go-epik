@@ -15,7 +15,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
-type message2 struct{ message0 }
+type message2 struct{ from address.Address }
 
 func (m message2) Create(
 	signers []address.Address, threshold uint64,
@@ -67,5 +67,73 @@ func (m message2) Create(
 		Method: builtin2.MethodsInit.Exec,
 		Params: enc,
 		Value:  initialAmount,
+	}, nil
+}
+
+func (m message2) Propose(msig, to address.Address, amt abi.TokenAmount,
+	method abi.MethodNum, params []byte) (*types.Message, error) {
+
+	if msig == address.Undef {
+		return nil, xerrors.Errorf("must provide a multisig address for proposal")
+	}
+
+	if to == address.Undef {
+		return nil, xerrors.Errorf("must provide a target address for proposal")
+	}
+
+	if amt.Sign() == -1 {
+		return nil, xerrors.Errorf("must provide a non-negative amount for proposed send")
+	}
+
+	if m.from == address.Undef {
+		return nil, xerrors.Errorf("must provide source address")
+	}
+
+	enc, actErr := actors.SerializeParams(&multisig2.ProposeParams{
+		To:     to,
+		Value:  amt,
+		Method: method,
+		Params: params,
+	})
+	if actErr != nil {
+		return nil, xerrors.Errorf("failed to serialize parameters: %w", actErr)
+	}
+
+	return &types.Message{
+		To:     msig,
+		From:   m.from,
+		Value:  abi.NewTokenAmount(0),
+		Method: builtin2.MethodsMultisig.Propose,
+		Params: enc,
+	}, nil
+}
+
+func (m message2) Approve(msig address.Address, txID uint64, hashData *ProposalHashData) (*types.Message, error) {
+	enc, err := txnParams(txID, hashData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Message{
+		To:     msig,
+		From:   m.from,
+		Value:  types.NewInt(0),
+		Method: builtin2.MethodsMultisig.Approve,
+		Params: enc,
+	}, nil
+}
+
+func (m message2) Cancel(msig address.Address, txID uint64, hashData *ProposalHashData) (*types.Message, error) {
+	enc, err := txnParams(txID, hashData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Message{
+		To:     msig,
+		From:   m.from,
+		Value:  types.NewInt(0),
+		Method: builtin2.MethodsMultisig.Cancel,
+		Params: enc,
 	}, nil
 }
