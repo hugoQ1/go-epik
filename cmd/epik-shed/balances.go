@@ -184,7 +184,8 @@ var chainBalanceStateCmd = &cli.Command{
 			return err
 		}
 
-		cs := store.NewChainStore(context.Background(), bs, bs, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
+		cs := store.NewChainStore(bs, bs, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
+		defer cs.Close() //nolint:errcheck
 
 		cst := cbor.NewCborStore(bs)
 		store := adt.WrapStore(ctx, cst)
@@ -406,6 +407,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 		}
 
 		cs := store.NewChainStore(bs, bs, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
+		defer cs.Close() //nolint:errcheck
 
 		cst := cbor.NewCborStore(bs)
 		store := adt.WrapStore(ctx, cst)
