@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/protocol"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
@@ -13,6 +15,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
@@ -112,9 +115,13 @@ func (bss *BlockSyncService) HandleStream(s inet.Stream) {
 
 	defer s.Close() //nolint:errcheck
 
+	stats.Record(ctx, metrics.SyncResponse.M(1))
+
 	var req BlockSyncRequest
 	if err := cborutil.ReadCborRPC(bufio.NewReader(s), &req); err != nil {
 		log.Warnf("failed to read block sync request: %s", err)
+		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "read_timeout"))
+		stats.Record(ctx, metrics.SyncResponseFailure.M(1))
 		return
 	}
 	log.Infow("block sync request", "start", req.Start, "len", req.RequestLength)
@@ -122,13 +129,21 @@ func (bss *BlockSyncService) HandleStream(s inet.Stream) {
 	resp, err := bss.processRequest(ctx, s.Conn().RemotePeer(), &req)
 	if err != nil {
 		log.Warn("failed to process block sync request: ", err)
+		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "prepare"))
+		stats.Record(ctx, metrics.SyncResponseFailure.M(1))
 		return
 	}
 
 	writeDeadline := 60 * time.Second
 	_ = s.SetDeadline(time.Now().Add(writeDeadline))
-	if err := cborutil.WriteCborRPC(s, resp); err != nil {
+	cw := NewCountWriter(s)
+	defer func() {
+		stats.Record(ctx, metrics.SyncSent.M(int64(cw.Count())))
+	}()
+	if err := cborutil.WriteCborRPC(cw, resp); err != nil {
 		log.Warnw("failed to write back response for handle stream", "err", err, "peer", s.Conn().RemotePeer())
+		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "write_timeout"))
+		stats.Record(ctx, metrics.SyncResponseFailure.M(1))
 		return
 	}
 }

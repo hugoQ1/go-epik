@@ -19,10 +19,12 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
+	"go.opencensus.io/stats"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/filecoin-project/go-address"
 	dtgraphsync "github.com/filecoin-project/go-data-transfer/impl/graphsync"
@@ -378,6 +380,7 @@ func RetrievalProvider(h host.Host, miner *storage.Miner, sealer sectorstorage.S
 	netwk := rmnet.NewFromLibp2pHost(h)
 
 	opt := retrievalimpl.DealDeciderOpt(func(ctx context.Context, state retrievalmarket.ProviderDealState) (bool, string, error) {
+		stats.Record(ctx, metrics.RetrievalReceived.M(1))
 		b, err := onlineOk()
 		if err != nil {
 			return false, "miner error", err
@@ -396,7 +399,7 @@ func RetrievalProvider(h host.Host, miner *storage.Miner, sealer sectorstorage.S
 		if !b {
 			log.Info("offline retrieval has not been implemented yet")
 		}
-
+		stats.Record(ctx, metrics.RetrievalAccepted.M(1))
 		return true, "", nil
 	})
 

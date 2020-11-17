@@ -147,6 +147,7 @@ func (bv *BlockValidator) Validate(ctx context.Context, pid peer.ID, msg *pubsub
 	}()
 
 	stats.Record(ctx, metrics.BlockReceived.M(1))
+	stats.Record(ctx, metrics.BlockReceivedSize.M(int64(msg.Size())))
 
 	recordFailure := func(what string) {
 		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, what))
@@ -357,6 +358,7 @@ func NewMessageValidator(mp *messagepool.MessagePool) *MessageValidator {
 
 func (mv *MessageValidator) Validate(ctx context.Context, pid peer.ID, msg *pubsub.Message) pubsub.ValidationResult {
 	stats.Record(ctx, metrics.MessageReceived.M(1))
+	stats.Record(ctx, metrics.MessageReceivedSize.M(int64(msg.Size())))
 	m, err := types.DecodeSignedMessage(msg.Message.GetData())
 	if err != nil {
 		log.Warnf("failed to decode incoming message: %s", err)
@@ -367,15 +369,14 @@ func (mv *MessageValidator) Validate(ctx context.Context, pid peer.ID, msg *pubs
 
 	if err := mv.mpool.Add(m); err != nil {
 		log.Debugf("failed to add message from network to message pool (From: %s, To: %s, Nonce: %d, Value: %s): %s", m.Message.From, m.Message.To, m.Message.Nonce, types.EPK(m.Message.Value), err)
-		ctx, _ = tag.New(
-			ctx,
-			tag.Insert(metrics.FailureType, "add"),
-		)
-		stats.Record(ctx, metrics.MessageValidationFailure.M(1))
 		switch {
 		case xerrors.Is(err, messagepool.ErrBroadcastAnyway):
+			ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "pool_ignore"))
+			stats.Record(ctx, metrics.MessageValidationFailure.M(1))
 			return pubsub.ValidationIgnore
 		default:
+			ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "pool_reject"))
+			stats.Record(ctx, metrics.MessageValidationFailure.M(1))
 			return pubsub.ValidationReject
 		}
 	}

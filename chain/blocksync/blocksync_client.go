@@ -17,6 +17,7 @@ import (
 	host "github.com/libp2p/go-libp2p-core/host"
 	inet "github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	incrt "github.com/EpiK-Protocol/go-epik/lib/increadtimeout"
 	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	cborutil "github.com/filecoin-project/go-cbor-util"
 )
@@ -300,9 +302,18 @@ func (bs *BlockSync) fetchBlocksBlockSync(ctx context.Context, p peer.ID, req *B
 	_ = s.SetWriteDeadline(time.Time{})
 
 	var res BlockSyncResponse
-	r := incrt.New(s, 50<<10, 5*time.Second)
-	if err := cborutil.ReadCborRPC(bufio.NewReader(r), &res); err != nil {
+	r := incrt.New(s, 20<<10, 5*time.Second)
+	cr := NewCountReader(bufio.NewReader(r))
+
+	stats.Record(ctx, metrics.SyncRequest.M(1))
+	defer func() {
+		stats.Record(ctx, metrics.SyncReceived.M(int64(cr.Count())))
+	}()
+	if err := cborutil.ReadCborRPC(cr, &res); err != nil {
 		bs.syncPeers.logFailure(p, time.Since(start))
+		log.Warnf("failed to sync %d blocks (cost %dms, read %dbytes) from peer %s: %s",
+			req.RequestLength, time.Since(start).Milliseconds(), cr.Count(), p.String(), err)
+		stats.Record(ctx, metrics.SyncRequestFailure.M(1))
 		return nil, err
 	}
 

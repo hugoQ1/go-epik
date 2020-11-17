@@ -14,6 +14,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"go.opencensus.io/stats/view"
 	"golang.org/x/xerrors"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/metrics/influxexporter"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
@@ -66,12 +68,23 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 		IdleTimeout: 10 * time.Minute,
 	}
 
+	ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
+	if err != nil {
+		log.Warnf("unable to register influx exporter: %v", err)
+	} else {
+		view.RegisterExporter(ifExporter)
+	}
+
 	sigCh := make(chan os.Signal, 2)
 	shutdownDone := make(chan struct{})
 	go func() {
 		select {
 		case <-sigCh:
 		case <-shutdownCh:
+		}
+
+		if ifCloser != nil {
+			ifCloser()
 		}
 
 		log.Warn("Shutting down...")

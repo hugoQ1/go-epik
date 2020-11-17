@@ -3,6 +3,7 @@ package lp2p
 import (
 	"context"
 	"fmt"
+	"time"
 
 	nilrouting "github.com/ipfs/go-ipfs-routing/none"
 	"github.com/libp2p/go-libp2p"
@@ -13,9 +14,11 @@ import (
 	record "github.com/libp2p/go-libp2p-record"
 	routedhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
+	"go.opencensus.io/stats"
 	"go.uber.org/fx"
 
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
@@ -47,6 +50,7 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 		libp2p.NoListenAddrs,
 		libp2p.Ping(true),
 		libp2p.UserAgent("epik-" + build.UserVersion()),
+		libp2p.BandwidthReporter(BwReporter),
 	}
 	for _, o := range params.Opts {
 		opts = append(opts, o...)
@@ -57,12 +61,30 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 		return nil, err
 	}
 
+	q := make(chan struct{})
 	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				ticker := time.NewTicker(5 * time.Second)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-q:
+						return
+					case <-ticker.C:
+						totals := BwReporter.GetBandwidthTotals()
+						stats.Record(ctx, metrics.BandwidthTotalIn.M(totals.TotalIn))
+						stats.Record(ctx, metrics.BandwidthTotalOut.M(totals.TotalOut))
+					}
+				}
+			}()
+			return nil
+		},
 		OnStop: func(ctx context.Context) error {
+			close(q)
 			return h.Close()
 		},
 	})
-
 	return h, nil
 }
 
