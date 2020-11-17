@@ -172,9 +172,10 @@ func (*ActorRegistry) transform(instance invokee) (nativeCode, error) {
 				paramT := meth.Type().In(1).Elem()
 				param := reflect.New(paramT)
 
+				rt := in[0].Interface().(*Runtime)
 				inBytes := in[1].Interface().([]byte)
 				if err := DecodeParams(inBytes, param.Interface()); err != nil {
-					aerr := aerrors.Absorb(err, 1, "failed to decode parameters")
+					aerr := aerrors.Absorb(err, exitcode.ErrSerialization, "failed to decode parameters")
 					return []reflect.Value{
 						reflect.ValueOf([]byte{}),
 						// Below is a hack, fixed in Go 1.13
@@ -182,7 +183,6 @@ func (*ActorRegistry) transform(instance invokee) (nativeCode, error) {
 						reflect.ValueOf(&aerr).Elem(),
 					}
 				}
-				rt := in[0].Interface().(*Runtime)
 				rval, aerror := rt.shimCall(func() interface{} {
 					ret := meth.Call([]reflect.Value{
 						reflect.ValueOf(rt),
