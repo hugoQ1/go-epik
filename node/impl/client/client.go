@@ -409,47 +409,47 @@ func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (*api.ImportRes
 	}, nil
 }
 
-func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (cid.Cid, error) {
+func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (*api.ImportRes, error) {
 
 	res, err := a.ClientImport(ctx, ref)
 	if err != nil {
-		return cid.Undef, err
+		return nil, err
 	}
 
 	payer, err := a.WalletDefaultAddress(ctx)
 	if err != nil {
-		return cid.Undef, err
+		return nil, err
 	}
 
 	ts, err := a.ChainHead(ctx)
 	if err != nil {
-		return cid.Undef, xerrors.Errorf("failed getting chain height: %w", err)
+		return nil, xerrors.Errorf("failed getting chain height: %w", err)
 	}
 	if miner == address.Undef {
 		miners, err := a.StateListMiners(ctx, ts.Key())
 		if err != nil {
-			return cid.Undef, err
+			return nil, err
 		}
 
 		if len(miners) == 0 {
-			return cid.Undef, xerrors.Errorf("miners not found.")
+			return nil, xerrors.Errorf("miners not found.")
 		}
 		miner = miners[0]
 	}
 
 	mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
 	if err != nil {
-		return cid.Undef, xerrors.Errorf("failed to get peerID for miner: %w", err)
+		return nil, xerrors.Errorf("failed to get peerID for miner: %w", err)
 	}
 
 	if *mi.PeerId == peer.ID("SETME") {
-		return cid.Undef, xerrors.Errorf("the miner hasn't initialized yet")
+		return nil, xerrors.Errorf("the miner hasn't initialized yet")
 	}
 
 	pid := *mi.PeerId
 	ask, err := a.ClientQueryAsk(ctx, pid, miner)
 	if err != nil {
-		return cid.Undef, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
+		return nil, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
 	}
 
 	dataRef := &storagemarket.DataRef{
@@ -467,11 +467,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 	}
 	dealId, err := a.ClientStartDeal(ctx, params)
 	if err != nil {
-		return cid.Undef, err
+		return nil, err
 	}
 	log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
 
-	return res.Root, nil
+	return res, nil
 }
 
 func (a *API) ClientRemoveImport(ctx context.Context, importID multistore.StoreID) error {

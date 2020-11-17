@@ -285,7 +285,7 @@ type FullNode interface {
 	// ClientStartDeal proposes a deal with a miner.
 	ClientStartDeal(ctx context.Context, params *StartDealParams) (*cid.Cid, error)
 	// ClientImportAndDeal imports file and deal with all miners found.
-	ClientImportAndDeal(ctx context.Context, ref FileRef, miner address.Address) (cid.Cid, error)
+	ClientImportAndDeal(ctx context.Context, ref FileRef, miner address.Address) (*ImportRes, error)
 	// ClientGetDealInfo returns the latest information about a given deal.
 	ClientGetDealInfo(context.Context, cid.Cid) (*DealInfo, error)
 	// ClientListDeals returns information about the deals made by the local client.

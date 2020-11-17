@@ -163,20 +163,20 @@ var clientImportCmd = &cli.Command{
 			miner = m
 		}
 
-		_, err = api.ClientImportAndDeal(ctx, ref, miner)
+		c, err := api.ClientImportAndDeal(ctx, ref, miner)
 		if err != nil {
 			return err
 		}
 
-		// encoder, err := GetCidEncoder(cctx)
-		// if err != nil {
-		// 	return err
-		// }
+		encoder, err := GetCidEncoder(cctx)
+		if err != nil {
+			return err
+		}
 
-		// if !cctx.Bool("quiet") {
-		// 	fmt.Printf("Import %d, Root ", c.ImportID)
-		// }
-		// fmt.Println(encoder.Encode(c.Root))
+		if !cctx.Bool("quiet") {
+			fmt.Printf("Import %d, Root ", c.ImportID)
+		}
+		fmt.Println(encoder.Encode(c.Root))
 
 		return nil
 	},
