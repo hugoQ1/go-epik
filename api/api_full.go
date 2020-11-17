@@ -340,9 +340,6 @@ type FullNode interface {
 	// ClientQuery query file status by file root or retrieve id
 	ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*QueryResp, error)
 
-	// ClientExpert returns expert
-	ClientExpert(ctx context.Context) (*ExpertInfo, error)
-
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// Most methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.

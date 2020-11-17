@@ -1141,15 +1141,3 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 		DealId: uint64(dealID),
 	}, nil
 }
-
-func (a *API) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
-	_, err := a.WalletDefaultAddress(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	//TODO:
-	// experts, err := a.StateListExperts(ctx, types.EmptyTSK)
-
-	return &api.ExpertInfo{}, nil
-}

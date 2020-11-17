@@ -181,7 +181,6 @@ type FullNodeStruct struct {
 		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                  `perm:"admin"`
 		ClientQuery                               func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                             `perm:"read"`
-		ClientExpert                              func(ctx context.Context) (*api.ExpertInfo, error)                                                                `perm:"read"`
 
 		StateNetworkName                   func(context.Context) (dtypes.NetworkName, error)                                                                    `perm:"read"`
 		StateMinerSectors                  func(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error)      `perm:"read"`
@@ -642,10 +641,6 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 
 func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
 	return c.Internal.ClientQuery(ctx, root, miner)
-}
-
-func (c *FullNodeStruct) ClientExpert(ctx context.Context) (*api.ExpertInfo, error) {
-	return c.Internal.ClientExpert(ctx)
 }
 
 func (c *FullNodeStruct) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (types.BigInt, error) {
