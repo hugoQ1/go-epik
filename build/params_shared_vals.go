@@ -62,6 +62,9 @@ const TicketRandomnessLookback = abi.ChainEpoch(1)
 
 const AddressMainnetEnvVar = "_mainnet_"
 
+// the 'f' prefix doesn't matter
+var ZeroAddress = MustParseAddress("f3yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaby2smx7a")
+
 // /////
 // Devnet settings
 

@@ -8,6 +8,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-state-types/network"
 	block "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	xerrors "golang.org/x/xerrors"
@@ -144,13 +145,17 @@ func (m *Message) EqualCall(o *Message) bool {
 	return (&m1).Equals(&m2)
 }
 
-func (m *Message) ValidForBlockInclusion(minGas int64) error {
+func (m *Message) ValidForBlockInclusion(minGas int64, version network.Version) error {
 	if m.Version != 0 {
 		return xerrors.New("'Version' unsupported")
 	}
 
 	if m.To == address.Undef {
 		return xerrors.New("'To' address cannot be empty")
+	}
+
+	if m.To == build.ZeroAddress {
+		return xerrors.New("invalid 'To' address")
 	}
 
 	if m.From == address.Undef {

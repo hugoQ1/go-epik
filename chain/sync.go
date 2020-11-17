@@ -1070,7 +1070,7 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 
 		// Phase 1: syntactic validation, as defined in the spec
 		minGas := pl.OnChainMessage(msg.ChainLength())
-		if err := m.ValidForBlockInclusion(minGas.Total()); err != nil {
+		if err := m.ValidForBlockInclusion(minGas.Total(), syncer.sm.GetNtwkVersion(ctx, b.Header.Height)); err != nil {
 			return err
 		}
 
