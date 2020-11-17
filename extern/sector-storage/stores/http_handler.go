@@ -2,7 +2,6 @@ package stores
 
 import (
 	"encoding/json"
-	"github.com/filecoin-project/specs-storage/storage"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +12,8 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/tarutil"
+
+	"github.com/filecoin-project/specs-storage/storage"
 )
 
 var log = logging.Logger("stores")
