@@ -138,16 +138,14 @@ func (ss *stateSnaps) deleteActor(addr address.Address) {
 // VersionForNetwork returns the state tree version for the given network
 // version.
 func VersionForNetwork(ver network.Version) types.StateTreeVersion {
-	if actors.VersionForNetwork(ver) == actors.Version0 {
-		return types.StateTreeVersion0
-	}
+	// if actors.VersionForNetwork(ver) == actors.Version0 {
+	// 	return types.StateTreeVersion0
+	// }
 	return types.StateTreeVersion1
 }
 
 func adtForSTVersion(ver types.StateTreeVersion) actors.Version {
 	switch ver {
-	case types.StateTreeVersion0:
-		return actors.Version0
 	case types.StateTreeVersion1:
 		return actors.Version2
 	default:
@@ -158,8 +156,6 @@ func adtForSTVersion(ver types.StateTreeVersion) actors.Version {
 func NewStateTree(cst cbor.IpldStore, ver types.StateTreeVersion) (*StateTree, error) {
 	var info cid.Cid
 	switch ver {
-	case types.StateTreeVersion0:
-		// info is undefined
 	case types.StateTreeVersion1:
 		var err error
 		info, err = cst.Put(context.TODO(), new(types.StateInfo0))
@@ -191,7 +187,7 @@ func LoadStateTree(cst cbor.IpldStore, c cid.Cid) (*StateTree, error) {
 	if err := cst.Get(context.TODO(), c, &root); err != nil {
 		// We failed to decode as the new version, must be an old version.
 		root.Actors = c
-		root.Version = types.StateTreeVersion0
+		root.Version = types.StateTreeVersion1
 	}
 
 	switch root.Version {
