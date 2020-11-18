@@ -1203,12 +1203,12 @@ func (sm *StateManager) GetFilVested(ctx context.Context, height abi.ChainEpoch,
 	}
 
 	// After UpgradeActorsV2Height these funds are accounted for in GetFilReserveDisbursed
-	if height <= build.UpgradeActorsV2Height {
-		// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
-		vf = big.Add(vf, sm.preIgnitionGenInfos.genesisPledge)
-		// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
-		vf = big.Add(vf, sm.preIgnitionGenInfos.genesisMarketFunds)
-	}
+	// if height <= build.UpgradeActorsV2Height {
+	// 	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
+	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisPledge)
+	// 	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
+	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisMarketFunds)
+	// }
 
 	return vf, nil
 }

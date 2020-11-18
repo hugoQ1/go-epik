@@ -12,7 +12,6 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	exported0 "github.com/filecoin-project/specs-actors/actors/builtin/exported"
 	exported2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
 	vmr "github.com/filecoin-project/specs-actors/v2/actors/runtime"
 
@@ -58,7 +57,7 @@ func NewActorRegistry() *ActorRegistry {
 	// TODO: define all these properties on the actors themselves, in specs-actors.
 
 	// add builtInCode using: register(cid, singleton)
-	inv.Register(ActorsVersionPredicate(actors.Version0), exported0.BuiltinActors()...)
+	// inv.Register(ActorsVersionPredicate(actors.Version0), exported0.BuiltinActors()...)
 	inv.Register(ActorsVersionPredicate(actors.Version2), exported2.BuiltinActors()...)
 
 	return inv

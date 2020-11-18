@@ -85,7 +85,7 @@ var (
 	UpgradeIgnitionHeight abi.ChainEpoch = -2
 	UpgradeRefuelHeight   abi.ChainEpoch = -3
 	UpgradeTapeHeight     abi.ChainEpoch = -4
-	UpgradeActorsV2Height abi.ChainEpoch = 10
+	UpgradeActorsV2Height abi.ChainEpoch = 0
 	UpgradeLiftoffHeight  abi.ChainEpoch = -5
 	UpgradeKumquatHeight  abi.ChainEpoch = -6
 

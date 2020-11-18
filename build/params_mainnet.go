@@ -19,27 +19,27 @@ var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 	UpgradeSmokeHeight: DrandMainnet,
 }
 
-const UpgradeBreezeHeight = 41280
-const BreezeGasTampingDuration = 120
+const UpgradeBreezeHeight = -1
+const BreezeGasTampingDuration = 0
 
-const UpgradeSmokeHeight = 51000
+const UpgradeSmokeHeight = -1
 
-const UpgradeIgnitionHeight = 94000
-const UpgradeRefuelHeight = 130800
+const UpgradeIgnitionHeight = -2
+const UpgradeRefuelHeight = -3
 
-var UpgradeActorsV2Height = abi.ChainEpoch(138720)
+var UpgradeActorsV2Height = abi.ChainEpoch(0)
 
-const UpgradeTapeHeight = 140760
+const UpgradeTapeHeight = -4
 
 // This signals our tentative epoch for mainnet launch. Can make it later, but not earlier.
 // Miners, clients, developers, custodians all need time to prepare.
 // We still have upgrades and state changes to do, but can happen after signaling timing here.
-const UpgradeLiftoffHeight = 148888
+const UpgradeLiftoffHeight = -5
 
-const UpgradeKumquatHeight = 170000
+const UpgradeKumquatHeight = -6
 
 func init() {
-	policy.SetConsensusMinerMinPower(abi.NewStoragePower(10 << 40))
+	policy.SetConsensusMinerMinPower(abi.NewStoragePower(1))
 	policy.SetSupportedProofTypes(
 		abi.RegisteredSealProof_StackedDrg8MiBV1,
 	)

@@ -10,7 +10,6 @@ import (
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	"github.com/filecoin-project/go-address"
@@ -87,8 +86,8 @@ func newAccountActor(ver actors.Version) *types.Actor {
 	// TODO: ActorsUpgrade use a global actor registry?
 	var code cid.Cid
 	switch ver {
-	case actors.Version0:
-		code = builtin0.AccountActorCodeID
+	// case actors.Version0:
+	// 	code = builtin0.AccountActorCodeID
 	case actors.Version2:
 		code = builtin2.AccountActorCodeID
 	default:
