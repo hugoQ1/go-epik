@@ -7,7 +7,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 
 	"github.com/ipfs/go-cid"
-	logging "github.com/ipfs/go-log"
+	logging "github.com/ipfs/go-log/v2"
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -18,11 +18,11 @@ var log = logging.Logger("chainxchg")
 const (
 	// BlockSyncProtocolID is the protocol ID of the former blocksync protocol.
 	// Deprecated.
-	BlockSyncProtocolID = "/fil/sync/blk/0.0.1"
+	BlockSyncProtocolID = "/epk/sync/blk/0.0.1"
 
 	// ChainExchangeProtocolID is the protocol ID of the chain exchange
 	// protocol.
-	ChainExchangeProtocolID = "/fil/chain/xchg/0.0.1"
+	ChainExchangeProtocolID = "/epk/chain/xchg/0.0.1"
 )
 
 // FIXME: Bumped from original 800 to this to accommodate `syncFork()`

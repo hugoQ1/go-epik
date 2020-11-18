@@ -153,7 +153,7 @@ func init() {
 		},
 	})
 	addExample(map[protocol.ID]metrics.Stats{
-		"/fil/hello/1.0.0": {
+		"/epk/hello/1.0.0": {
 			RateIn:   100,
 			RateOut:  50,
 			TotalIn:  174000,

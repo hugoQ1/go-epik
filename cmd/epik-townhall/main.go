@@ -19,7 +19,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
-var topic = "/fil/headnotifs/"
+var topic = "/epk/headnotifs/"
 
 func init() {
 	genBytes := build.MaybeGenesis()

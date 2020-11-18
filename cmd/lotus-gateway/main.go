@@ -14,7 +14,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 
-	logging "github.com/ipfs/go-log"
+	logging "github.com/ipfs/go-log/v2"
 	"go.opencensus.io/stats/view"
 
 	"github.com/gorilla/mux"

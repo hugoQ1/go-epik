@@ -32,7 +32,7 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	"go.uber.org/fx"
 
-	logging "github.com/ipfs/go-log"
+	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
