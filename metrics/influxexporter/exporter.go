@@ -2,7 +2,9 @@ package influxexporter
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -31,7 +33,7 @@ func NewExporter(commonTags map[string]string) (view.Exporter, func(), error) {
 		return nil, nil, xerrors.New("environment variables not set")
 	}
 
-	ip := getLocalIP()
+	ip := GetMyExternalIP()
 	if len(ip) == 0 {
 		return nil, nil, xerrors.New("failed to lookup local IP")
 	}
@@ -139,19 +141,31 @@ func InfluxClient(addr, user, pass string) (client.Client, error) {
 	})
 }
 
-func getLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		log.Warnf("failed to lookup local IP: %v", err)
-		return ""
-	}
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() == nil {
-				continue
-			}
-			return ipnet.IP.To4().String()
+var Servers = []string{
+	"https://api.ipify.org?format=text",
+	"http://myexternalip.com/raw",
+	"https://ident.me/",
+	"http://bot.whatismyipaddress.com/",
+}
+
+func GetMyExternalIP() (ip string) {
+	for _, server := range Servers {
+		resp, err := http.Get(server)
+		if err != nil {
+			log.Warnf("failed to lookup my external IP from %s: %v", server, err)
+			continue
+		}
+		buf, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Warnf("failed to read response from %s: %v", server, err)
+			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
+		ip = string(buf)
+		if net.ParseIP(ip) != nil {
+			break
 		}
 	}
-	return ""
+	return
 }
