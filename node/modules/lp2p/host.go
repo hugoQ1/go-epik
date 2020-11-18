@@ -75,6 +75,8 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 						totals := BwReporter.GetBandwidthTotals()
 						stats.Record(ctx, metrics.BandwidthTotalIn.M(totals.TotalIn))
 						stats.Record(ctx, metrics.BandwidthTotalOut.M(totals.TotalOut))
+						stats.Record(ctx, metrics.BandwidthRateIn.M(totals.RateIn))
+						stats.Record(ctx, metrics.BandwidthRateOut.M(totals.RateOut))
 					}
 				}
 			}()

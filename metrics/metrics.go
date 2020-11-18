@@ -39,6 +39,8 @@ var (
 	// bandwidth
 	BandwidthTotalIn  = stats.Int64("bandwidth/total_in", "Counter for total traffic in", stats.UnitBytes)
 	BandwidthTotalOut = stats.Int64("bandwidth/total_out", "Counter for total traffic out", stats.UnitBytes)
+	BandwidthRateIn   = stats.Float64("bandwidth/rate_in", "Counter for bytes received per second", stats.UnitBytes)
+	BandwidthRateOut  = stats.Float64("bandwidth/rate_out", "Counter for bytes sent per second", stats.UnitBytes)
 	// retrieval
 	RetrievalReceived = stats.Int64("retrieval/received", "Counter for total received retrieval", stats.UnitDimensionless)
 	RetrievalAccepted = stats.Int64("retrieval/accepted", "Counter for total accepted retrieval", stats.UnitDimensionless)
@@ -117,6 +119,14 @@ var (
 		Measure:     BandwidthTotalOut,
 		Aggregation: view.LastValue(),
 	}
+	BandwidthRateInView = &view.View{
+		Measure:     BandwidthRateIn,
+		Aggregation: view.LastValue(),
+	}
+	BandwidthRateOutView = &view.View{
+		Measure:     BandwidthRateOut,
+		Aggregation: view.LastValue(),
+	}
 	RetrievalReceivedView = &view.View{
 		Measure:     RetrievalReceived,
 		Aggregation: view.Count(),
@@ -168,6 +178,8 @@ var DefaultViews = append([]*view.View{
 	PeerCountView,
 	BandwidthTotalInView,
 	BandwidthTotalOutView,
+	BandwidthRateInView,
+	BandwidthRateOutView,
 	SyncRequestView,
 	SyncRequestFailureView,
 	SyncReceivedView,
