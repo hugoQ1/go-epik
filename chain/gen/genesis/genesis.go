@@ -181,6 +181,15 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set market actor: %w", err)
 	}
 
+	// Create empty vote actor
+	voteact, err := SetupVoteActor(bs)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.VoteActorAddr, voteact); err != nil {
+		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
+	}
+
 	// Create verified registry
 	verifact, err := SetupVerifiedRegistryActor(bs)
 	if err != nil {
