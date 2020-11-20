@@ -442,9 +442,9 @@ var chainPledgeCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Println("(real) circulating supply: ", types.EPK(circ.FilCirculating))
-		if circ.FilCirculating.LessThan(big.Zero()) {
-			circ.FilCirculating = big.Zero()
+		fmt.Println("(real) circulating supply: ", types.EPK(circ.EpkCirculating))
+		if circ.EpkCirculating.LessThan(big.Zero()) {
+			circ.EpkCirculating = big.Zero()
 		}
 
 		rewardActor, err := state.GetActor(reward.Address)
@@ -457,11 +457,11 @@ var chainPledgeCmd = &cli.Command{
 			return xerrors.Errorf("loading reward actor state: %w", err)
 		}
 
-		fmt.Println("FilVested", types.EPK(circ.FilVested))
-		fmt.Println("FilMined", types.EPK(circ.FilMined))
-		fmt.Println("FilBurnt", types.EPK(circ.FilBurnt))
-		fmt.Println("FilLocked", types.EPK(circ.FilLocked))
-		fmt.Println("FilCirculating", types.EPK(circ.FilCirculating))
+		fmt.Println("EpkVested", types.EPK(circ.EpkVested))
+		fmt.Println("EpkMined", types.EPK(circ.EpkMined))
+		fmt.Println("EpkBurnt", types.EPK(circ.EpkBurnt))
+		fmt.Println("EpkLocked", types.EPK(circ.EpkLocked))
+		fmt.Println("EpkCirculating", types.EPK(circ.EpkCirculating))
 
 		for _, sectorWeight := range []abi.StoragePower{
 			types.NewInt(32 << 30),
@@ -473,7 +473,7 @@ var chainPledgeCmd = &cli.Command{
 				sectorWeight,
 				pledgeCollateral,
 				&powerSmoothed,
-				circ.FilCirculating,
+				circ.EpkCirculating,
 			)
 			if err != nil {
 				return xerrors.Errorf("calculating initial pledge: %w", err)

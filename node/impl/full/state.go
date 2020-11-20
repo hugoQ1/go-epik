@@ -1115,7 +1115,7 @@ func (a *StateAPI) StateMinerInitialPledgeCollateral(ctx context.Context, maddr 
 		sectorWeight,
 		pledgeCollateral,
 		&powerSmoothed,
-		circSupply.FilCirculating,
+		circSupply.EpkCirculating,
 	)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("calculating initial pledge: %w", err)
@@ -1299,7 +1299,7 @@ func (m *StateModule) StateDealProviderCollateralBounds(ctx context.Context, siz
 		powClaim.RawBytePower,
 		powClaim.QualityAdjPower,
 		rewPow,
-		circ.FilCirculating,
+		circ.EpkCirculating,
 		m.StateManager.GetNtwkVersion(ctx, ts.Height()))
 	return api.DealCollateralBounds{
 		Min: types.BigDiv(types.BigMul(min, dealProviderCollateralNum), dealProviderCollateralDen),

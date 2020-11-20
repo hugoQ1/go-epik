@@ -12,13 +12,14 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 )
 
-func SetupKnowledgeActor(bs bstore.Blockstore, initPayee address.Address) (*types.Actor, error) {
+func SetupKnowledgeActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 	m, err := adt.MakeEmptyMap(store).Root()
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO: default to undef?
 	sms := knowledge.ConstructState(m, address.Undef)
 	stcid, err := store.Put(store.Context(), sms)
 	if err != nil {

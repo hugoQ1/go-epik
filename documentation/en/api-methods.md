@@ -4530,11 +4530,11 @@ Inputs:
 Response:
 ```json
 {
-  "FilVested": "0",
-  "FilMined": "0",
-  "FilBurnt": "0",
-  "FilLocked": "0",
-  "FilCirculating": "0"
+  "EpkVested": "0",
+  "EpkMined": "0",
+  "EpkBurnt": "0",
+  "EpkLocked": "0",
+  "EpkCirculating": "0"
 }
 ```
 

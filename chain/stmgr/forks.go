@@ -470,7 +470,7 @@ func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, cb ExecCal
 		return cid.Undef, xerrors.Errorf("checking final state balance failed: %w", err)
 	}
 
-	exp := types.FromFil(build.FilBase)
+	exp := types.FromFil(build.EpkBase)
 	if !exp.Equals(total) {
 		return cid.Undef, xerrors.Errorf("resultant state tree account balance was not correct: %s", total)
 	}

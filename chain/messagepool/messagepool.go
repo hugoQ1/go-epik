@@ -554,7 +554,7 @@ func (mp *MessagePool) checkMessage(m *types.SignedMessage) error {
 		return ErrInvalidToAddr
 	}
 
-	if !m.Message.Value.LessThan(types.TotalFilecoinInt) {
+	if !m.Message.Value.LessThan(types.TotalEpkInt) {
 		return ErrMessageValueTooHigh
 	}
 

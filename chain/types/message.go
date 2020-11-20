@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/EpiK-Protocol/go-epik/build"
 	block "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	xerrors "golang.org/x/xerrors"
@@ -165,7 +165,7 @@ func (m *Message) ValidForBlockInclusion(minGas int64) error {
 		return xerrors.New("'Value' field cannot be negative")
 	}
 
-	if m.Value.GreaterThan(TotalFilecoinInt) {
+	if m.Value.GreaterThan(TotalEpkInt) {
 		return xerrors.New("'Value' field cannot be greater than total epk supply")
 	}
 

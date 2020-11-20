@@ -126,7 +126,7 @@ func runSimulateCmd(_ *cli.Context) error {
 		Preroot:    preroot,
 		Epoch:      epoch,
 		Message:    msg,
-		CircSupply: circSupply.FilCirculating,
+		CircSupply: circSupply.EpkCirculating,
 		BaseFee:    baseFee,
 		Rand:       rand,
 	})
@@ -181,7 +181,7 @@ func runSimulateCmd(_ *cli.Context) error {
 			Variants: []schema.Variant{
 				{ID: codename, Epoch: int64(epoch), NetworkVersion: uint(nv)},
 			},
-			CircSupply: circSupply.FilCirculating.Int,
+			CircSupply: circSupply.EpkCirculating.Int,
 			BaseFee:    baseFee.Int,
 			StateTree: &schema.StateTree{
 				RootCID: preroot,

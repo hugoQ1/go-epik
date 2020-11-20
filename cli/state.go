@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/fatih/color"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -1695,11 +1695,11 @@ var stateCircSupplyCmd = &cli.Command{
 				return err
 			}
 
-			fmt.Println("Circulating supply: ", types.EPK(circ.FilCirculating))
-			fmt.Println("Mined: ", types.EPK(circ.FilMined))
-			fmt.Println("Vested: ", types.EPK(circ.FilVested))
-			fmt.Println("Burnt: ", types.EPK(circ.FilBurnt))
-			fmt.Println("Locked: ", types.EPK(circ.FilLocked))
+			fmt.Println("Circulating supply: ", types.EPK(circ.EpkCirculating))
+			fmt.Println("Mined: ", types.EPK(circ.EpkMined))
+			fmt.Println("Vested: ", types.EPK(circ.EpkVested))
+			fmt.Println("Burnt: ", types.EPK(circ.EpkBurnt))
+			fmt.Println("Locked: ", types.EPK(circ.EpkLocked))
 		} else {
 			circ, err := api.StateCirculatingSupply(ctx, ts.Key())
 			if err != nil {

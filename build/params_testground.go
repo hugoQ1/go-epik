@@ -53,20 +53,20 @@ var (
 
 	TicketRandomnessLookback = abi.ChainEpoch(1)
 
-	FilBase               uint64 = 2_000_000_000
-	FilAllocStorageMining uint64 = 1_400_000_000
-	FilReserved           uint64 = 300_000_000
+	EpkBase               uint64 = 2_000_000_000
+	EpkAllocStorageMining uint64 = 1_400_000_000
+	EpkReserved           uint64 = 300_000_000
 
 	FilecoinPrecision uint64 = 1_000_000_000_000_000_000
 
 	InitialRewardBalance = func() *big.Int {
-		v := big.NewInt(int64(FilAllocStorageMining))
+		v := big.NewInt(int64(EpkAllocStorageMining))
 		v = v.Mul(v, big.NewInt(int64(FilecoinPrecision)))
 		return v
 	}()
 
-	InitialFilReserved = func() *big.Int {
-		v := big.NewInt(int64(FilReserved))
+	InitialEpkReserved = func() *big.Int {
+		v := big.NewInt(int64(EpkReserved))
 		v = v.Mul(v, big.NewInt(int64(FilecoinPrecision)))
 		return v
 	}()

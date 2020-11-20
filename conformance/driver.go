@@ -33,7 +33,7 @@ var (
 	// DefaultCirculatingSupply is the fallback circulating supply returned by
 	// the driver's CircSupplyCalculator function, used if the vector specifies
 	// no circulating supply.
-	DefaultCirculatingSupply = types.TotalFilecoinInt
+	DefaultCirculatingSupply = types.TotalEpkInt
 
 	// DefaultBaseFee to use in the VM, if one is not supplied in the vector.
 	DefaultBaseFee = abi.NewTokenAmount(100)

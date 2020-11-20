@@ -186,7 +186,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
 	}
-	if err := state.SetActor(builtin2.VoteActorAddr, voteact); err != nil {
+	if err := state.SetActor(builtin2.VoteFundsActorAddr, voteact); err != nil {
 		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
 	}
 
@@ -195,7 +195,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
 	}
-	if err := state.SetActor(builtin2.KnowledgeActorAddr, knowact); err != nil {
+	if err := state.SetActor(builtin2.KnowledgeFundsActorAddr, knowact); err != nil {
 		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 
@@ -342,8 +342,8 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("summing account balances in state tree: %w", err)
 	}
 
-	totalFil := big.Mul(big.NewInt(int64(build.FilBase)), big.NewInt(int64(build.FilecoinPrecision)))
-	remainingFil := big.Sub(totalFil, totalFilAllocated)
+	totalEpk := big.Mul(big.NewInt(int64(build.EpkBase)), big.NewInt(int64(build.FilecoinPrecision)))
+	remainingFil := big.Sub(totalEpk, totalFilAllocated)
 	if remainingFil.Sign() < 0 {
 		return nil, nil, xerrors.Errorf("somehow overallocated filecoin (allocated = %s)", types.EPK(totalFilAllocated))
 	}

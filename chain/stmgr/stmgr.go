@@ -312,6 +312,15 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		pstate = newState
 	}
 
+	pstatetree, err := sm.StateTree(pstate)
+	if err != nil {
+		return cid.Undef, cid.Undef, err
+	}
+	detail, err := sm.GetVMCirculatingSupplyDetailed(ctx, parentEpoch, pstatetree)
+	if err != nil {
+		return cid.Undef, cid.Undef, err
+	}
+
 	var receipts []cbg.CBORMarshaler
 	processedMsgs := make(map[cid.Cid]struct{})
 	for _, b := range bms {
@@ -341,10 +350,12 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		}
 
 		params, err := actors.SerializeParams(&reward.AwardBlockRewardParams{
-			Miner:     b.Miner,
-			Penalty:   penalty,
-			GasReward: gasReward,
-			WinCount:  b.WinCount,
+			Miner:            b.Miner,
+			Penalty:          penalty,
+			GasReward:        gasReward,
+			WinCount:         b.WinCount,
+			RetrievalPledged: big.Zero(), // TODO: get from retrieval
+			Circulating:      detail.EpkCirculating,
 		})
 		if err != nil {
 			return cid.Undef, cid.Undef, xerrors.Errorf("failed to serialize award params: %w", err)
@@ -1172,7 +1183,7 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 // GetVestedFunds returns all funds that have "left" actors that are in the genesis state:
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
-func (sm *StateManager) GetFilVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (abi.TokenAmount, error) {
+func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (abi.TokenAmount, error) {
 	vf := big.Zero()
 	if height <= build.UpgradeIgnitionHeight {
 		for _, v := range sm.preIgnitionGenInfos.genesisMsigs {
@@ -1202,7 +1213,7 @@ func (sm *StateManager) GetFilVested(ctx context.Context, height abi.ChainEpoch,
 		}
 	}
 
-	// After UpgradeActorsV2Height these funds are accounted for in GetFilReserveDisbursed
+	// After UpgradeActorsV2Height these funds are accounted for in GetEpkReserveDisbursed
 	// if height <= build.UpgradeActorsV2Height {
 	// 	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
 	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisPledge)
@@ -1213,17 +1224,17 @@ func (sm *StateManager) GetFilVested(ctx context.Context, height abi.ChainEpoch,
 	return vf, nil
 }
 
-func GetFilReserveDisbursed(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func GetEpkReserveDisbursed(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	ract, err := st.GetActor(builtin.ReserveAddress)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to get reserve actor: %w", err)
 	}
 
 	// If money enters the reserve actor, this could lead to a negative term
-	return big.Sub(big.NewFromGo(build.InitialFilReserved), ract.Balance), nil
+	return big.Sub(big.NewFromGo(build.InitialEpkReserved), ract.Balance), nil
 }
 
-func GetFilMined(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func GetEpkMined(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	ractor, err := st.GetActor(reward.Address)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to load reward actor state: %w", err)
@@ -1265,7 +1276,7 @@ func getFilPowerLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmoun
 	return pst.TotalLocked()
 }
 
-func (sm *StateManager) GetFilLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func (sm *StateManager) GetEpkLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 
 	filMarketLocked, err := getFilMarketLocked(ctx, st)
 	if err != nil {
@@ -1280,7 +1291,7 @@ func (sm *StateManager) GetFilLocked(ctx context.Context, st *state.StateTree) (
 	return types.BigAdd(filMarketLocked, filPowerLocked), nil
 }
 
-func GetFilBurnt(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func GetEpkBurnt(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	burnt, err := st.GetActor(builtin.BurntFundsActorAddr)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to load burnt actor: %w", err)
@@ -1295,7 +1306,7 @@ func (sm *StateManager) GetVMCirculatingSupply(ctx context.Context, height abi.C
 		return types.EmptyInt, err
 	}
 
-	return cs.FilCirculating, err
+	return cs.EpkCirculating, err
 }
 
 func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (api.CirculatingSupply, error) {
@@ -1314,49 +1325,49 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 		}
 	}
 
-	filVested, err := sm.GetFilVested(ctx, height, st)
+	epkVested, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
-		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate filVested: %w", err)
+		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)
 	}
 
-	filReserveDisbursed := big.Zero()
+	epkReserveDisbursed := big.Zero()
 	if height > build.UpgradeActorsV2Height {
-		filReserveDisbursed, err = GetFilReserveDisbursed(ctx, st)
+		epkReserveDisbursed, err = GetEpkReserveDisbursed(ctx, st)
 		if err != nil {
-			return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate filReserveDisbursed: %w", err)
+			return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkReserveDisbursed: %w", err)
 		}
 	}
 
-	filMined, err := GetFilMined(ctx, st)
+	epkMined, err := GetEpkMined(ctx, st)
 	if err != nil {
-		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate filMined: %w", err)
+		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkMined: %w", err)
 	}
 
-	filBurnt, err := GetFilBurnt(ctx, st)
+	epkBurnt, err := GetEpkBurnt(ctx, st)
 	if err != nil {
-		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate filBurnt: %w", err)
+		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkBurnt: %w", err)
 	}
 
-	filLocked, err := sm.GetFilLocked(ctx, st)
+	epkLocked, err := sm.GetEpkLocked(ctx, st)
 	if err != nil {
-		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate filLocked: %w", err)
+		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkLocked: %w", err)
 	}
 
-	ret := types.BigAdd(filVested, filMined)
-	ret = types.BigAdd(ret, filReserveDisbursed)
-	ret = types.BigSub(ret, filBurnt)
-	ret = types.BigSub(ret, filLocked)
+	ret := types.BigAdd(epkVested, epkMined)
+	ret = types.BigAdd(ret, epkReserveDisbursed)
+	ret = types.BigSub(ret, epkBurnt)
+	ret = types.BigSub(ret, epkLocked)
 
 	if ret.LessThan(big.Zero()) {
 		ret = big.Zero()
 	}
 
 	return api.CirculatingSupply{
-		FilVested:      filVested,
-		FilMined:       filMined,
-		FilBurnt:       filBurnt,
-		FilLocked:      filLocked,
-		FilCirculating: ret,
+		EpkVested:      epkVested,
+		EpkMined:       epkMined,
+		EpkBurnt:       epkBurnt,
+		EpkLocked:      epkLocked,
+		EpkCirculating: ret,
 	}, nil
 }
 
@@ -1441,8 +1452,8 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 	}
 
 	total := big.Add(circ, unCirc)
-	if !total.Equals(types.TotalFilecoinInt) {
-		return types.EmptyInt, xerrors.Errorf("total filecoin didn't add to expected amount: %s != %s", total, types.TotalFilecoinInt)
+	if !total.Equals(types.TotalEpkInt) {
+		return types.EmptyInt, xerrors.Errorf("total epk didn't add to expected amount: %s != %s", total, types.TotalEpkInt)
 	}
 
 	return circ, nil

@@ -11,8 +11,6 @@ import (
 
 	"github.com/filecoin-project/go-state-types/big"
 
-	"github.com/filecoin-project/go-state-types/network"
-
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
@@ -667,10 +665,10 @@ func minerHasMinPower(ctx context.Context, sm *StateManager, addr address.Addres
 func MinerEligibleToMine(ctx context.Context, sm *StateManager, addr address.Address, baseTs *types.TipSet, lookbackTs *types.TipSet) (bool, error) {
 	hmp, err := minerHasMinPower(ctx, sm, addr, lookbackTs)
 
-	// TODO: We're blurring the lines between a "runtime network version" and a "Epik upgrade epoch", is that unavoidable?
-	if sm.GetNtwkVersion(ctx, baseTs.Height()) <= network.Version3 {
-		return hmp, err
-	}
+	// // We're blurring the lines between a "runtime network version" and a "Epik upgrade epoch", is that unavoidable?
+	// if sm.GetNtwkVersion(ctx, baseTs.Height()) <= network.Version3 {
+	// 	return hmp, err
+	// }
 
 	if err != nil {
 		return false, err

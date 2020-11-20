@@ -66,23 +66,23 @@ const AddressMainnetEnvVar = "_mainnet_"
 
 var Devnet = true
 
-const FilBase = uint64(1_000_000_000)
-const FilAllocStorageMining = uint64(700_000_000)
+const EpkBase = uint64(1_000_000_000)
+const EpkAllocStorageMining = uint64(700_000_000)
 
 const FilecoinPrecision = uint64(1_000_000_000_000_000_000)
-const FilReserved = uint64(300_000_000)
+const EpkReserved = uint64(300_000_000)
 
 var InitialRewardBalance *big.Int
-var InitialFilReserved *big.Int
+var InitialEpkReserved *big.Int
 
 // TODO: Move other important consts here
 
 func init() {
-	InitialRewardBalance = big.NewInt(int64(FilAllocStorageMining))
+	InitialRewardBalance = big.NewInt(int64(EpkAllocStorageMining))
 	InitialRewardBalance = InitialRewardBalance.Mul(InitialRewardBalance, big.NewInt(int64(FilecoinPrecision)))
 
-	InitialFilReserved = big.NewInt(int64(FilReserved))
-	InitialFilReserved = InitialFilReserved.Mul(InitialFilReserved, big.NewInt(int64(FilecoinPrecision)))
+	InitialEpkReserved = big.NewInt(int64(EpkReserved))
+	InitialEpkReserved = InitialEpkReserved.Mul(InitialEpkReserved, big.NewInt(int64(FilecoinPrecision)))
 
 	if os.Getenv("EPIK_ADDRESS_TYPE") == AddressMainnetEnvVar {
 		SetAddressNetwork(address.Mainnet)

@@ -563,7 +563,7 @@ func (mv *MessageValidator) validateLocalMessage(ctx context.Context, msg *pubsu
 		return pubsub.ValidationIgnore
 	}
 
-	if !m.Message.Value.LessThan(types.TotalFilecoinInt) {
+	if !m.Message.Value.LessThan(types.TotalEpkInt) {
 		log.Warnf("local messages has too high value: %s", m.Message.Value)
 		recordFailure(ctx, metrics.MessageValidationFailure, "value-too-high")
 		return pubsub.ValidationIgnore
