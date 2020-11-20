@@ -75,6 +75,7 @@ var stateCmd = &cli.Command{
 		stateExecTraceCmd,
 		stateVoteFundCmd,
 		stateKnowFundInfoCmd,
+		stateNtwkVersionCmd,
 	},
 }
 
@@ -2067,6 +2068,38 @@ var stateKnowFundInfoCmd = &cli.Command{
 		for payee, amt := range info.Tally {
 			fmt.Printf("\t%s: %s\n", payee, types.EPK(amt))
 		}
+
+		return nil
+	},
+}
+
+var stateNtwkVersionCmd = &cli.Command{
+	Name:  "network-version",
+	Usage: "Returns the network version",
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Present() {
+			return ShowHelp(cctx, fmt.Errorf("doesn't expect any arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		nv, err := api.StateNetworkVersion(ctx, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Network Version: %d\n", nv)
 
 		return nil
 	},
