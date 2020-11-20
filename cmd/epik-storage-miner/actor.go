@@ -581,7 +581,7 @@ var actorControlList = &cli.Command{
 			tablewriter.Col("balance"),
 		)
 
-		postAddr, err := storage.AddressFor(ctx, api, mi, storage.PoStAddr, types.FromEpk(1))
+		postAddr, _, err := storage.AddressFor(ctx, api, mi, storage.PoStAddr, types.FromEpk(1), types.FromEpk(1))
 		if err != nil {
 			return xerrors.Errorf("getting address for post: %w", err)
 		}
