@@ -22,7 +22,8 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fr32"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
+	"github.com/filecoin-project/go-commp-utils/ffiwrapper"
+	"github.com/filecoin-project/go-commp-utils/zerocomm"
 )
 
 var _ Storage = &Sealer{}
@@ -175,7 +176,7 @@ func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existi
 }
 
 func (sb *Sealer) pieceCid(spt abi.RegisteredSealProof, in []byte) (cid.Cid, error) {
-	prf, werr, err := ToReadableFile(bytes.NewReader(in), int64(len(in)))
+	prf, werr, err := ffiwrapper.ToReadableFile(bytes.NewReader(in), int64(len(in)))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("getting tee reader pipe: %w", err)
 	}
@@ -608,20 +609,6 @@ func (sb *Sealer) ReleaseUnsealed(ctx context.Context, sector storage.SectorRef,
 
 func (sb *Sealer) Remove(ctx context.Context, sector storage.SectorRef) error {
 	return xerrors.Errorf("not supported at this layer") // happens in localworker
-}
-
-func GeneratePieceCIDFromFile(proofType abi.RegisteredSealProof, piece io.Reader, pieceSize abi.UnpaddedPieceSize) (cid.Cid, error) {
-	f, werr, err := ToReadableFile(piece, int64(pieceSize))
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	pieceCID, err := ffi.GeneratePieceCIDFromFile(proofType, f, pieceSize)
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	return pieceCID, werr()
 }
 
 func GetRequiredPadding(oldLength abi.PaddedPieceSize, newPieceLength abi.PaddedPieceSize) ([]abi.PaddedPieceSize, abi.PaddedPieceSize) {

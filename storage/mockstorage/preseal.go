@@ -5,6 +5,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/mock"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-commp-utils/zerocomm"
 	commcid "github.com/filecoin-project/go-fil-commcid"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
 
