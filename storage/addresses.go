@@ -42,7 +42,7 @@ func AddressFor(ctx context.Context, a addrSelectApi, mi miner.MinerInfo, use Ad
 		}
 	}
 
-	log.Warnw("No address had enough funds to for full PoSt message Fee, selecting least bad address", "address", leastBad, "balance", types.FIL(bestAvail), "optimalFunds", types.FIL(goodFunds), "minFunds", types.FIL(minFunds))
+	log.Warnw("No address had enough funds to for full PoSt message Fee, selecting least bad address", "address", leastBad, "balance", types.EPK(bestAvail), "optimalFunds", types.EPK(goodFunds), "minFunds", types.EPK(minFunds))
 
 	return leastBad, bestAvail, nil
 }
@@ -82,6 +82,6 @@ func maybeUseAddress(ctx context.Context, a addrSelectApi, addr address.Address,
 		*bestAvail = b
 	}
 
-	log.Warnw("address didn't have enough funds for window post message", "address", addr, "required", types.FIL(goodFunds), "balance", types.FIL(b))
+	log.Warnw("address didn't have enough funds for window post message", "address", addr, "required", types.EPK(goodFunds), "balance", types.EPK(b))
 	return false
 }

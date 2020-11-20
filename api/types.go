@@ -125,3 +125,9 @@ type ExpertInfo struct {
 	PeerId     peer.ID
 	Multiaddrs []abi.Multiaddrs
 }
+
+type NetBlockList struct {
+	Peers     []peer.ID
+	IPAddrs   []string
+	IPSubnets []string
+}
