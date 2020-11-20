@@ -190,6 +190,15 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
 	}
 
+	// Create empty knowledge actor
+	knowact, err := SetupKnowledgeActor(bs)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.KnowledgeActorAddr, knowact); err != nil {
+		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
+	}
+
 	// Create verified registry
 	verifact, err := SetupVerifiedRegistryActor(bs)
 	if err != nil {
