@@ -33,6 +33,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/verifreg"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
@@ -316,7 +317,12 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
+	// query circulating and total retrieval collateral
 	detail, err := sm.GetVMCirculatingSupplyDetailed(ctx, parentEpoch, pstatetree)
+	if err != nil {
+		return cid.Undef, cid.Undef, err
+	}
+	totalCollateral, err := getRetrievalTotalCollateral(ctx, pstatetree)
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
@@ -354,7 +360,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			Penalty:          penalty,
 			GasReward:        gasReward,
 			WinCount:         b.WinCount,
-			RetrievalPledged: big.Zero(), // TODO: get from retrieval
+			RetrievalPledged: totalCollateral,
 			Circulating:      detail.EpkCirculating,
 		})
 		if err != nil {
@@ -1246,6 +1252,18 @@ func GetEpkMined(ctx context.Context, st *state.StateTree) (abi.TokenAmount, err
 	}
 
 	return rst.TotalStoragePowerReward()
+}
+
+func getRetrievalTotalCollateral(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+	ractor, err := st.GetActor(retrieval.Address)
+	if err != nil {
+		return big.Zero(), xerrors.Errorf("failed to load retrieval actor state: %w", err)
+	}
+	rst, err := retrieval.Load(adt.WrapStore(ctx, st.Store), ractor)
+	if err != nil {
+		return big.Zero(), err
+	}
+	return rst.TotalCollateral()
 }
 
 func getFilMarketLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
