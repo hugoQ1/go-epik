@@ -473,6 +473,11 @@ workflows:
           packages: "./conformance"
           vectors-branch: master
       - build-epik-soup
+      - trigger-testplans:
+          filters:
+            branches:
+              only:
+                - master
       - build-debug
       - build-all:
           requires:
