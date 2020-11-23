@@ -22,7 +22,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fr32"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
-	"github.com/filecoin-project/go-commp-utils/ffiwrapper"
+	commpffi "github.com/filecoin-project/go-commp-utils/ffiwrapper"
 	"github.com/filecoin-project/go-commp-utils/zerocomm"
 )
 
@@ -176,7 +176,7 @@ func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existi
 }
 
 func (sb *Sealer) pieceCid(spt abi.RegisteredSealProof, in []byte) (cid.Cid, error) {
-	prf, werr, err := ffiwrapper.ToReadableFile(bytes.NewReader(in), int64(len(in)))
+	prf, werr, err := commpffi.ToReadableFile(bytes.NewReader(in), int64(len(in)))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("getting tee reader pipe: %w", err)
 	}
