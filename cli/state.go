@@ -1809,6 +1809,9 @@ var stateSectorCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
+		if si == nil {
+			return xerrors.Errorf("sector %d for miner %s not found", sid, maddr)
+		}
 
 		fmt.Println("SectorNumber: ", si.SectorNumber)
 		fmt.Println("SealProof: ", si.SealProof)
