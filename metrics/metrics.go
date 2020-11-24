@@ -11,14 +11,17 @@ import (
 
 // Global Tags
 var (
-	Version, _      = tag.NewKey("version")
-	Commit, _       = tag.NewKey("commit")
-	PeerID, _       = tag.NewKey("peer_id")
-	FailureType, _  = tag.NewKey("failure_type")
-	MessageFrom, _  = tag.NewKey("message_from")
-	MessageTo, _    = tag.NewKey("message_to")
-	MessageNonce, _ = tag.NewKey("message_nonce")
-	ReceivedFrom, _ = tag.NewKey("received_from")
+	Version, _         = tag.NewKey("version")
+	Commit, _          = tag.NewKey("commit")
+	PeerID, _          = tag.NewKey("peer_id")
+	FailureType, _     = tag.NewKey("failure_type")
+	MessageFrom, _     = tag.NewKey("message_from")
+	MessageTo, _       = tag.NewKey("message_to")
+	MessageNonce, _    = tag.NewKey("message_nonce")
+	ReceivedFrom, _    = tag.NewKey("received_from")
+	P2PMsgType, _      = tag.NewKey("type")
+	P2PMsgStatus, _    = tag.NewKey("status")
+	P2PMsgDirection, _ = tag.NewKey("direction")
 )
 
 // Measures
@@ -51,6 +54,9 @@ var (
 	SyncRequest         = stats.Int64("sync/request", "Counter for total sync request", stats.UnitDimensionless)
 	SyncRequestFailure  = stats.Int64("sync/request_failure", "Counter for failed sync request", stats.UnitDimensionless)
 	SyncReceived        = stats.Int64("sync/received", "Counter for total received bytes of sync", stats.UnitBytes)
+	// p2p msg
+	P2PMessageBytes = stats.Int64("p2p/message_bytes", "Counter for p2p message bytes", stats.UnitBytes)
+	P2PMessage      = stats.Int64("p2p/message", "Counter for p2p message", stats.UnitDimensionless)
 )
 
 var (
@@ -159,6 +165,16 @@ var (
 		Measure:     SyncSent,
 		Aggregation: view.Sum(),
 	}
+	P2PMessageBytesView = &view.View{
+		Measure:     P2PMessageBytes,
+		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{P2PMsgType, P2PMsgStatus, P2PMsgDirection},
+	}
+	P2PMessageView = &view.View{
+		Measure:     P2PMessage,
+		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{P2PMsgType, P2PMsgStatus, P2PMsgDirection},
+	}
 )
 
 // DefaultViews is an array of OpenCensus views for metric gathering purposes
@@ -186,4 +202,6 @@ var DefaultViews = append([]*view.View{
 	SyncResponseView,
 	SyncResponseFailureView,
 	SyncSentView,
+	P2PMessageView,
+	P2PMessageBytesView,
 }, rpcmetrics.DefaultViews...)

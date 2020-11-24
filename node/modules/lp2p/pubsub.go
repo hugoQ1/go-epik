@@ -11,10 +11,13 @@ import (
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	blake2b "github.com/minio/blake2b-simd"
 	ma "github.com/multiformats/go-multiaddr"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/fx"
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
@@ -309,6 +312,18 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 		trw := newTracerWrapper(tr)
 		options = append(options, pubsub.WithEventTracer(trw))
 	}
+	options = append(options,
+		pubsub.WithRPCReporter(func(typ string, size, times int, status string, direction string) {
+			ctx, _ := tag.New(context.Background(),
+				tag.Insert(metrics.P2PMsgType, typ),
+				tag.Insert(metrics.P2PMsgStatus, status),
+				tag.Insert(metrics.P2PMsgDirection, direction),
+			)
+			stats.Record(ctx, metrics.P2PMessageBytes.M(int64(size*times)))
+			stats.Record(ctx, metrics.P2PMessage.M(int64(times)))
+		}),
+		pubsub.WithValidateQueueSize(512),
+	)
 
 	// TODO: we want to hook the peer score inspector so that we can gain visibility
 	//       in peer scores for debugging purposes -- this might be trigged by metrics collection

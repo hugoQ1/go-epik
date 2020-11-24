@@ -12,6 +12,7 @@ require (
 	github.com/Gurpartap/async v0.0.0-20180927173644-4f7f499dd9ee
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/coreos/go-systemd/v22 v22.0.0
+	github.com/dchest/blake2b v1.0.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/docker/go-units v0.4.0
 	github.com/drand/drand v0.9.2-0.20200616080806-a94e9c1636a4
@@ -37,7 +38,6 @@ require (
 	github.com/filecoin-project/specs-storage v0.1.1-0.20200622113353-88a9704877ea
 	github.com/filecoin-project/storage-fsm v0.0.0-20200625160832-379a4655b044
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-beta.1
-	github.com/go-delve/delve v1.5.0 // indirect
 	github.com/go-kit/kit v0.10.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.1.1
@@ -84,7 +84,6 @@ require (
 	github.com/libp2p/go-libp2p v0.10.0
 	github.com/libp2p/go-libp2p-connmgr v0.2.4
 	github.com/libp2p/go-libp2p-core v0.6.0
-	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/libp2p/go-libp2p-discovery v0.4.0
 	github.com/libp2p/go-libp2p-kad-dht v0.8.1
 	github.com/libp2p/go-libp2p-mplex v0.2.3
@@ -141,3 +140,5 @@ replace github.com/filecoin-project/sector-storage => github.com/EpiK-Protocol/e
 replace github.com/filecoin-project/specs-actors => github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20201101151210-d0359e6c9eca
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.3.2-0.20201031124322-3cc32a3bdbe0
+
+replace github.com/libp2p/go-libp2p-pubsub => github.com/EpiK-Protocol/go-libp2p-pubsub v0.3.3-0.20201124122636-5181360e6131
