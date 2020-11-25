@@ -6,18 +6,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/crypto"
 	logging "github.com/ipfs/go-log/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
-
 	"github.com/EpiK-Protocol/go-epik/api"
-	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"  // enable bls signatures
-	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp" // enable secp signatures
-
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"  // enable bls signatures
+	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp" // enable secp signatures
 )
 
 var log = logging.Logger("wallet")
@@ -318,7 +316,7 @@ func (w *LocalWallet) WalletHas(ctx context.Context, addr address.Address) (bool
 	return k != nil, nil
 }
 
-func (w *LocalWallet) WalletDelete(ctx context.Context, addr address.Address) error {
+func (w *LocalWallet) walletDelete(ctx context.Context, addr address.Address) error {
 	k, err := w.findKey(addr)
 
 	if err != nil {
@@ -353,7 +351,15 @@ func (w *LocalWallet) WalletDelete(ctx context.Context, addr address.Address) er
 
 	delete(w.keys, addr)
 
-	def, err := w.GetDefault(ctx)
+	return nil
+}
+
+func (w *LocalWallet) WalletDelete(ctx context.Context, addr address.Address) error {
+	if err := w.walletDelete(ctx, addr); err != nil {
+		return xerrors.Errorf("wallet delete: %w", err)
+	}
+
+	def, err := w.GetDefault()
 	if err != nil {
 		return xerrors.Errorf("getting default address: %w", err)
 	}
