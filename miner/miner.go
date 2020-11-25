@@ -436,6 +436,8 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 		return nil, xerrors.Errorf("failed to compute winning post proof: %w", err)
 	}
 
+	tProof := build.Clock.Now()
+
 	// get pending messages early,
 	msgs, err := m.api.MpoolSelect(context.TODO(), base.TipSet.Key(), ticket.Quality())
 	if err != nil {
@@ -464,7 +466,8 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 			"tPowercheck ", tPowercheck.Sub(tDrand),
 			"tTicket ", tTicket.Sub(tPowercheck),
 			"tSeed ", tSeed.Sub(tTicket),
-			"tPending ", tPending.Sub(tSeed),
+			"tProof ", tProof.Sub(tSeed),
+			"tPending ", tPending.Sub(tProof),
 			"tCreateBlock ", tCreateBlock.Sub(tPending))
 	}
 
