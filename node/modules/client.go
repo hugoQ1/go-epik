@@ -8,6 +8,8 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/fx"
 
 	graphsyncimpl "github.com/filecoin-project/go-data-transfer/impl/graphsync"
@@ -29,6 +31,7 @@ import (
 	"github.com/ipfs/go-filestore"
 
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -131,6 +134,13 @@ func StorageClient(lc fx.Lifecycle, h host.Host, ibs dtypes.ClientBlockstore, r 
 func RetrievalClient(h host.Host, bs dtypes.ClientBlockstore, pmgr *paychmgr.Manager, payapi payapi.PaychAPI, resolver retrievalmarket.PeerResolver, ds dtypes.MetadataDS, chainapi full.ChainAPI) (retrievalmarket.RetrievalClient, error) {
 	adapter := retrievaladapter.NewRetrievalClientNode(pmgr, payapi, chainapi)
 	network := rmnet.NewFromLibp2pHost(h)
+	rmnet.WithStatsReporter(network, func(typ, direction string, value int) {
+		ctx, _ := tag.New(context.Background(),
+			tag.Insert(metrics.P2PMsgType, typ),
+			tag.Insert(metrics.P2PMsgDirection, direction),
+		)
+		stats.Record(ctx, metrics.P2PMessageBytes.M(int64(value)))
+	})
 	sc := storedcounter.New(ds, datastore.NewKey("/retr"))
 	return retrievalimpl.NewClient(network, bs, adapter, resolver, namespace.Wrap(ds, datastore.NewKey("/retrievals/client")), sc)
 }

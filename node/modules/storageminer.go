@@ -20,6 +20,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
 	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
@@ -378,6 +379,13 @@ func RetrievalProvider(h host.Host, miner *storage.Miner, sealer sectorstorage.S
 	}
 
 	netwk := rmnet.NewFromLibp2pHost(h)
+	rmnet.WithStatsReporter(netwk, func(typ, direction string, value int) {
+		ctx, _ := tag.New(context.Background(),
+			tag.Insert(metrics.P2PMsgType, typ),
+			tag.Insert(metrics.P2PMsgDirection, direction),
+		)
+		stats.Record(ctx, metrics.P2PMessageBytes.M(int64(value)))
+	})
 
 	opt := retrievalimpl.DealDeciderOpt(func(ctx context.Context, state retrievalmarket.ProviderDealState) (bool, string, error) {
 		stats.Record(ctx, metrics.RetrievalReceived.M(1))

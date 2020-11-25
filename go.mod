@@ -139,6 +139,6 @@ replace github.com/filecoin-project/sector-storage => github.com/EpiK-Protocol/e
 
 replace github.com/filecoin-project/specs-actors => github.com/EpiK-Protocol/go-epik-actors v0.6.2-0.20201101151210-d0359e6c9eca
 
-replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.3.2-0.20201031124322-3cc32a3bdbe0
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.3.2-0.20201125095241-68a9511f010c
 
 replace github.com/libp2p/go-libp2p-pubsub => github.com/EpiK-Protocol/go-libp2p-pubsub v0.3.3-0.20201124122636-5181360e6131
