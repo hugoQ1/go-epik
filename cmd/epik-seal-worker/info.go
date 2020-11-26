@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
-
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 )
 
 var infoCmd = &cli.Command{
@@ -63,14 +62,7 @@ var infoCmd = &cli.Command{
 		fmt.Printf("Reserved memory: %s\n", types.SizeStr(types.NewInt(info.Resources.MemReserved)))
 
 		fmt.Printf("Task types: ")
-		tasks := make([]sealtasks.TaskType, 0, len(tt))
-		for taskType := range tt {
-			tasks = append(tasks, taskType)
-		}
-		sort.Slice(tasks, func(i, j int) bool {
-			return tasks[i].Less(tasks[j])
-		})
-		for _, t := range tasks {
+		for _, t := range ttList(tt) {
 			fmt.Printf("%s ", t.Short())
 		}
 		fmt.Println()
@@ -101,4 +93,15 @@ var infoCmd = &cli.Command{
 
 		return nil
 	},
+}
+
+func ttList(tt map[sealtasks.TaskType]struct{}) []sealtasks.TaskType {
+	tasks := make([]sealtasks.TaskType, 0, len(tt))
+	for taskType := range tt {
+		tasks = append(tasks, taskType)
+	}
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].Less(tasks[j])
+	})
+	return tasks
 }
