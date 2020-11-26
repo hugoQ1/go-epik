@@ -14,6 +14,11 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
 
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-fil-markets/piecestore"
@@ -21,12 +26,6 @@ import (
 	storagemarket "github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-jsonrpc/auth"
 	"github.com/filecoin-project/go-state-types/abi"
-
-	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
-	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
@@ -36,6 +35,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/storage"
 	"github.com/EpiK-Protocol/go-epik/storage/sectorblocks"
+	sto "github.com/filecoin-project/specs-storage/storage"
 )
 
 type StorageMinerAPI struct {
@@ -55,8 +55,7 @@ type StorageMinerAPI struct {
 	storiface.WorkerReturn
 	DataTransfer dtypes.ProviderDataTransfer
 	Host         host.Host
-
-	DS dtypes.MetadataDS
+	DS           dtypes.MetadataDS
 
 	ConsiderOnlineStorageDealsConfigFunc       dtypes.ConsiderOnlineStorageDealsConfigFunc
 	SetConsiderOnlineStorageDealsConfigFunc    dtypes.SetConsiderOnlineStorageDealsConfigFunc
@@ -542,6 +541,20 @@ func (sm *StorageMinerAPI) PiecesGetCIDInfo(ctx context.Context, payloadCid cid.
 
 func (sm *StorageMinerAPI) CreateBackup(ctx context.Context, fpath string) error {
 	return backup(sm.DS, fpath)
+}
+
+func (sm *StorageMinerAPI) CheckProvable(ctx context.Context, pp abi.RegisteredPoStProof, sectors []sto.SectorRef) (map[abi.SectorNumber]string, error) {
+	bad, err := sm.StorageMgr.CheckProvable(ctx, pp, sectors)
+	if err != nil {
+		return nil, err
+	}
+
+	var out = make(map[abi.SectorNumber]string)
+	for sid, err := range bad {
+		out[sid.Number] = err
+	}
+
+	return out, nil
 }
 
 var _ api.StorageMiner = &StorageMinerAPI{}
