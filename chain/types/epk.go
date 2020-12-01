@@ -23,6 +23,28 @@ func (f EPK) Unitless() string {
 	return strings.TrimRight(strings.TrimRight(r.FloatString(18), "0"), ".")
 }
 
+var unitPrefixes = []string{"a", "f", "p", "n", "μ", "m", ""}
+
+func (f EPK) Short() string {
+	n := BigInt(f)
+
+	dn := uint64(1)
+	var prefix string
+	for _, prefix = range unitPrefixes {
+		if n.LessThan(NewInt(dn * 1000)) {
+			break
+		}
+		dn = dn * 1000
+	}
+
+	r := new(big.Rat).SetFrac(f.Int, big.NewInt(int64(dn)))
+	if r.Sign() == 0 {
+		return "0"
+	}
+
+	return strings.TrimRight(strings.TrimRight(r.FloatString(3), "0"), ".") + " " + prefix + "EPK"
+}
+
 func (f EPK) Format(s fmt.State, ch rune) {
 	switch ch {
 	case 's', 'v':
