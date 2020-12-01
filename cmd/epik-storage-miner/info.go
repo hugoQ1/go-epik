@@ -6,17 +6,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/filecoin-project/go-state-types/big"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apibstore"
@@ -25,6 +23,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
@@ -126,15 +125,15 @@ func infoCmdAct(cctx *cli.Context) error {
 	rpercI := types.BigDiv(types.BigMul(pow.MinerPower.RawBytePower, types.NewInt(1000000)), pow.TotalPower.RawBytePower)
 	qpercI := types.BigDiv(types.BigMul(pow.MinerPower.QualityAdjPower, types.NewInt(1000000)), pow.TotalPower.QualityAdjPower)
 
-	fmt.Printf("Byte Power:   %s / %s (%0.4f%%)\n",
-		color.BlueString(types.SizeStr(pow.MinerPower.RawBytePower)),
-		types.SizeStr(pow.TotalPower.RawBytePower),
-		float64(rpercI.Int64())/10000)
-
-	fmt.Printf("Actual Power: %s / %s (%0.4f%%)\n",
+	fmt.Printf("Power: %s / %s (%0.4f%%)\n",
 		color.GreenString(types.DeciStr(pow.MinerPower.QualityAdjPower)),
 		types.DeciStr(pow.TotalPower.QualityAdjPower),
 		float64(qpercI.Int64())/10000)
+
+	fmt.Printf("\tRaw: %s / %s (%0.4f%%)\n",
+		color.BlueString(types.SizeStr(pow.MinerPower.RawBytePower)),
+		types.SizeStr(pow.TotalPower.RawBytePower),
+		float64(rpercI.Int64())/10000)
 
 	secCounts, err := api.StateMinerSectorCount(ctx, maddr, types.EmptyTSK)
 	if err != nil {
@@ -215,23 +214,23 @@ func infoCmdAct(cctx *cli.Context) error {
 	if err != nil {
 		return xerrors.Errorf("getting available balance: %w", err)
 	}
-	fmt.Printf("Miner Balance: %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
-	fmt.Printf("\tVesting:    %s\n", types.EPK(lockedFunds.VestingFunds).Short())
-	color.Green("\tAvailable: %s", types.EPK(availBalance).Short())
+	fmt.Printf("Miner Balance:    %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
+	fmt.Printf("      Vesting:    %s\n", types.EPK(lockedFunds.VestingFunds).Short())
+	color.Green("      Available:  %s", types.EPK(availBalance).Short())
 
 	mb, err := api.StateMarketBalance(ctx, maddr, types.EmptyTSK)
 	if err != nil {
 		return xerrors.Errorf("getting market balance: %w", err)
 	}
-	fmt.Printf("Market Balance: %s\n", types.EPK(mb.Escrow).Short())
-	fmt.Printf("\tLocked:    %s\n", types.EPK(mb.Locked).Short())
-	color.Green("\tAvailable: %s\n", types.EPK(big.Sub(mb.Escrow, mb.Locked)).Short())
+	fmt.Printf("Market Balance:   %s\n", types.EPK(mb.Escrow).Short())
+	fmt.Printf("       Locked:    %s\n", types.EPK(mb.Locked).Short())
+	color.Green("       Available: %s\n", types.EPK(big.Sub(mb.Escrow, mb.Locked)).Short())
 
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {
 		return xerrors.Errorf("getting worker balance: %w", err)
 	}
-	color.Cyan("Worker Balance: %s", types.EPK(wb).Short())
+	color.Cyan("Worker Balance:   %s", types.EPK(wb).Short())
 
 	fmt.Println()
 
