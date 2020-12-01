@@ -7,9 +7,9 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/lotus/api"
-	lcli "github.com/filecoin-project/lotus/cli"
-	"github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"
+	"github.com/EpiK-Protocol/go-epik/api"
+	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 )
 
 var tasksCmd = &cli.Command{
