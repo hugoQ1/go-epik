@@ -204,6 +204,8 @@ func infoCmdAct(cctx *cli.Context) error {
 	fmt.Printf("\tActive: %d, %s\n", nactiveDeals, types.SizeStr(types.NewInt(uint64(activeDealBytes))) /* , nVerifDeals, types.SizeStr(types.NewInt(uint64(activeVerifDealBytes))) */)
 	fmt.Println()
 
+	spendable := big.Zero()
+
 	// NOTE: there's no need to unlock anything here. Funds only
 	// vest on deadline boundaries, and they're unlocked by cron.
 	lockedFunds, err := mas.LockedFunds()
@@ -214,6 +216,8 @@ func infoCmdAct(cctx *cli.Context) error {
 	if err != nil {
 		return xerrors.Errorf("getting available balance: %w", err)
 	}
+	spendable = big.Add(spendable, availBalance)
+
 	fmt.Printf("Miner Balance:    %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
 	fmt.Printf("      Vesting:    %s\n", types.EPK(lockedFunds.VestingFunds).Short())
 	color.Green("      Available:  %s", types.EPK(availBalance).Short())
@@ -222,6 +226,8 @@ func infoCmdAct(cctx *cli.Context) error {
 	if err != nil {
 		return xerrors.Errorf("getting market balance: %w", err)
 	}
+	spendable = big.Add(spendable, big.Sub(mb.Escrow, mb.Locked))
+
 	fmt.Printf("Market Balance:   %s\n", types.EPK(mb.Escrow).Short())
 	fmt.Printf("       Locked:    %s\n", types.EPK(mb.Locked).Short())
 	color.Green("       Available: %s\n", types.EPK(big.Sub(mb.Escrow, mb.Locked)).Short())
@@ -230,7 +236,22 @@ func infoCmdAct(cctx *cli.Context) error {
 	if err != nil {
 		return xerrors.Errorf("getting worker balance: %w", err)
 	}
+	spendable = big.Add(spendable, wb)
 	color.Cyan("Worker Balance:   %s", types.EPK(wb).Short())
+	if len(mi.ControlAddresses) > 0 {
+		cbsum := big.Zero()
+		for _, ca := range mi.ControlAddresses {
+			b, err := api.WalletBalance(ctx, ca)
+			if err != nil {
+				return xerrors.Errorf("getting control address balance: %w", err)
+			}
+			cbsum = big.Add(cbsum, b)
+		}
+		spendable = big.Add(spendable, cbsum)
+
+		fmt.Printf("       Control:   %s\n", types.EPK(cbsum).Short())
+	}
+	fmt.Printf("Total Spendable:  %s\n", color.YellowString(types.EPK(spendable).Short()))
 
 	fmt.Println()
 
