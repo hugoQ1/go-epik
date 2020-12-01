@@ -12,6 +12,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/store/splitstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -90,7 +91,18 @@ var exportChainCmd = &cli.Command{
 			return err
 		}
 
-		cs := store.NewChainStore(bs, bs, mds, nil, nil)
+		ssPath, err := lr.SplitstorePath()
+		if err != nil {
+			return err
+		}
+
+		ss, err := splitstore.NewSplitStore(ssPath, mds, bs)
+		if err != nil {
+			return err
+		}
+		defer ss.Close() //nolint:errcheck
+
+		cs := store.NewChainStore(ss, ss, mds, nil, nil)
 		defer cs.Close() //nolint:errcheck
 
 		if err := cs.Load(); err != nil {
