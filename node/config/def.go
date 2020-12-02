@@ -79,11 +79,6 @@ type MinerAddressConfig struct {
 	CommitControl    []string
 }
 
-type MinerAddressConfig struct {
-	PreCommitControl []string
-	CommitControl    []string
-}
-
 // API contains configs for API endpoint
 type API struct {
 	ListenAddress       string

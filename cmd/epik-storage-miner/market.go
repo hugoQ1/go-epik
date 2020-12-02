@@ -114,16 +114,6 @@ var storageDealSelectionResetCmd = &cli.Command{
 			return err
 		}
 
-		err = smapi.DealsSetConsiderVerifiedStorageDeals(lcli.DaemonContext(cctx), true)
-		if err != nil {
-			return err
-		}
-
-		err = smapi.DealsSetConsiderUnverifiedStorageDeals(lcli.DaemonContext(cctx), true)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	},
 }
@@ -137,12 +127,6 @@ var storageDealSelectionRejectCmd = &cli.Command{
 		},
 		&cli.BoolFlag{
 			Name: "offline",
-		},
-		&cli.BoolFlag{
-			Name: "verified",
-		},
-		&cli.BoolFlag{
-			Name: "unverified",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -161,20 +145,6 @@ var storageDealSelectionRejectCmd = &cli.Command{
 
 		if cctx.Bool("offline") {
 			err = smapi.DealsSetConsiderOfflineStorageDeals(lcli.DaemonContext(cctx), false)
-			if err != nil {
-				return err
-			}
-		}
-
-		if cctx.Bool("verified") {
-			err = smapi.DealsSetConsiderVerifiedStorageDeals(lcli.DaemonContext(cctx), false)
-			if err != nil {
-				return err
-			}
-		}
-
-		if cctx.Bool("unverified") {
-			err = smapi.DealsSetConsiderUnverifiedStorageDeals(lcli.DaemonContext(cctx), false)
 			if err != nil {
 				return err
 			}
