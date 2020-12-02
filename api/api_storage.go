@@ -204,6 +204,14 @@ func (st *SealSeed) Equals(ost *SealSeed) bool {
 
 type SectorState string
 
+type AddrUse int
+
+const (
+	PreCommitAddr AddrUse = iota
+	CommitAddr
+	PoStAddr
+)
+
 type AddressConfig struct {
 	PreCommitControl []address.Address
 	CommitControl    []address.Address
