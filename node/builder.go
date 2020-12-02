@@ -14,6 +14,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/node/hello"
+	"github.com/EpiK-Protocol/go-epik/system"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	logging "github.com/ipfs/go-log/v2"
@@ -176,6 +177,7 @@ func defaults() []Option {
 		Override(new(journal.DisabledEvents), journal.EnvDisabledEvents),
 		Override(new(journal.Journal), modules.OpenFilesystemJournal),
 
+		Override(new(system.MemoryConstraints), modules.MemoryConstraints),
 		Override(InitMemoryWatchdog, modules.MemoryWatchdog),
 
 		Override(new(helpers.MetricsCtx), func() context.Context {
