@@ -36,6 +36,7 @@ type StorageMiner struct {
 	Sealing    SealingConfig
 	Storage    sectorstorage.SealerConfig
 	Fees       MinerFeeConfig
+	Addresses  MinerAddressConfig
 }
 
 type DealmakingConfig struct {
@@ -71,6 +72,11 @@ type MinerFeeConfig struct {
 	MaxWindowPoStGasFee    types.EPK
 	MaxPublishDealsFee     types.EPK
 	MaxMarketBalanceAddFee types.EPK
+}
+
+type MinerAddressConfig struct {
+	PreCommitControl []string
+	CommitControl    []string
 }
 
 // API contains configs for API endpoint
