@@ -269,7 +269,11 @@ github.com/filecoin-project/go-data-transfer v0.6.7/go.mod h1:C++k1U6+jMQODOaen5
 github.com/filecoin-project/go-data-transfer v1.0.1/go.mod h1:UxvfUAY9v3ub0a21BSK9u3pB2aq30Y0KMsG+w9/ysyo=
 github.com/filecoin-project/go-data-transfer v1.2.0 h1:LM+K+J+y9t8e3gYskJHWDlyHJsF6aaxoHOP+HIiVE1U=
 github.com/filecoin-project/go-data-transfer v1.2.0/go.mod h1:ZAH51JZFR8NZC4FPiDPG+swjgui0q6zTMJbztc6pHhY=
+<<<<<<< HEAD
 github.com/filecoin-project/go-data-transfer v1.2.5/go.mod h1:mvjZ+C3NkBX10JP4JMu27DCjUouHFjHwUGh+Xc4yvDA=
+=======
+github.com/filecoin-project/go-data-transfer v1.2.2/go.mod h1:ZAH51JZFR8NZC4FPiDPG+swjgui0q6zTMJbztc6pHhY=
+>>>>>>> 370817eb6... Allow miners to filter (un)verified deals
 github.com/filecoin-project/go-ds-versioning v0.1.0 h1:y/X6UksYTsK8TLCI7rttCKEvl8btmWxyFMEeeWGUxIQ=
 github.com/filecoin-project/go-ds-versioning v0.1.0/go.mod h1:mp16rb4i2QPmxBnmanUx8i/XANp+PFCCJWiAb+VW4/s=
 github.com/filecoin-project/go-fil-commcid v0.0.0-20200716160307-8f644712406f h1:GxJzR3oRIMTPtpZ0b7QF8FKPK6/iPAc7trhlL5k/g+s=
@@ -281,14 +285,22 @@ github.com/filecoin-project/go-fil-markets v0.7.1/go.mod h1:5Pt4DXQqUoUrp9QzlSdl
 github.com/filecoin-project/go-fil-markets v1.0.5-0.20201113164554-c5eba40d5335/go.mod h1:AJySOJC00JRWEZzRG2KsfUnqEf5ITXxeX09BE9N4f9c=
 github.com/filecoin-project/go-fil-markets v1.0.6 h1:JTZBMKJ19YpK/vQfE0rHvjELy83NeGor5d4dBnoIlK0=
 github.com/filecoin-project/go-fil-markets v1.0.6/go.mod h1:iVYc+VrHIP15F5COkHNM6ndTwKSJ7qPrHSKCfFUnve4=
+<<<<<<< HEAD
 github.com/filecoin-project/go-fil-markets v1.1.1/go.mod h1:MKiwW9ylGjDFg31Im1kjZlrWjbsO3GbCkZYgdWy3jzs=
+=======
+github.com/filecoin-project/go-fil-markets v1.0.9/go.mod h1:uOikzYK7aNbSWMczCp6Ru257ML4PplLRBfDk/NAOgaY=
+>>>>>>> 370817eb6... Allow miners to filter (un)verified deals
 github.com/filecoin-project/go-hamt-ipld v0.1.5 h1:uoXrKbCQZ49OHpsTCkrThPNelC4W3LPEk0OrS/ytIBM=
 github.com/filecoin-project/go-hamt-ipld v0.1.5/go.mod h1:6Is+ONR5Cd5R6XZoCse1CWaXZc0Hdb/JeX+EQCQzX24=
 github.com/filecoin-project/go-hamt-ipld/v2 v2.0.0 h1:b3UDemBYN2HNfk3KOXNuxgTTxlWi3xVvbQP0IT38fvM=
 github.com/filecoin-project/go-hamt-ipld/v2 v2.0.0/go.mod h1:7aWZdaQ1b16BVoQUYR+eEvrDCGJoPLxFpDynFjYfBjI=
 github.com/filecoin-project/go-jsonrpc v0.1.2-0.20201008195726-68c6a2704e49 h1:FSY245KeXFCUgyfFEu+bhrZNk8BGGJyfpSmQl2aiPU8=
 github.com/filecoin-project/go-jsonrpc v0.1.2-0.20201008195726-68c6a2704e49/go.mod h1:XBBpuKIMaXIIzeqzO1iucq4GvbF8CxmXRFoezRh+Cx4=
+<<<<<<< HEAD
 github.com/filecoin-project/go-jsonrpc v0.1.2-0.20201116213214-f4b2d34247f0/go.mod h1:XBBpuKIMaXIIzeqzO1iucq4GvbF8CxmXRFoezRh+Cx4=
+=======
+github.com/filecoin-project/go-jsonrpc v0.1.2/go.mod h1:XBBpuKIMaXIIzeqzO1iucq4GvbF8CxmXRFoezRh+Cx4=
+>>>>>>> 370817eb6... Allow miners to filter (un)verified deals
 github.com/filecoin-project/go-multistore v0.0.3 h1:vaRBY4YiA2UZFPK57RNuewypB8u0DzzQwqsL0XarpnI=
 github.com/filecoin-project/go-multistore v0.0.3/go.mod h1:kaNqCC4IhU4B1uyr7YWFHd23TL4KM32aChS0jNkyUvQ=
 github.com/filecoin-project/go-padreader v0.0.0-20200903213702-ed5fae088b20 h1:+/4aUeUoKr6AKfPE3mBhXA5spIV6UcKdTYDPNU2Tdmg=
@@ -610,7 +622,11 @@ github.com/ipfs/go-graphsync v0.4.2/go.mod h1:/VmbZTUdUMTbNkgzAiCEucIIAU3BkLE2cZ
 github.com/ipfs/go-graphsync v0.4.3/go.mod h1:mPOwDYv128gf8gxPFgXnz4fNrSYPsWyqisJ7ych+XDY=
 github.com/ipfs/go-graphsync v0.5.0 h1:iaByvxq88Ys1KcaQzTS1wmRhNsNEo3SaUiSGqTSbGmM=
 github.com/ipfs/go-graphsync v0.5.0/go.mod h1:e2ZxnClqBBYAtd901g9vXMJzS47labjAtOzsWtOzKNk=
+<<<<<<< HEAD
 github.com/ipfs/go-graphsync v0.5.2/go.mod h1:e2ZxnClqBBYAtd901g9vXMJzS47labjAtOzsWtOzKNk=
+=======
+github.com/ipfs/go-graphsync v0.5.1/go.mod h1:e2ZxnClqBBYAtd901g9vXMJzS47labjAtOzsWtOzKNk=
+>>>>>>> 370817eb6... Allow miners to filter (un)verified deals
 github.com/ipfs/go-hamt-ipld v0.1.1/go.mod h1:1EZCr2v0jlCnhpa+aZ0JZYp8Tt2w16+JJOAVz17YcDk=
 github.com/ipfs/go-ipfs-blockstore v0.0.1/go.mod h1:d3WClOmRQKFnJ0Jz/jj/zmksX0ma1gROTlovZKBmN08=
 github.com/ipfs/go-ipfs-blockstore v0.1.0/go.mod h1:5aD0AvHPi7mZc6Ci1WCAhiBQu2IsfTduLl+422H6Rqw=
