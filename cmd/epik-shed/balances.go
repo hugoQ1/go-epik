@@ -597,7 +597,7 @@ var fillBalancesCmd = &cli.Command{
 		for i := 0; i < len(addrs); i++ {
 			row := []string{addrs[i].String()}
 			for _, b := range balances[i] {
-				row = append(row, types.FIL(b).String())
+				row = append(row, types.EPK(b).String())
 			}
 			w.Write(row) // nolint:errcheck
 		}
