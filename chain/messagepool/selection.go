@@ -760,9 +760,6 @@ func (mp *MessagePool) createMessageChains(actor address.Address, mset map[uint6
 		balance = new(big.Int).Sub(balance, required)
 
 		value := m.Message.Value.Int
-		if balance.Cmp(value) < 0 {
-			break
-		}
 		balance = new(big.Int).Sub(balance, value)
 
 		gasReward := mp.getGasReward(m, baseFee)
