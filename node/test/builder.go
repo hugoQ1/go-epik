@@ -21,7 +21,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/types"

@@ -204,6 +204,12 @@ epik-wallet:
 .PHONY: epik-wallet
 BINS+=epik-wallet
 
+epik-keygen:
+	rm -f epik-keygen
+	go build -o epik-keygen ./cmd/epik-keygen
+.PHONY: epik-keygen
+BINS+=epik-keygen
+
 testground:
 	go build -tags testground -o /dev/null ./cmd/epik
 .PHONY: testground
