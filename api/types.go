@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -52,19 +51,6 @@ type PubsubScore struct {
 
 type MessageSendSpec struct {
 	MaxFee abi.TokenAmount
-}
-
-var DefaultMessageSendSpec = MessageSendSpec{
-	// MaxFee of 0.1EPK
-	MaxFee: abi.NewTokenAmount(int64(build.EpkPrecision) / 10),
-}
-
-func (ms *MessageSendSpec) Get() MessageSendSpec {
-	if ms == nil {
-		return DefaultMessageSendSpec
-	}
-
-	return *ms
 }
 
 type DataTransferChannel struct {
