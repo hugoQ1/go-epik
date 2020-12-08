@@ -1550,7 +1550,7 @@ var clientListDeals = &cli.Command{
 			}
 		}
 
-		return outputStorageDeals(ctx, cctx.App.Writer, api, localDeals, cctx.Bool("verbose"), cctx.Bool("color"), showFailed)
+		return outputStorageDeals(ctx, cctx.App.Writer, api, localDeals, verbose, color, showFailed)
 	},
 }
 
@@ -1592,7 +1592,7 @@ func outputStorageDeals(ctx context.Context, out io.Writer, full lapi.FullNode, 
 
 	if verbose {
 		w := tabwriter.NewWriter(out, 2, 4, 2, ' ', 0)
-		fmt.Fprintf(w, "Created\tDealCid\tDealId\tProvider\tState\tOn Chain?\tSlashed?\tPieceCID\tSize\tMessage\n")
+		fmt.Fprintf(w, "Created\tDealCid\tDealId\tProvider\tState\tOn Chain?\tSlashed?\tPieceCID\tSize\tTransferChannelID\tTransferStatus\tMessage\n")
 		for _, d := range deals {
 			onChain := "N"
 			if d.OnChainDealState.SectorStartEpoch != -1 {
@@ -1604,8 +1604,38 @@ func outputStorageDeals(ctx context.Context, out io.Writer, full lapi.FullNode, 
 				slashed = fmt.Sprintf("Y (epoch %d)", d.OnChainDealState.SlashEpoch)
 			}
 
-			/* price := types.EPK(types.BigMul(d.LocalDeal.PricePerEpoch, types.NewInt(d.LocalDeal.Duration))) */
-			fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", d.LocalDeal.CreationTime.Format(time.Stamp), d.LocalDeal.ProposalCid, d.LocalDeal.DealID, d.LocalDeal.Provider, dealStateString(color, d.LocalDeal.State), onChain, slashed, d.LocalDeal.PieceCID, types.SizeStr(types.NewInt(d.LocalDeal.Size)) /* , price, d.LocalDeal.Duration, d.LocalDeal.Verified */, d.LocalDeal.Message)
+			// price := types.FIL(types.BigMul(d.LocalDeal.PricePerEpoch, types.NewInt(d.LocalDeal.Duration)))
+			transferChannelID := ""
+			if d.LocalDeal.TransferChannelID != nil {
+				transferChannelID = d.LocalDeal.TransferChannelID.String()
+			}
+			transferStatus := ""
+			if d.LocalDeal.DataTransfer != nil {
+				transferStatus = datatransfer.Statuses[d.LocalDeal.DataTransfer.Status]
+				// TODO: Include the transferred percentage once this bug is fixed:
+				// https://github.com/ipfs/go-graphsync/issues/126
+				//fmt.Printf("transferred: %d / size: %d\n", d.LocalDeal.DataTransfer.Transferred, d.LocalDeal.Size)
+				//if d.LocalDeal.Size > 0 {
+				//	pct := (100 * d.LocalDeal.DataTransfer.Transferred) / d.LocalDeal.Size
+				//	transferPct = fmt.Sprintf("%d%%", pct)
+				//}
+			}
+			fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%v\t%s\n",
+				d.LocalDeal.CreationTime.Format(time.Stamp),
+				d.LocalDeal.ProposalCid,
+				d.LocalDeal.DealID,
+				d.LocalDeal.Provider,
+				dealStateString(color, d.LocalDeal.State),
+				onChain,
+				slashed,
+				d.LocalDeal.PieceCID,
+				types.SizeStr(types.NewInt(d.LocalDeal.Size)),
+				// price,
+				// d.LocalDeal.Duration,
+				transferChannelID,
+				transferStatus,
+				// d.LocalDeal.Verified,
+				d.LocalDeal.Message)
 		}
 		return w.Flush()
 	}
