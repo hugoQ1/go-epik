@@ -1546,7 +1546,13 @@ Perms: read
 
 Inputs: `null`
 
-Response: `null`
+Response:
+```json
+[
+  123,
+  124
+]
+```
 
 ### SectorsListInStates
 List sectors in particular states
@@ -1561,7 +1567,13 @@ Inputs:
 ]
 ```
 
-Response: `null`
+Response:
+```json
+[
+  123,
+  124
+]
+```
 
 ### SectorsRefs
 There are not yet any comments for this method.
