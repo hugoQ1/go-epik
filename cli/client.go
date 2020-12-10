@@ -1455,6 +1455,7 @@ var clientQueryAskCmd = &cli.Command{
 		/* afmt.Printf("Price per GiB: %s\n", types.EPK(ask.Price))
 		afmt.Printf("Verified Price per GiB: %s\n", types.EPK(ask.VerifiedPrice)) */
 		afmt.Printf("Max Piece size: %s\n", types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))))
+		afmt.Printf("Min Piece size: %s\n", types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))))
 
 		size := cctx.Int64("size")
 		if size == 0 {
