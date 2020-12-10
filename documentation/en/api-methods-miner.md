@@ -101,8 +101,10 @@
   * [SectorStartSealing](#SectorStartSealing)
 * [Sectors](#Sectors)
   * [SectorsList](#SectorsList)
+  * [SectorsListInStates](#SectorsListInStates)
   * [SectorsRefs](#SectorsRefs)
   * [SectorsStatus](#SectorsStatus)
+  * [SectorsSummary](#SectorsSummary)
   * [SectorsUpdate](#SectorsUpdate)
 * [Storage](#Storage)
   * [StorageAddLocal](#StorageAddLocal)
@@ -1546,6 +1548,21 @@ Inputs: `null`
 
 Response: `null`
 
+### SectorsListInStates
+List sectors in particular states
+
+
+Perms: read
+
+Inputs:
+```json
+[
+  null
+]
+```
+
+Response: `null`
+
 ### SectorsRefs
 There are not yet any comments for this method.
 
@@ -1611,6 +1628,21 @@ Response:
   "InitialPledge": "0",
   "OnTime": 10101,
   "Early": 10101
+}
+```
+
+### SectorsSummary
+Get summary info of sectors
+
+
+Perms: read
+
+Inputs: `null`
+
+Response:
+```json
+{
+  "Proving": 120
 }
 ```
 
