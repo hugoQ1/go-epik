@@ -16,13 +16,14 @@ import (
 )
 
 var execFlags struct {
-	file string
+	file               string
+	fallbackBlockstore bool
 }
 
 var execCmd = &cli.Command{
 	Name:        "exec",
 	Description: "execute one or many test vectors against Epik; supplied as a single JSON file, or a ndjson stdin stream",
-	Action:      runExecEpik,
+	Action:      runExecEpiK,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "file",
@@ -30,10 +31,23 @@ var execCmd = &cli.Command{
 			TakesFile:   true,
 			Destination: &execFlags.file,
 		},
+		&cli.BoolFlag{
+			Name:        "fallback-blockstore",
+			Usage:       "sets the full node API as a fallback blockstore; use this if you're transplanting vectors and get block not found errors",
+			Destination: &execFlags.fallbackBlockstore,
+		},
 	},
 }
 
-func runExecEpik(_ *cli.Context) error {
+func runExecEpiK(c *cli.Context) error {
+	if execFlags.fallbackBlockstore {
+		if err := initialize(c); err != nil {
+			return fmt.Errorf("fallback blockstore was enabled, but could not resolve lotus API endpoint: %w", err)
+		}
+		defer destroy(c) //nolint:errcheck
+		conformance.FallbackBlockstoreGetter = FullAPI
+	}
+
 	if file := execFlags.file; file != "" {
 		// we have a single test vector supplied as a file.
 		file, err := os.Open(file)
