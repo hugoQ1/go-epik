@@ -130,8 +130,9 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 	}
 
 	timeoutOpt := dtimpl.ChannelRemoveTimeout(30 * time.Minute)
-
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, timeoutOpt)
+	// data-transfer push channel restart configuration
+	dtRestartConfig := dtimpl.PushChannelRestartConfig(time.Minute, 10, 1024, 10*time.Minute, 3)
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, dtRestartConfig, timeoutOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +156,11 @@ func NewClientDatastore(ds dtypes.MetadataDS) dtypes.ClientDatastore {
 }
 
 func StorageClient(lc fx.Lifecycle, h host.Host, ibs dtypes.ClientBlockstore, mds dtypes.ClientMultiDstore, r repo.LockedRepo, dataTransfer dtypes.ClientDataTransfer, discovery *discoveryimpl.Local, deals dtypes.ClientDatastore, scn storagemarket.StorageClientNode, j journal.Journal) (storagemarket.StorageClient, error) {
-	net := smnet.NewFromLibp2pHost(h)
+	// go-fil-markets protocol retries:
+	// 1s, 5s, 25s, 2m5s, 5m x 11 ~= 1 hour
+	marketsRetryParams := smnet.RetryParameters(time.Second, 5*time.Minute, 15, 5)
+	net := smnet.NewFromLibp2pHost(h, marketsRetryParams)
+
 	c, err := storageimpl.NewClient(net, ibs, mds, dataTransfer, discovery, deals, scn, storageimpl.DealPollingInterval(time.Second))
 	if err != nil {
 		return nil, err

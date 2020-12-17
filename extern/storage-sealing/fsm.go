@@ -432,7 +432,7 @@ func (m *Sealing) restartSectors(ctx context.Context) error {
 		return err
 	}
 
-	m.unsealedInfoMap.lk.Lock() // taken early in .New to prevent races
+	// m.unsealedInfoMap.lk.Lock() taken early in .New to prevent races
 	defer m.unsealedInfoMap.lk.Unlock()
 
 	for _, sector := range trackedSectors {

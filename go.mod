@@ -31,9 +31,9 @@ require (
 	github.com/filecoin-project/go-cbor-util v0.0.0-20191219014500-08c40a1e63a2
 	github.com/filecoin-project/go-commp-utils v0.0.0-20201119054358-b88f7a96a434
 	github.com/filecoin-project/go-crypto v0.0.0-20191218222705-effae4ea9f03
-	github.com/filecoin-project/go-data-transfer v1.2.5
+	github.com/filecoin-project/go-data-transfer v1.2.7
 	github.com/filecoin-project/go-fil-commcid v0.0.0-20201016201715-d41df56b4f6a
-	github.com/filecoin-project/go-fil-markets v1.1.1
+	github.com/filecoin-project/go-fil-markets v1.1.2
 	github.com/filecoin-project/go-jsonrpc v0.1.2
 	github.com/filecoin-project/go-multistore v0.0.3
 	github.com/filecoin-project/go-padreader v0.0.0-20200903213702-ed5fae088b20
@@ -172,6 +172,6 @@ replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go
 
 replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210218173531-83e8fc7b7b2f
 
-replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210208053641-e775f451d33e
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210218070103-0cf1f22940a5
 
-replace github.com/filecoin-project/go-data-transfer v1.2.5 => github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210206094606-72c176a84533
+replace github.com/filecoin-project/go-data-transfer => github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2
