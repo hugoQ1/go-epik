@@ -16,7 +16,7 @@ func (f EPK) String() string {
 }
 
 func (f EPK) Unitless() string {
-	r := new(big.Rat).SetFrac(f.Int, big.NewInt(int64(build.FilecoinPrecision)))
+	r := new(big.Rat).SetFrac(f.Int, big.NewInt(int64(build.EpkPrecision)))
 	if r.Sign() == 0 {
 		return "0"
 	}
@@ -71,7 +71,7 @@ func ParseEPK(s string) (EPK, error) {
 	}
 
 	if !attoepk {
-		r = r.Mul(r, big.NewRat(int64(build.FilecoinPrecision), 1))
+		r = r.Mul(r, big.NewRat(int64(build.EpkPrecision), 1))
 	}
 
 	if !r.IsInt() {

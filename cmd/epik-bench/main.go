@@ -21,13 +21,12 @@ import (
 	"golang.org/x/xerrors"
 
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
-	"github.com/filecoin-project/go-address"
-	paramfetch "github.com/filecoin-project/go-paramfetch"
-	"github.com/filecoin-project/go-state-types/abi"
-	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper/basicfs"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
+	"github.com/filecoin-project/go-address"
+	paramfetch "github.com/filecoin-project/go-paramfetch"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"

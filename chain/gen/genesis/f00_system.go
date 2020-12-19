@@ -3,9 +3,8 @@ package genesis
 import (
 	"context"
 
-	"github.com/filecoin-project/specs-actors/actors/builtin/system"
-
-	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/system"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"

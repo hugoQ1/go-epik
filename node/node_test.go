@@ -7,8 +7,8 @@ import (
 
 	builder "github.com/EpiK-Protocol/go-epik/node/test"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
+	"github.com/filecoin-project/go-state-types/abi"
 	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/EpiK-Protocol/go-epik/api/test"
@@ -20,7 +20,7 @@ func init() {
 
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(256)) */
 }
 
 func TestAPI(t *testing.T) {
@@ -124,7 +124,7 @@ func TestTapeFix(t *testing.T) {
 	logging.SetLogLevel("sub", "ERROR")
 	logging.SetLogLevel("storageminer", "ERROR")
 
-	test.TestTapeFix(t, builder.MockSbBuilder, 2*time.Millisecond)
+	/* test.TestTapeFix(t, builder.MockSbBuilder, 2*time.Millisecond) */
 }
 
 func TestWindowedPost(t *testing.T) {
@@ -148,7 +148,7 @@ func TestCCUpgrade(t *testing.T) {
 	logging.SetLogLevel("sub", "ERROR")
 	logging.SetLogLevel("storageminer", "ERROR")
 
-	test.TestCCUpgrade(t, builder.MockSbBuilder, 5*time.Millisecond)
+	/* test.TestCCUpgrade(t, builder.MockSbBuilder, 5*time.Millisecond) */
 }
 
 func TestPaymentChannels(t *testing.T) {
@@ -157,7 +157,8 @@ func TestPaymentChannels(t *testing.T) {
 	logging.SetLogLevel("chain", "ERROR")
 }
 
-func TestSectorsDist(t *testing.T) {
+/* func TestSectorsDist(t *testing.T) {
 	setLogLevel("ERROR")
 	test.TestSectorsDist(t, mockSbBuilder, 5*time.Millisecond, 10)
 }
+*/

@@ -12,7 +12,6 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
@@ -30,7 +29,7 @@ type CostKey struct {
 }
 
 var Costs = map[CostKey]int64{
-	{builtin0.InitActorCodeID, 2}:          8916753,
+	/* {builtin0.InitActorCodeID, 2}:          8916753,
 	{builtin0.StorageMarketActorCodeID, 2}: 6955002,
 	{builtin0.StorageMarketActorCodeID, 4}: 245436108,
 	{builtin0.StorageMinerActorCodeID, 4}:  2315133,
@@ -42,7 +41,7 @@ var Costs = map[CostKey]int64{
 	{builtin0.StorageMinerActorCodeID, 14}: 566356835,
 	{builtin0.StorageMinerActorCodeID, 16}: 5325185,
 	{builtin0.StorageMinerActorCodeID, 18}: 2328637,
-	{builtin0.StoragePowerActorCodeID, 2}:  23600956,
+	{builtin0.StoragePowerActorCodeID, 2}:  23600956, */
 	// TODO: Just reuse v0 values for now, this isn't actually used
 	{builtin2.InitActorCodeID, 2}:          8916753,
 	{builtin2.StorageMarketActorCodeID, 2}: 6955002,

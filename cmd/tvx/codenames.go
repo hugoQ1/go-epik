@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/filecoin-project/go-state-types/abi"
-
-	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 // ProtocolCodenames is a table that summarises the protocol codenames that
@@ -16,14 +14,14 @@ var ProtocolCodenames = []struct {
 	name       string
 }{
 	{0, "genesis"},
-	{build.UpgradeBreezeHeight + 1, "breeze"},
+	/* {build.UpgradeBreezeHeight + 1, "breeze"},
 	{build.UpgradeSmokeHeight + 1, "smoke"},
 	{build.UpgradeIgnitionHeight + 1, "ignition"},
 	{build.UpgradeRefuelHeight + 1, "refuel"},
 	{build.UpgradeActorsV2Height + 1, "actorsv2"},
 	{build.UpgradeTapeHeight + 1, "tape"},
 	{build.UpgradeLiftoffHeight + 1, "liftoff"},
-	{build.UpgradeKumquatHeight + 1, "postliftoff"},
+	{build.UpgradeKumquatHeight + 1, "postliftoff"}, */
 }
 
 // GetProtocolCodename gets the protocol codename associated with a height.

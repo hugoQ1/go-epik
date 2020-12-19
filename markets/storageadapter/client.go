@@ -5,6 +5,7 @@ package storageadapter
 import (
 	"bytes"
 	"context"
+	"math"
 
 	"github.com/filecoin-project/go-address"
 	cborutil "github.com/filecoin-project/go-cbor-util"
@@ -14,7 +15,6 @@ import (
 	"github.com/filecoin-project/go-fil-markets/shared"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/exitcode"
 
@@ -208,14 +208,14 @@ func (c *ClientNodeAdapter) ValidatePublishedDeal(ctx context.Context, deal stor
 
 const clientOverestimation = 2
 
-func (c *ClientNodeAdapter) DealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, isVerified bool) (abi.TokenAmount, abi.TokenAmount, error) {
+/* func (c *ClientNodeAdapter) DealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, isVerified bool) (abi.TokenAmount, abi.TokenAmount, error) {
 	bounds, err := c.StateDealProviderCollateralBounds(ctx, size, isVerified, types.EmptyTSK)
 	if err != nil {
 		return abi.TokenAmount{}, abi.TokenAmount{}, err
 	}
 
 	return big.Mul(bounds.Min, big.NewInt(clientOverestimation)), bounds.Max, nil
-}
+} */
 
 func (c *ClientNodeAdapter) OnDealSectorCommitted(ctx context.Context, provider address.Address, dealID abi.DealID, proposal market2.DealProposal, publishCid *cid.Cid, cb storagemarket.DealSectorCommittedCallback) error {
 	return OnDealSectorCommitted(ctx, c, c.ev, provider, dealID, marketactor.DealProposal(proposal), publishCid, cb)
@@ -239,11 +239,11 @@ func (c *ClientNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID a
 			return false, true, nil
 		}
 
-		// Check if the deal has already expired
+		/* // Check if the deal has already expired
 		if sd.Proposal.EndEpoch <= ts.Height() {
 			onDealExpired(nil)
 			return true, false, nil
-		}
+		} */
 
 		// If there is no deal assume it's already been slashed
 		if sd.State.SectorStartEpoch < 0 {
@@ -259,11 +259,11 @@ func (c *ClientNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID a
 	// Called when there was a match against the state change we're looking for
 	// and the chain has advanced to the confidence height
 	stateChanged := func(ts *types.TipSet, ts2 *types.TipSet, states events.StateChange, h abi.ChainEpoch) (more bool, err error) {
-		// Check if the deal has already expired
+		/* // Check if the deal has already expired
 		if sd.Proposal.EndEpoch <= ts2.Height() {
 			onDealExpired(nil)
 			return false, nil
-		}
+		} */
 
 		// Timeout waiting for state change
 		if states == nil {
@@ -302,7 +302,7 @@ func (c *ClientNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID a
 	match := c.dsMatcher.matcher(ctx, dealID)
 
 	// Wait until after the end epoch for the deal and then timeout
-	timeout := (sd.Proposal.EndEpoch - head.Height()) + 1
+	timeout := abi.ChainEpoch(math.MaxInt64) // (sd.Proposal.EndEpoch - head.Height()) + 1
 	if err := c.ev.StateChanged(checkFunc, stateChanged, revert, int(build.MessageConfidence)+1, timeout, match); err != nil {
 		return xerrors.Errorf("failed to set up state changed handler: %w", err)
 	}

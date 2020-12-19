@@ -8,18 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/go-units"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
@@ -36,10 +31,10 @@ var sectorsCmd = &cli.Command{
 		sectorsUpdateCmd,
 		//sectorsPledgeCmd,
 		sectorsRemoveCmd,
-		sectorsMarkForUpgradeCmd,
+		// sectorsMarkForUpgradeCmd,
 		sectorsStartSealCmd,
 		sectorsSealDelayCmd,
-		sectorsCapacityCollateralCmd,
+		// sectorsCapacityCollateralCmd,
 	},
 }
 
@@ -116,10 +111,12 @@ var sectorsStatusCmd = &cli.Command{
 			fmt.Printf("\nSector On Chain Info\n")
 			fmt.Printf("SealProof:\t\t%x\n", status.SealProof)
 			fmt.Printf("Activation:\t\t%v\n", status.Activation)
-			fmt.Printf("Expiration:\t\t%v\n", status.Expiration)
+			fmt.Printf("PieceSizes:\t\t%v\n", status.PieceSizes)
+			fmt.Printf("DealWins:\t\t%v\n", status.DealWins)
+			/* fmt.Printf("Expiration:\t\t%v\n", status.Expiration)
 			fmt.Printf("DealWeight:\t\t%v\n", status.DealWeight)
 			fmt.Printf("VerifiedDealWeight:\t\t%v\n", status.VerifiedDealWeight)
-			fmt.Printf("InitialPledge:\t\t%v\n", status.InitialPledge)
+			fmt.Printf("InitialPledge:\t\t%v\n", status.InitialPledge) */
 			fmt.Printf("\nExpiration Info\n")
 			fmt.Printf("OnTime:\t\t%v\n", status.OnTime)
 			fmt.Printf("Early:\t\t%v\n", status.Early)
@@ -228,7 +225,7 @@ var sectorsListCmd = &cli.Command{
 			tablewriter.Col("SealTime"),
 			tablewriter.Col("Events"),
 			tablewriter.Col("Deals"),
-			tablewriter.Col("DealWeight"),
+			// tablewriter.Col("DealWeight"),
 			tablewriter.NewLineCol("Error"),
 			tablewriter.NewLineCol("RecoveryTimeout"))
 
@@ -248,10 +245,10 @@ var sectorsListCmd = &cli.Command{
 				_, inSSet := commitedIDs[s]
 				_, inASet := activeIDs[s]
 
-				dw := .0
+				/* dw := .0
 				if st.Expiration-st.Activation > 0 {
 					dw = float64(big.Div(st.DealWeight, big.NewInt(int64(st.Expiration-st.Activation))).Uint64())
-				}
+				} */
 
 				var deals int
 				for _, deal := range st.Deals {
@@ -260,10 +257,10 @@ var sectorsListCmd = &cli.Command{
 					}
 				}
 
-				exp := st.Expiration
-				if st.OnTime > 0 && st.OnTime < exp {
+				exp := st.OnTime //st.Expiration
+				/* if st.OnTime > 0 && st.OnTime < exp {
 					exp = st.OnTime // Can be different when the sector was CC upgraded
-				}
+				} */
 
 				m := map[string]interface{}{
 					"ID":      s,
@@ -276,9 +273,9 @@ var sectorsListCmd = &cli.Command{
 					m["Deals"] = color.GreenString("%d", deals)
 				} else {
 					m["Deals"] = color.BlueString("CC")
-					if st.ToUpgrade {
+					/* if st.ToUpgrade {
 						m["Deals"] = color.CyanString("CC(upgrade)")
-					}
+					} */
 				}
 
 				if !fast {
@@ -287,9 +284,9 @@ var sectorsListCmd = &cli.Command{
 					} else {
 						m["Expiration"] = lcli.EpochTime(head.Height(), exp)
 
-						if !fast && deals > 0 {
+						/* if !fast && deals > 0 {
 							m["DealWeight"] = units.BytesSize(dw)
-						}
+						} */
 
 						if st.Early > 0 {
 							m["RecoveryTimeout"] = color.YellowString(lcli.EpochTime(head.Height(), st.Early))
@@ -410,7 +407,7 @@ var sectorsRemoveCmd = &cli.Command{
 	},
 }
 
-var sectorsMarkForUpgradeCmd = &cli.Command{
+/* var sectorsMarkForUpgradeCmd = &cli.Command{
 	Name:      "mark-for-upgrade",
 	Usage:     "Mark a committed capacity sector for replacement by a sector with deals",
 	ArgsUsage: "<sectorNum>",
@@ -433,7 +430,7 @@ var sectorsMarkForUpgradeCmd = &cli.Command{
 
 		return nodeApi.SectorMarkForUpgrade(ctx, abi.SectorNumber(id))
 	},
-}
+} */
 
 var sectorsStartSealCmd = &cli.Command{
 	Name:      "seal",
@@ -485,7 +482,7 @@ var sectorsSealDelayCmd = &cli.Command{
 	},
 }
 
-var sectorsCapacityCollateralCmd = &cli.Command{
+/* var sectorsCapacityCollateralCmd = &cli.Command{
 	Name:  "get-cc-collateral",
 	Usage: "Get the collateral required to pledge a committed capacity sector",
 	Flags: []cli.Flag{
@@ -530,7 +527,7 @@ var sectorsCapacityCollateralCmd = &cli.Command{
 
 		return nil
 	},
-}
+} */
 
 var sectorsUpdateCmd = &cli.Command{
 	Name:      "update-state",

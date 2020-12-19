@@ -14,9 +14,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/api/test"
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/stretchr/testify/require"
 	lcli "github.com/urfave/cli/v2"
 )
@@ -48,8 +46,8 @@ func RunClientTest(t *testing.T, cmds []*lcli.Command, clientNode test.TestNode)
 	require.NoError(t, err)
 	dataCid := res.Root
 	price := "1000000attofil"
-	duration := fmt.Sprintf("%d", build.MinDealDuration)
-	out = clientCLI.RunCmd("client", "deal", dataCid.String(), minerAddr.String(), price, duration)
+	/* duration := fmt.Sprintf("%d", build.MinDealDuration) */
+	out = clientCLI.RunCmd("client", "deal", dataCid.String(), minerAddr.String(), price /* , duration */)
 	fmt.Println("client deal", out)
 
 	// Create a deal (interactive)
@@ -62,11 +60,11 @@ func RunClientTest(t *testing.T, cmds []*lcli.Command, clientNode test.TestNode)
 	res, _, err = test.CreateClientFile(ctx, clientNode, 2)
 	require.NoError(t, err)
 	dataCid2 := res.Root
-	duration = fmt.Sprintf("%d", build.MinDealDuration/builtin.EpochsInDay)
+	/* duration = fmt.Sprintf("%d", build.MinDealDuration/builtin.EpochsInDay) */
 	cmd := []string{"client", "deal"}
 	interactiveCmds := []string{
 		dataCid2.String(),
-		duration,
+		/* duration, */
 		minerAddr.String(),
 		"no",
 		"yes",

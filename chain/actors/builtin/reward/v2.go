@@ -5,11 +5,8 @@ import (
 	"github.com/ipfs/go-cid"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 
-	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
-	reward2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
-	smoothing2 "github.com/filecoin-project/specs-actors/v2/actors/util/smoothing"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
 )
 
 var _ State = (*state2)(nil)
@@ -24,7 +21,7 @@ func load2(store adt.Store, root cid.Cid) (State, error) {
 }
 
 type state2 struct {
-	reward2.State
+	reward.State
 	store adt.Store
 }
 
@@ -32,7 +29,11 @@ func (s *state2) ThisEpochReward() (abi.TokenAmount, error) {
 	return s.State.ThisEpochReward, nil
 }
 
-func (s *state2) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
+func (s *state2) TotalStoragePowerReward() (abi.TokenAmount, error) {
+	return s.State.TotalStoragePowerReward, nil
+}
+
+/* func (s *state2) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
 	return builtin.FilterEstimate{
 		PositionEstimate: s.State.ThisEpochRewardSmoothed.PositionEstimate,
 		VelocityEstimate: s.State.ThisEpochRewardSmoothed.VelocityEstimate,
@@ -41,10 +42,6 @@ func (s *state2) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
 
 func (s *state2) ThisEpochBaselinePower() (abi.StoragePower, error) {
 	return s.State.ThisEpochBaselinePower, nil
-}
-
-func (s *state2) TotalStoragePowerReward() (abi.TokenAmount, error) {
-	return s.State.TotalStoragePowerReward, nil
 }
 
 func (s *state2) EffectiveBaselinePower() (abi.StoragePower, error) {
@@ -83,4 +80,4 @@ func (s *state2) PreCommitDepositForPower(networkQAPower builtin.FilterEstimate,
 			VelocityEstimate: networkQAPower.VelocityEstimate,
 		},
 		sectorWeight), nil
-}
+} */

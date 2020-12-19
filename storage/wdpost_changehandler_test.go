@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	tutils "github.com/filecoin-project/specs-actors/support/testing"
+	tutils "github.com/filecoin-project/specs-actors/v2/support/testing"
 
 	"github.com/filecoin-project/go-state-types/crypto"
 

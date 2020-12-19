@@ -1,6 +1,6 @@
 package sealing
 
-import (
+/* import (
 	"context"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -98,7 +98,7 @@ func (m *Sealing) maybeUpgradableSector() *abi.SectorNumber {
 		// TODO: checks to match actor constraints
 
 		// this one looks good
-		/*if checks */
+		// if checks
 		{
 			delete(m.toUpgrade, number)
 			return &number
@@ -106,4 +106,4 @@ func (m *Sealing) maybeUpgradableSector() *abi.SectorNumber {
 	}
 
 	return nil
-}
+} */

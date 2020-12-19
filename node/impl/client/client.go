@@ -262,11 +262,11 @@ func (a *API) ClientListDeals(ctx context.Context) ([]api.DealInfo, error) {
 			PieceCID: v.Proposal.PieceCID,
 			Size:     uint64(v.Proposal.PieceSize.Unpadded()),
 
-			PricePerEpoch: v.Proposal.StoragePricePerEpoch,
-			Duration:      uint64(v.Proposal.Duration()),
-			DealID:        v.DealID,
-			CreationTime:  v.CreationTime.Time(),
-			Verified:      v.Proposal.VerifiedDeal,
+			/* PricePerEpoch: v.Proposal.StoragePricePerEpoch,
+			Duration:      uint64(v.Proposal.Duration()), */
+			DealID:       v.DealID,
+			CreationTime: v.CreationTime.Time(),
+			/* Verified:      v.Proposal.VerifiedDeal, */
 		}
 	}
 
@@ -280,17 +280,17 @@ func (a *API) ClientGetDealInfo(ctx context.Context, d cid.Cid) (*api.DealInfo, 
 	}
 
 	return &api.DealInfo{
-		ProposalCid:   v.ProposalCid,
-		State:         v.State,
-		Message:       v.Message,
-		Provider:      v.Proposal.Provider,
-		PieceCID:      v.Proposal.PieceCID,
-		Size:          uint64(v.Proposal.PieceSize.Unpadded()),
-		PricePerEpoch: v.Proposal.StoragePricePerEpoch,
-		Duration:      uint64(v.Proposal.Duration()),
-		DealID:        v.DealID,
-		CreationTime:  v.CreationTime.Time(),
-		Verified:      v.Proposal.VerifiedDeal,
+		ProposalCid: v.ProposalCid,
+		State:       v.State,
+		Message:     v.Message,
+		Provider:    v.Proposal.Provider,
+		PieceCID:    v.Proposal.PieceCID,
+		Size:        uint64(v.Proposal.PieceSize.Unpadded()),
+		/* PricePerEpoch: v.Proposal.StoragePricePerEpoch,
+		Duration:      uint64(v.Proposal.Duration()), */
+		DealID:       v.DealID,
+		CreationTime: v.CreationTime.Time(),
+		/* Verified:      v.Proposal.VerifiedDeal, */
 	}, nil
 }
 
@@ -446,11 +446,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 		return nil, xerrors.Errorf("the miner hasn't initialized yet")
 	}
 
-	pid := *mi.PeerId
+	/* pid := *mi.PeerId
 	ask, err := a.ClientQueryAsk(ctx, pid, miner)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
-	}
+	} */
 
 	dataRef := &storagemarket.DataRef{
 		TransferType: storagemarket.TTGraphsync,
@@ -459,11 +459,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner ad
 		Bounty:       ref.Bounty,
 	}
 	params := &api.StartDealParams{
-		Data:              dataRef,
-		Wallet:            payer,
-		Miner:             miner,
-		EpochPrice:        ask.Price,
-		MinBlocksDuration: uint64(ask.Expiry - ts.Height()),
+		Data:   dataRef,
+		Wallet: payer,
+		Miner:  miner,
+		/* EpochPrice:        ask.Price,
+		MinBlocksDuration: uint64(ask.Expiry - ts.Height()), */
 	}
 	dealId, err := a.ClientStartDeal(ctx, params)
 	if err != nil {
@@ -1016,18 +1016,18 @@ func (a *API) ClientCancelDataTransfer(ctx context.Context, transferID datatrans
 
 func newDealInfo(v storagemarket.ClientDeal) api.DealInfo {
 	return api.DealInfo{
-		ProposalCid:   v.ProposalCid,
-		DataRef:       v.DataRef,
-		State:         v.State,
-		Message:       v.Message,
-		Provider:      v.Proposal.Provider,
-		PieceCID:      v.Proposal.PieceCID,
-		Size:          uint64(v.Proposal.PieceSize.Unpadded()),
-		PricePerEpoch: v.Proposal.StoragePricePerEpoch,
-		Duration:      uint64(v.Proposal.Duration()),
-		DealID:        v.DealID,
-		CreationTime:  v.CreationTime.Time(),
-		Verified:      v.Proposal.VerifiedDeal,
+		ProposalCid: v.ProposalCid,
+		DataRef:     v.DataRef,
+		State:       v.State,
+		Message:     v.Message,
+		Provider:    v.Proposal.Provider,
+		PieceCID:    v.Proposal.PieceCID,
+		Size:        uint64(v.Proposal.PieceSize.Unpadded()),
+		/* PricePerEpoch: v.Proposal.StoragePricePerEpoch,
+		Duration:      uint64(v.Proposal.Duration()), */
+		DealID:       v.DealID,
+		CreationTime: v.CreationTime.Time(),
+		/* Verified:      v.Proposal.VerifiedDeal, */
 	}
 }
 

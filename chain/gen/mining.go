@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/filecoin-project/go-state-types/crypto"
-	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
+	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"

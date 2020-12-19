@@ -262,13 +262,13 @@ func (m *mockStorageMinerAPI) StateMinerProvingDeadline(ctx context.Context, add
 	}, nil
 }
 
-func (m *mockStorageMinerAPI) StateMinerPreCommitDepositForPower(ctx context.Context, address address.Address, info miner.SectorPreCommitInfo, key types.TipSetKey) (types.BigInt, error) {
+/* func (m *mockStorageMinerAPI) StateMinerPreCommitDepositForPower(ctx context.Context, address address.Address, info miner.SectorPreCommitInfo, key types.TipSetKey) (types.BigInt, error) {
 	panic("implement me")
 }
 
 func (m *mockStorageMinerAPI) StateMinerInitialPledgeCollateral(ctx context.Context, address address.Address, info miner.SectorPreCommitInfo, key types.TipSetKey) (types.BigInt, error) {
 	panic("implement me")
-}
+} */
 
 func (m *mockStorageMinerAPI) StateSearchMsg(ctx context.Context, cid cid.Cid) (*api.MsgLookup, error) {
 	panic("implement me")

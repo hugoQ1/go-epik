@@ -63,9 +63,9 @@ func (s *state2) VestedFunds(epoch abi.ChainEpoch) (abi.TokenAmount, error) {
 
 func (s *state2) LockedFunds() (LockedFunds, error) {
 	return LockedFunds{
-		VestingFunds:             s.State.LockedFunds,
-		InitialPledgeRequirement: s.State.InitialPledge,
-		PreCommitDeposits:        s.State.PreCommitDeposits,
+		VestingFunds: s.State.LockedFunds,
+		/* InitialPledgeRequirement: s.State.InitialPledge,
+		PreCommitDeposits:        s.State.PreCommitDeposits, */
 	}, nil
 }
 
@@ -73,13 +73,13 @@ func (s *state2) FeeDebt() (abi.TokenAmount, error) {
 	return s.State.FeeDebt, nil
 }
 
-func (s *state2) InitialPledge() (abi.TokenAmount, error) {
+/* func (s *state2) InitialPledge() (abi.TokenAmount, error) {
 	return s.State.InitialPledge, nil
 }
 
 func (s *state2) PreCommitDeposits() (abi.TokenAmount, error) {
 	return s.State.PreCommitDeposits, nil
-}
+} */
 
 func (s *state2) GetSector(num abi.SectorNumber) (*SectorOnChainInfo, error) {
 	info, ok, err := s.State.GetSector(s.store, num)
@@ -120,6 +120,7 @@ func (s *state2) NumLiveSectors() (uint64, error) {
 // GetSectorExpiration returns the effective expiration of the given sector.
 //
 // If the sector does not expire early, the Early expiration field is 0.
+// TODO: test no expire epoch
 func (s *state2) GetSectorExpiration(num abi.SectorNumber) (*SectorExpiration, error) {
 	dls, err := s.State.LoadDeadlines(s.store)
 	if err != nil {
@@ -300,6 +301,7 @@ func (s *state2) Info() (MinerInfo, error) {
 		Owner:            info.Owner,
 		Worker:           info.Worker,
 		ControlAddresses: info.ControlAddresses,
+		Coinbase:         info.Coinbase,
 
 		NewWorker:         address.Undef,
 		WorkerChangeEpoch: -1,
@@ -399,26 +401,29 @@ func (p *partition2) RecoveringSectors() (bitfield.BitField, error) {
 
 func fromV2SectorOnChainInfo(v2 miner2.SectorOnChainInfo) SectorOnChainInfo {
 	return SectorOnChainInfo{
-		SectorNumber:          v2.SectorNumber,
-		SealProof:             v2.SealProof,
-		SealedCID:             v2.SealedCID,
-		DealIDs:               v2.DealIDs,
-		Activation:            v2.Activation,
-		Expiration:            v2.Expiration,
+		SectorNumber: v2.SectorNumber,
+		SealProof:    v2.SealProof,
+		SealedCID:    v2.SealedCID,
+		DealIDs:      v2.DealIDs,
+		Activation:   v2.Activation,
+		PieceSizes:   v2.PieceSizes,
+		DealWins:     v2.DealWins,
+		/* Expiration:            v2.Expiration,
 		DealWeight:            v2.DealWeight,
 		VerifiedDealWeight:    v2.VerifiedDealWeight,
 		InitialPledge:         v2.InitialPledge,
 		ExpectedDayReward:     v2.ExpectedDayReward,
-		ExpectedStoragePledge: v2.ExpectedStoragePledge,
+		ExpectedStoragePledge: v2.ExpectedStoragePledge, */
 	}
 }
 
 func fromV2SectorPreCommitOnChainInfo(v2 miner2.SectorPreCommitOnChainInfo) SectorPreCommitOnChainInfo {
 	return SectorPreCommitOnChainInfo{
-		Info:               (SectorPreCommitInfo)(v2.Info),
-		PreCommitDeposit:   v2.PreCommitDeposit,
-		PreCommitEpoch:     v2.PreCommitEpoch,
+		Info:           (SectorPreCommitInfo)(v2.Info),
+		PreCommitEpoch: v2.PreCommitEpoch,
+		PieceSizes:     v2.PieceSizes,
+		/* PreCommitDeposit:   v2.PreCommitDeposit,
 		DealWeight:         v2.DealWeight,
-		VerifiedDealWeight: v2.VerifiedDealWeight,
+		VerifiedDealWeight: v2.VerifiedDealWeight, */
 	}
 }

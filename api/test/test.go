@@ -16,13 +16,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 )
 
 func init() {
@@ -112,12 +111,12 @@ var TwoFull = DefaultFullOpts(2)
 var FullNodeWithUpgradeAt = func(upgradeHeight abi.ChainEpoch) FullNodeOpts {
 	return FullNodeOpts{
 		Opts: func(nodes []TestNode) node.Option {
-			return node.Override(new(stmgr.UpgradeSchedule), stmgr.UpgradeSchedule{{
-				// Skip directly to tape height so precommits work.
-				Network:   network.Version5,
-				Height:    upgradeHeight,
-				Migration: stmgr.UpgradeActorsV2,
-			}})
+			return node.Override(new(stmgr.UpgradeSchedule), stmgr.UpgradeSchedule{ /* {
+					// Skip directly to tape height so precommits work.
+					Network:   network.Version5,
+					Height:    upgradeHeight,
+					Migration: stmgr.UpgradeActorsV2,
+				} */})
 		},
 	}
 }

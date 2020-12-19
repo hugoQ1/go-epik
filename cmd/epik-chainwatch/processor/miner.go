@@ -19,7 +19,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api/apibstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
-	"github.com/EpiK-Protocol/go-epik/chain/events/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	cw_util "github.com/EpiK-Protocol/go-epik/cmd/epik-chainwatch/util"
@@ -30,7 +29,7 @@ func (p *Processor) setupMiners() error {
 	if err != nil {
 		return err
 	}
-
+	//TODO: modify table structure
 	if _, err := tx.Exec(`
 
 create table if not exists miner_info
@@ -144,9 +143,9 @@ const (
 
 	CommitCapacityAdded = "COMMIT_CAPACITY_ADDED"
 
-	SectorAdded      = "SECTOR_ADDED"
-	SectorExpired    = "SECTOR_EXPIRED"
-	SectorExtended   = "SECTOR_EXTENDED"
+	SectorAdded   = "SECTOR_ADDED"
+	SectorExpired = "SECTOR_EXPIRED"
+	/* SectorExtended   = "SECTOR_EXTENDED" */
 	SectorFaulted    = "SECTOR_FAULTED"
 	SectorRecovering = "SECTOR_RECOVERING"
 	SectorRecovered  = "SECTOR_RECOVERED"
@@ -310,7 +309,8 @@ func (p *Processor) storeMinerPreCommitInfo(ctx context.Context, miners []minerA
 		return xerrors.Errorf("Failed to create temp table for sector_precommit_info: %w", err)
 	}
 
-	stmt, err := tx.Prepare(`copy spi (miner_id, sector_id, sealed_cid, state_root, seal_rand_epoch, expiration_epoch, precommit_deposit, precommit_epoch, deal_weight, verified_deal_weight, is_replace_capacity, replace_sector_deadline, replace_sector_partition, replace_sector_number) from STDIN`)
+	// stmt, err := tx.Prepare(`copy spi (miner_id, sector_id, sealed_cid, state_root, seal_rand_epoch, expiration_epoch, precommit_deposit, precommit_epoch, deal_weight, verified_deal_weight, is_replace_capacity, replace_sector_deadline, replace_sector_partition, replace_sector_number) from STDIN`)
+	stmt, err := tx.Prepare(`copy spi (miner_id, sector_id, sealed_cid, state_root, seal_rand_epoch, precommit_epoch) from STDIN`)
 
 	if err != nil {
 		return xerrors.Errorf("Failed to prepare miner precommit info statement: %w", err)
@@ -340,7 +340,7 @@ func (p *Processor) storeMinerPreCommitInfo(ctx context.Context, miners []minerA
 						DealIDs:  added.Info.DealIDs,
 					}
 				}
-				if added.Info.ReplaceCapacity {
+				/* if added.Info.ReplaceCapacity {
 					if _, err := stmt.Exec(
 						m.common.addr.String(),
 						added.Info.SectorNumber,
@@ -359,27 +359,27 @@ func (p *Processor) storeMinerPreCommitInfo(ctx context.Context, miners []minerA
 					); err != nil {
 						return err
 					}
-				} else {
-					if _, err := stmt.Exec(
-						m.common.addr.String(),
-						added.Info.SectorNumber,
-						added.Info.SealedCID.String(),
-						m.common.stateroot.String(),
-						added.Info.SealRandEpoch,
-						added.Info.Expiration,
-						added.PreCommitDeposit.String(),
-						added.PreCommitEpoch,
-						added.DealWeight.String(),
-						added.VerifiedDealWeight.String(),
-						added.Info.ReplaceCapacity,
-						nil, // replace deadline
-						nil, // replace partition
-						nil, // replace sector
-					); err != nil {
-						return err
-					}
-
+				} else { */
+				if _, err := stmt.Exec(
+					m.common.addr.String(),
+					added.Info.SectorNumber,
+					added.Info.SealedCID.String(),
+					m.common.stateroot.String(),
+					added.Info.SealRandEpoch,
+					/* added.Info.Expiration,
+					added.PreCommitDeposit.String(), */
+					added.PreCommitEpoch,
+					/* added.DealWeight.String(),
+					added.VerifiedDealWeight.String(),
+					added.Info.ReplaceCapacity,
+					nil, // replace deadline
+					nil, // replace partition
+					nil, // replace sector */
+				); err != nil {
+					return err
 				}
+
+				/* } */
 				preCommitAdded[i] = uint64(added.Info.SectorNumber)
 			}
 			if len(preCommitAdded) > 0 {
@@ -440,7 +440,8 @@ func (p *Processor) storeMinerSectorInfo(ctx context.Context, miners []minerActo
 		return xerrors.Errorf("Failed to create temp table for sector_: %w", err)
 	}
 
-	stmt, err := tx.Prepare(`copy si (miner_id, sector_id, sealed_cid, state_root, activation_epoch, expiration_epoch, deal_weight, verified_deal_weight, initial_pledge, expected_day_reward, expected_storage_pledge) from STDIN`)
+	// stmt, err := tx.Prepare(`copy si (miner_id, sector_id, sealed_cid, state_root, activation_epoch, expiration_epoch, deal_weight, verified_deal_weight, initial_pledge, expected_day_reward, expected_storage_pledge) from STDIN`)
+	stmt, err := tx.Prepare(`copy si (miner_id, sector_id, sealed_cid, state_root, activation_epoch, ) from STDIN`)
 	if err != nil {
 		return xerrors.Errorf("Failed to prepare miner sector info statement: %w", err)
 	}
@@ -461,7 +462,7 @@ func (p *Processor) storeMinerSectorInfo(ctx context.Context, miners []minerActo
 			}
 			var sectorsAdded []uint64
 			var ccAdded []uint64
-			var extended []uint64
+			/* var extended []uint64 */
 			for _, added := range changes.Added {
 				// add the sector to the table
 				if _, err := stmt.Exec(
@@ -470,12 +471,12 @@ func (p *Processor) storeMinerSectorInfo(ctx context.Context, miners []minerActo
 					added.SealedCID.String(),
 					m.common.stateroot.String(),
 					added.Activation.String(),
-					added.Expiration.String(),
+					/* added.Expiration.String(),
 					added.DealWeight.String(),
 					added.VerifiedDealWeight.String(),
 					added.InitialPledge.String(),
 					added.ExpectedDayReward.String(),
-					added.ExpectedStoragePledge.String(),
+					added.ExpectedStoragePledge.String(), */
 				); err != nil {
 					log.Errorw("writing miner sector changes statement", "error", err.Error())
 				}
@@ -486,9 +487,9 @@ func (p *Processor) storeMinerSectorInfo(ctx context.Context, miners []minerActo
 				}
 			}
 
-			for _, mod := range changes.Extended {
+			/* for _, mod := range changes.Extended {
 				extended = append(extended, uint64(mod.To.SectorNumber))
-			}
+			} */
 
 			events <- &MinerSectorsEvent{
 				MinerID:   m.common.addr,
@@ -502,12 +503,12 @@ func (p *Processor) storeMinerSectorInfo(ctx context.Context, miners []minerActo
 				SectorIDs: sectorsAdded,
 				Event:     SectorAdded,
 			}
-			events <- &MinerSectorsEvent{
+			/* events <- &MinerSectorsEvent{
 				MinerID:   m.common.addr,
 				StateRoot: m.common.stateroot,
 				SectorIDs: extended,
 				Event:     SectorExtended,
-			}
+			} */
 			return nil
 		})
 	}

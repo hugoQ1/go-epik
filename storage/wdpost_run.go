@@ -425,7 +425,7 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 		var (
 			sigmsg     *types.SignedMessage
 			recoveries []miner.RecoveryDeclaration
-			faults     []miner.FaultDeclaration
+			// faults     []miner.FaultDeclaration
 
 			// optionalCid returns the CID of the message, or cid.Undef is the
 			// message is nil. We don't need the argument (could capture the
@@ -452,8 +452,8 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 			j.Error = err
 			return j
 		})
-
-		if ts.Height() > build.UpgradeIgnitionHeight {
+		return
+		/* if ts.Height() > build.UpgradeIgnitionHeight {
 			return // FORK: declaring faults after ignition upgrade makes no sense
 		}
 
@@ -468,7 +468,7 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 				Declarations: faults,
 				MessageCID:   optionalCid(sigmsg),
 			}
-		})
+		}) */
 	}()
 
 	buf := new(bytes.Buffer)

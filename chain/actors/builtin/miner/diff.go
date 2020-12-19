@@ -1,8 +1,8 @@
 package miner
 
 import (
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
+	"github.com/filecoin-project/go-state-types/abi"
 	cbg "github.com/whyrusleeping/cbor-gen"
 )
 
@@ -98,7 +98,7 @@ func (m *sectorDiffer) Add(key uint64, val *cbg.Deferred) error {
 }
 
 func (m *sectorDiffer) Modify(key uint64, from, to *cbg.Deferred) error {
-	siFrom, err := m.pre.decodeSectorOnChainInfo(from)
+	/* siFrom, err := m.pre.decodeSectorOnChainInfo(from)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (m *sectorDiffer) Modify(key uint64, from, to *cbg.Deferred) error {
 			From: siFrom,
 			To:   siTo,
 		})
-	}
+	} */
 	return nil
 }
 

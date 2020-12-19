@@ -6,10 +6,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
@@ -19,7 +17,7 @@ import (
 type rewardActorInfo struct {
 	common actorInfo
 
-	cumSumBaselinePower big.Int
+	/* cumSumBaselinePower big.Int
 	cumSumRealizedPower big.Int
 
 	effectiveNetworkTime   abi.ChainEpoch
@@ -28,14 +26,14 @@ type rewardActorInfo struct {
 	// NOTE: These variables are wrong. Talk to @ZX about fixing. These _do
 	// not_ represent "new" anything.
 	newBaselinePower     big.Int
-	newBaseReward        big.Int
-	newSmoothingEstimate builtin.FilterEstimate
+	newSmoothingEstimate builtin.FilterEstimate */
 
+	newBaseReward    big.Int
 	totalMinedReward big.Int
 }
 
 func (rw *rewardActorInfo) set(s reward.State) (err error) {
-	rw.cumSumBaselinePower, err = s.CumsumBaseline()
+	/* rw.cumSumBaselinePower, err = s.CumsumBaseline()
 	if err != nil {
 		return xerrors.Errorf("getting cumsum baseline power (@ %s): %w", rw.common.stateroot.String(), err)
 	}
@@ -53,16 +51,11 @@ func (rw *rewardActorInfo) set(s reward.State) (err error) {
 	rw.effectiveBaselinePower, err = s.EffectiveBaselinePower()
 	if err != nil {
 		return xerrors.Errorf("getting effective baseline power (@ %s): %w", rw.common.stateroot.String(), err)
-	}
+	} */
 
 	rw.totalMinedReward, err = s.TotalStoragePowerReward()
 	if err != nil {
 		return xerrors.Errorf("getting  total mined (@ %s): %w", rw.common.stateroot.String(), err)
-	}
-
-	rw.newBaselinePower, err = s.ThisEpochBaselinePower()
-	if err != nil {
-		return xerrors.Errorf("getting this epoch baseline power (@ %s): %w", rw.common.stateroot.String(), err)
 	}
 
 	rw.newBaseReward, err = s.ThisEpochReward()
@@ -70,10 +63,15 @@ func (rw *rewardActorInfo) set(s reward.State) (err error) {
 		return xerrors.Errorf("getting this epoch baseline power (@ %s): %w", rw.common.stateroot.String(), err)
 	}
 
-	rw.newSmoothingEstimate, err = s.ThisEpochRewardSmoothed()
+	/* rw.newBaselinePower, err = s.ThisEpochBaselinePower()
 	if err != nil {
 		return xerrors.Errorf("getting this epoch baseline power (@ %s): %w", rw.common.stateroot.String(), err)
 	}
+
+	rw.newSmoothingEstimate, err = s.ThisEpochRewardSmoothed()
+	if err != nil {
+		return xerrors.Errorf("getting this epoch baseline power (@ %s): %w", rw.common.stateroot.String(), err)
+	} */
 	return nil
 }
 
@@ -204,14 +202,14 @@ func (p *Processor) persistRewardActors(ctx context.Context, rewards []rewardAct
 	for _, rewardState := range rewards {
 		if _, err := stmt.Exec(
 			rewardState.common.stateroot.String(),
-			rewardState.cumSumBaselinePower.String(),
+			/* rewardState.cumSumBaselinePower.String(),
 			rewardState.cumSumRealizedPower.String(),
 			uint64(rewardState.effectiveNetworkTime),
 			rewardState.effectiveBaselinePower.String(),
 			rewardState.newBaselinePower.String(),
-			rewardState.newBaseReward.String(),
 			rewardState.newSmoothingEstimate.PositionEstimate.String(),
-			rewardState.newSmoothingEstimate.VelocityEstimate.String(),
+			rewardState.newSmoothingEstimate.VelocityEstimate.String(), */
+			rewardState.newBaseReward.String(),
 			rewardState.totalMinedReward.String(),
 		); err != nil {
 			log.Errorw("failed to store chain power", "state_root", rewardState.common.stateroot, "error", err)

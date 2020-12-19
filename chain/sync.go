@@ -29,15 +29,15 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	blst "github.com/supranational/blst/bindings/go"
 
 	// named msgarray here to make it clear that these are the types used by
 	// messages, regardless of specs-actors version.
-	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
+	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
@@ -902,9 +902,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 			return xerrors.Errorf("failed to marshal miner address to cbor: %w", err)
 		}
 
-		if h.Height > build.UpgradeSmokeHeight {
-			buf.Write(baseTs.MinTicket().VRFProof)
-		}
+		buf.Write(baseTs.MinTicket().VRFProof)
 
 		beaconBase := *prevBeacon
 		if len(h.BeaconEntries) != 0 {

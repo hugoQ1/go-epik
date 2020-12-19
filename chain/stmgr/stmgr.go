@@ -19,7 +19,7 @@ import (
 	"github.com/filecoin-project/go-state-types/network"
 
 	// Used for genesis.
-	msig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
+	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -35,7 +35,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/verifreg"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -73,13 +72,14 @@ type StateManager struct {
 	// ErrExpensiveFork.
 	expensiveUpgrades map[abi.ChainEpoch]struct{}
 
-	stCache              map[string][]cid.Cid
-	compWait             map[string]chan struct{}
-	stlk                 sync.Mutex
-	genesisMsigLk        sync.Mutex
-	newVM                func(context.Context, *vm.VMOpts) (*vm.VM, error)
-	preIgnitionGenInfos  *genesisInfo
-	postIgnitionGenInfos *genesisInfo
+	stCache  map[string][]cid.Cid
+	compWait map[string]chan struct{}
+	stlk     sync.Mutex
+	// genesisMsigLk sync.Mutex
+	newVM    func(context.Context, *vm.VMOpts) (*vm.VM, error)
+	genInfos *genesisInfo
+	// preIgnitionGenInfos  *genesisInfo
+	// postIgnitionGenInfos *genesisInfo
 }
 
 func NewStateManager(cs *store.ChainStore) *StateManager {
@@ -317,11 +317,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
-	// query circulating and total retrieval collateral
-	detail, err := sm.GetVMCirculatingSupplyDetailed(ctx, parentEpoch, pstatetree)
-	if err != nil {
-		return cid.Undef, cid.Undef, err
-	}
+	// query total retrieval collateral
 	totalCollateral, err := getRetrievalTotalCollateral(ctx, pstatetree)
 	if err != nil {
 		return cid.Undef, cid.Undef, err
@@ -360,8 +356,8 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			Penalty:          penalty,
 			GasReward:        gasReward,
 			WinCount:         b.WinCount,
+			ShareCount:       int64(len(bms)),
 			RetrievalPledged: totalCollateral,
-			Circulating:      detail.EpkCirculating,
 		})
 		if err != nil {
 			return cid.Undef, cid.Undef, xerrors.Errorf("failed to serialize award params: %w", err)
@@ -907,7 +903,7 @@ func (sm *StateManager) SetVMConstructor(nvm func(context.Context, *vm.VMOpts) (
 }
 
 type genesisInfo struct {
-	genesisMsigs []msig0.State
+	genesisMsigs map[address.Address]genesisMsig
 	// info about the Accounts in the genesis state
 	genesisActors      []genesisActor
 	genesisPledge      abi.TokenAmount
@@ -919,10 +915,18 @@ type genesisActor struct {
 	initBal abi.TokenAmount
 }
 
+type genesisMsig struct {
+	InitialVested abi.TokenAmount
+	// Linear unlock
+	multisig2.State
+}
+
 // sets up information about the actors in the genesis state
 func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 
-	gi := genesisInfo{}
+	gi := genesisInfo{
+		genesisMsigs: make(map[address.Address]genesisMsig),
+	}
 
 	gb, err := sm.cs.GetGenesis()
 	if err != nil {
@@ -945,19 +949,21 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		return xerrors.Errorf("loading state tree: %w", err)
 	}
 
-	gi.genesisMarketFunds, err = getFilMarketLocked(ctx, sTree)
+	gi.genesisMarketFunds, err = getEpkMarketLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis market funds: %w", err)
 	}
 
-	gi.genesisPledge, err = getFilPowerLocked(ctx, sTree)
+	gi.genesisPledge, err = getEpkPowerLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis pledge: %w", err)
 	}
 
-	totalsByEpoch := make(map[abi.ChainEpoch]abi.TokenAmount)
+	// totalsByEpoch := make(map[abi.ChainEpoch]abi.TokenAmount)
 	err = sTree.ForEach(func(kaddr address.Address, act *types.Actor) error {
 		if builtin.IsMultisigActor(act.Code) {
+			// TODO: should exclude govern/fundation/... actor
+
 			s, err := multisig.Load(sm.cs.Store(ctx), act)
 			if err != nil {
 				return err
@@ -981,15 +987,29 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			iv := big.Sub(act.Balance, ib)
+			if iv.LessThan(big.Zero()) {
+				return xerrors.Errorf("multisig balance %v less than initial balance %v", act.Balance, ib)
+			}
+			gi.genesisMsigs[kaddr] = genesisMsig{
+				InitialVested: iv,
+				State: multisig2.State{
+					InitialBalance: ib,
+					UnlockDuration: ud,
+					StartEpoch:     se,
+					PendingTxns:    cid.Undef,
+				},
+			}
 
-			ot, f := totalsByEpoch[ud]
+			/* ot, f := totalsByEpoch[ud]
 			if f {
 				totalsByEpoch[ud] = big.Add(ot, ib)
 			} else {
 				totalsByEpoch[ud] = ib
-			}
+			} */
 
 		} else if builtin.IsAccountActor(act.Code) {
+			// TODO:
 			// should exclude burnt funds actor and "remainder account actor"
 			// should only ever be "faucet" accounts in testnets
 			if kaddr == builtin.BurntFundsActorAddr {
@@ -1013,7 +1033,7 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		return xerrors.Errorf("error setting up genesis infos: %w", err)
 	}
 
-	// TODO: use network upgrade abstractions or always start at actors v0?
+	/* // TODO: use network upgrade abstractions or always start at actors v0?
 	gi.genesisMsigs = make([]msig0.State, 0, len(totalsByEpoch))
 	for k, v := range totalsByEpoch {
 		ns := msig0.State{
@@ -1024,12 +1044,13 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		gi.genesisMsigs = append(gi.genesisMsigs, ns)
 	}
 
-	sm.preIgnitionGenInfos = &gi
+	sm.preIgnitionGenInfos = &gi */
+	sm.genInfos = &gi
 
 	return nil
 }
 
-// sets up information about the actors in the genesis state
+/* // sets up information about the actors in the genesis state
 // For testnet we use a hardcoded set of multisig states, instead of what's actually in the genesis multisigs
 // We also do not consider ANY account actors (including the faucet)
 func (sm *StateManager) setupPreIgnitionGenesisActorsTestnet(ctx context.Context) error {
@@ -1057,12 +1078,12 @@ func (sm *StateManager) setupPreIgnitionGenesisActorsTestnet(ctx context.Context
 		return xerrors.Errorf("loading state tree: %w", err)
 	}
 
-	gi.genesisMarketFunds, err = getFilMarketLocked(ctx, sTree)
+	gi.genesisMarketFunds, err = getEpkMarketLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis market funds: %w", err)
 	}
 
-	gi.genesisPledge, err = getFilPowerLocked(ctx, sTree)
+	gi.genesisPledge, err = getEpkPowerLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis pledge: %w", err)
 	}
@@ -1133,13 +1154,13 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 	}
 
 	// Unnecessary, should be removed
-	gi.genesisMarketFunds, err = getFilMarketLocked(ctx, sTree)
+	gi.genesisMarketFunds, err = getEpkMarketLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis market funds: %w", err)
 	}
 
 	// Unnecessary, should be removed
-	gi.genesisPledge, err = getFilPowerLocked(ctx, sTree)
+	gi.genesisPledge, err = getEpkPowerLocked(ctx, sTree)
 	if err != nil {
 		return xerrors.Errorf("setting up genesis pledge: %w", err)
 	}
@@ -1172,7 +1193,7 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 	for k, v := range totalsByEpoch {
 		ns := msig0.State{
 			// In the pre-ignition logic, we incorrectly set this value in Fil, not attoFil, an off-by-10^18 error
-			InitialBalance: big.Mul(v, big.NewInt(int64(build.FilecoinPrecision))),
+			InitialBalance: big.Mul(v, big.NewInt(int64(build.EpkPrecision))),
 			UnlockDuration: k,
 			PendingTxns:    cid.Undef,
 			// In the pre-ignition logic, the start epoch was 0. This changes in the fork logic of the Ignition upgrade itself.
@@ -1184,14 +1205,18 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 	sm.postIgnitionGenInfos = &gi
 
 	return nil
-}
+} */
 
 // GetVestedFunds returns all funds that have "left" actors that are in the genesis state:
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
-func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (abi.TokenAmount, error) {
-	vf := big.Zero()
-	if height <= build.UpgradeIgnitionHeight {
+func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (
+	vf, team, foundation, fundraising abi.TokenAmount, err error) {
+	vf = big.Zero()
+	team = big.Zero()
+	foundation = big.Zero()
+	fundraising = big.Zero()
+	/* if height <= build.UpgradeIgnitionHeight {
 		for _, v := range sm.preIgnitionGenInfos.genesisMsigs {
 			au := big.Sub(v.InitialBalance, v.AmountLocked(height))
 			vf = big.Add(vf, au)
@@ -1203,14 +1228,28 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 			au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
 			vf = big.Add(vf, au)
 		}
+	} */
+	for addr, v := range sm.genInfos.genesisMsigs {
+		au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
+		au = big.Add(au, v.InitialVested)
+		vf = big.Add(vf, au)
+		switch addr {
+		case builtin.TeamAddress:
+			team = au
+		case builtin.FoundationAddress:
+			foundation = au
+		case builtin.FundraisingAddress:
+			fundraising = au
+		default:
+			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("unknown address: %v", addr)
+		}
 	}
 
 	// there should not be any such accounts in testnet (and also none in mainnet?)
-	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
-	for _, v := range sm.preIgnitionGenInfos.genesisActors {
+	for _, v := range sm.genInfos.genesisActors {
 		act, err := st.GetActor(v.addr)
 		if err != nil {
-			return big.Zero(), xerrors.Errorf("failed to get actor: %w", err)
+			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("failed to get actor: %w", err)
 		}
 
 		diff := big.Sub(v.initBal, act.Balance)
@@ -1227,18 +1266,18 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisMarketFunds)
 	// }
 
-	return vf, nil
+	return
 }
 
-func GetEpkReserveDisbursed(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
-	ract, err := st.GetActor(builtin.ReserveAddress)
-	if err != nil {
-		return big.Zero(), xerrors.Errorf("failed to get reserve actor: %w", err)
-	}
+// func GetEpkReserveDisbursed(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+// 	ract, err := st.GetActor(builtin.ReserveAddress)
+// 	if err != nil {
+// 		return big.Zero(), xerrors.Errorf("failed to get reserve actor: %w", err)
+// 	}
 
-	// If money enters the reserve actor, this could lead to a negative term
-	return big.Sub(big.NewFromGo(build.InitialEpkReserved), ract.Balance), nil
-}
+// 	// If money enters the reserve actor, this could lead to a negative term
+// 	return big.Sub(big.NewFromGo(build.InitialEpkReserved), ract.Balance), nil
+// }
 
 func GetEpkMined(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	ractor, err := st.GetActor(reward.Address)
@@ -1266,7 +1305,7 @@ func getRetrievalTotalCollateral(ctx context.Context, st *state.StateTree) (abi.
 	return rst.TotalCollateral()
 }
 
-func getFilMarketLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func getEpkMarketLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	act, err := st.GetActor(market.Address)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to load market actor: %w", err)
@@ -1280,7 +1319,7 @@ func getFilMarketLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmou
 	return mst.TotalLocked()
 }
 
-func getFilPowerLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+func getEpkPowerLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 	pactor, err := st.GetActor(power.Address)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to load power actor: %w", err)
@@ -1296,17 +1335,17 @@ func getFilPowerLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmoun
 
 func (sm *StateManager) GetEpkLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 
-	filMarketLocked, err := getFilMarketLocked(ctx, st)
+	epkMarketLocked, err := getEpkMarketLocked(ctx, st)
 	if err != nil {
-		return big.Zero(), xerrors.Errorf("failed to get filMarketLocked: %w", err)
+		return big.Zero(), xerrors.Errorf("failed to get epkMarketLocked: %w", err)
 	}
 
-	filPowerLocked, err := getFilPowerLocked(ctx, st)
+	epkPowerLocked, err := getEpkPowerLocked(ctx, st)
 	if err != nil {
-		return big.Zero(), xerrors.Errorf("failed to get filPowerLocked: %w", err)
+		return big.Zero(), xerrors.Errorf("failed to get epkPowerLocked: %w", err)
 	}
 
-	return types.BigAdd(filMarketLocked, filPowerLocked), nil
+	return types.BigAdd(epkMarketLocked, epkPowerLocked), nil
 }
 
 func GetEpkBurnt(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
@@ -1328,33 +1367,33 @@ func (sm *StateManager) GetVMCirculatingSupply(ctx context.Context, height abi.C
 }
 
 func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (api.CirculatingSupply, error) {
-	sm.genesisMsigLk.Lock()
-	defer sm.genesisMsigLk.Unlock()
-	if sm.preIgnitionGenInfos == nil {
-		err := sm.setupPreIgnitionGenesisActorsTestnet(ctx)
-		if err != nil {
-			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup pre-ignition genesis information: %w", err)
-		}
-	}
-	if sm.postIgnitionGenInfos == nil {
-		err := sm.setupPostIgnitionGenesisActors(ctx)
-		if err != nil {
-			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup post-ignition genesis information: %w", err)
-		}
-	}
+	// sm.genesisMsigLk.Lock()
+	// defer sm.genesisMsigLk.Unlock()
+	// if sm.preIgnitionGenInfos == nil {
+	// 	err := sm.setupPreIgnitionGenesisActorsTestnet(ctx)
+	// 	if err != nil {
+	// 		return api.CirculatingSupply{}, xerrors.Errorf("failed to setup pre-ignition genesis information: %w", err)
+	// 	}
+	// }
+	// if sm.postIgnitionGenInfos == nil {
+	// 	err := sm.setupPostIgnitionGenesisActors(ctx)
+	// 	if err != nil {
+	// 		return api.CirculatingSupply{}, xerrors.Errorf("failed to setup post-ignition genesis information: %w", err)
+	// 	}
+	// }
 
-	epkVested, err := sm.GetEpkVested(ctx, height, st)
+	epkVested, team, foundation, fundraising, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)
 	}
 
-	epkReserveDisbursed := big.Zero()
-	if height > build.UpgradeActorsV2Height {
-		epkReserveDisbursed, err = GetEpkReserveDisbursed(ctx, st)
-		if err != nil {
-			return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkReserveDisbursed: %w", err)
-		}
-	}
+	// epkReserveDisbursed := big.Zero()
+	// if height > build.UpgradeActorsV2Height {
+	// 	epkReserveDisbursed, err = GetEpkReserveDisbursed(ctx, st)
+	// 	if err != nil {
+	// 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkReserveDisbursed: %w", err)
+	// 	}
+	// }
 
 	epkMined, err := GetEpkMined(ctx, st)
 	if err != nil {
@@ -1372,7 +1411,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 	}
 
 	ret := types.BigAdd(epkVested, epkMined)
-	ret = types.BigAdd(ret, epkReserveDisbursed)
+	// ret = types.BigAdd(ret, epkReserveDisbursed)
 	ret = types.BigSub(ret, epkBurnt)
 	ret = types.BigSub(ret, epkLocked)
 
@@ -1381,11 +1420,14 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 	}
 
 	return api.CirculatingSupply{
-		EpkVested:      epkVested,
-		EpkMined:       epkMined,
-		EpkBurnt:       epkBurnt,
-		EpkLocked:      epkLocked,
-		EpkCirculating: ret,
+		EpkVested:            epkVested,
+		EpkTeamVested:        team,
+		EpkFoundationVested:  foundation,
+		EpkFundraisingVested: fundraising,
+		EpkMined:             epkMined,
+		EpkBurnt:             epkBurnt,
+		EpkLocked:            epkLocked,
+		EpkCirculating:       ret,
 	}, nil
 }
 
@@ -1399,14 +1441,14 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			break
 		case a == _init.Address ||
 			a == reward.Address ||
-			a == verifreg.Address ||
+			// a == verifreg.Address ||
 			// The power actor itself should never receive funds
 			a == power.Address ||
 			a == builtin.SystemActorAddr ||
 			a == builtin.CronActorAddr ||
-			a == builtin.BurntFundsActorAddr ||
-			a == builtin.SaftAddress ||
-			a == builtin.ReserveAddress:
+			a == builtin.BurntFundsActorAddr:
+			// a == builtin.SaftAddress ||
+			// a == builtin.ReserveAddress:
 
 			unCirc = big.Add(unCirc, actor.Balance)
 
@@ -1423,6 +1465,7 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 
 			circ = big.Add(circ, big.Sub(actor.Balance, lb))
 			unCirc = big.Add(unCirc, lb)
+		// TODO: vote/knowledge/expert/retrieval
 
 		case builtin.IsAccountActor(actor.Code) || builtin.IsPaymentChannelActor(actor.Code):
 			circ = big.Add(circ, actor.Balance)

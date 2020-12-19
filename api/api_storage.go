@@ -6,6 +6,7 @@ import (
 	"time"
 
 	datatransfer "github.com/filecoin-project/go-data-transfer"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/google/uuid"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -57,7 +58,7 @@ type StorageMiner interface {
 	SectorGetExpectedSealDuration(context.Context) (time.Duration, error)
 	SectorsUpdate(context.Context, abi.SectorNumber, SectorState) error
 	SectorRemove(context.Context, abi.SectorNumber) error
-	SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error
+	/* SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error */
 
 	StorageList(ctx context.Context) (map[stores.ID][]stores.Decl, error)
 	StorageLocal(ctx context.Context) (map[stores.ID]string, error)
@@ -146,19 +147,21 @@ type SectorInfo struct {
 	PreCommitMsg *cid.Cid
 	CommitMsg    *cid.Cid
 	Retries      uint64
-	ToUpgrade    bool
+	/* ToUpgrade    bool */
 
 	LastErr string
 
 	Log []SectorLog
 
 	// On Chain Info
-	SealProof          abi.RegisteredSealProof // The seal proof type implies the PoSt proof/s
-	Activation         abi.ChainEpoch          // Epoch during which the sector proof was accepted
-	Expiration         abi.ChainEpoch          // Epoch during which the sector expires
+	SealProof  abi.RegisteredSealProof // The seal proof type implies the PoSt proof/s
+	Activation abi.ChainEpoch          // Epoch during which the sector proof was accepted
+	PieceSizes []uint64
+	DealWins   []builtin.BoolValue
+	/* Expiration         abi.ChainEpoch          // Epoch during which the sector expires
 	DealWeight         abi.DealWeight          // Integral of active deals over sector lifetime
 	VerifiedDealWeight abi.DealWeight          // Integral of active verified deals over sector lifetime
-	InitialPledge      abi.TokenAmount         // Pledge collected to commit this sector
+	InitialPledge      abi.TokenAmount         // Pledge collected to commit this sector */
 	// Expiration Info
 	OnTime abi.ChainEpoch
 	// non-zero if sector is faulty, epoch at which it will be permanently

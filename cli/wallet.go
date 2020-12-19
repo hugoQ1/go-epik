@@ -16,8 +16,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"

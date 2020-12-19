@@ -21,7 +21,6 @@ import (
 	storagemarket "github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-jsonrpc/auth"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
@@ -161,19 +160,19 @@ func (sm *StorageMinerAPI) SectorsStatus(ctx context.Context, sid abi.SectorNumb
 		PreCommitMsg: info.PreCommitMessage,
 		CommitMsg:    info.CommitMessage,
 		Retries:      info.InvalidProofs,
-		ToUpgrade:    sm.Miner.IsMarkedForUpgrade(sid),
+		/* ToUpgrade:    sm.Miner.IsMarkedForUpgrade(sid), */
 
 		LastErr: info.LastErr,
 		Log:     log,
 		// on chain info
-		SealProof:          0,
-		Activation:         0,
-		Expiration:         0,
+		SealProof:  0,
+		Activation: 0,
+		/* Expiration:         0,
 		DealWeight:         big.Zero(),
 		VerifiedDealWeight: big.Zero(),
-		InitialPledge:      big.Zero(),
-		OnTime:             0,
-		Early:              0,
+		InitialPledge:      big.Zero(), */
+		OnTime: 0,
+		Early:  0,
 	}
 
 	if !showOnChainInfo {
@@ -189,10 +188,12 @@ func (sm *StorageMinerAPI) SectorsStatus(ctx context.Context, sid abi.SectorNumb
 	}
 	sInfo.SealProof = onChainInfo.SealProof
 	sInfo.Activation = onChainInfo.Activation
-	sInfo.Expiration = onChainInfo.Expiration
+	sInfo.PieceSizes = onChainInfo.PieceSizes
+	sInfo.DealWins = onChainInfo.DealWins
+	/* sInfo.Expiration = onChainInfo.Expiration
 	sInfo.DealWeight = onChainInfo.DealWeight
 	sInfo.VerifiedDealWeight = onChainInfo.VerifiedDealWeight
-	sInfo.InitialPledge = onChainInfo.InitialPledge
+	sInfo.InitialPledge = onChainInfo.InitialPledge */
 
 	ex, err := sm.Full.StateSectorExpiration(ctx, sm.Miner.Address(), sid, types.EmptyTSK)
 	if err != nil {
@@ -281,9 +282,9 @@ func (sm *StorageMinerAPI) SectorRemove(ctx context.Context, id abi.SectorNumber
 	return sm.Miner.RemoveSector(ctx, id)
 }
 
-func (sm *StorageMinerAPI) SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error {
+/* func (sm *StorageMinerAPI) SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error {
 	return sm.Miner.MarkForUpgrade(id)
-}
+} */
 
 func (sm *StorageMinerAPI) WorkerConnect(ctx context.Context, url string) error {
 	w, err := connectRemoteWorker(ctx, sm, url)
@@ -377,7 +378,7 @@ func (sm *StorageMinerAPI) MarketSetAsk(ctx context.Context, price types.BigInt,
 		storagemarket.MaxPieceSize(maxPieceSize),
 	}
 
-	return sm.StorageProvider.SetAsk(price, verifiedPrice, duration, options...)
+	return sm.StorageProvider.SetAsk( /* price, verifiedPrice, */ duration, options...)
 }
 
 func (sm *StorageMinerAPI) MarketGetAsk(ctx context.Context) (*storagemarket.SignedStorageAsk, error) {

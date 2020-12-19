@@ -1,7 +1,6 @@
 package miner
 
 import (
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -36,7 +35,7 @@ var WPoStChallengeWindow = miner2.WPoStChallengeWindow
 var WPoStChallengeLookback = miner2.WPoStChallengeLookback
 var FaultDeclarationCutoff = miner2.FaultDeclarationCutoff
 
-const MinSectorExpiration = miner2.MinSectorExpiration
+/* const MinSectorExpiration = miner2.MinSectorExpiration */
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
@@ -99,27 +98,30 @@ type Partition interface {
 }
 
 type SectorOnChainInfo struct {
-	SectorNumber          abi.SectorNumber
-	SealProof             abi.RegisteredSealProof
-	SealedCID             cid.Cid
-	DealIDs               []abi.DealID
-	Activation            abi.ChainEpoch
-	Expiration            abi.ChainEpoch
+	SectorNumber abi.SectorNumber
+	SealProof    abi.RegisteredSealProof
+	SealedCID    cid.Cid
+	DealIDs      []abi.DealID
+	Activation   abi.ChainEpoch
+	PieceSizes   []uint64
+	DealWins     []builtin2.BoolValue
+	/* Expiration            abi.ChainEpoch
 	DealWeight            abi.DealWeight
 	VerifiedDealWeight    abi.DealWeight
 	InitialPledge         abi.TokenAmount
 	ExpectedDayReward     abi.TokenAmount
-	ExpectedStoragePledge abi.TokenAmount
+	ExpectedStoragePledge abi.TokenAmount */
 }
 
 type SectorPreCommitInfo = miner2.SectorPreCommitInfo
 
 type SectorPreCommitOnChainInfo struct {
-	Info               SectorPreCommitInfo
-	PreCommitDeposit   abi.TokenAmount
-	PreCommitEpoch     abi.ChainEpoch
+	Info           SectorPreCommitInfo
+	PreCommitEpoch abi.ChainEpoch
+	PieceSizes     []uint64
+	/* PreCommitDeposit   abi.TokenAmount
 	DealWeight         abi.DealWeight
-	VerifiedDealWeight abi.DealWeight
+	VerifiedDealWeight abi.DealWeight */
 }
 
 type PoStPartition = miner2.PoStPartition
@@ -137,6 +139,7 @@ type MinerInfo struct {
 	Worker                     address.Address   // Must be an ID-address.
 	NewWorker                  address.Address   // Must be an ID-address.
 	ControlAddresses           []address.Address // Must be an ID-addresses.
+	Coinbase                   address.Address   // Must be an ID-address.
 	WorkerChangeEpoch          abi.ChainEpoch
 	PeerId                     *peer.ID
 	Multiaddrs                 []abi.Multiaddrs
@@ -174,15 +177,15 @@ type SectorLocation struct {
 }
 
 type SectorChanges struct {
-	Added    []SectorOnChainInfo
-	Extended []SectorExtensions
-	Removed  []SectorOnChainInfo
+	Added   []SectorOnChainInfo
+	Removed []SectorOnChainInfo
+	/* Extended []SectorExtensions */
 }
 
-type SectorExtensions struct {
+/* type SectorExtensions struct {
 	From SectorOnChainInfo
 	To   SectorOnChainInfo
-}
+} */
 
 type PreCommitChanges struct {
 	Added   []SectorPreCommitOnChainInfo
@@ -190,11 +193,12 @@ type PreCommitChanges struct {
 }
 
 type LockedFunds struct {
-	VestingFunds             abi.TokenAmount
-	InitialPledgeRequirement abi.TokenAmount
-	PreCommitDeposits        abi.TokenAmount
+	VestingFunds abi.TokenAmount
+	/* InitialPledgeRequirement abi.TokenAmount
+	PreCommitDeposits        abi.TokenAmount */
 }
 
 func (lf LockedFunds) TotalLockedFunds() abi.TokenAmount {
-	return big.Add(lf.VestingFunds, big.Add(lf.InitialPledgeRequirement, lf.PreCommitDeposits))
+	/* return big.Add(lf.VestingFunds, big.Add(lf.InitialPledgeRequirement, lf.PreCommitDeposits)) */
+	return lf.VestingFunds
 }

@@ -22,15 +22,15 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/filecoin-project/go-address"
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	paramfetch "github.com/filecoin-project/go-paramfetch"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-statestore"
-	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
@@ -314,7 +314,7 @@ func migratePreSealMeta(ctx context.Context, api lapi.FullNode, metadata string,
 						DealID: dealID,
 						DealSchedule: sealing.DealSchedule{
 							StartEpoch: sector.Deal.StartEpoch,
-							EndEpoch:   sector.Deal.EndEpoch,
+							/* EndEpoch:   sector.Deal.EndEpoch, */
 						},
 					},
 				},

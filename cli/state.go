@@ -1697,7 +1697,10 @@ var stateCircSupplyCmd = &cli.Command{
 
 			fmt.Println("Circulating supply: ", types.EPK(circ.EpkCirculating))
 			fmt.Println("Mined: ", types.EPK(circ.EpkMined))
-			fmt.Println("Vested: ", types.EPK(circ.EpkVested))
+			fmt.Println("Total vested: ", types.EPK(circ.EpkVested))
+			fmt.Println("Foundation vested: ", types.EPK(circ.EpkFoundationVested))
+			fmt.Println("Fundraising vested: ", types.EPK(circ.EpkFundraisingVested))
+			fmt.Println("Team vested: ", types.EPK(circ.EpkTeamVested))
 			fmt.Println("Burnt: ", types.EPK(circ.EpkBurnt))
 			fmt.Println("Locked: ", types.EPK(circ.EpkLocked))
 		} else {
@@ -1764,13 +1767,15 @@ var stateSectorCmd = &cli.Command{
 		fmt.Println("DealIDs: ", si.DealIDs)
 		fmt.Println()
 		fmt.Println("Activation: ", EpochTime(ts.Height(), si.Activation))
-		fmt.Println("Expiration: ", EpochTime(ts.Height(), si.Expiration))
+		fmt.Println("PieceSizes: ", si.PieceSizes)
+		fmt.Println("DealWins: ", si.DealWins)
+		/* fmt.Println("Expiration: ", EpochTime(ts.Height(), si.Expiration))
 		fmt.Println()
 		fmt.Println("DealWeight: ", si.DealWeight)
 		fmt.Println("VerifiedDealWeight: ", si.VerifiedDealWeight)
 		fmt.Println("InitialPledge: ", types.EPK(si.InitialPledge))
 		fmt.Println("ExpectedDayReward: ", types.EPK(si.ExpectedDayReward))
-		fmt.Println("ExpectedStoragePledge: ", types.EPK(si.ExpectedStoragePledge))
+		fmt.Println("ExpectedStoragePledge: ", types.EPK(si.ExpectedStoragePledge)) */
 		fmt.Println()
 
 		sp, err := api.StateSectorPartition(ctx, maddr, abi.SectorNumber(sid), ts.Key())

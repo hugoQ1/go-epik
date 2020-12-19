@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-bitfield"
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/filecoin-project/go-state-types/dline"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -19,6 +13,12 @@ import (
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-bitfield"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/go-state-types/dline"
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 )
 
@@ -49,7 +49,7 @@ type gatewayDepsAPI interface {
 	MsigGetAvailableBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (types.BigInt, error)
 	MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
 	StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
-	StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error)
+	/* StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) */
 	StateGetActor(ctx context.Context, actor address.Address, ts types.TipSetKey) (*types.Actor, error)
 	StateGetReceipt(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)
 	StateLookupID(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
@@ -67,7 +67,7 @@ type gatewayDepsAPI interface {
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
-	StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
+	// StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
 	StateVMCirculatingSupplyInternal(context.Context, types.TipSetKey) (api.CirculatingSupply, error)
 }
 
@@ -234,13 +234,13 @@ func (a *GatewayAPI) StateAccountKey(ctx context.Context, addr address.Address, 
 	return a.api.StateAccountKey(ctx, addr, tsk)
 }
 
-func (a *GatewayAPI) StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) {
+/* func (a *GatewayAPI) StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
 		return api.DealCollateralBounds{}, err
 	}
 
 	return a.api.StateDealProviderCollateralBounds(ctx, size, verified, tsk)
-}
+} */
 
 func (a *GatewayAPI) StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
@@ -365,12 +365,12 @@ func (a *GatewayAPI) StateCirculatingSupply(ctx context.Context, tsk types.TipSe
 
 }
 
-func (a *GatewayAPI) StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error) {
-	if err := a.checkTipsetKey(ctx, tsk); err != nil {
-		return nil, err
-	}
-	return a.api.StateVerifiedClientStatus(ctx, addr, tsk)
-}
+// func (a *GatewayAPI) StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error) {
+// 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
+// 		return nil, err
+// 	}
+// 	return a.api.StateVerifiedClientStatus(ctx, addr, tsk)
+// }
 
 func (a *GatewayAPI) StateVMCirculatingSupplyInternal(ctx context.Context, tsk types.TipSetKey) (api.CirculatingSupply, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {

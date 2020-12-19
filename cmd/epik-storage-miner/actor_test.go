@@ -38,7 +38,7 @@ func TestWorkerKeyChange(t *testing.T) {
 
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(256)) */
 
 	epiklog.SetupLogLevels()
 	logging.SetLogLevel("miner", "ERROR")

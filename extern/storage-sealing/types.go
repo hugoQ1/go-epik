@@ -7,7 +7,6 @@ import (
 	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/specs-storage/storage"
 
@@ -41,7 +40,7 @@ type DealInfo struct {
 // is invalid.
 type DealSchedule struct {
 	StartEpoch abi.ChainEpoch
-	EndEpoch   abi.ChainEpoch
+	/* EndEpoch   abi.ChainEpoch */
 }
 
 type Log struct {
@@ -82,8 +81,8 @@ type SectorInfo struct {
 	CommR *cid.Cid
 	Proof []byte
 
-	PreCommitInfo    *miner.SectorPreCommitInfo
-	PreCommitDeposit big.Int
+	PreCommitInfo *miner.SectorPreCommitInfo
+	/* PreCommitDeposit big.Int */
 	PreCommitMessage *cid.Cid
 	PreCommitTipSet  TipSetToken
 

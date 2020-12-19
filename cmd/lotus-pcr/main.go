@@ -18,8 +18,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 
-	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
-
 	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/ipfs/go-cid"
@@ -634,7 +632,7 @@ type refunderNodeApi interface {
 	ChainGetParentReceipts(ctx context.Context, blockCid cid.Cid) ([]*types.MessageReceipt, error)
 	ChainGetTipSetByHeight(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) (*types.TipSet, error)
 	ChainReadObj(context.Context, cid.Cid) ([]byte, error)
-	StateMinerInitialPledgeCollateral(ctx context.Context, addr address.Address, precommitInfo miner.SectorPreCommitInfo, tsk types.TipSetKey) (types.BigInt, error)
+	/* StateMinerInitialPledgeCollateral(ctx context.Context, addr address.Address, precommitInfo miner.SectorPreCommitInfo, tsk types.TipSetKey) (types.BigInt, error) */
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
 	StateSectorPreCommitInfo(ctx context.Context, addr address.Address, sector abi.SectorNumber, tsk types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error)
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
@@ -831,7 +829,7 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 		}
 
 		totalAvailableBalance := big.Add(addrSum, minerAvailableBalance)
-		balanceCutoff := big.Mul(big.Div(big.NewIntUnsigned(faultsCount), big.NewInt(10)), big.NewIntUnsigned(build.FilecoinPrecision))
+		balanceCutoff := big.Mul(big.Div(big.NewIntUnsigned(faultsCount), big.NewInt(10)), big.NewIntUnsigned(build.EpkPrecision))
 
 		if totalAvailableBalance.GreaterThan(balanceCutoff) {
 			log.Debugw(
@@ -842,8 +840,8 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 				"available_balance", totalAvailableBalance,
 				"balance_cutoff", balanceCutoff,
 				"faults_count", faultsCount,
-				"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
-				"balance_cutoff_fil", big.Div(balanceCutoff, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+				"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
+				"balance_cutoff_fil", big.Div(balanceCutoff, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 			)
 			continue
 		}
@@ -865,9 +863,9 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 				"balance_cutoff", balanceCutoff,
 				"faults_count", faultsCount,
 				"refund", refundValue,
-				"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
-				"balance_cutoff_fil", big.Div(balanceCutoff, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
-				"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+				"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
+				"balance_cutoff_fil", big.Div(balanceCutoff, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
+				"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 			)
 			continue
 		}
@@ -876,8 +874,8 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 		record := []string{
 			maddr.String(),
 			fmt.Sprintf("%d", faultsCount),
-			big.Div(totalAvailableBalance, big.NewIntUnsigned(build.FilecoinPrecision)).String(),
-			big.Div(refundValue, big.NewIntUnsigned(build.FilecoinPrecision)).String(),
+			big.Div(totalAvailableBalance, big.NewIntUnsigned(build.EpkPrecision)).String(),
+			big.Div(refundValue, big.NewIntUnsigned(build.EpkPrecision)).String(),
 		}
 		if err := csvOut.Write(record); err != nil {
 			return nil, err
@@ -889,8 +887,8 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 			"faults_count", faultsCount,
 			"available_balance", totalAvailableBalance,
 			"refund", refundValue,
-			"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
-			"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+			"available_balance_fil", big.Div(totalAvailableBalance, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
+			"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 		)
 	}
 
@@ -971,7 +969,7 @@ func (r *refunder) processTipsetStorageMinerActor(ctx context.Context, tipset *t
 			return false, messageMethod, types.NewInt(0), nil
 		}
 
-		var sn abi.SectorNumber
+		/* var sn abi.SectorNumber
 
 		var proveCommitSector miner2.ProveCommitSectorParams
 		if err := proveCommitSector.UnmarshalCBOR(bytes.NewBuffer(m.Params)); err != nil {
@@ -1006,7 +1004,7 @@ func (r *refunder) processTipsetStorageMinerActor(ctx context.Context, tipset *t
 			return false, messageMethod, types.NewInt(0), nil
 		}
 
-		refundValue = collateral
+		refundValue = collateral */
 		if r.refundPercent > 0 {
 			refundValue = types.BigMul(types.BigDiv(refundValue, types.NewInt(100)), types.NewInt(uint64(r.refundPercent)))
 		}
@@ -1038,13 +1036,13 @@ func (r *refunder) processTipsetStorageMinerActor(ctx context.Context, tipset *t
 			return false, messageMethod, types.NewInt(0), nil
 		}
 
-		collateral, err := r.api.StateMinerInitialPledgeCollateral(ctx, m.To, precommitInfo, tipset.Key())
+		/* collateral, err := r.api.StateMinerInitialPledgeCollateral(ctx, m.To, precommitInfo, tipset.Key())
 		if err != nil {
 			log.Warnw("failed to calculate initial pledge collateral", "err", err, "method", messageMethod, "cid", msg.Cid, "miner", m.To, "sector_number", precommitInfo.SectorNumber)
 			return false, messageMethod, types.NewInt(0), nil
 		}
 
-		refundValue = collateral
+		refundValue = collateral */
 		if r.refundPercent > 0 {
 			refundValue = types.BigMul(types.BigDiv(refundValue, types.NewInt(100)), types.NewInt(uint64(r.refundPercent)))
 		}
@@ -1120,7 +1118,7 @@ func (r *refunder) ProcessTipset(ctx context.Context, tipset *types.TipSet, refu
 			"gas_premium", m.GasPremium,
 			"gas_used", recps[i].GasUsed,
 			"refund", refundValue,
-			"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+			"refund_fil", big.Div(refundValue, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 		)
 
 		refunds.Track(m.From, refundValue)
@@ -1132,7 +1130,7 @@ func (r *refunder) ProcessTipset(ctx context.Context, tipset *types.TipSet, refu
 		"height", tipset.Height(),
 		"key", tipset.Key(),
 		"total_refunds", tipsetRefunds.TotalRefunds(),
-		"total_refunds_fil", big.Div(tipsetRefunds.TotalRefunds(), big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+		"total_refunds_fil", big.Div(tipsetRefunds.TotalRefunds(), big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 		"messages_processed", tipsetRefunds.Count(),
 	)
 
@@ -1204,7 +1202,7 @@ func (r *refunder) Refund(ctx context.Context, name string, tipset *types.TipSet
 		"key", tipset.Key(),
 		"messages_sent", len(messages)-failures,
 		"refund_sum", refundSum,
-		"refund_sum_fil", big.Div(refundSum, big.NewIntUnsigned(build.FilecoinPrecision)).Int64(),
+		"refund_sum_fil", big.Div(refundSum, big.NewIntUnsigned(build.EpkPrecision)).Int64(),
 		"messages_failures", failures,
 		"messages_processed", refunds.Count(),
 	)

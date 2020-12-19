@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 )
@@ -87,13 +87,13 @@ func checkDealEquality(ctx context.Context, ts *types.TipSet, api getCurrentDeal
 	}
 	return p1.PieceCID.Equals(p2.PieceCID) &&
 		p1.PieceSize == p2.PieceSize &&
-		p1.VerifiedDeal == p2.VerifiedDeal &&
+		/* p1.VerifiedDeal == p2.VerifiedDeal && */
 		p1.Label == p2.Label &&
 		p1.StartEpoch == p2.StartEpoch &&
-		p1.EndEpoch == p2.EndEpoch &&
+		/* p1.EndEpoch == p2.EndEpoch &&
 		p1.StoragePricePerEpoch.Equals(p2.StoragePricePerEpoch) &&
 		p1.ProviderCollateral.Equals(p2.ProviderCollateral) &&
-		p1.ClientCollateral.Equals(p2.ClientCollateral) &&
+		p1.ClientCollateral.Equals(p2.ClientCollateral) && */
 		p1.Provider == p2.Provider &&
 		p1ClientID == p2ClientID, nil
 }

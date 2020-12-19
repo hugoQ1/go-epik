@@ -6,9 +6,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
-	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 	"github.com/filecoin-project/go-address"

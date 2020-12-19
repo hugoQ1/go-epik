@@ -12,9 +12,9 @@ import (
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
-	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apibstore"
@@ -165,8 +165,8 @@ func infoCmdAct(cctx *cli.Context) error {
 		return err
 	}
 
-	var nactiveDeals, nVerifDeals, ndeals uint64
-	var activeDealBytes, activeVerifDealBytes, dealBytes abi.PaddedPieceSize
+	var nactiveDeals /* nVerifDeals, */, ndeals uint64
+	var activeDealBytes /* activeVerifDealBytes, */, dealBytes abi.PaddedPieceSize
 	for _, deal := range deals {
 		ndeals++
 		dealBytes += deal.Proposal.PieceSize
@@ -175,15 +175,15 @@ func infoCmdAct(cctx *cli.Context) error {
 			nactiveDeals++
 			activeDealBytes += deal.Proposal.PieceSize
 
-			if deal.Proposal.VerifiedDeal {
+			/* if deal.Proposal.VerifiedDeal {
 				nVerifDeals++
 				activeVerifDealBytes += deal.Proposal.PieceSize
-			}
+			} */
 		}
 	}
 
 	fmt.Printf("Deals: %d, %s\n", ndeals, types.SizeStr(types.NewInt(uint64(dealBytes))))
-	fmt.Printf("\tActive: %d, %s (Verified: %d, %s)\n", nactiveDeals, types.SizeStr(types.NewInt(uint64(activeDealBytes))), nVerifDeals, types.SizeStr(types.NewInt(uint64(activeVerifDealBytes))))
+	fmt.Printf("\tActive: %d, %s\n", nactiveDeals, types.SizeStr(types.NewInt(uint64(activeDealBytes))) /* , nVerifDeals, types.SizeStr(types.NewInt(uint64(activeVerifDealBytes))) */)
 	fmt.Println()
 
 	// NOTE: there's no need to unlock anything here. Funds only
@@ -197,8 +197,8 @@ func infoCmdAct(cctx *cli.Context) error {
 		return xerrors.Errorf("getting available balance: %w", err)
 	}
 	fmt.Printf("Miner Balance: %s\n", color.YellowString("%s", types.EPK(mact.Balance)))
-	fmt.Printf("\tPreCommit:   %s\n", types.EPK(lockedFunds.PreCommitDeposits))
-	fmt.Printf("\tPledge:      %s\n", types.EPK(lockedFunds.InitialPledgeRequirement))
+	/* fmt.Printf("\tPreCommit:   %s\n", types.EPK(lockedFunds.PreCommitDeposits))
+	fmt.Printf("\tPledge:      %s\n", types.EPK(lockedFunds.InitialPledgeRequirement)) */
 	fmt.Printf("\tVesting:     %s\n", types.EPK(lockedFunds.VestingFunds))
 	color.Green("\tAvailable:   %s", types.EPK(availBalance))
 	wb, err := api.WalletBalance(ctx, mi.Worker)

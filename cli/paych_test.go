@@ -12,11 +12,11 @@ import (
 
 	clitest "github.com/EpiK-Protocol/go-epik/cli/test"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/require"
 
@@ -30,7 +30,7 @@ import (
 func init() {
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(256)) */
 }
 
 // TestPaymentChannels does a basic test to exercise the payment channel CLI
@@ -132,7 +132,7 @@ func TestPaymentChannelStatus(t *testing.T) {
 	stateCreated := regexp.MustCompile("Channel exists").MatchString(out)
 	require.True(t, stateCreating || stateCreated)
 
-	channelAmtAtto := types.BigMul(types.NewInt(channelAmt), types.NewInt(build.FilecoinPrecision))
+	channelAmtAtto := types.BigMul(types.NewInt(channelAmt), types.NewInt(build.EpkPrecision))
 	channelAmtStr := fmt.Sprintf("%d", channelAmtAtto)
 	if stateCreating {
 		// If we're in the creating state (most likely) the amount should be pending
@@ -158,7 +158,7 @@ func TestPaymentChannelStatus(t *testing.T) {
 
 	out = creatorCLI.RunCmd("paych", "status", chstr)
 	fmt.Println(out)
-	voucherAmtAtto := types.BigMul(types.NewInt(voucherAmt), types.NewInt(build.FilecoinPrecision))
+	voucherAmtAtto := types.BigMul(types.NewInt(voucherAmt), types.NewInt(build.EpkPrecision))
 	voucherAmtStr := fmt.Sprintf("%d", voucherAmtAtto)
 	// Output should include voucher amount
 	require.Regexp(t, regexp.MustCompile("Voucher.*"+voucherAmtStr), out)

@@ -5,6 +5,7 @@ package storageadapter
 import (
 	"context"
 	"io"
+	"math"
 	"time"
 
 	"github.com/ipfs/go-cid"
@@ -115,7 +116,7 @@ func (n *ProviderNodeAdapter) OnDealComplete(ctx context.Context, deal storagema
 		PublishCid: deal.PublishCid,
 		DealSchedule: sealing.DealSchedule{
 			StartEpoch: deal.ClientDealProposal.Proposal.StartEpoch,
-			EndEpoch:   deal.ClientDealProposal.Proposal.EndEpoch,
+			/* EndEpoch:   deal.ClientDealProposal.Proposal.EndEpoch, */
 		},
 		KeepUnsealed: deal.FastRetrieval,
 	}
@@ -280,14 +281,14 @@ func (n *ProviderNodeAdapter) LocatePieceForDealWithinSector(ctx context.Context
 	return best.SectorID, best.Offset, best.Size.Padded(), nil
 }
 
-func (n *ProviderNodeAdapter) DealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, isVerified bool) (abi.TokenAmount, abi.TokenAmount, error) {
+/* func (n *ProviderNodeAdapter) DealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, isVerified bool) (abi.TokenAmount, abi.TokenAmount, error) {
 	bounds, err := n.StateDealProviderCollateralBounds(ctx, size, isVerified, types.EmptyTSK)
 	if err != nil {
 		return abi.TokenAmount{}, abi.TokenAmount{}, err
 	}
 
 	return bounds.Min, bounds.Max, nil
-}
+} */
 
 func (n *ProviderNodeAdapter) OnDealSectorCommitted(ctx context.Context, provider address.Address, dealID abi.DealID, proposal market2.DealProposal, publishCid *cid.Cid, cb storagemarket.DealSectorCommittedCallback) error {
 	return OnDealSectorCommitted(ctx, n, n.ev, provider, dealID, market.DealProposal(proposal), publishCid, cb)
@@ -310,15 +311,14 @@ func (n *ProviderNodeAdapter) WaitForMessage(ctx context.Context, mcid cid.Cid, 
 	return cb(receipt.Receipt.ExitCode, receipt.Receipt.Return, receipt.Message, nil)
 }
 
-func (n *ProviderNodeAdapter) GetDataCap(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (*abi.StoragePower, error) {
+/* func (n *ProviderNodeAdapter) GetDataCap(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (*abi.StoragePower, error) {
 	tsk, err := types.TipSetKeyFromBytes(encodedTs)
 	if err != nil {
 		return nil, err
 	}
 
 	sp, err := n.StateVerifiedClientStatus(ctx, addr, tsk)
-	return sp, err
-}
+} */
 
 func (n *ProviderNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID abi.DealID, onDealExpired storagemarket.DealExpiredCallback, onDealSlashed storagemarket.DealSlashedCallback) error {
 	head, err := n.ChainHead(ctx)
@@ -338,11 +338,11 @@ func (n *ProviderNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID
 			return false, true, nil
 		}
 
-		// Check if the deal has already expired
+		/* // Check if the deal has already expired
 		if sd.Proposal.EndEpoch <= ts.Height() {
 			onDealExpired(nil)
 			return true, false, nil
-		}
+		} */
 
 		// If there is no deal assume it's already been slashed
 		if sd.State.SectorStartEpoch < 0 {
@@ -358,11 +358,11 @@ func (n *ProviderNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID
 	// Called when there was a match against the state change we're looking for
 	// and the chain has advanced to the confidence height
 	stateChanged := func(ts *types.TipSet, ts2 *types.TipSet, states events.StateChange, h abi.ChainEpoch) (more bool, err error) {
-		// Check if the deal has already expired
+		/* // Check if the deal has already expired
 		if sd.Proposal.EndEpoch <= ts2.Height() {
 			onDealExpired(nil)
 			return false, nil
-		}
+		} */
 
 		// Timeout waiting for state change
 		if states == nil {
@@ -401,7 +401,7 @@ func (n *ProviderNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID
 	match := n.dsMatcher.matcher(ctx, dealID)
 
 	// Wait until after the end epoch for the deal and then timeout
-	timeout := (sd.Proposal.EndEpoch - head.Height()) + 1
+	timeout := abi.ChainEpoch(math.MaxInt64) // TODO: any risk? (sd.Proposal.EndEpoch - head.Height()) + 1
 	if err := n.ev.StateChanged(checkFunc, stateChanged, revert, int(build.MessageConfidence)+1, timeout, match); err != nil {
 		return xerrors.Errorf("failed to set up state changed handler: %w", err)
 	}

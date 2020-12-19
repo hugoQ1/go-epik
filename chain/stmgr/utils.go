@@ -21,7 +21,6 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/rt"
 
-	exported0 "github.com/filecoin-project/specs-actors/actors/builtin/exported"
 	exported2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -577,7 +576,7 @@ var MethodsMap = map[cid.Cid]map[abi.MethodNum]MethodMeta{}
 func init() {
 	// TODO: combine with the runtime actor registry.
 	var actors []rt.VMActor
-	actors = append(actors, exported0.BuiltinActors()...)
+	/* actors = append(actors, exported0.BuiltinActors()...) */
 	actors = append(actors, exported2.BuiltinActors()...)
 
 	for _, actor := range actors {

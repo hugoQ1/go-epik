@@ -53,8 +53,8 @@ var (
 
 	TicketRandomnessLookback = abi.ChainEpoch(1)
 
-	EpkBase               uint64 = 2_000_000_000
-	EpkAllocStorageMining uint64 = 1_400_000_000
+	EpkBase               uint64 = 1_000_000_000
+	EpkAllocStorageMining uint64 = 700_000_000
 	EpkReserved           uint64 = 300_000_000
 
 	FilecoinPrecision uint64 = 1_000_000_000_000_000_000
@@ -72,29 +72,29 @@ var (
 	}()
 
 	// Actor consts
-	// TODO: Pull from actors when its made not private
+	// TODO: remove it
 	MinDealDuration = abi.ChainEpoch(180 * builtin2.EpochsInDay)
 
 	PackingEfficiencyNum   int64 = 4
 	PackingEfficiencyDenom int64 = 5
 
-	UpgradeBreezeHeight      abi.ChainEpoch = -1
-	BreezeGasTampingDuration abi.ChainEpoch = 0
+	// UpgradeBreezeHeight      abi.ChainEpoch = -1
+	// BreezeGasTampingDuration abi.ChainEpoch = 0
 
-	UpgradeSmokeHeight    abi.ChainEpoch = -1
-	UpgradeIgnitionHeight abi.ChainEpoch = -2
-	UpgradeRefuelHeight   abi.ChainEpoch = -3
-	UpgradeTapeHeight     abi.ChainEpoch = -4
-	UpgradeActorsV2Height abi.ChainEpoch = 0
-	UpgradeLiftoffHeight  abi.ChainEpoch = -5
-	UpgradeKumquatHeight  abi.ChainEpoch = -6
+	// UpgradeSmokeHeight    abi.ChainEpoch = -1
+	// UpgradeIgnitionHeight abi.ChainEpoch = -2
+	// UpgradeRefuelHeight   abi.ChainEpoch = -3
+	// UpgradeTapeHeight     abi.ChainEpoch = -4
+	// UpgradeActorsV2Height abi.ChainEpoch = 10
+	// UpgradeLiftoffHeight  abi.ChainEpoch = -5
+	// UpgradeKumquatHeight  abi.ChainEpoch = -6
 
 	DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 		0: DrandMainnet,
 	}
 
-	NewestNetworkVersion       = network.Version5
-	ActorUpgradeNetworkVersion = network.Version4
+	NewestNetworkVersion = network.Version5
+	// ActorUpgradeNetworkVersion = network.Version4
 
 	Devnet = true
 )

@@ -22,7 +22,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
-	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -219,7 +218,7 @@ func mockBuilderOpts(t *testing.T, fullOpts []test.FullNodeOpts, storage []test.
 
 		genaccs = append(genaccs, genesis.Actor{
 			Type:    genesis.TAccount,
-			Balance: big.Mul(big.NewInt(400000000), types.NewInt(build.FilecoinPrecision)),
+			Balance: big.Mul(big.NewInt(400000000), types.NewInt(build.EpkPrecision)),
 			Meta:    (&genesis.AccountMeta{Owner: wk.Address}).ActorMeta(),
 		})
 
@@ -229,12 +228,12 @@ func mockBuilderOpts(t *testing.T, fullOpts []test.FullNodeOpts, storage []test.
 		genms = append(genms, *genm)
 	}
 	templ := &genesis.Template{
-		Accounts:         genaccs,
-		Miners:           genms,
-		NetworkName:      "test",
-		Timestamp:        uint64(time.Now().Unix() - 10000), // some time sufficiently far in the past
-		VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
-		RemainderAccount: gen.DefaultRemainderAccountActor,
+		Accounts:    genaccs,
+		Miners:      genms,
+		NetworkName: "test",
+		Timestamp:   uint64(time.Now().Unix() - 10000), // some time sufficiently far in the past
+		// VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
+		// RemainderAccount: gen.DefaultRemainderAccountActor,
 	}
 
 	// END PRESEAL SECTION
@@ -376,7 +375,7 @@ func mockSbBuilderOpts(t *testing.T, fullOpts []test.FullNodeOpts, storage []tes
 
 		genaccs = append(genaccs, genesis.Actor{
 			Type:    genesis.TAccount,
-			Balance: big.Mul(big.NewInt(400000000), types.NewInt(build.FilecoinPrecision)),
+			Balance: big.Mul(big.NewInt(400000000), types.NewInt(build.EpkPrecision)),
 			Meta:    (&genesis.AccountMeta{Owner: wk.Address}).ActorMeta(),
 		})
 
@@ -386,12 +385,12 @@ func mockSbBuilderOpts(t *testing.T, fullOpts []test.FullNodeOpts, storage []tes
 		genms = append(genms, *genm)
 	}
 	templ := &genesis.Template{
-		Accounts:         genaccs,
-		Miners:           genms,
-		NetworkName:      "test",
-		Timestamp:        uint64(time.Now().Unix()) - (build.BlockDelaySecs * 20000),
-		VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
-		RemainderAccount: gen.DefaultRemainderAccountActor,
+		Accounts:    genaccs,
+		Miners:      genms,
+		NetworkName: "test",
+		Timestamp:   uint64(time.Now().Unix()) - (build.BlockDelaySecs * 20000),
+		// VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
+		// RemainderAccount: gen.DefaultRemainderAccountActor,
 	}
 
 	// END PRESEAL SECTION

@@ -241,15 +241,15 @@ func (p *Processor) storeMarketActorDealProposals(ctx context.Context, marketTip
 				ds.Proposal.PieceCID.String(),
 				ds.Proposal.PieceSize,
 				ds.Proposal.PieceSize.Unpadded(),
-				ds.Proposal.VerifiedDeal,
+				/* ds.Proposal.VerifiedDeal, */
 				ds.Proposal.Client.String(),
 				ds.Proposal.Provider.String(),
 				ds.Proposal.StartEpoch,
-				ds.Proposal.EndEpoch,
+				/* ds.Proposal.EndEpoch, */
 				nil, // slashed_epoch
-				ds.Proposal.StoragePricePerEpoch.String(),
+				/* ds.Proposal.StoragePricePerEpoch.String(),
 				ds.Proposal.ProviderCollateral.String(),
-				ds.Proposal.ClientCollateral.String(),
+				ds.Proposal.ClientCollateral.String(), */
 			); err != nil {
 				return err
 			}

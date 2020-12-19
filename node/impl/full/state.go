@@ -19,15 +19,10 @@ import (
 	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/verifreg"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
@@ -44,7 +39,7 @@ type StateModuleAPI interface {
 	MsigGetAvailableBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (types.BigInt, error)
 	MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
 	StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
-	StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error)
+	/* StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) */
 	StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error)
 	StateGetReceipt(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)
 	StateListMiners(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error)
@@ -55,7 +50,7 @@ type StateModuleAPI interface {
 	StateMinerProvingDeadline(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*dline.Info, error)
 	StateMinerPower(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
 	StateNetworkVersion(ctx context.Context, key types.TipSetKey) (network.Version, error)
-	StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
+	// StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
 	StateWaitMsg(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error)
 }
 
@@ -780,7 +775,9 @@ func (a *StateAPI) StateSectorPreCommitInfo(ctx context.Context, maddr address.A
 	if err != nil {
 		return miner.SectorPreCommitOnChainInfo{}, err
 	}
-
+	if pci == nil {
+		pci = &miner.SectorPreCommitOnChainInfo{}
+	}
 	return *pci, err
 }
 
@@ -984,7 +981,7 @@ func (m *StateModule) MsigGetVested(ctx context.Context, addr address.Address, s
 	return types.BigSub(startLk, endLk), nil
 }
 
-var initialPledgeNum = types.NewInt(110)
+/* var initialPledgeNum = types.NewInt(110)
 var initialPledgeDen = types.NewInt(100)
 
 func (a *StateAPI) StateMinerPreCommitDepositForPower(ctx context.Context, maddr address.Address, pci miner.SectorPreCommitInfo, tsk types.TipSetKey) (types.BigInt, error) {
@@ -1122,7 +1119,7 @@ func (a *StateAPI) StateMinerInitialPledgeCollateral(ctx context.Context, maddr 
 	}
 
 	return types.BigDiv(types.BigMul(initialPledge, initialPledgeNum), initialPledgeDen), nil
-}
+} */
 
 func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
@@ -1172,7 +1169,7 @@ func (a *StateAPI) StateMinerSectorAllocated(ctx context.Context, maddr address.
 	return mas.IsAllocated(s)
 }
 
-// StateVerifiedClientStatus returns the data cap for the given address.
+/* // StateVerifiedClientStatus returns the data cap for the given address.
 // Returns zero if there is no entry in the data cap table for the
 // address.
 func (a *StateAPI) StateVerifierStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error) {
@@ -1305,7 +1302,7 @@ func (m *StateModule) StateDealProviderCollateralBounds(ctx context.Context, siz
 		Min: types.BigDiv(types.BigMul(min, dealProviderCollateralNum), dealProviderCollateralDen),
 		Max: max,
 	}, nil
-}
+} */
 
 func (a *StateAPI) StateCirculatingSupply(ctx context.Context, tsk types.TipSetKey) (abi.TokenAmount, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)

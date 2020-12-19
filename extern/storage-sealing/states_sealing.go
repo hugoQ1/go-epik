@@ -12,16 +12,15 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-statemachine"
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-storage/storage"
 
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 )
 
 var DealSectorPriority = 1024
-var MaxTicketAge = abi.ChainEpoch(builtin0.EpochsInDay * 2)
+var MaxTicketAge = abi.ChainEpoch(builtin.EpochsInDay * 2)
 
 func (m *Sealing) handlePacking(ctx statemachine.Context, sector SectorInfo) error {
 	log.Infow("performing filling up rest of the sector...", "sector", sector.SectorNumber)
@@ -174,13 +173,13 @@ func (m *Sealing) handlePreCommit2(ctx statemachine.Context, sector SectorInfo) 
 	})
 }
 
-// TODO: We should probably invoke this method in most (if not all) state transition failures after handlePreCommitting
+/* // TODO: We should probably invoke this method in most (if not all) state transition failures after handlePreCommitting
 func (m *Sealing) remarkForUpgrade(sid abi.SectorNumber) {
 	err := m.MarkForUpgrade(sid)
 	if err != nil {
 		log.Errorf("error re-marking sector %d as for upgrade: %+v", sid, err)
 	}
-}
+} */
 
 func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInfo) error {
 	tok, height, err := m.api.ChainHead(ctx.Context())
@@ -222,7 +221,7 @@ func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInf
 		}
 	}
 
-	expiration, err := m.pcp.Expiration(ctx.Context(), sector.Pieces...)
+	/* expiration, err := m.pcp.Expiration(ctx.Context(), sector.Pieces...)
 	if err != nil {
 		return ctx.Send(SectorSealPreCommit1Failed{xerrors.Errorf("handlePreCommitting: failed to compute pre-commit expiry: %w", err)})
 	}
@@ -239,10 +238,10 @@ func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInf
 	if minExpiration := height + msd + miner.MinSectorExpiration + 10; expiration < minExpiration {
 		expiration = minExpiration
 	}
-	// TODO: enforce a reasonable _maximum_ sector lifetime?
+	// TODO: enforce a reasonable _maximum_ sector lifetime? */
 
 	params := &miner.SectorPreCommitInfo{
-		Expiration:   expiration,
+		/* Expiration:   expiration, */
 		SectorNumber: sector.SectorNumber,
 		SealProof:    sector.SectorType,
 
@@ -251,30 +250,30 @@ func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInf
 		DealIDs:       sector.dealIDs(),
 	}
 
-	depositMinimum := m.tryUpgradeSector(ctx.Context(), params)
+	/* depositMinimum := m.tryUpgradeSector(ctx.Context(), params) */
 
 	enc := new(bytes.Buffer)
 	if err := params.MarshalCBOR(enc); err != nil {
 		return ctx.Send(SectorChainPreCommitFailed{xerrors.Errorf("could not serialize pre-commit sector parameters: %w", err)})
 	}
 
-	collateral, err := m.api.StateMinerPreCommitDepositForPower(ctx.Context(), m.maddr, *params, tok)
+	/* collateral, err := m.api.StateMinerPreCommitDepositForPower(ctx.Context(), m.maddr, *params, tok)
 	if err != nil {
 		return xerrors.Errorf("getting initial pledge collateral: %w", err)
 	}
 
 	deposit := big.Max(depositMinimum, collateral)
 
-	log.Infof("submitting precommit for sector %d (deposit: %s): ", sector.SectorNumber, deposit)
-	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, miner.Methods.PreCommitSector, deposit, m.feeCfg.MaxPreCommitGasFee, enc.Bytes())
+	log.Infof("submitting precommit for sector %d (deposit: %s): ", sector.SectorNumber, deposit) */
+	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, miner.Methods.PreCommitSector, big.Zero() /* deposit */, m.feeCfg.MaxPreCommitGasFee, enc.Bytes())
 	if err != nil {
-		if params.ReplaceCapacity {
+		/* if params.ReplaceCapacity {
 			m.remarkForUpgrade(params.ReplaceSectorNumber)
-		}
+		} */
 		return ctx.Send(SectorChainPreCommitFailed{xerrors.Errorf("pushing message to mpool: %w", err)})
 	}
 
-	return ctx.Send(SectorPreCommitted{Message: mcid, PreCommitDeposit: deposit, PreCommitInfo: *params})
+	return ctx.Send(SectorPreCommitted{Message: mcid /* , PreCommitDeposit: deposit */, PreCommitInfo: *params})
 }
 
 func (m *Sealing) handlePreCommitWait(ctx statemachine.Context, sector SectorInfo) error {
@@ -436,7 +435,7 @@ func (m *Sealing) handleSubmitCommit(ctx statemachine.Context, sector SectorInfo
 		return ctx.Send(SectorCommitFailed{error: xerrors.Errorf("precommit info not found on chain")})
 	}
 
-	collateral, err := m.api.StateMinerInitialPledgeCollateral(ctx.Context(), m.maddr, pci.Info, tok)
+	/* collateral, err := m.api.StateMinerInitialPledgeCollateral(ctx.Context(), m.maddr, pci.Info, tok)
 	if err != nil {
 		return xerrors.Errorf("getting initial pledge collateral: %w", err)
 	}
@@ -444,10 +443,10 @@ func (m *Sealing) handleSubmitCommit(ctx statemachine.Context, sector SectorInfo
 	collateral = big.Sub(collateral, pci.PreCommitDeposit)
 	if collateral.LessThan(big.Zero()) {
 		collateral = big.Zero()
-	}
+	} */
 
 	// TODO: check seed / ticket / deals are up to date
-	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, miner.Methods.ProveCommitSector, collateral, m.feeCfg.MaxCommitGasFee, enc.Bytes())
+	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, miner.Methods.ProveCommitSector, big.Zero() /* collateral */, m.feeCfg.MaxCommitGasFee, enc.Bytes())
 	if err != nil {
 		return ctx.Send(SectorCommitFailed{xerrors.Errorf("pushing message to mpool: %w", err)})
 	}

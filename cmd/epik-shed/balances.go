@@ -4,22 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 
 	_init "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 
-	"github.com/docker/go-units"
-
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
@@ -40,14 +34,15 @@ import (
 )
 
 type accountInfo struct {
-	Address         address.Address
-	Balance         types.EPK
-	Type            string
-	Power           abi.StoragePower
-	Worker          address.Address
-	Owner           address.Address
-	InitialPledge   types.EPK
-	PreCommits      types.EPK
+	Address  address.Address
+	Balance  types.EPK
+	Type     string
+	Power    abi.StoragePower
+	Worker   address.Address
+	Owner    address.Address
+	Coinbase address.Address
+	/* InitialPledge   types.EPK
+	PreCommits      types.EPK */
 	LockedFunds     types.EPK
 	Sectors         uint64
 	VestingStart    abi.ChainEpoch
@@ -61,7 +56,7 @@ var auditsCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		chainBalanceCmd,
 		chainBalanceStateCmd,
-		chainPledgeCmd,
+		// chainPledgeCmd,
 	},
 }
 
@@ -120,6 +115,7 @@ var chainBalanceCmd = &cli.Command{
 				}
 				ai.Worker = info.Worker
 				ai.Owner = info.Owner
+				ai.Coinbase = info.Coinbase
 
 			}
 			infos = append(infos, ai)
@@ -233,13 +229,13 @@ var chainBalanceStateCmd = &cli.Command{
 		err = tree.ForEach(func(addr address.Address, act *types.Actor) error {
 
 			ai := accountInfo{
-				Address:       addr,
-				Balance:       types.EPK(act.Balance),
-				Type:          string(act.Code.Hash()[2:]),
-				Power:         big.NewInt(0),
-				LockedFunds:   types.EPK(big.NewInt(0)),
-				InitialPledge: types.EPK(big.NewInt(0)),
-				PreCommits:    types.EPK(big.NewInt(0)),
+				Address:     addr,
+				Balance:     types.EPK(act.Balance),
+				Type:        string(act.Code.Hash()[2:]),
+				Power:       big.NewInt(0),
+				LockedFunds: types.EPK(big.NewInt(0)),
+				/* InitialPledge: types.EPK(big.NewInt(0)),
+				PreCommits:    types.EPK(big.NewInt(0)), */
 				VestingAmount: types.EPK(big.NewInt(0)),
 			}
 
@@ -283,9 +279,9 @@ var chainBalanceStateCmd = &cli.Command{
 					return xerrors.Errorf("failed to compute locked funds: %w", err)
 				}
 
-				ai.InitialPledge = types.EPK(lockedFunds.InitialPledgeRequirement)
+				/* ai.InitialPledge = types.EPK(lockedFunds.InitialPledgeRequirement) */
 				ai.LockedFunds = types.EPK(lockedFunds.VestingFunds)
-				ai.PreCommits = types.EPK(lockedFunds.PreCommitDeposits)
+				/* ai.PreCommits = types.EPK(lockedFunds.PreCommitDeposits) */
 				ai.Sectors = liveSectorCount
 
 				minfo, err := st.Info()
@@ -295,6 +291,7 @@ var chainBalanceStateCmd = &cli.Command{
 
 				ai.Worker = minfo.Worker
 				ai.Owner = minfo.Owner
+				ai.Coinbase = minfo.Coinbase
 			}
 
 			if builtin.IsMultisigActor(act.Code) {
@@ -337,9 +334,9 @@ var chainBalanceStateCmd = &cli.Command{
 
 func printAccountInfos(infos []accountInfo, minerInfo bool) {
 	if minerInfo {
-		fmt.Printf("Address,Balance,Type,Sectors,Worker,Owner,InitialPledge,Locked,PreCommits,VestingStart,VestingDuration,VestingAmount\n")
+		fmt.Printf("Address,Balance,Type,Sectors,Worker,Owner,Coinbase,Locked,VestingStart,VestingDuration,VestingAmount\n")
 		for _, acc := range infos {
-			fmt.Printf("%s,%s,%s,%d,%s,%s,%s,%s,%s,%d,%d,%s\n", acc.Address, acc.Balance.Unitless(), acc.Type, acc.Sectors, acc.Worker, acc.Owner, acc.InitialPledge.Unitless(), acc.LockedFunds.Unitless(), acc.PreCommits.Unitless(), acc.VestingStart, acc.VestingDuration, acc.VestingAmount.Unitless())
+			fmt.Printf("%s,%s,%s,%d,%s,%s,%s,%s,%d,%d,%s\n", acc.Address, acc.Balance.Unitless(), acc.Type, acc.Sectors, acc.Worker, acc.Owner, acc.Coinbase /* acc.InitialPledge.Unitless(), */, acc.LockedFunds.Unitless() /* acc.PreCommits.Unitless(),  */, acc.VestingStart, acc.VestingDuration, acc.VestingAmount.Unitless())
 		}
 	} else {
 		fmt.Printf("Address,Balance,Type\n")
@@ -350,7 +347,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 
 }
 
-var chainPledgeCmd = &cli.Command{
+/* var chainPledgeCmd = &cli.Command{
 	Name:        "stateroot-pledge",
 	Description: "Calculate sector pledge numbers",
 	Flags: []cli.Flag{
@@ -484,4 +481,4 @@ var chainPledgeCmd = &cli.Command{
 
 		return nil
 	},
-}
+} */

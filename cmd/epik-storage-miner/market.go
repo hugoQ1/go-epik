@@ -291,7 +291,7 @@ var getAskCmd = &cli.Command{
 			rem = (time.Second * time.Duration(int64(dlt)*int64(build.BlockDelaySecs))).String()
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%s\t%d\n", types.EPK(ask.Price), types.EPK(ask.VerifiedPrice), types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))), types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))), ask.Expiry, rem, ask.SeqNo)
+		fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%d\n" /* types.EPK(ask.Price), types.EPK(ask.VerifiedPrice), */, types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))), types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))), ask.Expiry, rem, ask.SeqNo)
 
 		return w.Flush()
 	},
@@ -431,13 +431,13 @@ func outputStorageDeals(out io.Writer, deals []storagemarket.MinerDeal, verbose 
 			propcid = "..." + propcid[len(propcid)-8:]
 		}
 
-		fil := types.EPK(types.BigMul(deal.Proposal.StoragePricePerEpoch, types.NewInt(uint64(deal.Proposal.Duration()))))
+		/* fil := types.EPK(types.BigMul(deal.Proposal.StoragePricePerEpoch, types.NewInt(uint64(deal.Proposal.Duration())))) */
 
 		if verbose {
 			_, _ = fmt.Fprintf(w, "%s\t", deal.CreationTime.Time().Format(time.Stamp))
 		}
 
-		_, _ = fmt.Fprintf(w, "%s\t%d\t%s\t%s\t%s\t%s\t%s", propcid, deal.DealID, storagemarket.DealStates[deal.State], deal.Proposal.Client, units.BytesSize(float64(deal.Proposal.PieceSize)), fil, deal.Proposal.Duration())
+		_, _ = fmt.Fprintf(w, "%s\t%d\t%s\t%s\t%s", propcid, deal.DealID, storagemarket.DealStates[deal.State], deal.Proposal.Client, units.BytesSize(float64(deal.Proposal.PieceSize)) /* , fil, deal.Proposal.Duration() */)
 		if verbose {
 			_, _ = fmt.Fprintf(w, "\t%s", deal.Message)
 		}

@@ -344,7 +344,7 @@ func (sp *StatePredicates) OnMinerSectorChange() DiffMinerActorStateFunc {
 			return false, nil, err
 		}
 		// nothing changed
-		if len(sectorChanges.Added)+len(sectorChanges.Extended)+len(sectorChanges.Removed) == 0 {
+		if len(sectorChanges.Added) /* +len(sectorChanges.Extended) */ +len(sectorChanges.Removed) == 0 {
 			return false, nil, nil
 		}
 

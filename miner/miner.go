@@ -474,9 +474,7 @@ func (m *Miner) computeTicket(ctx context.Context, brand *types.BeaconEntry, bas
 	}
 
 	round := base.TipSet.Height() + base.NullRounds + 1
-	if round > build.UpgradeSmokeHeight {
-		buf.Write(base.TipSet.MinTicket().VRFProof)
-	}
+	buf.Write(base.TipSet.MinTicket().VRFProof)
 
 	input, err := store.DrawRandomness(brand.Data, crypto.DomainSeparationTag_TicketProduction, round-build.TicketRandomnessLookback, buf.Bytes())
 	if err != nil {

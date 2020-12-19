@@ -18,9 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-jsonrpc"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/client"
 	"github.com/EpiK-Protocol/go-epik/api/test"
@@ -29,6 +26,9 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node"
 	builder "github.com/EpiK-Protocol/go-epik/node/test"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/filecoin-project/go-state-types/abi"
 )
 
 const maxLookbackCap = time.Duration(math.MaxInt64)
@@ -37,7 +37,7 @@ const maxStateWaitLookbackLimit = stmgr.LookbackNoLimit
 func init() {
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(256)) */
 }
 
 // TestWalletMsig tests that API calls to wallet and msig can be made on a lite

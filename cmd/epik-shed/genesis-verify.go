@@ -73,7 +73,7 @@ var genesisVerifyCmd = &cli.Command{
 		}
 
 		fmt.Println("Genesis: ", ts.Key())
-		expEPK := big.Mul(big.NewInt(int64(build.EpkBase)), big.NewInt(int64(build.FilecoinPrecision)))
+		expEPK := big.Mul(big.NewInt(int64(build.EpkBase)), big.NewInt(int64(build.EpkPrecision)))
 		fmt.Printf("Total EPK: %s", types.EPK(total))
 		if !expEPK.Equals(total) {
 			color.Red("  INCORRECT!")

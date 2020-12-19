@@ -144,7 +144,7 @@ func (p Processor) storeActorAddresses(ctx context.Context, actors map[cid.Cid]A
 	addressToID[builtin2.CronActorAddr] = builtin2.CronActorAddr
 	addressToID[builtin2.StoragePowerActorAddr] = builtin2.StoragePowerActorAddr
 	addressToID[builtin2.StorageMarketActorAddr] = builtin2.StorageMarketActorAddr
-	addressToID[builtin2.VerifiedRegistryActorAddr] = builtin2.VerifiedRegistryActorAddr
+	/* addressToID[builtin2.VerifiedRegistryActorAddr] = builtin2.VerifiedRegistryActorAddr */
 	addressToID[builtin2.BurntFundsActorAddr] = builtin2.BurntFundsActorAddr
 	addressToID[builtin2.ExpertFundsActorAddr] = builtin2.ExpertFundsActorAddr
 	addressToID[builtin2.RetrieveFundsActorAddr] = builtin2.RetrieveFundsActorAddr

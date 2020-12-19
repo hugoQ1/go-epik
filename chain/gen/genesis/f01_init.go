@@ -7,11 +7,10 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	init_ "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
+	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/util/adt"
-
-	init_ "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
@@ -21,7 +20,7 @@ import (
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
-func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []genesis.Actor, rootVerifier genesis.Actor) (int64, *types.Actor, map[address.Address]address.Address, error) {
+func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []genesis.Actor) (int64, *types.Actor, map[address.Address]address.Address, error) {
 	if len(initialActors) > MaxAccounts {
 		return 0, nil, nil, xerrors.New("too many initial actors")
 	}
@@ -90,39 +89,39 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []genesi
 		}
 	}
 
-	if rootVerifier.Type == genesis.TAccount {
-		var ainfo genesis.AccountMeta
-		if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
-			return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
-		}
-		value := cbg.CborInt(80)
-		if err := amap.Put(abi.AddrKey(ainfo.Owner), &value); err != nil {
-			return 0, nil, nil, err
-		}
-	} else if rootVerifier.Type == genesis.TMultisig {
-		var ainfo genesis.MultisigMeta
-		if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
-			return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
-		}
-		for _, e := range ainfo.Signers {
-			if _, ok := keyToId[e]; ok {
-				continue
-			}
-			fmt.Printf("init set %s t0%d\n", e, counter)
+	// if rootVerifier.Type == genesis.TAccount {
+	// 	var ainfo genesis.AccountMeta
+	// 	if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
+	// 		return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
+	// 	}
+	// 	value := cbg.CborInt(80)
+	// 	if err := amap.Put(abi.AddrKey(ainfo.Owner), &value); err != nil {
+	// 		return 0, nil, nil, err
+	// 	}
+	// } else if rootVerifier.Type == genesis.TMultisig {
+	// 	var ainfo genesis.MultisigMeta
+	// 	if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
+	// 		return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
+	// 	}
+	// 	for _, e := range ainfo.Signers {
+	// 		if _, ok := keyToId[e]; ok {
+	// 			continue
+	// 		}
+	// 		fmt.Printf("init set %s t0%d\n", e, counter)
 
-			value := cbg.CborInt(counter)
-			if err := amap.Put(abi.AddrKey(e), &value); err != nil {
-				return 0, nil, nil, err
-			}
-			counter = counter + 1
-			var err error
-			keyToId[e], err = address.NewIDAddress(uint64(value))
-			if err != nil {
-				return 0, nil, nil, err
-			}
+	// 		value := cbg.CborInt(counter)
+	// 		if err := amap.Put(abi.AddrKey(e), &value); err != nil {
+	// 			return 0, nil, nil, err
+	// 		}
+	// 		counter = counter + 1
+	// 		var err error
+	// 		keyToId[e], err = address.NewIDAddress(uint64(value))
+	// 		if err != nil {
+	// 			return 0, nil, nil, err
+	// 		}
 
-		}
-	}
+	// 	}
+	// }
 
 	amapaddr, err := amap.Root()
 	if err != nil {

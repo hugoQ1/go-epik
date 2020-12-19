@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 
@@ -15,10 +15,10 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 )
 
@@ -127,9 +127,9 @@ func (m *mockGatewayDepsAPI) ChainReadObj(ctx context.Context, c cid.Cid) ([]byt
 	panic("implement me")
 }
 
-func (m *mockGatewayDepsAPI) StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) {
+/* func (m *mockGatewayDepsAPI) StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) {
 	panic("implement me")
-}
+} */
 
 func (m *mockGatewayDepsAPI) StateListMiners(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error) {
 	panic("implement me")

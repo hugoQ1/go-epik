@@ -3,10 +3,10 @@ package store
 import (
 	"context"
 
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 )
@@ -17,14 +17,8 @@ func ComputeNextBaseFee(baseFee types.BigInt, gasLimitUsed int64, noOfBlocks int
 	// nextBaseFee = baseFee + change
 	// nextBaseFee = max(nextBaseFee, build.MinimumBaseFee)
 
-	var delta int64
-	if epoch > build.UpgradeSmokeHeight {
-		delta = gasLimitUsed / int64(noOfBlocks)
-		delta -= build.BlockGasTarget
-	} else {
-		delta = build.PackingEfficiencyDenom * gasLimitUsed / (int64(noOfBlocks) * build.PackingEfficiencyNum)
-		delta -= build.BlockGasTarget
-	}
+	delta := gasLimitUsed / int64(noOfBlocks)
+	delta -= build.BlockGasTarget
 
 	// cap change at 12.5% (BaseFeeMaxChangeDenom) by capping delta
 	if delta > build.BlockGasTarget {
@@ -46,9 +40,9 @@ func ComputeNextBaseFee(baseFee types.BigInt, gasLimitUsed int64, noOfBlocks int
 }
 
 func (cs *ChainStore) ComputeBaseFee(ctx context.Context, ts *types.TipSet) (abi.TokenAmount, error) {
-	if build.UpgradeBreezeHeight >= 0 && ts.Height() > build.UpgradeBreezeHeight && ts.Height() < build.UpgradeBreezeHeight+build.BreezeGasTampingDuration {
-		return abi.NewTokenAmount(100), nil
-	}
+	// if build.UpgradeBreezeHeight >= 0 && ts.Height() > build.UpgradeBreezeHeight && ts.Height() < build.UpgradeBreezeHeight+build.BreezeGasTampingDuration {
+	// 	return abi.NewTokenAmount(100), nil
+	// }
 
 	zero := abi.NewTokenAmount(0)
 

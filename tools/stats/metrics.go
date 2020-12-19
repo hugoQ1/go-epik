@@ -177,7 +177,7 @@ func RecordTipsetPoints(ctx context.Context, api api.FullNode, pl *PointList, ti
 		baseFeeIn := tipset.Blocks()[0].ParentBaseFee
 		newBaseFee := store.ComputeNextBaseFee(baseFeeIn, totalUniqGasLimit, len(tipset.Blocks()), tipset.Height())
 
-		baseFeeRat := new(big.Rat).SetFrac(newBaseFee.Int, new(big.Int).SetUint64(build.FilecoinPrecision))
+		baseFeeRat := new(big.Rat).SetFrac(newBaseFee.Int, new(big.Int).SetUint64(build.EpkPrecision))
 		baseFeeFloat, _ := baseFeeRat.Float64()
 		p = NewPoint("chain.basefee", baseFeeFloat)
 		pl.AddPoint(p)
@@ -239,7 +239,7 @@ func (ht *ApiIpldStore) Put(ctx context.Context, v interface{}) (cid.Cid, error)
 }
 
 func RecordTipsetStatePoints(ctx context.Context, api api.FullNode, pl *PointList, tipset *types.TipSet) error {
-	attoFil := types.NewInt(build.FilecoinPrecision).Int
+	attoFil := types.NewInt(build.EpkPrecision).Int
 
 	//TODO: StatePledgeCollateral API is not implemented and is commented out - re-enable this block once the API is implemented again.
 	//pc, err := api.StatePledgeCollateral(ctx, tipset.Key())

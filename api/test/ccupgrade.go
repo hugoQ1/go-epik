@@ -1,6 +1,6 @@
 package test
 
-import (
+/* import (
 	"context"
 	"fmt"
 	"sync/atomic"
@@ -124,4 +124,4 @@ func testCCUpgrade(t *testing.T, b APIBuilder, blocktime time.Duration, upgradeH
 	fmt.Println("shutting down mining")
 	atomic.AddInt64(&mine, -1)
 	<-done
-}
+} */

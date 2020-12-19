@@ -19,16 +19,12 @@ import (
 	"github.com/ipld/go-car"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/filecoin-project/go-fil-markets/storagemarket"
-	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/build"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
+	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	dag "github.com/ipfs/go-merkledag"
 	dstest "github.com/ipfs/go-merkledag/test"
 	unixfile "github.com/ipfs/go-unixfs/file"
 
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 	ipld "github.com/ipfs/go-ipld-format"
 )
@@ -295,11 +291,11 @@ func startDeal(t *testing.T, ctx context.Context, miner TestStorageNode, client 
 			TransferType: storagemarket.TTGraphsync,
 			Root:         fcid,
 		},
-		Wallet:            addr,
-		Miner:             maddr,
-		EpochPrice:        types.NewInt(1000000),
-		MinBlocksDuration: uint64(build.MinDealDuration),
-		FastRetrieval:     fastRet,
+		Wallet: addr,
+		Miner:  maddr,
+		/* EpochPrice:        types.NewInt(1000000),
+		MinBlocksDuration: uint64(build.MinDealDuration), */
+		FastRetrieval: fastRet,
 	})
 	if err != nil {
 		t.Fatalf("%+v", err)

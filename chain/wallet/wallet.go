@@ -114,7 +114,7 @@ func (w *LocalWallet) tryFind(addr address.Address) (types.KeyInfo, error) {
 	// We got an ErrKeyInfoNotFound error
 	// Try again, this time with the testnet prefix
 
-	tAddress, err := swapMainnetForTestnetPrefix(addr.String())
+	tAddress, err := swapMainnetForTestnetPrefix(addr.String()) // TODO: remove testnet
 	if err != nil {
 		return types.KeyInfo{}, err
 	}

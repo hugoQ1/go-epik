@@ -5,11 +5,11 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
@@ -32,9 +32,10 @@ type state2 struct {
 }
 
 func (s *state2) TotalLocked() (abi.TokenAmount, error) {
-	fml := types.BigAdd(s.TotalClientLockedCollateral, s.TotalProviderLockedCollateral)
-	fml = types.BigAdd(fml, s.TotalClientStorageFee)
-	return fml, nil
+	// fml := types.BigAdd(s.TotalClientLockedCollateral, s.TotalProviderLockedCollateral)
+	// fml = types.BigAdd(fml, s.TotalClientStorageFee)
+	// return fml, nil
+	return big.Zero(), nil
 }
 
 func (s *state2) BalancesChanged(otherState State) (bool, error) {
@@ -99,12 +100,20 @@ func (s *state2) LockedTable() (BalanceTable, error) {
 	return &balanceTable2{bt}, nil
 }
 
-func (s *state2) VerifyDealsForActivation(
+func (s *state2) Quotas() (Quotas, error) {
+	quotas, err := adt2.AsMap(s.store, s.State.Quotas)
+	if err != nil {
+		return nil, err
+	}
+	return &quotasAccesor{quotas}, nil
+}
+
+/* func (s *state2) VerifyDealsForActivation(
 	minerAddr address.Address, deals []abi.DealID, currEpoch, sectorExpiry abi.ChainEpoch,
 ) (weight, verifiedWeight abi.DealWeight, err error) {
 	w, vw, _, err := market2.ValidateDealsForActivation(&s.State, s.store, deals, minerAddr, sectorExpiry, currEpoch)
 	return w, vw, err
-}
+} */
 
 type balanceTable2 struct {
 	*adt2.BalanceTable
@@ -127,40 +136,36 @@ type dealStates2 struct {
 }
 
 func (s *dealStates2) Get(dealID abi.DealID) (*DealState, bool, error) {
-	var deal2 market2.DealState
-	found, err := s.Array.Get(uint64(dealID), &deal2)
+	var out market2.DealState
+	found, err := s.Array.Get(uint64(dealID), &out)
 	if err != nil {
 		return nil, false, err
 	}
 	if !found {
 		return nil, false, nil
 	}
-	deal := fromV2DealState(deal2)
-	return &deal, true, nil
+	ds := (DealState)(out)
+	return &ds, true, nil
 }
 
 func (s *dealStates2) ForEach(cb func(dealID abi.DealID, ds DealState) error) error {
-	var ds1 market2.DealState
-	return s.Array.ForEach(&ds1, func(idx int64) error {
-		return cb(abi.DealID(idx), fromV2DealState(ds1))
+	var ds market2.DealState
+	return s.Array.ForEach(&ds, func(idx int64) error {
+		return cb(abi.DealID(idx), (DealState)(ds))
 	})
 }
 
 func (s *dealStates2) decode(val *cbg.Deferred) (*DealState, error) {
-	var ds1 market2.DealState
-	if err := ds1.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
+	var ds market2.DealState
+	if err := ds.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
 		return nil, err
 	}
-	ds := fromV2DealState(ds1)
-	return &ds, nil
+	out := (DealState)(ds)
+	return &out, nil
 }
 
 func (s *dealStates2) array() adt.Array {
 	return s.Array
-}
-
-func fromV2DealState(v1 market2.DealState) DealState {
-	return (DealState)(v1)
 }
 
 type dealProposals2 struct {
@@ -168,31 +173,31 @@ type dealProposals2 struct {
 }
 
 func (s *dealProposals2) Get(dealID abi.DealID) (*DealProposal, bool, error) {
-	var proposal2 market2.DealProposal
-	found, err := s.Array.Get(uint64(dealID), &proposal2)
+	var out market2.DealProposal
+	found, err := s.Array.Get(uint64(dealID), &out)
 	if err != nil {
 		return nil, false, err
 	}
 	if !found {
 		return nil, false, nil
 	}
-	proposal := fromV2DealProposal(proposal2)
+	proposal := (DealProposal)(out)
 	return &proposal, true, nil
 }
 
 func (s *dealProposals2) ForEach(cb func(dealID abi.DealID, dp DealProposal) error) error {
-	var dp1 market2.DealProposal
-	return s.Array.ForEach(&dp1, func(idx int64) error {
-		return cb(abi.DealID(idx), fromV2DealProposal(dp1))
+	var out market2.DealProposal
+	return s.Array.ForEach(&out, func(idx int64) error {
+		return cb(abi.DealID(idx), (DealProposal)(out))
 	})
 }
 
 func (s *dealProposals2) decode(val *cbg.Deferred) (*DealProposal, error) {
-	var dp1 market2.DealProposal
-	if err := dp1.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
+	var out market2.DealProposal
+	if err := out.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
 		return nil, err
 	}
-	dp := fromV2DealProposal(dp1)
+	dp := (DealProposal)(out)
 	return &dp, nil
 }
 
@@ -200,6 +205,18 @@ func (s *dealProposals2) array() adt.Array {
 	return s.Array
 }
 
-func fromV2DealProposal(v1 market2.DealProposal) DealProposal {
-	return (DealProposal)(v1)
+type quotasAccesor struct {
+	adt.Map
+}
+
+func (a *quotasAccesor) GetRemainingQuota(pieceCID cid.Cid) (int64, error) {
+	var out cbg.CborInt
+	found, err := a.Map.Get(abi.CidKey(pieceCID), &out)
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		return 0, nil
+	}
+	return int64(out), nil
 }

@@ -56,7 +56,7 @@ type MessageSendSpec struct {
 
 var DefaultMessageSendSpec = MessageSendSpec{
 	// MaxFee of 0.1EPK
-	MaxFee: abi.NewTokenAmount(int64(build.FilecoinPrecision) / 10),
+	MaxFee: abi.NewTokenAmount(int64(build.EpkPrecision) / 10),
 }
 
 func (ms *MessageSendSpec) Get() MessageSendSpec {

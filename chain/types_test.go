@@ -7,6 +7,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/build"
 
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
 )
 

@@ -7,8 +7,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/big"
-
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 )
 
 type powerActorInfo struct {
@@ -20,7 +18,7 @@ type powerActorInfo struct {
 	totalQualityAdjustedBytesCommitted big.Int
 	totalPledgeCollateral              big.Int
 
-	qaPowerSmoothed builtin.FilterEstimate
+	/* qaPowerSmoothed builtin.FilterEstimate */
 
 	minerCount                  int64
 	minerCountAboveMinimumPower int64
@@ -103,11 +101,11 @@ func (p *Processor) processPowerActors(ctx context.Context, powerTips ActorTips)
 				return nil, xerrors.Errorf("failed to compute total locked: %w", err)
 			}
 
-			powerSmoothed, err := powerActorState.TotalPowerSmoothed()
+			/* powerSmoothed, err := powerActorState.TotalPowerSmoothed()
 			if err != nil {
 				return nil, xerrors.Errorf("failed to determine smoothed power: %w", err)
 			}
-
+			*/
 			// NOTE: this doesn't set new* fields. Previously, we
 			// filled these using ThisEpoch* fields from the actor
 			// state, but these fields are effectively internal
@@ -124,7 +122,7 @@ func (p *Processor) processPowerActors(ctx context.Context, powerTips ActorTips)
 			pw.totalRawBytesCommitted = totalCommitted.RawBytePower
 			pw.totalQualityAdjustedBytesCommitted = totalCommitted.QualityAdjPower
 			pw.totalPledgeCollateral = totalLocked
-			pw.qaPowerSmoothed = powerSmoothed
+			/* pw.qaPowerSmoothed = powerSmoothed */
 			pw.minerCountAboveMinimumPower = int64(participatingMiners)
 			pw.minerCount = int64(totalMiners)
 		}
@@ -163,8 +161,8 @@ func (p *Processor) storePowerSmoothingEstimates(powerStates []powerActorInfo) e
 			ps.totalQualityAdjustedBytesCommitted.String(),
 			ps.totalPledgeCollateral.String(),
 
-			ps.qaPowerSmoothed.PositionEstimate.String(),
-			ps.qaPowerSmoothed.VelocityEstimate.String(),
+			/* ps.qaPowerSmoothed.PositionEstimate.String(),
+			ps.qaPowerSmoothed.VelocityEstimate.String(), */
 
 			ps.minerCount,
 			ps.minerCountAboveMinimumPower,

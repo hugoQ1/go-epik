@@ -18,13 +18,8 @@ func SetupVoteActor(bs bstore.Blockstore) (*types.Actor, error) {
 		return nil, err
 	}
 
-	v, err := adt.MakeEmptyMap(store).Root()
-	if err != nil {
-		return nil, err
-	}
-
-	sms := vote.ConstructState(c, v)
-	stcid, err := store.Put(store.Context(), sms)
+	vas := vote.ConstructState(c, c)
+	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err
 	}

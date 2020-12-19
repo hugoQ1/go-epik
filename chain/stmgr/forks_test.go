@@ -17,7 +17,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
 	rt2 "github.com/filecoin-project/specs-actors/v2/actors/runtime"
 
@@ -37,7 +37,7 @@ import (
 func init() {
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(256)) */
 }
 
 const testForkHeight = 40
@@ -46,7 +46,7 @@ type testActor struct {
 }
 
 // must use existing actor that an account is allowed to exec.
-func (testActor) Code() cid.Cid  { return builtin0.PaymentChannelActorCodeID }
+func (testActor) Code() cid.Cid  { return builtin.PaymentChannelActorCodeID }
 func (testActor) State() cbor.Er { return new(testActorState) }
 
 type testActorState struct {

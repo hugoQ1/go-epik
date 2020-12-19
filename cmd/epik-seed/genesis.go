@@ -19,7 +19,6 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
@@ -48,11 +47,11 @@ var genesisNewCmd = &cli.Command{
 			return xerrors.New("seed genesis new [genesis.json]")
 		}
 		out := genesis.Template{
-			Accounts:         []genesis.Actor{},
-			Miners:           []genesis.Miner{},
-			VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
-			RemainderAccount: gen.DefaultRemainderAccountActor,
-			NetworkName:      cctx.String("network-name"),
+			Accounts: []genesis.Actor{},
+			Miners:   []genesis.Miner{},
+			// VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
+			// RemainderAccount: gen.DefaultRemainderAccountActor,
+			NetworkName: cctx.String("network-name"),
 		}
 		if out.NetworkName == "" {
 			out.NetworkName = "localnet-" + uuid.New().String()
@@ -134,7 +133,7 @@ var genesisAddMinerCmd = &cli.Command{
 			log.Infof("Giving %s some initial balance", miner.Owner)
 			template.Accounts = append(template.Accounts, genesis.Actor{
 				Type:    genesis.TAccount,
-				Balance: big.Mul(big.NewInt(50_000_000), big.NewInt(int64(build.FilecoinPrecision))),
+				Balance: big.Mul(big.NewInt(50_000_000), big.NewInt(int64(build.EpkPrecision))),
 				Meta:    (&genesis.AccountMeta{Owner: miner.Owner}).ActorMeta(),
 			})
 		}

@@ -46,9 +46,10 @@ type State interface {
 	States() (DealStates, error)
 	ProposalsChanged(State) (bool, error)
 	Proposals() (DealProposals, error)
-	VerifyDealsForActivation(
+	Quotas() (Quotas, error)
+	/* VerifyDealsForActivation(
 		minerAddr address.Address, deals []abi.DealID, currEpoch, sectorExpiry abi.ChainEpoch,
-	) (weight, verifiedWeight abi.DealWeight, err error)
+	) (weight, verifiedWeight abi.DealWeight, err error) */
 }
 
 type BalanceTable interface {
@@ -72,6 +73,10 @@ type DealProposals interface {
 	decode(*cbg.Deferred) (*DealProposal, error)
 }
 
+type Quotas interface {
+	GetRemainingQuota(pieceCID cid.Cid) (int64, error)
+}
+
 type PublishStorageDataRef = market2.PublishStorageDataRef
 type PublishStorageDealsParams = market2.PublishStorageDealsParams
 type PublishStorageDealsReturn = market2.PublishStorageDealsReturn
@@ -87,17 +92,17 @@ type DealState struct {
 }
 
 type DealProposal struct {
-	PieceCID             cid.Cid
-	PieceSize            abi.PaddedPieceSize
-	VerifiedDeal         bool
-	Client               address.Address
-	Provider             address.Address
-	Label                string
-	StartEpoch           abi.ChainEpoch
-	EndEpoch             abi.ChainEpoch
+	PieceCID  cid.Cid
+	PieceSize abi.PaddedPieceSize
+	/* VerifiedDeal         bool */
+	Client     address.Address
+	Provider   address.Address
+	Label      string
+	StartEpoch abi.ChainEpoch
+	/* EndEpoch             abi.ChainEpoch
 	StoragePricePerEpoch abi.TokenAmount
 	ProviderCollateral   abi.TokenAmount
-	ClientCollateral     abi.TokenAmount
+	ClientCollateral     abi.TokenAmount */
 }
 
 type DealStateChanges struct {

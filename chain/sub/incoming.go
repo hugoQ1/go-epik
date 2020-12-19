@@ -22,7 +22,7 @@ import (
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 
-	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
+	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"

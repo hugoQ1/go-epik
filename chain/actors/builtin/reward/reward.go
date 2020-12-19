@@ -36,20 +36,20 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
-	ThisEpochBaselinePower() (abi.StoragePower, error)
 	ThisEpochReward() (abi.StoragePower, error)
+	TotalStoragePowerReward() (abi.TokenAmount, error)
+	/* ThisEpochBaselinePower() (abi.StoragePower, error)
 	ThisEpochRewardSmoothed() (builtin.FilterEstimate, error)
 
 	EffectiveBaselinePower() (abi.StoragePower, error)
 	EffectiveNetworkTime() (abi.ChainEpoch, error)
 
-	TotalStoragePowerReward() (abi.TokenAmount, error)
 
 	CumsumBaseline() (abi.StoragePower, error)
 	CumsumRealized() (abi.StoragePower, error)
 
 	InitialPledgeForPower(abi.StoragePower, abi.TokenAmount, *builtin.FilterEstimate, abi.TokenAmount) (abi.TokenAmount, error)
-	PreCommitDepositForPower(builtin.FilterEstimate, abi.StoragePower) (abi.TokenAmount, error)
+	PreCommitDepositForPower(builtin.FilterEstimate, abi.StoragePower) (abi.TokenAmount, error) */
 }
 
 type AwardBlockRewardParams = reward2.AwardBlockRewardParams

@@ -382,10 +382,10 @@ type FullNode interface {
 	StateAllMinerFaults(ctx context.Context, lookback abi.ChainEpoch, ts types.TipSetKey) ([]*Fault, error)
 	// StateMinerRecoveries returns a bitfield indicating the recovering sectors of the given miner
 	StateMinerRecoveries(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
-	// StateMinerInitialPledgeCollateral returns the precommit deposit for the specified miner's sector
+	/* // StateMinerInitialPledgeCollateral returns the precommit deposit for the specified miner's sector
 	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
 	// StateMinerInitialPledgeCollateral returns the initial pledge collateral for the specified miner's sector
-	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
+	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
 	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	// StateMinerSectorAllocated checks if a sector is allocated
@@ -435,7 +435,7 @@ type FullNode interface {
 	// StateCompute is a flexible command that applies the given messages on the given tipset.
 	// The messages are run as though the VM were at the provided height.
 	StateCompute(context.Context, abi.ChainEpoch, []*types.Message, types.TipSetKey) (*ComputeStateOutput, error)
-	// StateVerifierStatus returns the data cap for the given address.
+	/* // StateVerifierStatus returns the data cap for the given address.
 	// Returns nil if there is no entry in the data cap table for the
 	// address.
 	StateVerifierStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
@@ -447,7 +447,7 @@ type FullNode interface {
 	StateVerifiedRegistryRootKey(ctx context.Context, tsk types.TipSetKey) (address.Address, error)
 	// StateDealProviderCollateralBounds returns the min and max collateral a storage provider
 	// can issue. It takes the deal size and verified status as parameters.
-	StateDealProviderCollateralBounds(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (DealCollateralBounds, error)
+	StateDealProviderCollateralBounds(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (DealCollateralBounds, error) */
 
 	// StateCirculatingSupply returns the exact circulating supply of Filecoin at the given tipset.
 	// This is not used anywhere in the protocol itself, and is only for external consumption.
@@ -605,13 +605,13 @@ type DealInfo struct {
 	PieceCID cid.Cid
 	Size     uint64
 
-	PricePerEpoch types.BigInt
-	Duration      uint64
+	/* PricePerEpoch types.BigInt
+	Duration      uint64 */
 
 	DealID abi.DealID
 
 	CreationTime time.Time
-	Verified     bool
+	/* Verified     bool */
 }
 
 type MsgLookup struct {
@@ -801,15 +801,15 @@ type MethodCall struct {
 }
 
 type StartDealParams struct {
-	Data               *storagemarket.DataRef
-	Wallet             address.Address
-	Miner              address.Address
-	EpochPrice         types.BigInt
-	MinBlocksDuration  uint64
-	ProviderCollateral big.Int
-	DealStartEpoch     abi.ChainEpoch
-	FastRetrieval      bool
-	VerifiedDeal       bool
+	Data   *storagemarket.DataRef
+	Wallet address.Address
+	Miner  address.Address
+	/* EpochPrice        types.BigInt
+	MinBlocksDuration uint64
+	ProviderCollateral big.Int */
+	DealStartEpoch abi.ChainEpoch
+	FastRetrieval  bool
+	/* VerifiedDeal       bool */
 }
 
 type IpldObject struct {
@@ -884,17 +884,20 @@ type ComputeStateOutput struct {
 	Trace []*InvocResult
 }
 
-type DealCollateralBounds struct {
+/* type DealCollateralBounds struct {
 	Min abi.TokenAmount
 	Max abi.TokenAmount
-}
+} */
 
 type CirculatingSupply struct {
-	EpkVested      abi.TokenAmount
-	EpkMined       abi.TokenAmount
-	EpkBurnt       abi.TokenAmount
-	EpkLocked      abi.TokenAmount
-	EpkCirculating abi.TokenAmount
+	EpkVested            abi.TokenAmount
+	EpkTeamVested        abi.TokenAmount
+	EpkFoundationVested  abi.TokenAmount
+	EpkFundraisingVested abi.TokenAmount
+	EpkMined             abi.TokenAmount
+	EpkBurnt             abi.TokenAmount
+	EpkLocked            abi.TokenAmount
+	EpkCirculating       abi.TokenAmount
 }
 
 type MiningBaseInfo struct {

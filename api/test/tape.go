@@ -1,19 +1,19 @@
 package test
 
-import (
+/* import (
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +26,8 @@ func testTapeFix(t *testing.T, b APIBuilder, blocktime time.Duration, after bool
 	defer cancel()
 
 	upgradeSchedule := stmgr.UpgradeSchedule{{
-		Network:   build.ActorUpgradeNetworkVersion,
+		// Network:   build.ActorUpgradeNetworkVersion,
+		Network:   build.NewestNetworkVersion,
 		Height:    1,
 		Migration: stmgr.UpgradeActorsV2,
 	}}
@@ -111,4 +112,4 @@ func testTapeFix(t *testing.T, b APIBuilder, blocktime time.Duration, after bool
 		fmt.Println("WaitSeal")
 	}
 
-}
+} */

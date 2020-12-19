@@ -11,7 +11,6 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/google/uuid"
 	block "github.com/ipfs/go-block-format"
@@ -98,30 +97,30 @@ func (m mybs) Get(c cid.Cid) (block.Block, error) {
 	return b, nil
 }
 
-var rootkeyMultisig = genesis.MultisigMeta{
-	Signers:         []address.Address{remAccTestKey},
-	Threshold:       1,
-	VestingDuration: 0,
-	VestingStart:    0,
-}
+// var rootkeyMultisig = genesis.MultisigMeta{
+// 	Signers:         []address.Address{remAccTestKey},
+// 	Threshold:       1,
+// 	VestingDuration: 0,
+// 	VestingStart:    0,
+// }
 
-var DefaultVerifregRootkeyActor = genesis.Actor{
-	Type:    genesis.TMultisig,
-	Balance: big.NewInt(0),
-	Meta:    rootkeyMultisig.ActorMeta(),
-}
+// var DefaultVerifregRootkeyActor = genesis.Actor{
+// 	Type:    genesis.TMultisig,
+// 	Balance: big.NewInt(0),
+// 	Meta:    rootkeyMultisig.ActorMeta(),
+// }
 
-var remAccTestKey, _ = address.NewFromString("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy")
-var remAccMeta = genesis.MultisigMeta{
-	Signers:   []address.Address{remAccTestKey},
-	Threshold: 1,
-}
+// var remAccTestKey, _ = address.NewFromString("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy")
+// var remAccMeta = genesis.MultisigMeta{
+// 	Signers:   []address.Address{remAccTestKey},
+// 	Threshold: 1,
+// }
 
-var DefaultRemainderAccountActor = genesis.Actor{
-	Type:    genesis.TMultisig,
-	Balance: big.NewInt(0),
-	Meta:    remAccMeta.ActorMeta(),
-}
+// var DefaultRemainderAccountActor = genesis.Actor{
+// 	Type:    genesis.TMultisig,
+// 	Balance: big.NewInt(0),
+// 	Meta:    remAccMeta.ActorMeta(),
+// }
 
 func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 	j := journal.NilJournal()
@@ -184,7 +183,7 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		return nil, err
 	}
 
-	genm1, k1, err := seed.PreSeal(maddr1, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, numSectors, m1temp, []byte("some randomness"), nil, true)
+	genm1, k1, err := seed.PreSeal(maddr1, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, numSectors, m1temp, []byte("some randomness"), nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +195,7 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		return nil, err
 	}
 
-	genm2, k2, err := seed.PreSeal(maddr2, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, numSectors, m2temp, []byte("some randomness"), nil, true)
+	genm2, k2, err := seed.PreSeal(maddr2, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, numSectors, m2temp, []byte("some randomness"), nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -214,17 +213,17 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 
 	tpl := genesis.Template{
 		Accounts: []genesis.Actor{
-			{
+			{ // TODO:
 				Type:    genesis.TAccount,
-				Balance: types.FromFil(20_000_000),
+				Balance: types.FromFil(0),
 				Meta:    (&genesis.AccountMeta{Owner: mk1}).ActorMeta(),
 			},
-			{
+			{ // TODO:
 				Type:    genesis.TAccount,
-				Balance: types.FromFil(20_000_000),
+				Balance: types.FromFil(0),
 				Meta:    (&genesis.AccountMeta{Owner: mk2}).ActorMeta(),
 			},
-			{
+			{ // TODO:
 				Type:    genesis.TAccount,
 				Balance: types.FromFil(50000),
 				Meta:    (&genesis.AccountMeta{Owner: banker}).ActorMeta(),
@@ -234,10 +233,14 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 			*genm1,
 			*genm2,
 		},
-		VerifregRootKey:  DefaultVerifregRootkeyActor,
-		RemainderAccount: DefaultRemainderAccountActor,
-		NetworkName:      uuid.New().String(),
-		Timestamp:        uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
+		// VerifregRootKey:  DefaultVerifregRootkeyActor,
+		// RemainderAccount: DefaultRemainderAccountActor,
+		GovernAccountActor:      DefaultGovernAccountActor,
+		TeamAccountActor:        DefaultTeamAccountActor,
+		FoundationAccountActor:  DefaultFoundationAccountActor,
+		FundraisingAccountActor: DefaultFundraisingAccountActor,
+		NetworkName:             uuid.New().String(),
+		Timestamp:               uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
 	}
 
 	genb, err := genesis2.MakeGenesisBlock(context.TODO(), j, bs, sys, tpl)
@@ -369,9 +372,7 @@ func (cg *ChainGen) nextBlockProof(ctx context.Context, pts *types.TipSet, m add
 		return nil, nil, nil, xerrors.Errorf("failed to cbor marshal address: %w", err)
 	}
 
-	if round > build.UpgradeSmokeHeight {
-		buf.Write(pts.MinTicket().VRFProof)
-	}
+	buf.Write(pts.MinTicket().VRFProof)
 
 	ticketRand, err := store.DrawRandomness(rbase.Data, crypto.DomainSeparationTag_TicketProduction, round-build.TicketRandomnessLookback, buf.Bytes())
 	if err != nil {

@@ -19,12 +19,10 @@ import (
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/go-state-types/crypto"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
-	verifreg2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/verifreg"
-	adt0 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
+	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
@@ -33,7 +31,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 )
 
 const AccountStart = 100
@@ -134,7 +131,9 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 
 	// Create init actor
 
-	idStart, initact, keyIDs, err := SetupInitActor(bs, template.NetworkName, template.Accounts, template.VerifregRootKey)
+	idStart, initact, keyIDs, err := SetupInitActor(bs, template.NetworkName,
+		append(template.Accounts, template.GovernAccountActor, template.FoundationAccountActor,
+			template.FundraisingAccountActor, template.TeamAccountActor))
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
@@ -191,7 +190,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	}
 
 	// Create empty knowledge actor
-	knowact, err := SetupKnowledgeActor(bs)
+	knowact, err := SetupKnowledgeActor(bs, builtin.GovernAddress)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
 	}
@@ -199,23 +198,22 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 
-	// Create verified registry
+	/* // Create verified registry
 	verifact, err := SetupVerifiedRegistryActor(bs)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
 	}
 	if err := state.SetActor(builtin2.VerifiedRegistryActorAddr, verifact); err != nil {
 		return nil, nil, xerrors.Errorf("set market actor: %w", err)
-	}
+	} */
 
+	// Setup burnt-funds
 	burntRoot, err := cst.Put(ctx, &account2.State{
 		Address: builtin2.BurntFundsActorAddr,
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
 	}
-
-	// Setup burnt-funds
 	err = state.SetActor(builtin2.BurntFundsActorAddr, &types.Actor{
 		Code:    builtin2.AccountActorCodeID,
 		Balance: types.NewInt(0),
@@ -283,76 +281,90 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 
 	}
 
-	vregroot, err := address.NewIDAddress(80)
-	if err != nil {
-		return nil, nil, err
+	// vregroot, err := address.NewIDAddress(80)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+
+	// if err = createMultisigAccount(ctx, bs, cst, state, vregroot, template.VerifregRootKey, keyIDs); err != nil {
+	// 	return nil, nil, xerrors.Errorf("failed to set up verified registry signer: %w", err)
+	// }
+
+	// // Setup the first verifier as ID-address 81
+	// // TODO: remove this
+	// skBytes, err := sigs.Generate(crypto.SigTypeBLS)
+	// if err != nil {
+	// 	return nil, nil, xerrors.Errorf("creating random verifier secret key: %w", err)
+	// }
+
+	// verifierPk, err := sigs.ToPublic(crypto.SigTypeBLS, skBytes)
+	// if err != nil {
+	// 	return nil, nil, xerrors.Errorf("creating random verifier public key: %w", err)
+	// }
+
+	// verifierAd, err := address.NewBLSAddress(verifierPk)
+	// if err != nil {
+	// 	return nil, nil, xerrors.Errorf("creating random verifier address: %w", err)
+	// }
+
+	// verifierId, err := address.NewIDAddress(81)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+
+	// verifierState, err := cst.Put(ctx, &account2.State{Address: verifierAd})
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+
+	// err = state.SetActor(verifierId, &types.Actor{
+	// 	Code:    builtin2.AccountActorCodeID,
+	// 	Balance: types.NewInt(0),
+	// 	Head:    verifierState,
+	// })
+	// if err != nil {
+	// 	return nil, nil, xerrors.Errorf("setting account from actmap: %w", err)
+	// }
+
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.GovernAddress, template.GovernAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up govern account: %w", err)
+	}
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FundraisingAddress, template.FundraisingAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up fundraising account: %w", err)
+	}
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.TeamAddress, template.TeamAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up team account: %w", err)
 	}
 
-	if err = createMultisigAccount(ctx, bs, cst, state, vregroot, template.VerifregRootKey, keyIDs); err != nil {
-		return nil, nil, xerrors.Errorf("failed to set up verified registry signer: %w", err)
-	}
-
-	// Setup the first verifier as ID-address 81
-	// TODO: remove this
-	skBytes, err := sigs.Generate(crypto.SigTypeBLS)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("creating random verifier secret key: %w", err)
-	}
-
-	verifierPk, err := sigs.ToPublic(crypto.SigTypeBLS, skBytes)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("creating random verifier public key: %w", err)
-	}
-
-	verifierAd, err := address.NewBLSAddress(verifierPk)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("creating random verifier address: %w", err)
-	}
-
-	verifierId, err := address.NewIDAddress(81)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	verifierState, err := cst.Put(ctx, &account2.State{Address: verifierAd})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = state.SetActor(verifierId, &types.Actor{
-		Code:    builtin2.AccountActorCodeID,
-		Balance: types.NewInt(0),
-		Head:    verifierState,
-	})
-	if err != nil {
-		return nil, nil, xerrors.Errorf("setting account from actmap: %w", err)
-	}
-
-	totalFilAllocated := big.Zero()
+	totalEpkAllocated := big.Zero()
 
 	// flush as ForEach works on the HAMT
 	if _, err := state.Flush(ctx); err != nil {
 		return nil, nil, err
 	}
 	err = state.ForEach(func(addr address.Address, act *types.Actor) error {
-		totalFilAllocated = big.Add(totalFilAllocated, act.Balance)
+		totalEpkAllocated = big.Add(totalEpkAllocated, act.Balance)
 		return nil
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("summing account balances in state tree: %w", err)
 	}
 
-	totalEpk := big.Mul(big.NewInt(int64(build.EpkBase)), big.NewInt(int64(build.FilecoinPrecision)))
-	remainingFil := big.Sub(totalEpk, totalFilAllocated)
-	if remainingFil.Sign() < 0 {
-		return nil, nil, xerrors.Errorf("somehow overallocated filecoin (allocated = %s)", types.EPK(totalFilAllocated))
+	totalEpk := big.Mul(big.NewInt(int64(build.EpkBase)), big.NewInt(int64(build.EpkPrecision)))
+	template.FoundationAccountActor.Balance = big.Sub(totalEpk, totalEpkAllocated)
+	if template.FoundationAccountActor.Balance.Sign() < 0 {
+		return nil, nil, xerrors.Errorf("somehow overallocated epk (allocated = %s)", types.EPK(totalEpkAllocated))
 	}
 
-	template.RemainderAccount.Balance = remainingFil
-
-	if err := createMultisigAccount(ctx, bs, cst, state, builtin.ReserveAddress, template.RemainderAccount, keyIDs); err != nil {
-		return nil, nil, xerrors.Errorf("failed to set up remainder account: %w", err)
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FoundationAddress, template.FoundationAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up foundation account: %w", err)
 	}
+
+	// template.RemainderAccount.Balance = remainingEpk
+
+	// if err := createMultisigAccount(ctx, bs, cst, state, builtin.ReserveAddress, template.RemainderAccount, keyIDs); err != nil {
+	// 	return nil, nil, xerrors.Errorf("failed to set up remainder account: %w", err)
+	// }
 
 	return state, keyIDs, nil
 }
@@ -391,7 +403,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 	if err := json.Unmarshal(info.Meta, &ainfo); err != nil {
 		return xerrors.Errorf("unmarshaling account meta: %w", err)
 	}
-	pending, err := adt0.MakeEmptyMap(adt0.WrapStore(ctx, cst)).Root()
+	pending, err := adt2.MakeEmptyMap(adt2.WrapStore(ctx, cst)).Root()
 	if err != nil {
 		return xerrors.Errorf("failed to create empty map: %v", err)
 	}
@@ -432,7 +444,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 		StartEpoch:            abi.ChainEpoch(ainfo.VestingStart),
 		UnlockDuration:        abi.ChainEpoch(ainfo.VestingDuration),
 		PendingTxns:           pending,
-		InitialBalance:        info.Balance,
+		InitialBalance:        ainfo.InitialVestingBalance(info.Balance),
 	})
 	if err != nil {
 		return err
@@ -449,8 +461,8 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 }
 
 func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot cid.Cid, template genesis.Template, keyIDs map[address.Address]address.Address) (cid.Cid, error) {
-	verifNeeds := make(map[address.Address]abi.PaddedPieceSize)
-	var sum abi.PaddedPieceSize
+	/* verifNeeds := make(map[address.Address]abi.PaddedPieceSize)
+	var sum abi.PaddedPieceSize */
 
 	vmopt := vm.VMOpts{
 		StateBase:      stateroot,
@@ -473,13 +485,13 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 				return cid.Undef, xerrors.Errorf("Sector %d in miner %d in template had mismatch in provider and miner ID: %s != %s", si, mi, s.Deal.Provider, m.ID)
 			}
 
-			amt := s.Deal.PieceSize
+			/* amt := s.Deal.PieceSize
 			verifNeeds[keyIDs[s.Deal.Client]] += amt
-			sum += amt
+			sum += amt */
 		}
 	}
 
-	verifregRoot, err := address.NewIDAddress(80)
+	/* verifregRoot, err := address.NewIDAddress(80)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -507,7 +519,7 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to add verified client: %w", err)
 		}
-	}
+	} */
 
 	st, err := vm.Flush(ctx)
 	if err != nil {
@@ -545,8 +557,8 @@ func MakeGenesisBlock(ctx context.Context, j journal.Journal, bs bstore.Blocksto
 		return nil, xerrors.Errorf("setup miners failed: %w", err)
 	}
 
-	store := adt0.WrapStore(ctx, cbor.NewCborStore(bs))
-	emptyroot, err := adt0.MakeEmptyArray(store).Root()
+	store := adt2.WrapStore(ctx, cbor.NewCborStore(bs))
+	emptyroot, err := adt2.MakeEmptyArray(store).Root()
 	if err != nil {
 		return nil, xerrors.Errorf("amt build failed: %w", err)
 	}
@@ -571,32 +583,32 @@ func MakeGenesisBlock(ctx context.Context, j journal.Journal, bs bstore.Blocksto
 		VRFProof: tickBuf,
 	}
 
-	filecoinGenesisCid, err := cid.Decode("bafyreiaqpwbbyjo4a42saasj36kkrpv4tsherf2e7bvezkert2a7dhonoi")
+	epikGenesisCid, err := cid.Decode(epikGenesisCidString)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to decode filecoin genesis block CID: %w", err)
+		return nil, xerrors.Errorf("failed to decode epik genesis block CID: %w", err)
 	}
 
-	if !expectedCid().Equals(filecoinGenesisCid) {
-		return nil, xerrors.Errorf("expectedCid != filecoinGenesisCid")
+	if !expectedCid().Equals(epikGenesisCid) {
+		return nil, xerrors.Errorf("expectedCid != epikGenesisCid")
 	}
 
 	gblk, err := getGenesisBlock()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to construct filecoin genesis block: %w", err)
+		return nil, xerrors.Errorf("failed to construct epik genesis block: %w", err)
 	}
 
-	if !filecoinGenesisCid.Equals(gblk.Cid()) {
-		return nil, xerrors.Errorf("filecoinGenesisCid != gblk.Cid")
+	if !epikGenesisCid.Equals(gblk.Cid()) {
+		return nil, xerrors.Errorf("epikGenesisCid != gblk.Cid")
 	}
 
 	if err := bs.Put(gblk); err != nil {
-		return nil, xerrors.Errorf("failed writing filecoin genesis block to blockstore: %w", err)
+		return nil, xerrors.Errorf("failed writing epik genesis block to blockstore: %w", err)
 	}
 
 	b := &types.BlockHeader{
 		Miner:                 builtin2.SystemActorAddr,
 		Ticket:                genesisticket,
-		Parents:               []cid.Cid{filecoinGenesisCid},
+		Parents:               []cid.Cid{epikGenesisCid},
 		Height:                0,
 		ParentWeight:          types.NewInt(0),
 		ParentStateRoot:       stateroot,

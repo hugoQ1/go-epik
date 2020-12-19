@@ -3,14 +3,12 @@ package policy
 import (
 	"sort"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/network"
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	paych2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
-	verifreg2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/verifreg"
 )
 
 const (
@@ -60,11 +58,11 @@ func SetConsensusMinerMinPower(p abi.StoragePower) {
 	}
 }
 
-// SetMinVerifiedDealSize sets the minimum size of a verified deal. This should
+/* // SetMinVerifiedDealSize sets the minimum size of a verified deal. This should
 // only be used for testing.
 func SetMinVerifiedDealSize(size abi.StoragePower) {
 	verifreg2.MinVerifiedDealSize = size
-}
+} */
 
 func GetMaxProveCommitDuration(ver actors.Version, t abi.RegisteredSealProof) abi.ChainEpoch {
 	switch ver {
@@ -75,7 +73,7 @@ func GetMaxProveCommitDuration(ver actors.Version, t abi.RegisteredSealProof) ab
 	}
 }
 
-func DealProviderCollateralBounds(
+/* func DealProviderCollateralBounds(
 	size abi.PaddedPieceSize, verified bool,
 	rawBytePower, qaPower, baselinePower abi.StoragePower,
 	circulatingFil abi.TokenAmount, nwVer network.Version,
@@ -86,34 +84,40 @@ func DealProviderCollateralBounds(
 	default:
 		panic("unsupported network version")
 	}
-}
+} */
 
 // Sets the challenge window and scales the proving period to match (such that
-// there are always 48 challenge windows in a proving period).
+// there are always 336 challenge windows in a proving period).
 func SetWPoStChallengeWindow(period abi.ChainEpoch) {
 	miner2.WPoStChallengeWindow = period
 	miner2.WPoStProvingPeriod = period * abi.ChainEpoch(miner2.WPoStPeriodDeadlines)
 }
 
 func GetWinningPoStSectorSetLookback(nwVer network.Version) abi.ChainEpoch {
-	if nwVer <= network.Version3 {
+	/* if nwVer <= network.Version3 {
 		return 10
-	}
+	} */
 
 	return ChainFinality
 }
 
-func GetMaxSectorExpirationExtension() abi.ChainEpoch {
+/* func GetMaxSectorExpirationExtension() abi.ChainEpoch {
 	return miner2.MaxSectorExpirationExtension
 }
-
+*/
 // TODO: we'll probably need to abstract over this better in the future.
 func GetMaxPoStPartitions(p abi.RegisteredPoStProof) (int, error) {
 	sectorsPerPart, err := builtin2.PoStProofWindowPoStPartitionSectors(p)
 	if err != nil {
 		return 0, err
 	}
-	return int(miner2.AddressedSectorsMax / sectorsPerPart), nil
+	min64 := func(a, b uint64) uint64 {
+		if a < b {
+			return a
+		}
+		return b
+	}
+	return int(min64(miner2.AddressedSectorsMax/sectorsPerPart, miner2.AddressedPartitionsMax)), nil
 }
 
 func GetDefaultSectorSize() abi.SectorSize {
@@ -133,4 +137,12 @@ func GetDefaultSectorSize() abi.SectorSize {
 	})
 
 	return szs[0]
+}
+
+func GetConsensusMinerMinPledge() abi.TokenAmount {
+	return miner2.ConsensusMinerMinPledge
+}
+
+func SetConsensusMinerMinPledge(amount abi.TokenAmount) {
+	miner2.ConsensusMinerMinPledge = amount
 }

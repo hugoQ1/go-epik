@@ -6,7 +6,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-storage/storage"
 )
 
@@ -166,14 +165,14 @@ func (evt SectorChainPreCommitFailed) FormatError(xerrors.Printer) (next error) 
 func (evt SectorChainPreCommitFailed) apply(*SectorInfo)                        {}
 
 type SectorPreCommitted struct {
-	Message          cid.Cid
-	PreCommitDeposit big.Int
-	PreCommitInfo    miner.SectorPreCommitInfo
+	Message cid.Cid
+	/* PreCommitDeposit big.Int */
+	PreCommitInfo miner.SectorPreCommitInfo
 }
 
 func (evt SectorPreCommitted) apply(state *SectorInfo) {
 	state.PreCommitMessage = &evt.Message
-	state.PreCommitDeposit = evt.PreCommitDeposit
+	/* state.PreCommitDeposit = evt.PreCommitDeposit */
 	state.PreCommitInfo = &evt.PreCommitInfo
 }
 

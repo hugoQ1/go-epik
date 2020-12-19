@@ -15,16 +15,15 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
-	padreader "github.com/filecoin-project/go-padreader"
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/go-state-types/crypto"
-	statemachine "github.com/filecoin-project/go-statemachine"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/filecoin-project/go-address"
+	padreader "github.com/filecoin-project/go-padreader"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/crypto"
+	statemachine "github.com/filecoin-project/go-statemachine"
 )
 
 const SectorStorePrefix = "/sectors"
@@ -51,8 +50,8 @@ type SealingAPI interface {
 	StateSectorPartition(ctx context.Context, maddr address.Address, sectorNumber abi.SectorNumber, tok TipSetToken) (*SectorLocation, error)
 	StateMinerSectorSize(context.Context, address.Address, TipSetToken) (abi.SectorSize, error)
 	StateMinerWorkerAddress(ctx context.Context, maddr address.Address, tok TipSetToken) (address.Address, error)
-	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, TipSetToken) (big.Int, error)
-	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, TipSetToken) (big.Int, error)
+	/* StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, TipSetToken) (big.Int, error)
+	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, TipSetToken) (big.Int, error) */
 	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, TipSetToken) (bool, error)
 	StateMarketStorageDeal(context.Context, abi.DealID, TipSetToken) (market.DealProposal, error)
 	StateNetworkVersion(ctx context.Context, tok TipSetToken) (network.Version, error)
@@ -77,11 +76,11 @@ type Sealing struct {
 	sc      SectorIDCounter
 	verif   ffiwrapper.Verifier
 
-	pcp             PreCommitPolicy
+	/* pcp             PreCommitPolicy */
 	unsealedInfoMap UnsealedSectorMap
 
-	upgradeLk sync.Mutex
-	toUpgrade map[abi.SectorNumber]struct{}
+	/* upgradeLk sync.Mutex
+	toUpgrade map[abi.SectorNumber]struct{} */
 
 	notifee SectorStateNotifee
 
@@ -107,7 +106,7 @@ type UnsealedSectorInfo struct {
 	pieceSizes []abi.UnpaddedPieceSize
 }
 
-func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds datastore.Batching, sealer sectorstorage.SectorManager, sc SectorIDCounter, verif ffiwrapper.Verifier, pcp PreCommitPolicy, gc GetSealingConfigFunc, notifee SectorStateNotifee) *Sealing {
+func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds datastore.Batching, sealer sectorstorage.SectorManager, sc SectorIDCounter, verif ffiwrapper.Verifier /* , pcp PreCommitPolicy */, gc GetSealingConfigFunc, notifee SectorStateNotifee) *Sealing {
 	s := &Sealing{
 		api:    api,
 		feeCfg: fc,
@@ -117,13 +116,13 @@ func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds 
 		sealer: sealer,
 		sc:     sc,
 		verif:  verif,
-		pcp:    pcp,
+		/* pcp:    pcp, */
 		unsealedInfoMap: UnsealedSectorMap{
 			infos: make(map[abi.SectorNumber]UnsealedSectorInfo),
 			lk:    sync.Mutex{},
 		},
 
-		toUpgrade: map[abi.SectorNumber]struct{}{},
+		/* toUpgrade: map[abi.SectorNumber]struct{}{}, */
 
 		notifee: notifee,
 

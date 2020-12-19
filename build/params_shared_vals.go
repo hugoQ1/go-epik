@@ -26,7 +26,8 @@ const UnixfsLinksPerLevel = 1024
 
 const AllowableClockDriftSecs = uint64(1)
 const NewestNetworkVersion = network.Version6
-const ActorUpgradeNetworkVersion = network.Version4
+
+// const ActorUpgradeNetworkVersion = network.Version4
 
 // Epochs
 const ForkLengthThreshold = Finality
@@ -69,7 +70,7 @@ var Devnet = true
 const EpkBase = uint64(1_000_000_000)
 const EpkAllocStorageMining = uint64(700_000_000)
 
-const FilecoinPrecision = uint64(1_000_000_000_000_000_000)
+const EpkPrecision = uint64(1_000_000_000_000_000_000)
 const EpkReserved = uint64(300_000_000)
 
 var InitialRewardBalance *big.Int
@@ -79,10 +80,10 @@ var InitialEpkReserved *big.Int
 
 func init() {
 	InitialRewardBalance = big.NewInt(int64(EpkAllocStorageMining))
-	InitialRewardBalance = InitialRewardBalance.Mul(InitialRewardBalance, big.NewInt(int64(FilecoinPrecision)))
+	InitialRewardBalance = InitialRewardBalance.Mul(InitialRewardBalance, big.NewInt(int64(EpkPrecision)))
 
 	InitialEpkReserved = big.NewInt(int64(EpkReserved))
-	InitialEpkReserved = InitialEpkReserved.Mul(InitialEpkReserved, big.NewInt(int64(FilecoinPrecision)))
+	InitialEpkReserved = InitialEpkReserved.Mul(InitialEpkReserved, big.NewInt(int64(EpkPrecision)))
 
 	if os.Getenv("EPIK_ADDRESS_TYPE") == AddressMainnetEnvVar {
 		SetAddressNetwork(address.Mainnet)
@@ -114,6 +115,5 @@ const MinimumBaseFee = 100
 const PackingEfficiencyNum = 4
 const PackingEfficiencyDenom = 5
 
-// Actor consts
-// TODO: Pull from actors when its made not private
-var MinDealDuration = abi.ChainEpoch(180 * builtin2.EpochsInDay)
+/* // Actor consts
+var MinDealDuration = abi.ChainEpoch(180 * builtin2.EpochsInDay) */

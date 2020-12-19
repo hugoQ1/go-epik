@@ -39,7 +39,6 @@ require (
 	github.com/filecoin-project/go-statemachine v0.0.0-20200925024713-05bd7c71fbfe
 	github.com/filecoin-project/go-statestore v0.1.0
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
-	github.com/filecoin-project/specs-actors v0.9.12
 	github.com/filecoin-project/specs-actors/v2 v2.2.0
 	github.com/filecoin-project/specs-storage v0.1.1-0.20200907031224-ed2e5cd13796
 	github.com/filecoin-project/test-vectors/schema v0.0.5
@@ -123,7 +122,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/supranational/blst v0.1.1
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/urfave/cli/v2 v2.2.0
+	github.com/urfave/cli/v2 v2.3.0
 	github.com/whyrusleeping/bencher v0.0.0-20190829221104-bb6607aa8bba
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200826160007-0b9f6c5fb163
 	github.com/whyrusleeping/ledger-filecoin-go v0.9.1-0.20201010031517-c3dcc1bddce4
@@ -135,9 +134,9 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20200926100807-9d91bd62050c
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
@@ -167,6 +166,6 @@ replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go
 
 // replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20201116140240-9647d22c3d8e
 
-replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20201127063433-20b1f02f4bd7
+replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20201219190015-f7cd77336688
 
-replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20201116141736-bf5b14a86fdd
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20201219191852-59851713ff29

@@ -9,7 +9,6 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 
 	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
@@ -70,9 +69,9 @@ func (s *state2) MinerNominalPowerMeetsConsensusMinimum(a address.Address) (bool
 	return s.State.MinerNominalPowerMeetsConsensusMinimum(s.store, a)
 }
 
-func (s *state2) TotalPowerSmoothed() (builtin.FilterEstimate, error) {
+/* func (s *state2) TotalPowerSmoothed() (builtin.FilterEstimate, error) {
 	return builtin.FromV2FilterEstimate(s.State.ThisEpochQAPowerSmoothed), nil
-}
+} */
 
 func (s *state2) MinerCounts() (uint64, uint64, error) {
 	return uint64(s.State.MinerAboveMinPowerCount), uint64(s.State.MinerCount), nil

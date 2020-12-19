@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/docker/go-units"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/docker/go-units"
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
@@ -192,6 +192,7 @@ func mergeGenMiners(a, b genesis.Miner) genesis.Miner {
 	return genesis.Miner{
 		Owner:         a.Owner,
 		Worker:        a.Worker,
+		Coinbase:      a.Coinbase,
 		PeerId:        a.PeerId,
 		MarketBalance: big.Zero(),
 		PowerBalance:  big.Zero(),

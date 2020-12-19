@@ -44,10 +44,10 @@ func (m *Miner) RemoveSector(ctx context.Context, id abi.SectorNumber) error {
 	return m.sealing.Remove(ctx, id)
 }
 
-func (m *Miner) MarkForUpgrade(id abi.SectorNumber) error {
+/* func (m *Miner) MarkForUpgrade(id abi.SectorNumber) error {
 	return m.sealing.MarkForUpgrade(id)
 }
 
 func (m *Miner) IsMarkedForUpgrade(id abi.SectorNumber) bool {
 	return m.sealing.IsMarkedForUpgrade(id)
-}
+} */

@@ -31,7 +31,7 @@ func main() {
 		commpToCidCmd,
 		fetchParamCmd,
 		proofsCmd,
-		verifRegCmd,
+		// verifRegCmd,
 		miscCmd,
 		mpoolCmd,
 		genesisVerifyCmd,

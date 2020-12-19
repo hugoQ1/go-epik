@@ -1,40 +1,51 @@
 package stmgr
 
 import (
-	"bytes"
-	"context"
-	"encoding/binary"
-	"math"
+	/*
+		"bytes"
+		"context"
+		"encoding/binary"
+		"math"
 
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+		"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+
+		"github.com/filecoin-project/go-address"
+		"github.com/filecoin-project/go-state-types/abi"
+		"github.com/filecoin-project/go-state-types/big"
+		"github.com/filecoin-project/go-state-types/network"
+		"github.com/ipfs/go-cid"
+		cbor "github.com/ipfs/go-ipld-cbor"
+		"golang.org/x/xerrors"
+
+		builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
+		miner0 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
+		multisig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
+		power0 "github.com/filecoin-project/specs-actors/actors/builtin/power"
+		adt0 "github.com/filecoin-project/specs-actors/actors/util/adt"
+
+		"github.com/filecoin-project/specs-actors/actors/migration/nv3"
+		m2 "github.com/filecoin-project/specs-actors/v2/actors/migration"
+
+		"github.com/EpiK-Protocol/go-epik/build"
+		"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
+		init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
+		"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
+		"github.com/EpiK-Protocol/go-epik/chain/state"
+		"github.com/EpiK-Protocol/go-epik/chain/store"
+		"github.com/EpiK-Protocol/go-epik/chain/types"
+		"github.com/EpiK-Protocol/go-epik/chain/vm"
+		bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
+		"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
+	*/
+	"context"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
-	cbor "github.com/ipfs/go-ipld-cbor"
 	"golang.org/x/xerrors"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
-	miner0 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	multisig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
-	power0 "github.com/filecoin-project/specs-actors/actors/builtin/power"
-	adt0 "github.com/filecoin-project/specs-actors/actors/util/adt"
-
-	"github.com/filecoin-project/specs-actors/actors/migration/nv3"
-	m2 "github.com/filecoin-project/specs-actors/v2/actors/migration"
-
-	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
-	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
-	"github.com/EpiK-Protocol/go-epik/chain/state"
-	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 // UpgradeFunc is a migration function run at every upgrade.
@@ -58,42 +69,7 @@ type UpgradeSchedule []Upgrade
 func DefaultUpgradeSchedule() UpgradeSchedule {
 	var us UpgradeSchedule
 
-	updates := []Upgrade{{
-		Height:    build.UpgradeBreezeHeight,
-		Network:   network.Version1,
-		Migration: UpgradeFaucetBurnRecovery,
-	}, {
-		Height:    build.UpgradeSmokeHeight,
-		Network:   network.Version2,
-		Migration: nil,
-	}, {
-		Height:    build.UpgradeIgnitionHeight,
-		Network:   network.Version3,
-		Migration: UpgradeIgnition,
-	}, {
-		Height:    build.UpgradeRefuelHeight,
-		Network:   network.Version3,
-		Migration: UpgradeRefuel,
-	}, {
-		Height:    build.UpgradeActorsV2Height,
-		Network:   network.Version4,
-		Expensive: true,
-		Migration: UpgradeActorsV2,
-	}, {
-		Height:  build.UpgradeTapeHeight,
-		Network: network.Version5,
-	}, {
-		Height:    build.UpgradeLiftoffHeight,
-		Network:   network.Version5,
-		Migration: UpgradeLiftoff,
-	}, {
-		Height:    build.UpgradeKumquatHeight,
-		Network:   network.Version6,
-		Migration: nil,
-	}}
-
-	if build.UpgradeActorsV2Height == math.MaxInt64 { // disable actors upgrade
-		updates = []Upgrade{{
+	updates := []Upgrade{ /* {
 			Height:    build.UpgradeBreezeHeight,
 			Network:   network.Version1,
 			Migration: UpgradeFaucetBurnRecovery,
@@ -110,11 +86,22 @@ func DefaultUpgradeSchedule() UpgradeSchedule {
 			Network:   network.Version3,
 			Migration: UpgradeRefuel,
 		}, {
+			Height:    build.UpgradeActorsV2Height,
+			Network:   network.Version4,
+			Expensive: true,
+			Migration: UpgradeActorsV2,
+		}, {
+			Height:  build.UpgradeTapeHeight,
+			Network: network.Version5,
+		}, {
 			Height:    build.UpgradeLiftoffHeight,
-			Network:   network.Version3,
+			Network:   network.Version5,
 			Migration: UpgradeLiftoff,
-		}}
-	}
+		}, {
+			Height:    build.UpgradeKumquatHeight,
+			Network:   network.Version6,
+			Migration: nil,
+		} */}
 
 	for _, u := range updates {
 		if u.Height < 0 {
@@ -225,7 +212,7 @@ func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmo
 	return nil
 }
 
-func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+/* func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
 	// Some initial parameters
 	FundsForMiners := types.FromFil(1_000_000)
 	LookbackEpoch := abi.ChainEpoch(32000)
@@ -914,4 +901,4 @@ func resetMultisigVesting0(ctx context.Context, store adt0.Store, tree *state.St
 	}
 
 	return nil
-}
+} */

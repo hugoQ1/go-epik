@@ -17,18 +17,17 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"golang.org/x/xerrors"
 
+	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -79,8 +78,8 @@ type storageMinerApi interface {
 	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)
 	StateMinerPartitions(context.Context, address.Address, uint64, types.TipSetKey) ([]api.Partition, error)
 	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
-	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
-	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
+	/* StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
+	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
 	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)
 	StateSearchMsg(context.Context, cid.Cid) (*api.MsgLookup, error)
 	StateWaitMsg(ctx context.Context, cid cid.Cid, confidence uint64) (*api.MsgLookup, error) // TODO: removeme eventually
@@ -136,10 +135,10 @@ func (m *Miner) Run(ctx context.Context) error {
 		return xerrors.Errorf("miner preflight checks failed: %w", err)
 	}
 
-	md, err := m.api.StateMinerProvingDeadline(ctx, m.maddr, types.EmptyTSK)
+	/* md, err := m.api.StateMinerProvingDeadline(ctx, m.maddr, types.EmptyTSK)
 	if err != nil {
 		return xerrors.Errorf("getting miner info: %w", err)
-	}
+	} */
 
 	fc := sealing.FeeConfig{
 		MaxPreCommitGasFee: abi.TokenAmount(m.feeCfg.MaxPreCommitGasFee),
@@ -148,9 +147,9 @@ func (m *Miner) Run(ctx context.Context) error {
 
 	evts := events.NewEvents(ctx, m.api)
 	adaptedAPI := NewSealingAPIAdapter(m.api)
-	// TODO: Maybe we update this policy after actor upgrades?
-	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, policy.GetMaxSectorExpirationExtension()-(md.WPoStProvingPeriod*2), md.PeriodStart%md.WPoStProvingPeriod)
-	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig), m.handleSealingNotifications)
+	/* // TODO: Maybe we update this policy after actor upgrades?
+	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, policy.GetMaxSectorExpirationExtension()-(md.WPoStProvingPeriod*2), md.PeriodStart%md.WPoStProvingPeriod) */
+	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, sealing.GetSealingConfigFunc(m.getSealConfig), m.handleSealingNotifications)
 
 	go m.sealing.Run(ctx) //nolint:errcheck // logged intside the function
 

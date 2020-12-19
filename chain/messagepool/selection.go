@@ -10,7 +10,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	tbig "github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -20,12 +19,6 @@ import (
 )
 
 var bigBlockGasLimit = big.NewInt(build.BlockGasLimit)
-
-// this is *temporary* mutilation until we have implemented uncapped miner penalties -- it will go
-// away in the next fork.
-func allowNegativeChains(epoch abi.ChainEpoch) bool {
-	return epoch < build.UpgradeBreezeHeight+5
-}
 
 const MaxBlocks = 15
 
@@ -109,7 +102,7 @@ func (mp *MessagePool) selectMessagesOptimal(curTs, ts *types.TipSet, tq float64
 		return chains[i].Before(chains[j])
 	})
 
-	if !allowNegativeChains(curTs.Height()) && len(chains) != 0 && chains[0].gasPerf < 0 {
+	if len(chains) != 0 && chains[0].gasPerf < 0 {
 		log.Warnw("all messages in mpool have non-positive gas performance", "bestGasPerf", chains[0].gasPerf)
 		return result, nil
 	}
@@ -162,7 +155,7 @@ func (mp *MessagePool) selectMessagesOptimal(curTs, ts *types.TipSet, tq float64
 	last := len(chains)
 	for i, chain := range chains {
 		// did we run out of performing chains?
-		if !allowNegativeChains(curTs.Height()) && chain.gasPerf < 0 {
+		if chain.gasPerf < 0 {
 			break
 		}
 
@@ -228,7 +221,7 @@ tailLoop:
 	for gasLimit >= minGas && last < len(chains) {
 		// trim if necessary
 		if chains[last].gasLimit > gasLimit {
-			chains[last].Trim(gasLimit, mp, baseFee, allowNegativeChains(curTs.Height()))
+			chains[last].Trim(gasLimit, mp, baseFee)
 		}
 
 		// push down if it hasn't been invalidated
@@ -254,7 +247,7 @@ tailLoop:
 			}
 
 			// if gasPerf < 0 we have no more profitable chains
-			if !allowNegativeChains(curTs.Height()) && chain.gasPerf < 0 {
+			if chain.gasPerf < 0 {
 				break tailLoop
 			}
 
@@ -295,7 +288,7 @@ tailLoop:
 			}
 
 			// dependencies fit, just trim it
-			chain.Trim(gasLimit-depGasLimit, mp, baseFee, allowNegativeChains(curTs.Height()))
+			chain.Trim(gasLimit-depGasLimit, mp, baseFee)
 			last += i
 			continue tailLoop
 		}
@@ -328,7 +321,7 @@ tailLoop:
 			}
 
 			// is it negative?
-			if !allowNegativeChains(curTs.Height()) && chain.gasPerf < 0 {
+			if chain.gasPerf < 0 {
 				continue
 			}
 
@@ -350,7 +343,7 @@ tailLoop:
 
 			// do they fit as is? if it doesn't, trim to make it fit if possible
 			if chainGasLimit > gasLimit {
-				chain.Trim(gasLimit-depGasLimit, mp, baseFee, allowNegativeChains(curTs.Height()))
+				chain.Trim(gasLimit-depGasLimit, mp, baseFee)
 
 				if !chain.valid {
 					continue
@@ -433,7 +426,7 @@ func (mp *MessagePool) selectMessagesGreedy(curTs, ts *types.TipSet) ([]*types.S
 		return chains[i].Before(chains[j])
 	})
 
-	if !allowNegativeChains(curTs.Height()) && len(chains) != 0 && chains[0].gasPerf < 0 {
+	if len(chains) != 0 && chains[0].gasPerf < 0 {
 		log.Warnw("all messages in mpool have non-positive gas performance", "bestGasPerf", chains[0].gasPerf)
 		return result, nil
 	}
@@ -444,7 +437,7 @@ func (mp *MessagePool) selectMessagesGreedy(curTs, ts *types.TipSet) ([]*types.S
 	last := len(chains)
 	for i, chain := range chains {
 		// did we run out of performing chains?
-		if !allowNegativeChains(curTs.Height()) && chain.gasPerf < 0 {
+		if chain.gasPerf < 0 {
 			break
 		}
 
@@ -473,7 +466,7 @@ func (mp *MessagePool) selectMessagesGreedy(curTs, ts *types.TipSet) ([]*types.S
 tailLoop:
 	for gasLimit >= minGas && last < len(chains) {
 		// trim
-		chains[last].Trim(gasLimit, mp, baseFee, allowNegativeChains(curTs.Height()))
+		chains[last].Trim(gasLimit, mp, baseFee)
 
 		// push down if it hasn't been invalidated
 		if chains[last].valid {
@@ -493,7 +486,7 @@ tailLoop:
 			}
 
 			// if gasPerf < 0 we have no more profitable chains
-			if !allowNegativeChains(curTs.Height()) && chain.gasPerf < 0 {
+			if chain.gasPerf < 0 {
 				break tailLoop
 			}
 
@@ -555,7 +548,7 @@ func (mp *MessagePool) selectPriorityMessages(pending map[address.Address]map[ui
 		return chains[i].Before(chains[j])
 	})
 
-	if !allowNegativeChains(ts.Height()) && len(chains) != 0 && chains[0].gasPerf < 0 {
+	if len(chains) != 0 && chains[0].gasPerf < 0 {
 		log.Warnw("all priority messages in mpool have negative gas performance", "bestGasPerf", chains[0].gasPerf)
 		return nil, gasLimit
 	}
@@ -563,7 +556,7 @@ func (mp *MessagePool) selectPriorityMessages(pending map[address.Address]map[ui
 	// 3. Merge chains until the block limit, as long as they have non-negative gas performance
 	last := len(chains)
 	for i, chain := range chains {
-		if !allowNegativeChains(ts.Height()) && chain.gasPerf < 0 {
+		if chain.gasPerf < 0 {
 			break
 		}
 
@@ -581,7 +574,7 @@ func (mp *MessagePool) selectPriorityMessages(pending map[address.Address]map[ui
 tailLoop:
 	for gasLimit >= minGas && last < len(chains) {
 		// trim, discarding negative performing messages
-		chains[last].Trim(gasLimit, mp, baseFee, allowNegativeChains(ts.Height()))
+		chains[last].Trim(gasLimit, mp, baseFee)
 
 		// push down if it hasn't been invalidated
 		if chains[last].valid {
@@ -601,7 +594,7 @@ tailLoop:
 			}
 
 			// if gasPerf < 0 we have no more profitable chains
-			if !allowNegativeChains(ts.Height()) && chain.gasPerf < 0 {
+			if chain.gasPerf < 0 {
 				break tailLoop
 			}
 
@@ -671,12 +664,15 @@ func (mp *MessagePool) getPendingMessages(curTs, ts *types.TipSet) (map[address.
 
 func (*MessagePool) getGasReward(msg *types.SignedMessage, baseFee types.BigInt) *big.Int {
 	maxPremium := types.BigSub(msg.Message.GasFeeCap, baseFee)
-
 	if types.BigCmp(maxPremium, msg.Message.GasPremium) > 0 {
 		maxPremium = msg.Message.GasPremium
 	}
 
 	gasReward := tbig.Mul(maxPremium, types.NewInt(uint64(msg.Message.GasLimit)))
+	if gasReward.Sign() == -1 {
+		// penalty multiplier
+		gasReward = tbig.Mul(gasReward, types.NewInt(3))
+	}
 	return gasReward.Int
 }
 
@@ -858,9 +854,9 @@ func (mc *msgChain) Before(other *msgChain) bool {
 		(mc.gasPerf == other.gasPerf && mc.gasReward.Cmp(other.gasReward) > 0)
 }
 
-func (mc *msgChain) Trim(gasLimit int64, mp *MessagePool, baseFee types.BigInt, allowNegative bool) {
+func (mc *msgChain) Trim(gasLimit int64, mp *MessagePool, baseFee types.BigInt) {
 	i := len(mc.msgs) - 1
-	for i >= 0 && (mc.gasLimit > gasLimit || (!allowNegative && mc.gasPerf < 0)) {
+	for i >= 0 && (mc.gasLimit > gasLimit || mc.gasPerf < 0) {
 		gasReward := mp.getGasReward(mc.msgs[i], baseFee)
 		mc.gasReward = new(big.Int).Sub(mc.gasReward, gasReward)
 		mc.gasLimit -= mc.msgs[i].Message.GasLimit

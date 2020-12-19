@@ -3,8 +3,8 @@ package genesis
 import (
 	"context"
 
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -53,23 +53,7 @@ func doExecValue(ctx context.Context, vm *vm.VM, to, from address.Address, value
 // TODO: Get from build
 // TODO: make a list/schedule of these.
 var GenesisNetworkVersion = func() network.Version {
-	// returns the version _before_ the first upgrade.
-	// if build.UpgradeBreezeHeight >= 0 {
-	// 	return network.Version0
-	// }
-	// if build.UpgradeSmokeHeight >= 0 {
-	// 	return network.Version1
-	// }
-	// if build.UpgradeIgnitionHeight >= 0 {
-	// 	return network.Version2
-	// }
-	if build.UpgradeActorsV2Height >= 0 {
-		return network.Version3
-	}
-	// if build.UpgradeLiftoffHeight >= 0 {
-	// 	return network.Version3
-	// }
-	return build.ActorUpgradeNetworkVersion - 1 // genesis requires actors v0.
+	return build.NewestNetworkVersion
 }()
 
 func genesisNetworkVersion(context.Context, abi.ChainEpoch) network.Version { // TODO: Get from build/

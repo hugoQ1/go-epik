@@ -18,7 +18,7 @@ func TestSectorInfoSelialization(t *testing.T) {
 		DealID: d,
 		DealSchedule: DealSchedule{
 			StartEpoch: 0,
-			EndEpoch:   100,
+			/* EndEpoch:   100, */
 		},
 	}
 

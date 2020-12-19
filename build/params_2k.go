@@ -10,18 +10,18 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 )
 
-const UpgradeBreezeHeight = -1
-const BreezeGasTampingDuration = 0
+// const UpgradeBreezeHeight = -1
+// const BreezeGasTampingDuration = 0
 
-const UpgradeSmokeHeight = -1
-const UpgradeIgnitionHeight = -2
-const UpgradeRefuelHeight = -3
-const UpgradeTapeHeight = -4
+// const UpgradeSmokeHeight = -1
+// const UpgradeIgnitionHeight = -2
+// const UpgradeRefuelHeight = -3
+// const UpgradeTapeHeight = -4
 
-var UpgradeActorsV2Height = abi.ChainEpoch(0)
-var UpgradeLiftoffHeight = abi.ChainEpoch(-5)
+// var UpgradeActorsV2Height = abi.ChainEpoch(0)
+// var UpgradeLiftoffHeight = abi.ChainEpoch(-5)
 
-const UpgradeKumquatHeight = 15
+// const UpgradeKumquatHeight = 15
 
 var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 	0: DrandMainnet,

@@ -19,7 +19,6 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
-	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/genesis"
@@ -68,8 +67,8 @@ func (api *api) Spawn() (nodeInfo, error) {
 			Balance: types.FromFil(5000000),
 			Meta:    (&genesis.AccountMeta{Owner: genm.Owner}).ActorMeta(),
 		})
-		template.VerifregRootKey = gen.DefaultVerifregRootkeyActor
-		template.RemainderAccount = gen.DefaultRemainderAccountActor
+		// template.VerifregRootKey = gen.DefaultVerifregRootkeyActor
+		// template.RemainderAccount = gen.DefaultRemainderAccountActor
 		template.NetworkName = "pond-" + uuid.New().String()
 
 		tb, err := json.Marshal(&template)

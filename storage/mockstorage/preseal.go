@@ -3,11 +3,11 @@ package mockstorage
 import (
 	"fmt"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/mock"
 	"github.com/filecoin-project/go-address"
 	commcid "github.com/filecoin-project/go-fil-commcid"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/mock"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
@@ -28,6 +28,7 @@ func PreSeal(ssize abi.SectorSize, maddr address.Address, sectors int) (*genesis
 		ID:            maddr,
 		Owner:         k.Address,
 		Worker:        k.Address,
+		Coinbase:      k.Address,
 		MarketBalance: big.NewInt(0),
 		PowerBalance:  big.NewInt(0),
 		SectorSize:    ssize,
@@ -49,16 +50,16 @@ func PreSeal(ssize abi.SectorSize, maddr address.Address, sectors int) (*genesis
 		preseal.CommR, _ = commcid.ReplicaCommitmentV1ToCID(r[:])
 		preseal.SectorID = abi.SectorNumber(i + 1)
 		preseal.Deal = market2.DealProposal{
-			PieceCID:             preseal.CommD,
-			PieceSize:            abi.PaddedPieceSize(ssize),
-			Client:               k.Address,
-			Provider:             maddr,
-			Label:                fmt.Sprintf("%d", i),
-			StartEpoch:           1,
-			EndEpoch:             10000,
+			PieceCID:   preseal.CommD,
+			PieceSize:  abi.PaddedPieceSize(ssize),
+			Client:     k.Address,
+			Provider:   maddr,
+			Label:      fmt.Sprintf("%d", i),
+			StartEpoch: 1,
+			/* EndEpoch:             10000,
 			StoragePricePerEpoch: big.Zero(),
 			ProviderCollateral:   big.Zero(),
-			ClientCollateral:     big.Zero(),
+			ClientCollateral:     big.Zero(), */
 		}
 
 		genm.Sectors[i] = preseal

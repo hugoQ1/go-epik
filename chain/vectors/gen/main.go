@@ -10,20 +10,20 @@ import (
 	"github.com/filecoin-project/go-address"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
 	"github.com/EpiK-Protocol/go-epik/chain/vectors"
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/filecoin-project/go-state-types/abi"
 
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 )
 
 func init() {
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(2048))
+	/* policy.SetMinVerifiedDealSize(abi.NewStoragePower(2048)) */
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
 }
 

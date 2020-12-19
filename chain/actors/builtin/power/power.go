@@ -42,7 +42,7 @@ type State interface {
 	TotalLocked() (abi.TokenAmount, error)
 	TotalPower() (Claim, error)
 	TotalCommitted() (Claim, error)
-	TotalPowerSmoothed() (builtin.FilterEstimate, error)
+	/* TotalPowerSmoothed() (builtin.FilterEstimate, error) */
 
 	// MinerCounts returns the number of miners. Participating is the number
 	// with power above the minimum miner threshold.

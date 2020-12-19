@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/EpiK-Protocol/go-epik/build"
-
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
 	ic "github.com/libp2p/go-libp2p-core/crypto"
@@ -19,11 +17,11 @@ import (
 	"github.com/minio/blake2b-simd"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/zerocomm"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
@@ -116,14 +114,15 @@ func PreSeal(maddr address.Address, spt abi.RegisteredSealProof, offset abi.Sect
 		}
 	}
 
-	powerBalance := big.Mul(big.NewInt(1000), big.NewInt(int64(build.FilecoinPrecision)))
+	/* powerBalance := big.Mul(big.NewInt(1000), big.NewInt(int64(build.EpkPrecision))) */
 
 	miner := &genesis.Miner{
 		ID:            maddr,
 		Owner:         minerAddr.Address,
 		Worker:        minerAddr.Address,
+		Coinbase:      minerAddr.Address,
 		MarketBalance: big.Zero(),
-		PowerBalance:  powerBalance,
+		PowerBalance:  big.Zero(),
 		SectorSize:    ssize,
 		Sectors:       sealedSectors,
 		PeerId:        pid,
@@ -259,16 +258,16 @@ func WriteGenesisMiner(maddr address.Address, sbroot string, gm *genesis.Miner, 
 func createDeals(m *genesis.Miner, k *wallet.Key, maddr address.Address, ssize abi.SectorSize) error {
 	for i, sector := range m.Sectors {
 		proposal := &market2.DealProposal{
-			PieceCID:             sector.CommD,
-			PieceSize:            abi.PaddedPieceSize(ssize),
-			Client:               k.Address,
-			Provider:             maddr,
-			Label:                fmt.Sprintf("%d", i),
-			StartEpoch:           0,
-			EndEpoch:             9001,
+			PieceCID:   sector.CommD,
+			PieceSize:  abi.PaddedPieceSize(ssize),
+			Client:     k.Address,
+			Provider:   maddr,
+			Label:      fmt.Sprintf("%d", i),
+			StartEpoch: 0,
+			/* EndEpoch:             9001,
 			StoragePricePerEpoch: big.Zero(),
 			ProviderCollateral:   big.Zero(),
-			ClientCollateral:     big.Zero(),
+			ClientCollateral:     big.Zero(), */
 		}
 
 		sector.Deal = *proposal

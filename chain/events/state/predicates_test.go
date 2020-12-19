@@ -55,28 +55,28 @@ func TestMarketPredicates(t *testing.T) {
 	}
 
 	oldProp1 := &market2.DealProposal{
-		PieceCID:             dummyCid,
-		PieceSize:            0,
-		VerifiedDeal:         false,
-		Client:               tutils.NewIDAddr(t, 1),
-		Provider:             tutils.NewIDAddr(t, 1),
-		StartEpoch:           1,
-		EndEpoch:             2,
+		PieceCID:  dummyCid,
+		PieceSize: 0,
+		/* VerifiedDeal:         false, */
+		Client:     tutils.NewIDAddr(t, 1),
+		Provider:   tutils.NewIDAddr(t, 1),
+		StartEpoch: 1,
+		/* EndEpoch:             2,
 		StoragePricePerEpoch: big.Zero(),
 		ProviderCollateral:   big.Zero(),
-		ClientCollateral:     big.Zero(),
+		ClientCollateral:     big.Zero(), */
 	}
 	oldProp2 := &market2.DealProposal{
-		PieceCID:             dummyCid,
-		PieceSize:            0,
-		VerifiedDeal:         false,
-		Client:               tutils.NewIDAddr(t, 1),
-		Provider:             tutils.NewIDAddr(t, 1),
-		StartEpoch:           2,
-		EndEpoch:             3,
+		PieceCID:  dummyCid,
+		PieceSize: 0,
+		/* VerifiedDeal:         false, */
+		Client:     tutils.NewIDAddr(t, 1),
+		Provider:   tutils.NewIDAddr(t, 1),
+		StartEpoch: 2,
+		/* EndEpoch:             3,
 		StoragePricePerEpoch: big.Zero(),
 		ProviderCollateral:   big.Zero(),
-		ClientCollateral:     big.Zero(),
+		ClientCollateral:     big.Zero(), */
 	}
 	oldProps := map[abi.DealID]*market2.DealProposal{
 		abi.DealID(1): oldProp1,
@@ -114,16 +114,16 @@ func TestMarketPredicates(t *testing.T) {
 
 	// added
 	newProp3 := &market2.DealProposal{
-		PieceCID:             dummyCid,
-		PieceSize:            0,
-		VerifiedDeal:         false,
-		Client:               tutils.NewIDAddr(t, 1),
-		Provider:             tutils.NewIDAddr(t, 1),
-		StartEpoch:           4,
-		EndEpoch:             4,
+		PieceCID:  dummyCid,
+		PieceSize: 0,
+		/* VerifiedDeal:         false, */
+		Client:     tutils.NewIDAddr(t, 1),
+		Provider:   tutils.NewIDAddr(t, 1),
+		StartEpoch: 4,
+		/* EndEpoch:             4,
 		StoragePricePerEpoch: big.Zero(),
 		ProviderCollateral:   big.Zero(),
-		ClientCollateral:     big.Zero(),
+		ClientCollateral:     big.Zero(), */
 	}
 	newProps := map[abi.DealID]*market2.DealProposal{
 		abi.DealID(1): oldProp1, // 1 was persisted
@@ -355,7 +355,7 @@ func TestMinerSectorChange(t *testing.T) {
 	// 2 same
 	// 3 added
 	si1Ext := si1
-	si1Ext.Expiration++
+	/* si1Ext.Expiration++ */
 	newMinerC := createMinerState(ctx, t, store, owner, worker, []miner.SectorOnChainInfo{si1Ext, si2, si3})
 
 	minerAddr := nextIDAddrF()
@@ -386,9 +386,9 @@ func TestMinerSectorChange(t *testing.T) {
 	require.Equal(t, 1, len(sectorChanges.Removed))
 	require.Equal(t, si0, sectorChanges.Removed[0])
 
-	require.Equal(t, 1, len(sectorChanges.Extended))
+	/* require.Equal(t, 1, len(sectorChanges.Extended))
 	require.Equal(t, si1, sectorChanges.Extended[0].From)
-	require.Equal(t, si1Ext, sectorChanges.Extended[0].To)
+	require.Equal(t, si1Ext, sectorChanges.Extended[0].To) */
 
 	change, val, err = minerDiffFn(ctx, oldState.Key(), oldState.Key())
 	require.NoError(t, err)
@@ -409,9 +409,9 @@ func TestMinerSectorChange(t *testing.T) {
 	require.Equal(t, 1, len(sectorChanges.Removed))
 	require.Equal(t, si3, sectorChanges.Removed[0])
 
-	require.Equal(t, 1, len(sectorChanges.Extended))
+	/* require.Equal(t, 1, len(sectorChanges.Extended))
 	require.Equal(t, si1, sectorChanges.Extended[0].To)
-	require.Equal(t, si1Ext, sectorChanges.Extended[0].From)
+	require.Equal(t, si1Ext, sectorChanges.Extended[0].From) */
 }
 
 type balance struct {
@@ -515,19 +515,21 @@ func createSectorsAMT(ctx context.Context, t *testing.T, store adt2.Store, secto
 	root := adt2.MakeEmptyArray(store)
 	for _, sector := range sectors {
 		sector := miner2.SectorOnChainInfo{
-			SectorNumber:          sector.SectorNumber,
-			SealProof:             sector.SealProof,
-			SealedCID:             sector.SealedCID,
-			DealIDs:               sector.DealIDs,
-			Activation:            sector.Activation,
-			Expiration:            sector.Expiration,
+			SectorNumber: sector.SectorNumber,
+			SealProof:    sector.SealProof,
+			SealedCID:    sector.SealedCID,
+			DealIDs:      sector.DealIDs,
+			Activation:   sector.Activation,
+			PieceSizes:   sector.PieceSizes,
+			DealWins:     sector.DealWins,
+			/* Expiration:            sector.Expiration,
 			DealWeight:            sector.DealWeight,
 			VerifiedDealWeight:    sector.VerifiedDealWeight,
 			InitialPledge:         sector.InitialPledge,
 			ExpectedDayReward:     sector.ExpectedDayReward,
 			ExpectedStoragePledge: sector.ExpectedStoragePledge,
 			ReplacedSectorAge:     0,
-			ReplacedDayReward:     big.NewInt(0),
+			ReplacedDayReward:     big.NewInt(0), */
 		}
 		err := root.Set(uint64(sector.SectorNumber), &sector)
 		require.NoError(t, err)
@@ -545,14 +547,14 @@ func newSectorOnChainInfo(sectorNo abi.SectorNumber, sealed cid.Cid, weight big.
 		SealProof:    info.SealProof,
 		SealedCID:    info.SealedCID,
 		DealIDs:      info.DealIDs,
-		Expiration:   info.Expiration,
+		/* Expiration:   info.Expiration, */
 
-		Activation:            activation,
-		DealWeight:            weight,
+		Activation: activation,
+		/* DealWeight:            weight,
 		VerifiedDealWeight:    weight,
 		InitialPledge:         big.Zero(),
 		ExpectedDayReward:     big.Zero(),
-		ExpectedStoragePledge: big.Zero(),
+		ExpectedStoragePledge: big.Zero(), */
 	}
 }
 
@@ -563,12 +565,12 @@ const (
 // returns a unique SectorPreCommitInfo with each invocation with SectorNumber set to `sectorNo`.
 func newSectorPreCommitInfo(sectorNo abi.SectorNumber, sealed cid.Cid, expiration abi.ChainEpoch) *miner2.SectorPreCommitInfo {
 	return &miner2.SectorPreCommitInfo{
-		SealProof:     abi.RegisteredSealProof_StackedDrg32GiBV1,
+		SealProof:     abi.RegisteredSealProof_StackedDrg8MiBV1,
 		SectorNumber:  sectorNo,
 		SealedCID:     sealed,
 		SealRandEpoch: sectorSealRandEpochValue,
 		DealIDs:       nil,
-		Expiration:    expiration,
+		/* Expiration:    expiration, */
 	}
 }
 
