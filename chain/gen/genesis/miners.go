@@ -147,7 +147,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 
 		// Add expert
 		if i == 0 {
-			expertCreateParams := &power2.ExpertConstructorParams{
+			expertCreateParams := &power2.CreateExpertParams{
 				Owner:  m.Owner,
 				PeerId: []byte(m.PeerId),
 			}

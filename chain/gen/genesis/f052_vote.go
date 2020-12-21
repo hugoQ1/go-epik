@@ -18,14 +18,14 @@ func SetupVoteActor(bs bstore.Blockstore) (*types.Actor, error) {
 		return nil, err
 	}
 
-	vas := vote.ConstructState(c, c)
+	vas := vote.ConstructState(c)
 	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.Actor{
-		Code:    builtin.VoteActorCodeID,
+		Code:    builtin.VoteFundsActorCodeID,
 		Head:    stcid,
 		Nonce:   0,
 		Balance: types.NewInt(0),

@@ -12,21 +12,21 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 )
 
-func SetupKnowledgeActor(bs bstore.Blockstore, recipient address.Address) (*types.Actor, error) {
+func SetupKnowledgeActor(bs bstore.Blockstore, initialPayee address.Address) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 	m, err := adt.MakeEmptyMap(store).Root()
 	if err != nil {
 		return nil, err
 	}
 
-	kas := knowledge.ConstructState(m, recipient)
+	kas := knowledge.ConstructState(m, initialPayee)
 	stcid, err := store.Put(store.Context(), kas)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.Actor{
-		Code:    builtin.KnowledgeActorCodeID,
+		Code:    builtin.KnowledgeFundsActorCodeID,
 		Head:    stcid,
 		Nonce:   0,
 		Balance: types.NewInt(0),

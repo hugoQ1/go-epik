@@ -64,7 +64,7 @@ func (api *api) Spawn() (nodeInfo, error) {
 		template.Miners = append(template.Miners, *genm)
 		template.Accounts = append(template.Accounts, genesis.Actor{
 			Type:    genesis.TAccount,
-			Balance: types.FromFil(5000000),
+			Balance: types.FromEpk(5000000),
 			Meta:    (&genesis.AccountMeta{Owner: genm.Owner}).ActorMeta(),
 		})
 		// template.VerifregRootKey = gen.DefaultVerifregRootkeyActor

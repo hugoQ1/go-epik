@@ -414,7 +414,7 @@ var actorControlList = &cli.Command{
 			tablewriter.Col("balance"),
 		)
 
-		postAddr, err := storage.AddressFor(ctx, api, mi, storage.PoStAddr, types.FromFil(1))
+		postAddr, err := storage.AddressFor(ctx, api, mi, storage.PoStAddr, types.FromEpk(1))
 		if err != nil {
 			return xerrors.Errorf("getting address for post: %w", err)
 		}
@@ -439,9 +439,9 @@ var actorControlList = &cli.Command{
 
 			bstr := types.EPK(b).String()
 			switch {
-			case b.LessThan(types.FromFil(10)):
+			case b.LessThan(types.FromEpk(10)):
 				bstr = color.RedString(bstr)
-			case b.LessThan(types.FromFil(50)):
+			case b.LessThan(types.FromEpk(50)):
 				bstr = color.YellowString(bstr)
 			default:
 				bstr = color.GreenString(bstr)

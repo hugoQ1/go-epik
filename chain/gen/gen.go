@@ -183,7 +183,7 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		return nil, err
 	}
 
-	genm1, k1, err := seed.PreSeal(maddr1, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, numSectors, m1temp, []byte("some randomness"), nil, true)
+	genm1, k1, err := seed.PreSeal(maddr1, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, numSectors, m1temp, []byte("some randomness"), nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		return nil, err
 	}
 
-	genm2, k2, err := seed.PreSeal(maddr2, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, numSectors, m2temp, []byte("some randomness"), nil, true)
+	genm2, k2, err := seed.PreSeal(maddr2, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, numSectors, m2temp, []byte("some randomness"), nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -213,19 +213,19 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 
 	tpl := genesis.Template{
 		Accounts: []genesis.Actor{
-			{ // TODO:
+			{
 				Type:    genesis.TAccount,
-				Balance: types.FromFil(0),
+				Balance: types.FromEpk(20_000_000),
 				Meta:    (&genesis.AccountMeta{Owner: mk1}).ActorMeta(),
 			},
-			{ // TODO:
+			{
 				Type:    genesis.TAccount,
-				Balance: types.FromFil(0),
+				Balance: types.FromEpk(20_000_000),
 				Meta:    (&genesis.AccountMeta{Owner: mk2}).ActorMeta(),
 			},
-			{ // TODO:
+			{
 				Type:    genesis.TAccount,
-				Balance: types.FromFil(50000),
+				Balance: types.FromEpk(50000),
 				Meta:    (&genesis.AccountMeta{Owner: banker}).ActorMeta(),
 			},
 		},
@@ -235,12 +235,12 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		},
 		// VerifregRootKey:  DefaultVerifregRootkeyActor,
 		// RemainderAccount: DefaultRemainderAccountActor,
-		GovernAccountActor:      DefaultGovernAccountActor,
-		TeamAccountActor:        DefaultTeamAccountActor,
-		FoundationAccountActor:  DefaultFoundationAccountActor,
-		FundraisingAccountActor: DefaultFundraisingAccountActor,
-		NetworkName:             uuid.New().String(),
-		Timestamp:               uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
+		FirstGovernorAccountActor: FirstGovernorAccountActor,
+		TeamAccountActor:          DefaultTeamAccountActor,
+		FoundationAccountActor:    DefaultFoundationAccountActor,
+		FundraisingAccountActor:   DefaultFundraisingAccountActor,
+		NetworkName:               uuid.New().String(),
+		Timestamp:                 uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
 	}
 
 	genb, err := genesis2.MakeGenesisBlock(context.TODO(), j, bs, sys, tpl)

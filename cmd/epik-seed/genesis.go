@@ -17,8 +17,10 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
@@ -51,7 +53,11 @@ var genesisNewCmd = &cli.Command{
 			Miners:   []genesis.Miner{},
 			// VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
 			// RemainderAccount: gen.DefaultRemainderAccountActor,
-			NetworkName: cctx.String("network-name"),
+			NetworkName:               cctx.String("network-name"),
+			TeamAccountActor:          gen.DefaultTeamAccountActor,
+			FoundationAccountActor:    gen.DefaultFoundationAccountActor,
+			FundraisingAccountActor:   gen.DefaultFundraisingAccountActor,
+			FirstGovernorAccountActor: gen.FirstGovernorAccountActor,
 		}
 		if out.NetworkName == "" {
 			out.NetworkName = "localnet-" + uuid.New().String()
@@ -133,7 +139,7 @@ var genesisAddMinerCmd = &cli.Command{
 			log.Infof("Giving %s some initial balance", miner.Owner)
 			template.Accounts = append(template.Accounts, genesis.Actor{
 				Type:    genesis.TAccount,
-				Balance: big.Mul(big.NewInt(50_000_000), big.NewInt(int64(build.EpkPrecision))),
+				Balance: big.Mul(big.NewInt(5_00_000), big.NewInt(int64(build.EpkPrecision))),
 				Meta:    (&genesis.AccountMeta{Owner: miner.Owner}).ActorMeta(),
 			})
 		}
@@ -152,17 +158,19 @@ var genesisAddMinerCmd = &cli.Command{
 }
 
 type GenAccountEntry struct {
-	Version       int
-	ID            string
-	Amount        types.EPK
-	VestingMonths int
-	CustodianID   int
-	M             int
-	N             int
-	Addresses     []address.Address
-	Type          string
-	Sig1          string
-	Sig2          string
+	Version          int
+	ID               string
+	Amount           types.EPK
+	VestingMonths    int
+	CustodianID      int
+	M                int
+	N                int
+	Addresses        []address.Address
+	Type             string
+	Sig1             string
+	Sig2             string
+	InitialVestedNum int
+	InitialVestedDen int
 }
 
 var genesisAddMsigsCmd = &cli.Command{
@@ -207,6 +215,12 @@ var genesisAddMsigsCmd = &cli.Command{
 				Threshold:       e.M,
 				VestingDuration: monthsToBlocks(e.VestingMonths),
 				VestingStart:    0,
+			}
+			if e.InitialVestedNum > 0 && e.InitialVestedDen > 0 {
+				msig.InitialVestedTarget = &builtin.BigFrac{
+					Numerator:   big.NewInt(int64(e.InitialVestedNum)),
+					Denominator: big.NewInt(int64(e.InitialVestedDen)),
+				}
 			}
 
 			act := genesis.Actor{
@@ -259,6 +273,26 @@ func parseMultisigCsv(csvf string) ([]GenAccountEntry, error) {
 			addrs = append(addrs, addr)
 		}
 
+		initialVestedStr := strings.TrimSpace(e[11])
+		var initialNum, initialDen int
+		if len(initialVestedStr) > 0 {
+			target := strings.Split(initialVestedStr, "/")
+			if len(target) != 2 {
+				return nil, xerrors.Errorf("failed to parse initial vested")
+			}
+			initialNum, err = strconv.Atoi(strings.TrimSpace(target[0]))
+			if err != nil {
+				return nil, xerrors.Errorf("Numerator be integer: %w", err)
+			}
+			initialDen, err = strconv.Atoi(strings.TrimSpace(target[1]))
+			if err != nil {
+				return nil, xerrors.Errorf("Denominator be integer: %w", err)
+			}
+			if initialNum < 0 || initialDen <= 0 || initialNum > initialDen {
+				return nil, xerrors.Errorf("illegal numerator %d or denominator %d", initialNum, initialDen)
+			}
+		}
+
 		balance, err := types.ParseEPK(strings.TrimSpace(e[2]))
 		if err != nil {
 			return nil, xerrors.Errorf("failed to parse account balance: %w", err)
@@ -285,17 +319,19 @@ func parseMultisigCsv(csvf string) ([]GenAccountEntry, error) {
 			return nil, xerrors.Errorf("record version must be 1")
 		}
 		entries = append(entries, GenAccountEntry{
-			Version:       1,
-			ID:            e[1],
-			Amount:        balance,
-			CustodianID:   custodianID,
-			VestingMonths: vesting,
-			M:             threshold,
-			N:             num,
-			Type:          e[8],
-			Sig1:          e[9],
-			Sig2:          e[10],
-			Addresses:     addrs,
+			Version:          1,
+			ID:               e[1],
+			Amount:           balance,     // e[2]
+			VestingMonths:    vesting,     // e[3]
+			CustodianID:      custodianID, // e[4]
+			M:                threshold,   // e[5]
+			N:                num,         // e[6]
+			Addresses:        addrs,       // e[7]
+			Type:             e[8],
+			Sig1:             e[9],
+			Sig2:             e[10],
+			InitialVestedNum: initialNum,
+			InitialVestedDen: initialDen,
 		})
 	}
 

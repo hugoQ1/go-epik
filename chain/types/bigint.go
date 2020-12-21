@@ -11,7 +11,7 @@ import (
 
 const BigIntMaxSerializedLen = 128 // is this big enough? or too big?
 
-var TotalEpkInt = FromFil(build.EpkBase)
+var TotalEpkInt = FromEpk(build.EpkBase)
 
 var EmptyInt = BigInt{}
 
@@ -21,7 +21,7 @@ func NewInt(i uint64) BigInt {
 	return BigInt{Int: big.NewInt(0).SetUint64(i)}
 }
 
-func FromFil(i uint64) BigInt {
+func FromEpk(i uint64) BigInt {
 	return BigMul(NewInt(i), NewInt(build.EpkPrecision))
 }
 

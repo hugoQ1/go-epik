@@ -21,6 +21,8 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/knowledge"
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
@@ -56,9 +58,13 @@ The process:
   - Setup Reward (0.7B epk)
   - Setup Cron
   - Create empty power actor
-  - Create empty market
-  - Create verified registry
+  - Create empty market actor
+  - Create empty govern actor
   - Setup burnt fund address
+  - Setup expert funds actor
+  - Setup retrieval funds actor
+  - Setup vote funds actor
+  - Setup knowledge funds actor
   - Initialize account / msig balances
 - Instantiate early vm with genesis syscalls
   - Create miners
@@ -89,7 +95,7 @@ Genesis: {
 	Accounts: [ # non-miner, non-singleton actors, max len = MaxAccounts
 		{
 			Type: "account" / "multisig",
-			Value: "attofil",
+			Value: "attoepk",
 			[Meta: {msig settings, account key..}]
 		},...
 	],
@@ -132,8 +138,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	// Create init actor
 
 	idStart, initact, keyIDs, err := SetupInitActor(bs, template.NetworkName,
-		append(template.Accounts, template.GovernAccountActor, template.FoundationAccountActor,
-			template.FundraisingAccountActor, template.TeamAccountActor))
+		append(template.Accounts, template.FirstGovernorAccountActor, template.FoundationAccountActor, template.FundraisingAccountActor, template.TeamAccountActor))
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
@@ -165,7 +170,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	// Create empty power actor
 	spact, err := SetupStoragePowerActor(bs)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
+		return nil, nil, xerrors.Errorf("setup storage power actor: %w", err)
 	}
 	if err := state.SetActor(builtin2.StoragePowerActorAddr, spact); err != nil {
 		return nil, nil, xerrors.Errorf("set storage market actor: %w", err)
@@ -180,32 +185,14 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set market actor: %w", err)
 	}
 
-	// Create empty vote actor
-	voteact, err := SetupVoteActor(bs)
+	// Create empty govern actor
+	governact, err := SetupGovernActor(bs, builtin.FoundationAddress)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
+		return nil, nil, xerrors.Errorf("setup govern actor: %w", err)
 	}
-	if err := state.SetActor(builtin2.VoteFundsActorAddr, voteact); err != nil {
-		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
+	if err := state.SetActor(builtin2.GovernActorAddr, governact); err != nil {
+		return nil, nil, xerrors.Errorf("set govern actor: %w", err)
 	}
-
-	// Create empty knowledge actor
-	knowact, err := SetupKnowledgeActor(bs, builtin.GovernAddress)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
-	}
-	if err := state.SetActor(builtin2.KnowledgeFundsActorAddr, knowact); err != nil {
-		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
-	}
-
-	/* // Create verified registry
-	verifact, err := SetupVerifiedRegistryActor(bs)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("setup storage market actor: %w", err)
-	}
-	if err := state.SetActor(builtin2.VerifiedRegistryActorAddr, verifact); err != nil {
-		return nil, nil, xerrors.Errorf("set market actor: %w", err)
-	} */
 
 	// Setup burnt-funds
 	burntRoot, err := cst.Put(ctx, &account2.State{
@@ -253,6 +240,24 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	})
 	if err != nil {
 		return nil, nil, xerrors.Errorf("set retrieve funds account actor: %w", err)
+	}
+
+	// Create empty vote actor
+	voteact, err := SetupVoteActor(bs)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.VoteFundsActorAddr, voteact); err != nil {
+		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
+	}
+
+	// Create empty knowledge actor
+	knowact, err := SetupKnowledgeActor(bs, builtin.FirstGovernorAddress)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.KnowledgeFundsActorAddr, knowact); err != nil {
+		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 
 	// Create accounts
@@ -326,7 +331,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	// 	return nil, nil, xerrors.Errorf("setting account from actmap: %w", err)
 	// }
 
-	if err := createMultisigAccount(ctx, bs, cst, state, builtin.GovernAddress, template.GovernAccountActor, keyIDs); err != nil {
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FirstGovernorAddress, template.FirstGovernorAccountActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up govern account: %w", err)
 	}
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FundraisingAddress, template.FundraisingAccountActor, keyIDs); err != nil {
@@ -489,6 +494,15 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 			verifNeeds[keyIDs[s.Deal.Client]] += amt
 			sum += amt */
 		}
+	}
+
+	// Set initial governor
+	_, err = doExecValue(ctx, vm, builtin2.GovernActorAddr, builtin.FoundationAddress, types.NewInt(0), builtin2.MethodsGovern.Grant, mustEnc(&govern.GrantOrRevokeParams{
+		Governor:    builtin.FirstGovernorAddress,
+		Authorities: nil, // Grant all priviledges to FirstGovernorAddress
+	}))
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to set initial governor: %w", err)
 	}
 
 	/* verifregRoot, err := address.NewIDAddress(80)

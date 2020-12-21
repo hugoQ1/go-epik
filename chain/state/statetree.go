@@ -185,12 +185,7 @@ func LoadStateTree(cst cbor.IpldStore, c cid.Cid) (*StateTree, error) {
 	var root types.StateRoot
 	// Try loading as a new-style state-tree (version/actors tuple).
 	if err := cst.Get(context.TODO(), c, &root); err != nil {
-		// // We failed to decode as the new version, must be an old version.
-		// root.Actors = c
-		// root.Version = types.StateTreeVersion1
-
-		// Should never fail
-		return nil, xerrors.Errorf("unexpected failure to load state stree for %s: %s", c, err)
+		return nil, xerrors.Errorf("unexpected failure to load state root for %s: %s", c, err)
 	}
 
 	switch root.Version {
@@ -360,12 +355,7 @@ func (st *StateTree) Flush(ctx context.Context) (cid.Cid, error) {
 	// if st.version == types.StateTreeVersion0 {
 	// 	return root, nil
 	// }
-	switch st.version {
-	case types.StateTreeVersion1:
-		// do nothing
-	default:
-		return cid.Undef, xerrors.Errorf("unexpected state tree version: %d", st.version)
-	}
+
 	// Otherwise, return a versioned tree.
 	return st.Store.Put(ctx, &types.StateRoot{Version: st.version, Actors: root, Info: st.info})
 }

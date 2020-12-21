@@ -107,8 +107,8 @@ type Template struct {
 
 	// VerifregRootKey  Actor
 	// RemainderAccount Actor
-	TeamAccountActor        Actor
-	FoundationAccountActor  Actor
-	FundraisingAccountActor Actor
-	GovernAccountActor      Actor
+	TeamAccountActor          Actor
+	FoundationAccountActor    Actor
+	FundraisingAccountActor   Actor
+	FirstGovernorAccountActor Actor
 }

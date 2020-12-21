@@ -177,7 +177,7 @@ var findMinersCmd = &cli.Command{
 
 		rf := &refunder{
 			api:       api,
-			threshold: types.FromFil(threshold),
+			threshold: types.FromEpk(threshold),
 		}
 
 		refundTipset, err := api.ChainHead(ctx)
@@ -285,8 +285,8 @@ var recoverMinersCmd = &cli.Command{
 			wallet:                     from,
 			dryRun:                     dryRun,
 			minerRecoveryRefundPercent: minerRecoveryRefundPercent,
-			minerRecoveryCutoff:        types.FromFil(minerRecoveryCutoff),
-			minerRecoveryBonus:         types.FromFil(minerRecoveryBonus),
+			minerRecoveryCutoff:        types.FromEpk(minerRecoveryCutoff),
+			minerRecoveryBonus:         types.FromEpk(minerRecoveryBonus),
 			blockmap:                   blockmap,
 		}
 
@@ -491,8 +491,8 @@ var runCmd = &cli.Command{
 			wallet:                     from,
 			refundPercent:              refundPercent,
 			minerRecoveryRefundPercent: minerRecoveryRefundPercent,
-			minerRecoveryCutoff:        types.FromFil(minerRecoveryCutoff),
-			minerRecoveryBonus:         types.FromFil(minerRecoveryBonus),
+			minerRecoveryCutoff:        types.FromEpk(minerRecoveryCutoff),
+			minerRecoveryBonus:         types.FromEpk(minerRecoveryBonus),
 			dryRun:                     dryRun,
 			preCommitEnabled:           preCommitEnabled,
 			proveCommitEnabled:         proveCommitEnabled,

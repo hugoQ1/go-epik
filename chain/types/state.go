@@ -10,7 +10,7 @@ const (
 	// // StateTreeVersion0 corresponds to actors < v2.
 	// StateTreeVersion0 StateTreeVersion = iota
 	// StateTreeVersion1 corresponds to actors >= v2.
-	StateTreeVersion1 StateTreeVersion = iota
+	StateTreeVersion1 StateTreeVersion = 1 + iota
 )
 
 type StateRoot struct {

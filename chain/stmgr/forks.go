@@ -214,11 +214,11 @@ func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmo
 
 /* func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
 	// Some initial parameters
-	FundsForMiners := types.FromFil(1_000_000)
+	FundsForMiners := types.FromEpk(1_000_000)
 	LookbackEpoch := abi.ChainEpoch(32000)
-	AccountCap := types.FromFil(0)
-	BaseMinerBalance := types.FromFil(20)
-	DesiredReimbursementBalance := types.FromFil(5_000_000)
+	AccountCap := types.FromEpk(0)
+	BaseMinerBalance := types.FromEpk(20)
+	DesiredReimbursementBalance := types.FromEpk(5_000_000)
 
 	isSystemAccount := func(addr address.Address) (bool, error) {
 		id, err := address.IDFromAddress(addr)
@@ -457,7 +457,7 @@ func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmo
 		return cid.Undef, xerrors.Errorf("checking final state balance failed: %w", err)
 	}
 
-	exp := types.FromFil(build.EpkBase)
+	exp := types.FromEpk(build.EpkBase)
 	if !exp.Equals(total) {
 		return cid.Undef, xerrors.Errorf("resultant state tree account balance was not correct: %s", total)
 	}

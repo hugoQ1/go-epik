@@ -1091,7 +1091,7 @@ var clientRetrieveCmd = &cli.Command{
 			return fmt.Errorf("The received offer errored: %s", offer.Err)
 		}
 
-		maxPrice := types.FromFil(DefaultMaxRetrievePrice)
+		maxPrice := types.FromEpk(DefaultMaxRetrievePrice)
 
 		if cctx.String("maxPrice") != "" {
 			maxPriceFil, err := types.ParseEPK(cctx.String("maxPrice"))

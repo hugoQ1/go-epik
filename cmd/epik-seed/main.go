@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/docker/go-units"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
@@ -31,7 +33,7 @@ func main() {
 
 	local := []*cli.Command{
 		genesisCmd,
-
+		newKeyCmd,
 		preSealCmd,
 		aggregateManifestsCmd,
 	}
@@ -54,6 +56,42 @@ func main() {
 		log.Warn(err)
 		os.Exit(1)
 	}
+}
+
+var newKeyCmd = &cli.Command{
+	Name:      "new-key",
+	Usage:     "Generate a new key of the given type",
+	ArgsUsage: "[bls|secp256k1 (default secp256k1)]",
+	Action: func(c *cli.Context) error {
+
+		typ := c.Args().First()
+		if typ == "" {
+			typ = "secp256k1"
+		}
+
+		nk, err := wallet.GenerateKey(types.KeyType(typ))
+		if err != nil {
+			return err
+		}
+
+		cur, err := homedir.Expand(".")
+		if err != nil {
+			return err
+		}
+
+		b, err := json.Marshal(nk.KeyInfo)
+		if err != nil {
+			return err
+		}
+
+		// TODO: allow providing key
+		if err := ioutil.WriteFile(filepath.Join(cur, nk.Address.String()+".key"), []byte(hex.EncodeToString(b)), 0664); err != nil {
+			return err
+		}
+
+		fmt.Println(nk.Address.String())
+		return nil
+	},
 }
 
 var preSealCmd = &cli.Command{

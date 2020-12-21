@@ -7,7 +7,7 @@ import (
 type Version int
 
 const (
-	Version0 Version = 0
+	// Version0 Version = 0
 	Version2 Version = 2
 )
 

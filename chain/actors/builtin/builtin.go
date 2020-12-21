@@ -19,13 +19,10 @@ var SystemActorAddr = builtin.SystemActorAddr
 var BurntFundsActorAddr = builtin.BurntFundsActorAddr
 var CronActorAddr = builtin.CronActorAddr
 
-// var SaftAddress = makeAddress("t0122")
-// var ReserveAddress = makeAddress("t090")
-// var RootVerifierAddress = makeAddress("t080")
-var GovernAddress = makeAddress("t090")      // TODO: defined in actors
-var TeamAddress = makeAddress("t091")        // TODO: defined in actors
-var FoundationAddress = makeAddress("t092")  // TODO: defined in actors
-var FundraisingAddress = makeAddress("t093") // TODO: defined in actors
+var FoundationAddress = makeAddress("t080")
+var FundraisingAddress = makeAddress("t081")
+var TeamAddress = makeAddress("t082")
+var FirstGovernorAddress = makeAddress("t083")
 
 var (
 	ExpectedLeadersPerEpoch = builtin.ExpectedLeadersPerEpoch

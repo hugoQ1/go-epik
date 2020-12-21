@@ -8,6 +8,13 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
+// For testing
+//
+// PrivateKey of t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y:
+//
+// 7b2254797065223a22736563703235366b31222c22507269766174654b6579223a226e4a592b41555649724f596e6a51452f675653565274444f434374686d39785a4d7162764f7546794f69413d227d
+//
+
 /////////////////
 //	allocation
 /////////////////
@@ -15,16 +22,12 @@ import (
 // team & contributors
 var DefaultTeamAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
-	Balance: types.FromFil(50_000_000), // 50M
+	Balance: types.FromEpk(50_000_000), // 50M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
+			makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
 		},
-		Threshold:       3,
+		Threshold:       1,
 		VestingDuration: 90 * 15 * builtin.EpochsInDay,
 		VestingStart:    0,
 		InitialVestedTarget: &builtin.BigFrac{
@@ -37,16 +40,12 @@ var DefaultTeamAccountActor = genesis.Actor{
 // foundation
 var DefaultFoundationAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
-	Balance: types.FromFil(100_000_000), // may be a little less than 100M
+	Balance: types.FromEpk(100_000_000), // may be a little less than 100M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
+			makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
 		},
-		Threshold:       3,
+		Threshold:       1,
 		VestingDuration: 90 * 7 * builtin.EpochsInDay,
 		VestingStart:    0,
 		InitialVestedTarget: &builtin.BigFrac{
@@ -59,16 +58,12 @@ var DefaultFoundationAccountActor = genesis.Actor{
 // fundraising
 var DefaultFundraisingAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
-	Balance: types.FromFil(100_000_000), //  150M
+	Balance: types.FromEpk(100_000_000), //  150M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
+			makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
 		},
-		Threshold:       3,
+		Threshold:       1,
 		VestingDuration: 90 * 7 * builtin.EpochsInDay,
 		VestingStart:    0,
 		InitialVestedTarget: &builtin.BigFrac{
@@ -79,14 +74,14 @@ var DefaultFundraisingAccountActor = genesis.Actor{
 }
 
 /////////////////
-// 	government
+// 	governor
 /////////////////
-var DefaultGovernAccountActor = genesis.Actor{
+var FirstGovernorAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
 	Balance: big.Zero(),
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy"),
+			makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
 		},
 		Threshold:       1,
 		VestingDuration: 0,
