@@ -5,28 +5,38 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/knowledge"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/retrieval"
 	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	cbor "github.com/ipfs/go-ipld-cbor"
 )
 
-func SetupKnowledgeActor(bs bstore.Blockstore, initialPayee address.Address) (*types.Actor, error) {
+func SetupRetrievalFundActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-	m, err := adt.MakeEmptyMap(store).Root()
+
+	emptyMap, err := adt.MakeEmptyMap(store).Root()
 	if err != nil {
 		return nil, err
 	}
 
-	kas := knowledge.ConstructState(m, initialPayee)
-	stcid, err := store.Put(store.Context(), kas)
+	multiMap, err := adt.AsMultimap(store, emptyMap)
+	if err != nil {
+		return nil, err
+	}
+
+	emptyMultiMap, err := multiMap.Root()
+	if err != nil {
+		return nil, err
+	}
+
+	vas := retrieval.ConstructState(emptyMap, emptyMultiMap)
+	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.Actor{
-		Code:    builtin.KnowledgeFundsActorCodeID,
+		Code:    builtin.RetrievalFundActorCodeID,
 		Head:    stcid,
 		Nonce:   0,
 		Balance: types.NewInt(0),

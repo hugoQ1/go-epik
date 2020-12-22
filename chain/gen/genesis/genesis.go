@@ -209,53 +209,39 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set burnt funds account actor: %w", err)
 	}
 
-	// Setup expert-funds
-	expertRoot, err := cst.Put(ctx, &account2.State{
-		Address: builtin2.ExpertFundsActorAddr,
-	})
+	// Setup expert-fund
+	expertfundact, err := SetupExpertFundActor(bs)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
+		return nil, nil, xerrors.Errorf("setup expert fund actor: %w", err)
 	}
-	err = state.SetActor(builtin2.ExpertFundsActorAddr, &types.Actor{
-		Code:    builtin2.AccountActorCodeID,
-		Balance: types.NewInt(0),
-		Head:    expertRoot,
-	})
-	if err != nil {
-		return nil, nil, xerrors.Errorf("set expert funds account actor: %w", err)
+	if err := state.SetActor(builtin2.ExpertFundActorAddr, expertfundact); err != nil {
+		return nil, nil, xerrors.Errorf("set expert fund actor: %w", err)
 	}
 
-	// Setup retrieve-funds
-	retrieveRoot, err := cst.Put(ctx, &account2.State{
-		Address: builtin2.RetrieveFundsActorAddr,
-	})
+	// Setup retrieve-fund
+	retrievalact, err := SetupRetrievalFundActor(bs)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to setup burnt funds actor state: %w", err)
+		return nil, nil, xerrors.Errorf("setup retrieval fund actor: %w", err)
 	}
-	err = state.SetActor(builtin2.RetrieveFundsActorAddr, &types.Actor{
-		Code:    builtin2.AccountActorCodeID,
-		Balance: types.NewInt(0),
-		Head:    retrieveRoot,
-	})
-	if err != nil {
-		return nil, nil, xerrors.Errorf("set retrieve funds account actor: %w", err)
+	if err := state.SetActor(builtin2.RetrievalFundActorAddr, retrievalact); err != nil {
+		return nil, nil, xerrors.Errorf("set retrieval fund actor: %w", err)
 	}
 
-	// Create empty vote actor
+	// Create empty vote-fund
 	voteact, err := SetupVoteActor(bs)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
 	}
-	if err := state.SetActor(builtin2.VoteFundsActorAddr, voteact); err != nil {
+	if err := state.SetActor(builtin2.VoteFundActorAddr, voteact); err != nil {
 		return nil, nil, xerrors.Errorf("set vote actor: %w", err)
 	}
 
-	// Create empty knowledge actor
+	// Create empty knowledge-fund
 	knowact, err := SetupKnowledgeActor(bs, builtin.FirstGovernorAddress)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup knowledge actor: %w", err)
 	}
-	if err := state.SetActor(builtin2.KnowledgeFundsActorAddr, knowact); err != nil {
+	if err := state.SetActor(builtin2.KnowledgeFundActorAddr, knowact); err != nil {
 		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 

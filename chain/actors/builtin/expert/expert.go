@@ -24,7 +24,7 @@ func init() {
 }
 
 var (
-	Address = builtin2.ExpertFundsActorAddr
+	Address = builtin2.ExpertFundActorAddr
 	Methods = builtin2.MethodsExpert
 )
 

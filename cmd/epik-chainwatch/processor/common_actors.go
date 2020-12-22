@@ -144,10 +144,12 @@ func (p Processor) storeActorAddresses(ctx context.Context, actors map[cid.Cid]A
 	addressToID[builtin2.CronActorAddr] = builtin2.CronActorAddr
 	addressToID[builtin2.StoragePowerActorAddr] = builtin2.StoragePowerActorAddr
 	addressToID[builtin2.StorageMarketActorAddr] = builtin2.StorageMarketActorAddr
-	/* addressToID[builtin2.VerifiedRegistryActorAddr] = builtin2.VerifiedRegistryActorAddr */
+	addressToID[builtin2.GovernActorAddr] = builtin2.GovernActorAddr
 	addressToID[builtin2.BurntFundsActorAddr] = builtin2.BurntFundsActorAddr
-	addressToID[builtin2.ExpertFundsActorAddr] = builtin2.ExpertFundsActorAddr
-	addressToID[builtin2.RetrieveFundsActorAddr] = builtin2.RetrieveFundsActorAddr
+	addressToID[builtin2.ExpertFundActorAddr] = builtin2.ExpertFundActorAddr
+	addressToID[builtin2.RetrievalFundActorAddr] = builtin2.RetrievalFundActorAddr
+	addressToID[builtin2.VoteFundActorAddr] = builtin2.VoteFundActorAddr
+	addressToID[builtin2.KnowledgeFundActorAddr] = builtin2.KnowledgeFundActorAddr
 	initActor, err := p.node.StateGetActor(ctx, builtin2.InitActorAddr, types.EmptyTSK)
 	if err != nil {
 		return err

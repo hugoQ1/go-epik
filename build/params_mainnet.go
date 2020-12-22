@@ -14,8 +14,7 @@ import (
 )
 
 var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
-	0: DrandIncentinet, // TODO: testnet
-	// 0: DrandMainnet,
+	0: DrandTestnet, // TODO: DrandMainnet
 }
 
 // const UpgradeBreezeHeight = 41280
@@ -45,6 +44,7 @@ func init() {
 
 	if os.Getenv("EPIK_USE_TEST_ADDRESSES") != "1" {
 		SetAddressNetwork(address.Mainnet)
+		DrandSchedule[0] = DrandMainnet
 	}
 
 	Devnet = false

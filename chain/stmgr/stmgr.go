@@ -326,7 +326,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	var receipts []cbg.CBORMarshaler
 	processedMsgs := make(map[cid.Cid]struct{})
 	for _, b := range bms {
-		penalty := types.NewInt(0)
+		penalty := big.Zero()
 		gasReward := big.Zero()
 
 		for _, cm := range append(b.BlsMessages, b.SecpkMessages...) {
@@ -1240,6 +1240,8 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 			foundation = au
 		case builtin.FundraisingAddress:
 			fundraising = au
+		case builtin.FirstGovernorAddress:
+			// actually no amount
 		default:
 			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("unknown address: %v", addr)
 		}
@@ -1381,7 +1383,12 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 	// 		return api.CirculatingSupply{}, xerrors.Errorf("failed to setup post-ignition genesis information: %w", err)
 	// 	}
 	// }
-
+	if sm.genInfos == nil {
+		err := sm.setupGenesisActors(ctx)
+		if err != nil {
+			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup genesis information: %w", err)
+		}
+	}
 	epkVested, team, foundation, fundraising, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)

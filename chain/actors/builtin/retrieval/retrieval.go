@@ -12,19 +12,19 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.RetrievalActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+	builtin.RegisterActorState(builtin2.RetrievalFundActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
 		return load2(store, root)
 	})
 }
 
 var (
-	Address = builtin2.RetrieveFundsActorAddr
+	Address = builtin2.RetrievalFundActorAddr
 	Methods = builtin2.MethodsRetrieval
 )
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.RewardActorCodeID:
+	case builtin2.RetrievalFundActorCodeID:
 		return load2(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
