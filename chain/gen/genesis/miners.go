@@ -279,7 +279,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			// add mining pledge
 			_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, miner2.ConsensusMinerMinPledge, builtin2.MethodsMiner.AddPledge, nil)
 			if err != nil {
-				return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors: %w", err)
+				return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors (add pledge): %w", err)
 			}
 
 			for pi, preseal := range m.Sectors {
@@ -343,7 +343,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				fmt.Println(types.EPK(pledge)) */
 				_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, big.Zero() /* pledge */, builtin2.MethodsMiner.PreCommitSector, mustEnc(params))
 				if err != nil {
-					return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors: %w", err)
+					return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors (pre-commit): %w", err)
 				}
 
 				// Commit one-by-one, otherwise pledge math tends to explode
@@ -353,7 +353,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 
 				_, err = doExecValue(ctx, vm, minerInfos[i].maddr, power.Address, big.Zero(), builtin2.MethodsMiner.ConfirmSectorProofsValid, mustEnc(confirmParams))
 				if err != nil {
-					return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors: %w", err)
+					return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors (confirm proof): %w", err)
 				}
 			}
 		}

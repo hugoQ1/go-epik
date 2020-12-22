@@ -22,7 +22,6 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/knowledge"
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
