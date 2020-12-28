@@ -1970,6 +1970,11 @@ var clientListTransfers = &cli.Command{
 	Usage: "List ongoing data transfers for deals",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
+			Name:    "verbose",
+			Aliases: []string{"v"},
+			Usage:   "print verbose transfer details",
+		},
+		&cli.BoolFlag{
 			Name:  "color",
 			Usage: "use color in display output",
 			Value: true,
@@ -2000,6 +2005,7 @@ var clientListTransfers = &cli.Command{
 			return err
 		}
 
+		verbose := cctx.Bool("verbose")
 		completed := cctx.Bool("completed")
 		color := cctx.Bool("color")
 		watch := cctx.Bool("watch")
@@ -2015,7 +2021,7 @@ var clientListTransfers = &cli.Command{
 
 				tm.MoveCursor(1, 1)
 
-				OutputDataTransferChannels(tm.Screen, channels, completed, color, showFailed)
+				OutputDataTransferChannels(tm.Screen, channels, verbose, completed, color, showFailed)
 
 				tm.Flush()
 
@@ -2040,13 +2046,13 @@ var clientListTransfers = &cli.Command{
 				}
 			}
 		}
-		OutputDataTransferChannels(os.Stdout, channels, completed, color, showFailed)
+		OutputDataTransferChannels(os.Stdout, channels, verbose, completed, color, showFailed)
 		return nil
 	},
 }
 
 // OutputDataTransferChannels generates table output for a list of channels
-func OutputDataTransferChannels(out io.Writer, channels []lapi.DataTransferChannel, completed bool, color bool, showFailed bool) {
+func OutputDataTransferChannels(out io.Writer, channels []lapi.DataTransferChannel, verbose, completed, color, showFailed bool) {
 	sort.Slice(channels, func(i, j int) bool {
 		return channels[i].TransferID < channels[j].TransferID
 	})
@@ -2076,7 +2082,7 @@ func OutputDataTransferChannels(out io.Writer, channels []lapi.DataTransferChann
 		tablewriter.Col("Voucher"),
 		tablewriter.NewLineCol("Message"))
 	for _, channel := range sendingChannels {
-		w.Write(toChannelOutput(color, "Sending To", channel))
+		w.Write(toChannelOutput(color, "Sending To", channel, verbose))
 	}
 	w.Flush(out) //nolint:errcheck
 
@@ -2090,7 +2096,7 @@ func OutputDataTransferChannels(out io.Writer, channels []lapi.DataTransferChann
 		tablewriter.Col("Voucher"),
 		tablewriter.NewLineCol("Message"))
 	for _, channel := range receivingChannels {
-		w.Write(toChannelOutput(color, "Receiving From", channel))
+		w.Write(toChannelOutput(color, "Receiving From", channel, verbose))
 	}
 	w.Flush(out) //nolint:errcheck
 }
@@ -2111,9 +2117,13 @@ func channelStatusString(useColor bool, status datatransfer.Status) string {
 	}
 }
 
-func toChannelOutput(useColor bool, otherPartyColumn string, channel lapi.DataTransferChannel) map[string]interface{} {
-	rootCid := ellipsis(channel.BaseCID.String(), 8)
-	otherParty := ellipsis(channel.OtherPeer.String(), 8)
+func toChannelOutput(useColor bool, otherPartyColumn string, channel lapi.DataTransferChannel, verbose bool) map[string]interface{} {
+	rootCid := channel.BaseCID.String()
+	otherParty := channel.OtherPeer.String()
+	if !verbose {
+		rootCid = ellipsis(rootCid, 8)
+		otherParty = ellipsis(otherParty, 8)
+	}
 
 	initiated := "N"
 	if channel.IsInitiator {
@@ -2121,7 +2131,7 @@ func toChannelOutput(useColor bool, otherPartyColumn string, channel lapi.DataTr
 	}
 
 	voucher := channel.Voucher
-	if len(voucher) > 40 {
+	if len(voucher) > 40 && !verbose {
 		voucher = ellipsis(voucher, 37)
 	}
 
