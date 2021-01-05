@@ -55,6 +55,7 @@ type State interface {
 	// Funds locked for various reasons.
 	LockedFunds() (LockedFunds, error)
 	FeeDebt() (abi.TokenAmount, error)
+	TotalPledge() (abi.TokenAmount, error)
 
 	GetSector(abi.SectorNumber) (*SectorOnChainInfo, error)
 	FindSector(abi.SectorNumber) (*SectorLocation, error)

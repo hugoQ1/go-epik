@@ -12,7 +12,6 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/dline"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 
 	"go.opencensus.io/trace"
@@ -151,7 +150,8 @@ func (s *WindowPoStScheduler) runSubmitPoST(
 	ctx, span := trace.StartSpan(ctx, "WindowPoStScheduler.submitPoST")
 	defer span.End()
 
-	// Get randomness from tickets
+	commEpoch := deadline.Challenge
+	/* // Get randomness from tickets
 	// use the challenge epoch if we've upgraded to network version 4
 	// (actors version 2). We want to go back as far as possible to be safe.
 	commEpoch := deadline.Open
@@ -159,7 +159,7 @@ func (s *WindowPoStScheduler) runSubmitPoST(
 		log.Errorw("failed to get network version to determine PoSt epoch randomness lookback", "error", err)
 	} else if ver >= network.Version4 {
 		commEpoch = deadline.Challenge
-	}
+	} */
 
 	commRand, err := s.api.ChainGetRandomnessFromTickets(ctx, ts.Key(), crypto.DomainSeparationTag_PoStChainCommit, commEpoch, nil)
 	if err != nil {

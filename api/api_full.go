@@ -12,9 +12,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
@@ -60,9 +63,6 @@ type FullNode interface {
 
 	// ChainGetBlockMessages returns messages stored in the specified block.
 	ChainGetBlockMessages(ctx context.Context, blockCid cid.Cid) (*BlockMessages, error)
-
-	// ChainGetBlockRewards returns rewards of specified block.
-	ChainGetBlockRewards(ctx context.Context, blockCid cid.Cid) (*BlockRewards, error)
 
 	// ChainGetParentReceipts returns receipts for messages in parent tipset of
 	// the specified block.
@@ -350,6 +350,8 @@ type FullNode interface {
 	// StateReplay replays a given message, assuming it was included in a block in the specified tipset.
 	// If no tipset key is provided, the appropriate tipset is looked up.
 	StateReplay(context.Context, types.TipSetKey, cid.Cid) (*InvocResult, error)
+	// StateBlockReward returns block's reward detail.
+	StateBlockReward(ctx context.Context, bid cid.Cid, tsk types.TipSetKey) (*BlockReward, error)
 	// StateGetActor returns the indicated actor's nonce and balance.
 	StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error)
 	// StateReadState returns the indicated actor's state.
@@ -388,6 +390,8 @@ type FullNode interface {
 	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
 	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	// StateMinerTotalPledge returns the total pledge collateral for mining
+	StateMinerTotalPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	// StateMinerSectorAllocated checks if a sector is allocated
 	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)
 	// StateSectorPreCommitInfo returns the PreCommit info for the specified miner's sector
@@ -421,6 +425,10 @@ type FullNode interface {
 	StateMarketDeals(context.Context, types.TipSetKey) (map[string]MarketDeal, error)
 	// StateMarketStorageDeal returns information about the indicated deal
 	StateMarketStorageDeal(context.Context, abi.DealID, types.TipSetKey) (*MarketDeal, error)
+	// StateMarketInitialQuota returns current initial quota for all new deal piece
+	StateMarketInitialQuota(context.Context, types.TipSetKey) (int64, error)
+	// StateMarketInitialQuota returns remaining quota of piece
+	StateMarketRemainingQuota(context.Context, cid.Cid, types.TipSetKey) (int64, error)
 	// StateLookupID retrieves the ID address of the given address
 	StateLookupID(context.Context, address.Address, types.TipSetKey) (address.Address, error)
 	// StateAccountKey returns the public key address of the given ID address
@@ -463,6 +471,18 @@ type FullNode interface {
 	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)
 	// StateExpertInfo returns expert's data info
 	StateExpertDatas(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
+
+	// StateVoteTally returns voting result at given tipset
+	StateVoteTally(context.Context, types.TipSetKey) (*vote.Tally, error)
+	// StateVoterInfo returns voter info at given tipset
+	StateVoterInfo(context.Context, address.Address, types.TipSetKey) (*vote.VoterInfo, error)
+	// StateKnowledgeInfo returns knowledge fund info at given tipset
+	StateKnowledgeInfo(context.Context, types.TipSetKey) (*knowledge.Info, error)
+
+	// StateGovernSupervisor returns authorities of given governor
+	StateGovernSupervisor(context.Context, types.TipSetKey) (address.Address, error)
+	// StateGovernorList returns all governors
+	StateGovernorList(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
@@ -642,10 +662,15 @@ type BlockMessages struct {
 	Cids []cid.Cid
 }
 
-type BlockRewards struct {
-	Cid         cid.Cid // block cid
-	MinerReward types.BigInt
-	GasReward   types.BigInt
+type BlockReward struct {
+	PowerReward     abi.TokenAmount // to miner
+	GasReward       abi.TokenAmount // to miner
+	VoteReward      abi.TokenAmount // to vote fund
+	ExpertReward    abi.TokenAmount // to expert fund
+	RetrievalReward abi.TokenAmount // to retrieval fund
+	KnowledgeReward abi.TokenAmount // to knowledge fund
+	// Sum of failed to award among above, the funds may be burnt or remain in reward actor
+	SendFailed abi.TokenAmount
 }
 
 type Message struct {

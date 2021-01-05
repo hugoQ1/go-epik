@@ -9,6 +9,7 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	paych2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
+	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 )
 
 const (
@@ -140,9 +141,9 @@ func GetDefaultSectorSize() abi.SectorSize {
 }
 
 func GetConsensusMinerMinPledge() abi.TokenAmount {
-	return miner2.ConsensusMinerMinPledge
+	return power2.ConsensusMinerMinPledge
 }
 
 func SetConsensusMinerMinPledge(amount abi.TokenAmount) {
-	miner2.ConsensusMinerMinPledge = amount
+	power2.ConsensusMinerMinPledge = amount
 }

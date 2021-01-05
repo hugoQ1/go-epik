@@ -41,7 +41,7 @@ func makeTestMessage(w *wallet.LocalWallet, from, to address.Address, nonce uint
 		From:       from,
 		To:         to,
 		Method:     2,
-		Value:      types.FromFil(0),
+		Value:      types.FromEpk(0),
 		Nonce:      nonce,
 		GasLimit:   gasLimit,
 		GasFeeCap:  types.NewInt(100 + gasPrice),

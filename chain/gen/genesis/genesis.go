@@ -147,7 +147,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 
 	// Setup reward
 	// RewardActor's state is overrwritten by SetupStorageMiners
-	rewact, err := SetupRewardActor(bs, big.Zero())
+	rewact, err := SetupRewardActor(bs)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup init actor: %w", err)
 	}
@@ -228,7 +228,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	}
 
 	// Create empty vote-fund
-	voteact, err := SetupVoteActor(bs)
+	voteact, err := SetupVoteActor(bs, builtin.FoundationAddress)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("setup vote actor: %w", err)
 	}

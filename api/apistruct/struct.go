@@ -35,8 +35,11 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
@@ -86,7 +89,6 @@ type FullNodeStruct struct {
 		ChainGetBlock                 func(context.Context, cid.Cid) (*types.BlockHeader, error)                                                         `perm:"read"`
 		ChainGetTipSet                func(context.Context, types.TipSetKey) (*types.TipSet, error)                                                      `perm:"read"`
 		ChainGetBlockMessages         func(context.Context, cid.Cid) (*api.BlockMessages, error)                                                         `perm:"read"`
-		ChainGetBlockRewards          func(ctx context.Context, blockCid cid.Cid) (*api.BlockRewards, error)                                             `perm:"read"`
 		ChainGetParentReceipts        func(context.Context, cid.Cid) ([]*types.MessageReceipt, error)                                                    `perm:"read"`
 		ChainGetParentMessages        func(context.Context, cid.Cid) ([]api.Message, error)                                                              `perm:"read"`
 		ChainGetTipSetByHeight        func(context.Context, abi.ChainEpoch, types.TipSetKey) (*types.TipSet, error)                                      `perm:"read"`
@@ -196,6 +198,7 @@ type FullNodeStruct struct {
 		/* StateMinerPreCommitDepositForPower func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"`
 		StateMinerInitialPledgeCollateral  func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"` */
 		StateMinerAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
+		StateMinerTotalPledge      func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
 		StateMinerSectorAllocated  func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)                             `perm:"read"`
 		StateSectorPreCommitInfo   func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error) `perm:"read"`
 		StateSectorGetInfo         func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorOnChainInfo, error)         `perm:"read"`
@@ -203,6 +206,7 @@ type FullNodeStruct struct {
 		StateSectorPartition       func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorLocation, error)            `perm:"read"`
 		StateCall                  func(context.Context, *types.Message, types.TipSetKey) (*api.InvocResult, error)                                    `perm:"read"`
 		StateReplay                func(context.Context, types.TipSetKey, cid.Cid) (*api.InvocResult, error)                                           `perm:"read"`
+		StateBlockReward           func(ctx context.Context, bid cid.Cid, tsk types.TipSetKey) (*api.BlockReward, error)                               `perm:"read"`
 		StateGetActor              func(context.Context, address.Address, types.TipSetKey) (*types.Actor, error)                                       `perm:"read"`
 		StateReadState             func(context.Context, address.Address, types.TipSetKey) (*api.ActorState, error)                                    `perm:"read"`
 		StateWaitMsg               func(ctx context.Context, cid cid.Cid, confidence uint64) (*api.MsgLookup, error)                                   `perm:"read"`
@@ -214,6 +218,8 @@ type FullNodeStruct struct {
 		StateMarketParticipants    func(context.Context, types.TipSetKey) (map[string]api.MarketBalance, error)                                        `perm:"read"`
 		StateMarketDeals           func(context.Context, types.TipSetKey) (map[string]api.MarketDeal, error)                                           `perm:"read"`
 		StateMarketStorageDeal     func(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)                                         `perm:"read"`
+		StateMarketInitialQuota    func(context.Context, types.TipSetKey) (int64, error)                                                               `perm:"read"`
+		StateMarketRemainingQuota  func(context.Context, cid.Cid, types.TipSetKey) (int64, error)                                                      `perm:"read"`
 		StateLookupID              func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)                       `perm:"read"`
 		StateAccountKey            func(context.Context, address.Address, types.TipSetKey) (address.Address, error)                                    `perm:"read"`
 		StateChangedActors         func(context.Context, cid.Cid, cid.Cid) (map[string]types.Actor, error)                                             `perm:"read"`
@@ -232,6 +238,11 @@ type FullNodeStruct struct {
 		StateListExperts                 func(context.Context, types.TipSetKey) ([]address.Address, error)                                                    `perm:"read"`
 		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)                                  `perm:"read"`
 		StateExpertDatas                 func(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error) `perm:"read"`
+		StateVoteTally                   func(context.Context, types.TipSetKey) (*vote.Tally, error)                                                          `perm:"read"`
+		StateVoterInfo                   func(context.Context, address.Address, types.TipSetKey) (*vote.VoterInfo, error)                                     `perm:"read"`
+		StateKnowledgeInfo               func(context.Context, types.TipSetKey) (*knowledge.Info, error)                                                      `perm:"read"`
+		StateGovernSupervisor            func(context.Context, types.TipSetKey) (address.Address, error)                                                      `perm:"read"`
+		StateGovernorList                func(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)                                               `perm:"read"`
 
 		MsigGetAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                                                    `perm:"read"`
 		MsigGetVestingSchedule  func(context.Context, address.Address, types.TipSetKey) (api.MsigVesting, error)                                                                 `perm:"read"`
@@ -799,10 +810,6 @@ func (c *FullNodeStruct) ChainGetBlockMessages(ctx context.Context, b cid.Cid) (
 	return c.Internal.ChainGetBlockMessages(ctx, b)
 }
 
-func (c *FullNodeStruct) ChainGetBlockRewards(ctx context.Context, b cid.Cid) (*api.BlockRewards, error) {
-	return c.Internal.ChainGetBlockRewards(ctx, b)
-}
-
 func (c *FullNodeStruct) ChainGetParentReceipts(ctx context.Context, b cid.Cid) ([]*types.MessageReceipt, error) {
 	return c.Internal.ChainGetParentReceipts(ctx, b)
 }
@@ -955,6 +962,10 @@ func (c *FullNodeStruct) StateMinerAvailableBalance(ctx context.Context, maddr a
 	return c.Internal.StateMinerAvailableBalance(ctx, maddr, tsk)
 }
 
+func (c *FullNodeStruct) StateMinerTotalPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+	return c.Internal.StateMinerTotalPledge(ctx, maddr, tsk)
+}
+
 func (c *FullNodeStruct) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {
 	return c.Internal.StateMinerSectorAllocated(ctx, maddr, s, tsk)
 }
@@ -981,6 +992,10 @@ func (c *FullNodeStruct) StateCall(ctx context.Context, msg *types.Message, tsk 
 
 func (c *FullNodeStruct) StateReplay(ctx context.Context, tsk types.TipSetKey, mc cid.Cid) (*api.InvocResult, error) {
 	return c.Internal.StateReplay(ctx, tsk, mc)
+}
+
+func (c *FullNodeStruct) StateBlockReward(ctx context.Context, bid cid.Cid, tsk types.TipSetKey) (*api.BlockReward, error) {
+	return c.Internal.StateBlockReward(ctx, bid, tsk)
 }
 
 func (c *FullNodeStruct) StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error) {
@@ -1025,6 +1040,14 @@ func (c *FullNodeStruct) StateMarketDeals(ctx context.Context, tsk types.TipSetK
 
 func (c *FullNodeStruct) StateMarketStorageDeal(ctx context.Context, dealid abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error) {
 	return c.Internal.StateMarketStorageDeal(ctx, dealid, tsk)
+}
+
+func (c *FullNodeStruct) StateMarketInitialQuota(ctx context.Context, tsk types.TipSetKey) (int64, error) {
+	return c.Internal.StateMarketInitialQuota(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (int64, error) {
+	return c.Internal.StateMarketRemainingQuota(ctx, pieceCid, tsk)
 }
 
 func (c *FullNodeStruct) StateLookupID(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error) {
@@ -1093,6 +1116,26 @@ func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Addre
 
 func (c *FullNodeStruct) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
 	return c.Internal.StateExpertDatas(ctx, addr, filter, filterOut, tsk)
+}
+
+func (c *FullNodeStruct) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {
+	return c.Internal.StateVoteTally(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateVoterInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*vote.VoterInfo, error) {
+	return c.Internal.StateVoterInfo(ctx, addr, tsk)
+}
+
+func (c *FullNodeStruct) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {
+	return c.Internal.StateKnowledgeInfo(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateGovernSupervisor(ctx context.Context, tsk types.TipSetKey) (address.Address, error) {
+	return c.Internal.StateGovernSupervisor(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateGovernorList(ctx context.Context, tsk types.TipSetKey) ([]*govern.GovernorInfo, error) {
+	return c.Internal.StateGovernorList(ctx, tsk)
 }
 
 func (c *FullNodeStruct) MsigGetAvailableBalance(ctx context.Context, a address.Address, tsk types.TipSetKey) (types.BigInt, error) {

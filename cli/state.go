@@ -43,11 +43,11 @@ import (
 
 var stateCmd = &cli.Command{
 	Name:  "state",
-	Usage: "Interact with and query filecoin chain state",
+	Usage: "Interact with and query epik chain state",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "tipset",
-			Usage: "specify tipset to call method on (pass comma separated array of cids)",
+			Usage: "specify tipset to call method on (pass comma separated array of cids, or '@head' or '@{height}')",
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -61,6 +61,7 @@ var stateCmd = &cli.Command{
 		stateGetActorCmd,
 		stateLookupIDCmd,
 		stateReplayCmd,
+		stateBlockRewardCmd,
 		stateSectorSizeCmd,
 		stateReadStateCmd,
 		stateListMessagesCmd,
@@ -72,6 +73,8 @@ var stateCmd = &cli.Command{
 		stateMinerInfo,
 		stateMarketCmd,
 		stateExecTraceCmd,
+		stateVoteFundCmd,
+		stateKnowFundInfoCmd,
 	},
 }
 
@@ -111,9 +114,15 @@ var stateMinerInfo = &cli.Command{
 		if err != nil {
 			return xerrors.Errorf("getting miner available balance: %w", err)
 		}
+		totalPledge, err := api.StateMinerTotalPledge(ctx, addr, ts.Key())
+		if err != nil {
+			return xerrors.Errorf("getting miner total pledge: %w", err)
+		}
 		fmt.Printf("Available Balance: %s\n", types.EPK(availableBalance))
+		fmt.Printf("Total Mining Pledge: %s\n", types.EPK(totalPledge))
 		fmt.Printf("Owner:\t%s\n", mi.Owner)
 		fmt.Printf("Worker:\t%s\n", mi.Worker)
+		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)
 		for i, controlAddress := range mi.ControlAddresses {
 			fmt.Printf("Control %d: \t%s\n", i, controlAddress)
 		}
@@ -468,6 +477,44 @@ var stateReplayCmd = &cli.Command{
 			fmt.Printf("%s\t%s\t%s\t%d\t%x\t%d\t%x\n", res.Msg.From, res.Msg.To, res.Msg.Value, res.Msg.Method, res.Msg.Params, res.MsgRct.ExitCode, res.MsgRct.Return)
 			printInternalExecutions("\t", res.ExecutionTrace.Subcalls)
 		}
+
+		return nil
+	},
+}
+
+var stateBlockRewardCmd = &cli.Command{
+	Name:      "block-reward",
+	Usage:     "Query block's reward detail",
+	ArgsUsage: "[blockCid]",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		if !cctx.Args().Present() {
+			return fmt.Errorf("must pass cid of block to print")
+		}
+
+		bcid, err := cid.Decode(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		r, err := api.StateBlockReward(ctx, bcid, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("%-20s %s\n", "PowerReward:", types.EPK(r.PowerReward))
+		fmt.Printf("%-20s %s\n", "GasReward:", types.EPK(r.GasReward))
+		fmt.Printf("%-20s %s\n", "ExpertReward:", types.EPK(r.ExpertReward))
+		fmt.Printf("%-20s %s\n", "RetrievalReward:", types.EPK(r.RetrievalReward))
+		fmt.Printf("%-20s %s\n", "VoteReward:", types.EPK(r.VoteReward))
+		fmt.Printf("%-20s %s\n", "KnowledgeReward:", types.EPK(r.KnowledgeReward))
+		fmt.Printf("%-20s %s\n", "SendFailed:", types.EPK(r.SendFailed))
 
 		return nil
 	},
@@ -1795,6 +1842,8 @@ var stateMarketCmd = &cli.Command{
 	Usage: "Inspect the storage market actor",
 	Subcommands: []*cli.Command{
 		stateMarketBalanceCmd,
+		stateMarketInitialQuotaCmd,
+		stateMarketRemainingQuotaCmd,
 	},
 }
 
@@ -1831,6 +1880,192 @@ var stateMarketBalanceCmd = &cli.Command{
 
 		fmt.Printf("Escrow: %s\n", types.EPK(balance.Escrow))
 		fmt.Printf("Locked: %s\n", types.EPK(balance.Locked))
+
+		return nil
+	},
+}
+
+var stateMarketInitialQuotaCmd = &cli.Command{
+	Name:  "initial-quota",
+	Usage: "Get current initial quota for new deal piece",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		n, err := api.StateMarketInitialQuota(ctx, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Initial Quota: %d\n", n)
+
+		return nil
+	},
+}
+
+var stateMarketRemainingQuotaCmd = &cli.Command{
+	Name:      "remaining-quota",
+	Usage:     "Get remaining quota for piece",
+	ArgsUsage: "[pieceCid]",
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Args().Present() {
+			return fmt.Errorf("must specify piece cid to query for")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		pieceCid, err := cid.Decode(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		n, err := api.StateMarketRemainingQuota(ctx, pieceCid, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Remaining Quota: %d\n", n)
+
+		return nil
+	},
+}
+
+var stateVoteFundCmd = &cli.Command{
+	Name:  "vote",
+	Usage: "Inspect vote fund info",
+	Subcommands: []*cli.Command{
+		stateVoteTallyCmd,
+		stateVoteVoterCmd,
+	},
+}
+
+var stateVoteTallyCmd = &cli.Command{
+	Name:  "tally",
+	Usage: "Query tally for each candidate",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		tally, err := api.StateVoteTally(ctx, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Total Votes: %s\n", types.EPK(tally.TotalVotes))
+		fmt.Printf("Candidates:\n")
+		for cand, amt := range tally.Candidates {
+			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+		}
+
+		return nil
+	},
+}
+
+var stateVoteVoterCmd = &cli.Command{
+	Name:      "voter",
+	Usage:     "Get voter info",
+	ArgsUsage: "[address]",
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Args().Present() {
+			return ShowHelp(cctx, fmt.Errorf("must specify address to query for"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		addr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		idAddr, err := api.StateLookupID(ctx, addr, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		info, err := api.StateVoterInfo(ctx, idAddr, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Withdrawable: %s\n", types.EPK(info.Withdrawable))
+		fmt.Printf("Candidates:\n")
+		for cand, amt := range info.Candidates {
+			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+		}
+
+		return nil
+	},
+}
+
+var stateKnowFundInfoCmd = &cli.Command{
+	Name:  "knowledge",
+	Usage: "Inspect knowledge fund info",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		info, err := api.StateKnowledgeInfo(ctx, ts.Key())
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Current Payee: %s\n", info.Payee)
+		fmt.Printf("Tally:\n")
+		for payee, amt := range info.Tally {
+			fmt.Printf("\t%s: %s\n", payee, types.EPK(amt))
+		}
 
 		return nil
 	},

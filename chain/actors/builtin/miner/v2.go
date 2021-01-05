@@ -73,6 +73,10 @@ func (s *state2) FeeDebt() (abi.TokenAmount, error) {
 	return s.State.FeeDebt, nil
 }
 
+func (s *state2) TotalPledge() (abi.TokenAmount, error) {
+	return s.State.TotalPledge, nil
+}
+
 /* func (s *state2) InitialPledge() (abi.TokenAmount, error) {
 	return s.State.InitialPledge, nil
 }

@@ -20,9 +20,12 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
@@ -404,6 +407,42 @@ func (a *StateAPI) StateReplay(ctx context.Context, tsk types.TipSetKey, mc cid.
 	}, nil
 }
 
+func (a *StateAPI) StateBlockReward(ctx context.Context, bid cid.Cid, tsk types.TipSetKey) (*api.BlockReward, error) {
+	header, err := a.Chain.GetBlock(bid)
+	if err != nil {
+		return nil, err
+	}
+
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading specified tipset %s: %w", tsk, err)
+	}
+	bts, err := a.Chain.GetTipsetByHeight(ctx, header.Height, ts, false)
+	if err != nil {
+		return nil, xerrors.Errorf("get tipset by height %d: %w", header.Height, err)
+	}
+	if bts.Height() != header.Height {
+		return nil, xerrors.Errorf("null round block height: %d", header.Height)
+	}
+
+	found := 0
+	nth := 0
+	for i, id := range bts.Cids() {
+		if id == bid {
+			found++
+			nth = i
+		}
+	}
+	switch found {
+	case 1:
+		return a.StateManager.ReplayBlock(ctx, nth, bts)
+	case 0:
+		return nil, xerrors.New("block not found")
+	default:
+		return nil, xerrors.Errorf("more than 1 blocks found with the same cid:%s", bid)
+	}
+}
+
 func stateForTs(ctx context.Context, ts *types.TipSet, cstore *store.ChainStore, smgr *stmgr.StateManager) (*state.StateTree, error) {
 	if ts == nil {
 		ts = cstore.GetHeaviestTipSet()
@@ -706,6 +745,42 @@ func (m *StateModule) StateMarketStorageDeal(ctx context.Context, dealId abi.Dea
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
 	return stmgr.GetStorageDeal(ctx, m.StateManager, dealId, ts)
+}
+
+func (m *StateAPI) StateMarketInitialQuota(ctx context.Context, tsk types.TipSetKey) (int64, error) {
+	act, err := m.StateManager.LoadActorTsk(ctx, market.Address, tsk)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to load market actor: %w", err)
+	}
+
+	mState, err := market.Load(m.Chain.Store(ctx), act)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+
+	qs, err := mState.Quotas()
+	if err != nil {
+		return 0, xerrors.Errorf("failed to get quotas: %w", err)
+	}
+	return qs.InitialQuota(), nil
+}
+
+func (m *StateAPI) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (int64, error) {
+	act, err := m.StateManager.LoadActorTsk(ctx, market.Address, tsk)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to load market actor: %w", err)
+	}
+
+	mState, err := market.Load(m.Chain.Store(ctx), act)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+
+	qs, err := mState.Quotas()
+	if err != nil {
+		return 0, xerrors.Errorf("failed to get quotas: %w", err)
+	}
+	return qs.RemainingQuota(pieceCid)
 }
 
 func (a *StateAPI) StateChangedActors(ctx context.Context, old cid.Cid, new cid.Cid) (map[string]types.Actor, error) {
@@ -1150,6 +1225,24 @@ func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address
 	return types.BigAdd(abal, vested), nil
 }
 
+func (a *StateAPI) StateMinerTotalPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return types.EmptyInt, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
+	act, err := a.StateManager.LoadActor(ctx, maddr, ts)
+	if err != nil {
+		return types.EmptyInt, xerrors.Errorf("failed to load miner actor: %w", err)
+	}
+
+	mas, err := miner.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return types.EmptyInt, xerrors.Errorf("failed to load miner actor state: %w", err)
+	}
+	return mas.TotalPledge()
+}
+
 func (a *StateAPI) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
@@ -1386,4 +1479,69 @@ func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, f
 	}
 
 	return eas.Datas()
+}
+
+func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+	}
+
+	voteState, err := vote.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
+	}
+	return voteState.Tally()
+}
+
+func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*vote.VoterInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+	}
+
+	voteState, err := vote.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
+	}
+	return voteState.VoterInfo(addr)
+}
+
+func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, knowledge.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+	}
+
+	knoState, err := knowledge.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load knowledge actor state: %w", err)
+	}
+	return knoState.Info()
+}
+
+func (a *StateAPI) StateGovernSupervisor(ctx context.Context, tsk types.TipSetKey) (address.Address, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, govern.Address, tsk)
+	if err != nil {
+		return address.Undef, xerrors.Errorf("failed to load govern actor: %w", err)
+	}
+
+	govState, err := govern.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return address.Undef, xerrors.Errorf("failed to load govern actor state: %w", err)
+	}
+	return govState.Supervior(), nil
+}
+
+func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) ([]*govern.GovernorInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, govern.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load govern actor: %w", err)
+	}
+
+	govState, err := govern.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load govern actor state: %w", err)
+	}
+	return govState.ListGovrnors()
 }

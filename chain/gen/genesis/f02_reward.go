@@ -3,8 +3,6 @@ package genesis
 import (
 	"context"
 
-	"github.com/filecoin-project/go-state-types/big"
-
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -14,10 +12,10 @@ import (
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
-func SetupRewardActor(bs bstore.Blockstore, qaPower big.Int) (*types.Actor, error) {
+func SetupRewardActor(bs bstore.Blockstore) (*types.Actor, error) {
 	cst := cbor.NewCborStore(bs)
 
-	st := reward.ConstructState(qaPower)
+	st := reward.ConstructState()
 
 	hcid, err := cst.Put(context.TODO(), st)
 	if err != nil {

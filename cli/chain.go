@@ -44,7 +44,6 @@ var chainCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		chainHeadCmd,
 		chainGetBlock,
-		chainBlockRewards,
 		chainEpochCmd,
 		chainReadObjCmd,
 		chainDeleteObjCmd,
@@ -81,42 +80,6 @@ var chainHeadCmd = &cli.Command{
 		for _, c := range head.Cids() {
 			fmt.Println(c)
 		}
-		return nil
-	},
-}
-
-var chainBlockRewards = &cli.Command{
-	Name:      "block-rewards",
-	Usage:     "Get rewards to specified block",
-	ArgsUsage: "[blockCid]",
-	Action: func(cctx *cli.Context) error {
-		api, closer, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-		ctx := ReqContext(cctx)
-
-		if !cctx.Args().Present() {
-			return fmt.Errorf("must pass cid of block to print")
-		}
-
-		bcid, err := cid.Decode(cctx.Args().First())
-		if err != nil {
-			return err
-		}
-
-		r, err := api.ChainGetBlockRewards(ctx, bcid)
-		if err != nil {
-			return err
-		}
-
-		out, err := json.MarshalIndent(r, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(string(out))
 		return nil
 	},
 }

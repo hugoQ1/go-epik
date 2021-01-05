@@ -2,6 +2,7 @@ package market
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -105,7 +106,10 @@ func (s *state2) Quotas() (Quotas, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &quotasAccesor{quotas}, nil
+	return &quotasAccesor{
+		quotas,
+		s.State.InitialQuota,
+	}, nil
 }
 
 /* func (s *state2) VerifyDealsForActivation(
@@ -207,16 +211,21 @@ func (s *dealProposals2) array() adt.Array {
 
 type quotasAccesor struct {
 	adt.Map
+	initial int64
 }
 
-func (a *quotasAccesor) GetRemainingQuota(pieceCID cid.Cid) (int64, error) {
+func (a *quotasAccesor) InitialQuota() int64 {
+	return a.initial
+}
+
+func (a *quotasAccesor) RemainingQuota(pieceCID cid.Cid) (int64, error) {
 	var out cbg.CborInt
 	found, err := a.Map.Get(abi.CidKey(pieceCID), &out)
 	if err != nil {
 		return 0, err
 	}
 	if !found {
-		return 0, nil
+		return 0, fmt.Errorf("piece not found: %s", pieceCID)
 	}
 	return int64(out), nil
 }

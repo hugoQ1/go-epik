@@ -277,7 +277,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		// Commit sectors
 		{
 			// add mining pledge
-			_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, miner2.ConsensusMinerMinPledge, builtin2.MethodsMiner.AddPledge, nil)
+			_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, power2.ConsensusMinerMinPledge, builtin2.MethodsMiner.AddPledge, nil)
 			if err != nil {
 				return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors (add pledge): %w", err)
 			}
@@ -369,7 +369,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			return xerrors.Errorf("st.TotalQualityAdjPower %s doesn't match previously calculated qaPow %s", st.TotalQualityAdjPower, qaPow)
 		}
 
-		expected := big.Mul(miner2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos))))
+		expected := big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos))))
 		if !st.TotalPledgeCollateral.Equals(expected) {
 			return xerrors.Errorf("st.TotalPledgeCollateral %s doesn't match expected %s", st.TotalPledgeCollateral, expected)
 		}

@@ -39,7 +39,7 @@ require (
 	github.com/filecoin-project/go-statemachine v0.0.0-20200925024713-05bd7c71fbfe
 	github.com/filecoin-project/go-statestore v0.1.0
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
-	github.com/filecoin-project/specs-actors/v2 v2.2.0
+	github.com/filecoin-project/specs-actors/v2 v2.3.3
 	github.com/filecoin-project/specs-storage v0.1.1-0.20200907031224-ed2e5cd13796
 	github.com/filecoin-project/test-vectors/schema v0.0.5
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-beta.1
@@ -158,7 +158,7 @@ replace github.com/supranational/blst => ./extern/blst
 
 // replace github.com/filecoin-project/filecoin-ffi => ../go-epik-ffi
 
-// replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => ../go-epik-actors
+// replace github.com/filecoin-project/specs-actors/v2 v2.3.3 => ../go-epik-actors
 
 // replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
 
@@ -166,6 +166,6 @@ replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go
 
 // replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20201116140240-9647d22c3d8e
 
-replace github.com/filecoin-project/specs-actors/v2 v2.2.0 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20201222170544-c3bf5530b2c2
+replace github.com/filecoin-project/specs-actors/v2 v2.3.3 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210105122125-93af40ba4dec
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20201219191852-59851713ff29

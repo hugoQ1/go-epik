@@ -71,6 +71,22 @@ func (s *state2) ForEachPendingTxn(cb func(id int64, txn Transaction) error) err
 	})
 }
 
+func (s *state2) PendingTxn(id int64) (Transaction, error) {
+	arr, err := adt2.AsMap(s.store, s.State.PendingTxns)
+	if err != nil {
+		return Transaction{}, err
+	}
+	var out msig2.Transaction
+	found, err := arr.Get(abi.IntKey(id), &out)
+	if err != nil {
+		return Transaction{}, err
+	}
+	if !found {
+		return Transaction{}, xerrors.Errorf("txn not found: %d", id)
+	}
+	return out, nil
+}
+
 func (s *state2) PendingTxnChanged(other State) (bool, error) {
 	other2, ok := other.(*state2)
 	if !ok {

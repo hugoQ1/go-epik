@@ -74,7 +74,8 @@ type DealProposals interface {
 }
 
 type Quotas interface {
-	GetRemainingQuota(pieceCID cid.Cid) (int64, error)
+	InitialQuota() int64
+	RemainingQuota(pieceCID cid.Cid) (int64, error)
 }
 
 type PublishStorageDataRef = market2.PublishStorageDataRef

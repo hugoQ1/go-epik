@@ -55,6 +55,9 @@ func MakeGenesis(outFile, genesisTemplate string) func(bs dtypes.ChainBlockstore
 	return func(bs dtypes.ChainBlockstore, syscalls vm.SyscallBuilder, j journal.Journal) modules.Genesis {
 		return func() (*types.BlockHeader, error) {
 			glog.Warn("Generating new random genesis block, note that this SHOULD NOT happen unless you are setting up new network")
+			if fileExist(outFile) {
+				return nil, xerrors.Errorf("file exists: %s", outFile)
+			}
 			genesisTemplate, err := homedir.Expand(genesisTemplate)
 			if err != nil {
 				return nil, err
@@ -103,4 +106,12 @@ func MakeGenesis(outFile, genesisTemplate string) func(bs dtypes.ChainBlockstore
 			return b.Genesis, nil
 		}
 	}
+}
+
+func fileExist(filename string) bool {
+	st, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !st.IsDir()
 }

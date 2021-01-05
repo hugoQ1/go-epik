@@ -18,6 +18,7 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
@@ -39,6 +40,7 @@ var walletCmd = &cli.Command{
 		walletVerify,
 		walletDelete,
 		walletMarket,
+		walletVote,
 	},
 }
 
@@ -606,6 +608,219 @@ var walletMarketWithdraw = &cli.Command{
 		}
 
 		fmt.Printf("WithdrawBalance message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletVote = &cli.Command{
+	Name:  "vote",
+	Usage: "Manage votes for experts",
+	Subcommands: []*cli.Command{
+		walletVoteSend,
+		walletVoteRescind,
+		walletVoteWithdraw,
+	},
+}
+
+var walletVoteSend = &cli.Command{
+	Name:      "send",
+	Usage:     "Send votes for candidate",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one AttoEPK one AttoVote]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the account to send votes from",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'send' expects two arguments, candidate and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		candidateAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse candidate address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		sp, err := actors.SerializeParams(&candidateAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  types.BigInt(val),
+			Method: builtin.MethodsVote.Vote,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting vote message: %w", err)
+		}
+
+		fmt.Printf("Vote message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletVoteRescind = &cli.Command{
+	Name:      "rescind",
+	Usage:     "Rescind votes for candidate",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one AttoEPK one AttoVote]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the account to rescind votes from",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'send' expects two arguments, candidate and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		candidateAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse candidate address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		p := vote.RescindParams{
+			Candidate: candidateAddr,
+			Votes:     types.BigInt(val),
+		}
+		sp, err := actors.SerializeParams(&p)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Rescind,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting rescind message: %w", err)
+		}
+
+		fmt.Printf("Rescind message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletVoteWithdraw = &cli.Command{
+	Name:  "withdraw",
+	Usage: "Withdraw all unlocked votes and rewards",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the account to withdraw from",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Withdraw,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting withdraw message: %w", err)
+		}
+
+		fmt.Printf("Withdraw message cid: %s\n", smsg.Cid())
 
 		return nil
 	},

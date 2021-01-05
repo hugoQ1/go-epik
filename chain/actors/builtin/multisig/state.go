@@ -42,6 +42,7 @@ type State interface {
 	Signers() ([]address.Address, error)
 
 	ForEachPendingTxn(func(id int64, txn Transaction) error) error
+	PendingTxn(id int64) (Transaction, error)
 	PendingTxnChanged(State) (bool, error)
 
 	transactions() (adt.Map, error)

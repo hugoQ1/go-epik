@@ -25,6 +25,9 @@ var (
 	Methods = builtin2.MethodsReward
 )
 
+type AwardBlockRewardReturn = reward2.AwardBlockRewardReturn
+type AwardBlockRewardParams = reward2.AwardBlockRewardParams
+
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
 	case builtin2.RewardActorCodeID:
@@ -51,5 +54,3 @@ type State interface {
 	InitialPledgeForPower(abi.StoragePower, abi.TokenAmount, *builtin.FilterEstimate, abi.TokenAmount) (abi.TokenAmount, error)
 	PreCommitDepositForPower(builtin.FilterEstimate, abi.StoragePower) (abi.TokenAmount, error) */
 }
-
-type AwardBlockRewardParams = reward2.AwardBlockRewardParams

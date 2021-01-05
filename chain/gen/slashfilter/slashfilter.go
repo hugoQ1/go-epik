@@ -9,8 +9,8 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-state-types/abi"
 )
 
 type SlashFilter struct {
@@ -25,7 +25,19 @@ func New(dstore ds.Batching) *SlashFilter {
 	}
 }
 
-func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch) error {
+func (f *SlashFilter) putEpoch(epochKey ds.Key, value []byte) error {
+	if err := f.byEpoch.Put(epochKey, value); err != nil {
+		return xerrors.Errorf("putting byEpoch entry: %w", err)
+	}
+	return nil
+}
+
+func (f *SlashFilter) MarkMined(bh *types.BlockHeader) error {
+	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
+	return f.putEpoch(epochKey, bh.Cid().Bytes())
+}
+
+func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch, mark bool) error {
 	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
 	{
 		// double-fork mining (2 blocks at one epoch)
@@ -81,9 +93,12 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 		return xerrors.Errorf("putting byEpoch entry: %w", err)
 	}
 
-	if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
+	if mark {
+		return f.putEpoch(epochKey, bh.Cid().Bytes())
 	}
+	/* if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
+		return xerrors.Errorf("putting byEpoch entry: %w", err)
+	} */
 
 	return nil
 }

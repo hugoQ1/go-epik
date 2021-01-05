@@ -1,6 +1,7 @@
 package stmgr
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
@@ -264,4 +267,40 @@ func (sm *StateManager) Replay(ctx context.Context, ts *types.TipSet, mcid cid.C
 	}
 
 	return outm, outr, nil
+}
+
+func (sm *StateManager) ReplayBlock(ctx context.Context, nth int, ts *types.TipSet) (*api.BlockReward, error) {
+	var out *api.BlockReward
+	index := -1
+	_, _, err := sm.computeTipSetState(ctx, ts, func(c cid.Cid, m *types.Message, ret *vm.ApplyRet) error {
+		if m.To == reward.Address && m.From == builtin.SystemActorAddr && m.Method == reward.Methods.AwardBlockReward {
+			index++
+			if index == nth {
+				var br reward.AwardBlockRewardReturn
+				err := br.UnmarshalCBOR(bytes.NewReader(ret.MessageReceipt.Return))
+				if err != nil {
+					return err
+				}
+				out = &api.BlockReward{
+					PowerReward:     br.PowerReward,
+					GasReward:       br.GasReward,
+					VoteReward:      br.VoteReward,
+					ExpertReward:    br.ExpertReward,
+					KnowledgeReward: br.KnowledgeReward,
+					RetrievalReward: br.RetrievalReward,
+					SendFailed:      br.SendFailed,
+				}
+				return errHaltExecution
+			}
+		}
+		return nil
+	})
+
+	if err != nil && err != errHaltExecution {
+		return nil, xerrors.Errorf("replay block %s: %w", ts.Cids()[nth], err)
+	}
+	if out == nil {
+		return nil, xerrors.Errorf("block to replay not found: %s", ts.Cids()[nth])
+	}
+	return out, nil
 }

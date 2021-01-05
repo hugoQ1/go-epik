@@ -42,6 +42,9 @@ var actorCmd = &cli.Command{
 		actorControl,
 		actorProposeChangeWorker,
 		actorConfirmChangeWorker,
+		actorAddPledgeCmd,
+		actorWithdrawPledgeCmd,
+		actorSetCoinbaseCmd,
 	},
 }
 
@@ -353,6 +356,170 @@ var actorRepayDebtCmd = &cli.Command{
 		}
 
 		fmt.Printf("Sent repay debt message %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var actorAddPledgeCmd = &cli.Command{
+	Name:      "add-pledge",
+	Usage:     "Add mining pledge funds",
+	ArgsUsage: "[amount (EPK)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		api, acloser, err := lcli.GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+
+		ctx := lcli.ReqContext(cctx)
+
+		maddr, err := nodeApi.ActorAddress(ctx)
+		if err != nil {
+			return err
+		}
+
+		// amount
+		if !cctx.Args().Present() {
+			return xerrors.New("'add-pledge' expects one argument, amount")
+		}
+		f, err := types.ParseEPK(cctx.Args().First())
+		if err != nil {
+			return xerrors.Errorf("parsing 'amount' argument: %w", err)
+		}
+		amount := abi.TokenAmount(f)
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:   fromAddr,
+			To:     maddr,
+			Value:  amount,
+			Method: miner.Methods.AddPledge,
+			Params: nil,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Sent add-pledge message %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var actorWithdrawPledgeCmd = &cli.Command{
+	Name:      "withdraw-pledge",
+	Usage:     "Withdraw mining pledge funds",
+	ArgsUsage: "[amount (EPK)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		api, acloser, err := lcli.GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+
+		ctx := lcli.ReqContext(cctx)
+
+		maddr, err := nodeApi.ActorAddress(ctx)
+		if err != nil {
+			return err
+		}
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		if !cctx.Args().Present() {
+			return xerrors.New("'withdraw-pledge' expects one argument, amount")
+		}
+		f, err := types.ParseEPK(cctx.Args().First())
+		if err != nil {
+			return xerrors.Errorf("parsing 'amount' argument: %w", err)
+		}
+		amount := abi.TokenAmount(f)
+
+		available, err := api.StateMinerTotalPledge(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		if amount.GreaterThan(available) {
+			return xerrors.Errorf("can't withdraw more funds than available; requested: %s; available: %s", amount, available)
+		}
+
+		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{
+			AmountRequested: amount, // Default to attempting to withdraw all the extra funds in the miner actor
+		})
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     maddr,
+			From:   fromAddr,
+			Value:  types.NewInt(0),
+			Method: miner.Methods.WithdrawPledge,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Requested pledge withdrawal in message %s\n", smsg.Cid())
 
 		return nil
 	},
@@ -697,6 +864,94 @@ var actorSetOwnerCmd = &cli.Command{
 			return err
 		}
 
+		return nil
+	},
+}
+
+var actorSetCoinbaseCmd = &cli.Command{
+	Name:      "set-coinbase",
+	Usage:     "Set coinbase address",
+	ArgsUsage: "[address]",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "really-do-it",
+			Usage: "Actually send transaction performing the action",
+			Value: false,
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Bool("really-do-it") {
+			fmt.Println("Pass --really-do-it to actually execute this action")
+			return nil
+		}
+
+		if !cctx.Args().Present() {
+			return fmt.Errorf("must pass address of new coinbase")
+		}
+
+		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		api, acloser, err := lcli.GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+
+		ctx := lcli.ReqContext(cctx)
+
+		na, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		newAddr, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		maddr, err := nodeApi.ActorAddress(ctx)
+		if err != nil {
+			return err
+		}
+
+		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&newAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:   mi.Owner,
+			To:     maddr,
+			Method: miner.Methods.ChangeCoinbase,
+			Value:  big.Zero(),
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("mpool push: %w", err)
+		}
+
+		fmt.Println("Send Message CID:", smsg.Cid())
+
+		// wait for it to get mined into a block
+		wait, err := api.StateWaitMsg(ctx, smsg.Cid(), build.MessageConfidence)
+		if err != nil {
+			return err
+		}
+
+		// check it executed successfully
+		if wait.Receipt.ExitCode != 0 {
+			fmt.Println("Coinbase change failed!")
+			return err
+		}
 		return nil
 	},
 }

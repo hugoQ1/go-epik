@@ -27,14 +27,11 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -135,109 +132,6 @@ func (m *ChainModule) ChainGetBlockMessages(ctx context.Context, msg cid.Cid) (*
 		BlsMessages:   bmsgs,
 		SecpkMessages: smsgs,
 		Cids:          cids,
-	}, nil
-}
-
-func (a *ChainAPI) ChainGetBlockRewards(ctx context.Context, bcid cid.Cid) (*api.BlockRewards, error) {
-	b, err := a.Chain.GetBlock(bcid)
-	if err != nil {
-		return nil, err
-	}
-
-	if b.Height == 0 {
-		return &api.BlockRewards{}, nil
-	}
-
-	heaviest := a.Chain.GetHeaviestTipSet()
-	var next, bts *types.TipSet
-	for dis := abi.ChainEpoch(0); dis < miner.WPoStChallengeWindow; dis++ {
-		if b.Height+dis > heaviest.Height() {
-			break
-		}
-		tmp, err := a.Chain.GetTipsetByHeight(ctx, b.Height+dis, heaviest, false)
-		if err != nil {
-			return nil, err
-		}
-		if dis == 0 {
-			if tmp.Height() != b.Height {
-				return nil, xerrors.Errorf("unexpected tipset height %d(expect %d)", tmp.Height(), b.Height)
-			}
-			bts = tmp
-			continue
-		}
-		if tmp.Parents() != bts.Key() {
-			continue
-		}
-		next = tmp
-		break
-	}
-	if next == nil {
-		return nil, xerrors.Errorf("failed to get child tipset of block %s", bcid)
-	}
-
-	// gas reward
-	bmsgs, smsgs, err := a.Chain.MessagesForBlock(b)
-	if err != nil {
-		return nil, err
-	}
-
-	gasReward := big.Zero()
-	for _, m := range bmsgs {
-		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), next)
-		if err != nil {
-			return nil, err
-		}
-		gasReward = types.BigAdd(gasReward, types.BigMul(m.GasPremium, types.NewInt(uint64(receipt.GasUsed))))
-	}
-
-	for _, sm := range smsgs {
-		m := sm.Message
-		receipt, err := a.StateManager.GetReceipt(ctx, m.Cid(), next)
-		if err != nil {
-			return nil, err
-		}
-		gasReward = types.BigAdd(gasReward, types.BigMul(m.GasPremium, types.NewInt(uint64(receipt.GasUsed))))
-	}
-
-	// block reward
-	getRewardActorState := func(ts *types.TipSet) (reward.State, error) {
-		act, err := a.StateManager.LoadActorTsk(ctx, reward.Address, ts.Key())
-		if err != nil {
-			return nil, xerrors.Errorf("failed to load miner actor: %w", err)
-		}
-
-		ras, err := reward.Load(a.StateManager.ChainStore().Store(ctx), act)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
-		}
-		return ras, nil
-	}
-	prevTs, err := a.Chain.LoadTipSet(bts.Parents())
-	if err != nil {
-		return nil, err
-	}
-	prev, err := getRewardActorState(prevTs)
-	if err != nil {
-		return nil, err
-	}
-	prevReward, err := prev.TotalStoragePowerReward()
-	if err != nil {
-		return nil, err
-	}
-	bt, err := getRewardActorState(bts)
-	if err != nil {
-		return nil, err
-	}
-	btReward, err := bt.TotalStoragePowerReward()
-	if err != nil {
-		return nil, err
-	}
-	minerReward := big.Sub(btReward, prevReward)
-
-	return &api.BlockRewards{
-		Cid:         bcid,
-		MinerReward: minerReward,
-		GasReward:   gasReward,
 	}, nil
 }
 

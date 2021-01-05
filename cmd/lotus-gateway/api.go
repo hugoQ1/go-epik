@@ -65,6 +65,7 @@ type gatewayDepsAPI interface {
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
 	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	StateMinerTotalPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
 	// StateVerifiedClientStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
@@ -348,6 +349,13 @@ func (a *GatewayAPI) StateMinerAvailableBalance(ctx context.Context, m address.A
 		return types.BigInt{}, err
 	}
 	return a.api.StateMinerAvailableBalance(ctx, m, tsk)
+}
+
+func (a *GatewayAPI) StateMinerTotalPledge(ctx context.Context, m address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+	if err := a.checkTipsetKey(ctx, tsk); err != nil {
+		return types.BigInt{}, err
+	}
+	return a.api.StateMinerTotalPledge(ctx, m, tsk)
 }
 
 func (a *GatewayAPI) StateMinerProvingDeadline(ctx context.Context, m address.Address, tsk types.TipSetKey) (*dline.Info, error) {

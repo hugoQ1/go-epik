@@ -86,7 +86,7 @@ func (tma *testMpoolAPI) setStateNonce(addr address.Address, v uint64) {
 }
 
 func (tma *testMpoolAPI) setBalance(addr address.Address, v uint64) {
-	tma.balance[addr] = types.FromFil(v)
+	tma.balance[addr] = types.FromEpk(v)
 }
 
 func (tma *testMpoolAPI) setBalanceRaw(addr address.Address, v types.BigInt) {

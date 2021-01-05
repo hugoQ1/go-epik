@@ -19,6 +19,7 @@ import (
 	"github.com/filecoin-project/go-state-types/network"
 
 	// Used for genesis.
+
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -99,7 +100,7 @@ func NewStateManagerWithUpgradeSchedule(cs *store.ChainStore, us UpgradeSchedule
 	stateMigrations := make(map[abi.ChainEpoch]UpgradeFunc, len(us))
 	expensiveUpgrades := make(map[abi.ChainEpoch]struct{}, len(us))
 	var networkVersions []versionSpec
-	lastVersion := network.Version0
+	lastVersion := network.Version6
 	if len(us) > 0 {
 		// If we have any upgrades, process them and create a version
 		// schedule.
@@ -380,6 +381,9 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		}
 		if cb != nil {
 			if err := cb(rwMsg.Cid(), rwMsg, ret); err != nil {
+				if err == errHaltExecution {
+					return cid.Undef, cid.Undef, err
+				}
 				return cid.Undef, cid.Undef, xerrors.Errorf("callback failed on reward message: %w", err)
 			}
 		}
