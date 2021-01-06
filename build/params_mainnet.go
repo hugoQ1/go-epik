@@ -39,7 +39,7 @@ var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 func init() {
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(1))
 	policy.SetSupportedProofTypes(
-		abi.RegisteredSealProof_StackedDrg8MiBV1,
+		abi.RegisteredSealProof_StackedDrg8MiBV1_1,
 	)
 
 	if os.Getenv("EPIK_USE_TEST_ADDRESSES") != "1" {

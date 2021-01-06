@@ -36,6 +36,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/storage"
 	"github.com/EpiK-Protocol/go-epik/storage/sectorblocks"
+)
 
 type StorageMinerAPI struct {
 	common.CommonAPI

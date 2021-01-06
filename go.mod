@@ -35,7 +35,7 @@ require (
 	github.com/filecoin-project/go-multistore v0.0.3
 	github.com/filecoin-project/go-padreader v0.0.0-20200903213702-ed5fae088b20
 	github.com/filecoin-project/go-paramfetch v0.0.2-0.20200701152213-3e0f0afdc261
-	github.com/filecoin-project/go-state-types v0.0.0-20201013222834-41ea465f274f
+	github.com/filecoin-project/go-state-types v0.0.0-20201102161440-c8033295a1fc
 	github.com/filecoin-project/go-statemachine v0.0.0-20200925024713-05bd7c71fbfe
 	github.com/filecoin-project/go-statestore v0.1.0
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
@@ -54,7 +54,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d
 	github.com/ipfs/bbloom v0.0.4
-	github.com/ipfs/go-bitswap v0.3.1
+	github.com/ipfs/go-bitswap v0.3.2
 	github.com/ipfs/go-block-format v0.0.2
 	github.com/ipfs/go-blockservice v0.1.4
 	github.com/ipfs/go-cid v0.0.7
@@ -67,7 +67,7 @@ require (
 	github.com/ipfs/go-filestore v1.0.0
 	github.com/ipfs/go-fs-lock v0.0.6
 	github.com/ipfs/go-graphsync v0.5.0
-	github.com/ipfs/go-ipfs-blockstore v1.0.2
+	github.com/ipfs/go-ipfs-blockstore v1.0.3-0.20201116142306-a33814d3b08f
 	github.com/ipfs/go-ipfs-chunker v0.0.5
 	github.com/ipfs/go-ipfs-ds-help v1.0.0
 	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
@@ -163,10 +163,10 @@ replace github.com/supranational/blst => ./extern/blst
 
 // replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
 
-replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20201115130026-9957793d2874
+replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210106151122-30353f6cf7e4
 
 // replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20201116140240-9647d22c3d8e
 
-replace github.com/filecoin-project/specs-actors/v2 v2.3.3 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210105122125-93af40ba4dec
+replace github.com/filecoin-project/specs-actors/v2 v2.3.3 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210106111733-7f3bb5bb57b7
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20201219191852-59851713ff29

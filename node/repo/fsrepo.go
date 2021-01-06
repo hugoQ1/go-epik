@@ -14,7 +14,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ipfs/go-datastore"
 	fslock "github.com/ipfs/go-fs-lock"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
 	"github.com/multiformats/go-base32"
@@ -23,7 +22,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
-	lblockstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -318,7 +317,7 @@ func (fsr *fsLockedRepo) Blockstore(domain BlockstoreDomain) (blockstore.Blockst
 		if err != nil {
 			fsr.bsErr = err
 		}
-		fsr.bs = lblockstore.WrapIDStore(bs)
+		fsr.bs = blockstore.WrapIDStore(bs)
 	})
 
 	return fsr.bs, fsr.bsErr

@@ -167,21 +167,9 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
 
-	// TODO (!!): Actor Update: Make this active sectors
-
-	allSectors, err := miner.AllPartSectors(mas, miner.Partition.AllSectors)
+	provingSectors, err := miner.AllPartSectors(mas, miner.Partition.ActiveSectors)
 	if err != nil {
-		return nil, xerrors.Errorf("get all sectors: %w", err)
-	}
-
-	faultySectors, err := miner.AllPartSectors(mas, miner.Partition.FaultySectors)
-	if err != nil {
-		return nil, xerrors.Errorf("get faulty sectors: %w", err)
-	}
-
-	provingSectors, err := bitfield.SubtractBitField(allSectors, faultySectors) // TODO: This is wrong, as it can contain faaults, change to just ActiveSectors in an upgrade
-	if err != nil {
-		return nil, xerrors.Errorf("calc proving sectors: %w", err)
+		return nil, xerrors.Errorf("get active sectors sectors: %w", err)
 	}
 
 	numProvSect, err := provingSectors.Count()

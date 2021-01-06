@@ -5,11 +5,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
 	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/filecoin-project/go-state-types/abi"
 	datastore "github.com/ipfs/go-datastore"
 	syncds "github.com/ipfs/go-datastore/sync"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +31,7 @@ func TestIndexSeeks(t *testing.T) {
 	ctx := context.TODO()
 
 	nbs := blockstore.NewTemporarySync()
-	cs := store.NewChainStore(nbs, nbs, syncds.MutexWrap(datastore.NewMapDatastore()), nil, nil)
+	cs := store.NewChainStore(context.Background(), nbs, nbs, syncds.MutexWrap(datastore.NewMapDatastore()), nil, nil)
 
 	_, err = cs.Import(bytes.NewReader(gencar))
 	if err != nil {

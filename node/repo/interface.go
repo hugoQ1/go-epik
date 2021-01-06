@@ -3,8 +3,8 @@ package repo
 import (
 	"errors"
 
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/ipfs/go-datastore"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/multiformats/go-multiaddr"
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
