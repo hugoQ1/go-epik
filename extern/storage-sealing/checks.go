@@ -6,7 +6,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
-	"github.com/siddontang/go/log"
 
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
