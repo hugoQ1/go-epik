@@ -36,6 +36,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-multistore"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	lapi "github.com/EpiK-Protocol/go-epik/api"
@@ -1247,8 +1248,8 @@ var clientListAsksCmd = &cli.Command{
 			fmt.Printf("%s: min:%s max:%s ping:%s\n", ask.Miner,
 				types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))),
 				types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))),
-				// types.FIL(ask.Price),
-				// types.FIL(ask.VerifiedPrice),
+				// types.EPK(ask.Price),
+				// types.EPK(ask.VerifiedPrice),
 				a.Ping,
 			)
 		}
@@ -1605,7 +1606,7 @@ func outputStorageDeals(ctx context.Context, out io.Writer, full lapi.FullNode, 
 				slashed = fmt.Sprintf("Y (epoch %d)", d.OnChainDealState.SlashEpoch)
 			}
 
-			// price := types.FIL(types.BigMul(d.LocalDeal.PricePerEpoch, types.NewInt(d.LocalDeal.Duration)))
+			// price := types.EPK(types.BigMul(d.LocalDeal.PricePerEpoch, types.NewInt(d.LocalDeal.Duration)))
 			transferChannelID := ""
 			if d.LocalDeal.TransferChannelID != nil {
 				transferChannelID = d.LocalDeal.TransferChannelID.String()
@@ -1796,10 +1797,22 @@ var clientBalancesCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("Client Market Info:\n")
+		reserved, err := api.MarketGetReserved(ctx, addr)
+		if err != nil {
+			return err
+		}
 
-		fmt.Printf("Locked Funds:\t%s\n", types.EPK(balance.Locked))
-		fmt.Printf("Escrowed Funds:\t%s\n", types.EPK(balance.Escrow))
+		avail := big.Sub(big.Sub(balance.Escrow, balance.Locked), reserved)
+		if avail.LessThan(big.Zero()) {
+			avail = big.Zero()
+		}
+
+		fmt.Printf("Client Market Balance for address %s:\n", addr)
+
+		fmt.Printf("  Escrowed Funds:        %s\n", types.EPK(balance.Escrow))
+		fmt.Printf("  Locked Funds:          %s\n", types.EPK(balance.Locked))
+		fmt.Printf("  Reserved Funds:        %s\n", types.EPK(reserved))
+		fmt.Printf("  Available to Withdraw: %s\n", types.EPK(avail))
 
 		return nil
 	},

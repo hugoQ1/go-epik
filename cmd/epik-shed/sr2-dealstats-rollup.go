@@ -273,10 +273,10 @@ var rollupDealStatsCmd = &cli.Command{
 			unfilteredGrandTotals.seenPieceCid[dealInfo.Proposal.PieceCID] = true
 			unfilteredGrandTotals.TotalDeals++
 
-			if dealInfo.Proposal.VerifiedDeal {
+			/* if dealInfo.Proposal.VerifiedDeal {
 				unfilteredGrandTotals.FilplusTotalDeals++
 				unfilteredGrandTotals.FilplusTotalBytes += int64(dealInfo.Proposal.PieceSize)
-			}
+			} */
 
 			// perl -E 'say scalar gmtime ( 166560 * 30 + 1598306400 )'
 			// Wed Oct 21 18:00:00 2020
@@ -332,10 +332,10 @@ var rollupDealStatsCmd = &cli.Command{
 			projStatEntry.NumDeals++
 			clientStatEntry.NumDeals++
 
-			if dealInfo.Proposal.VerifiedDeal {
+			/* if dealInfo.Proposal.VerifiedDeal {
 				grandTotals.FilplusTotalDeals++
 				grandTotals.FilplusTotalBytes += int64(dealInfo.Proposal.PieceSize)
-			}
+			} */
 
 			payloadCid := "unknown"
 			if c, err := cid.Parse(dealInfo.Proposal.Label); err == nil {

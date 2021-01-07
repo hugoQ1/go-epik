@@ -130,6 +130,11 @@ func (fm *FundManager) Withdraw(ctx context.Context, wallet, addr address.Addres
 	return fm.getFundedAddress(addr).withdraw(ctx, wallet, amt)
 }
 
+// GetReserved returns the amount that is currently reserved for the address
+func (fm *FundManager) GetReserved(addr address.Address) abi.TokenAmount {
+	return fm.getFundedAddress(addr).getReserved()
+}
+
 // FundedAddressState keeps track of the state of an address with funds in the
 // datastore
 type FundedAddressState struct {
@@ -148,7 +153,7 @@ type fundedAddress struct {
 	env *fundManagerEnvironment
 	str *Store
 
-	lk    sync.Mutex
+	lk    sync.RWMutex
 	state *FundedAddressState
 
 	// Note: These request queues are ephemeral, they are not saved to store
@@ -182,6 +187,13 @@ func (a *fundedAddress) start() {
 		a.debugf("restart: wait for %s", a.state.MsgCid)
 		a.startWaitForResults(*a.state.MsgCid)
 	}
+}
+
+func (a *fundedAddress) getReserved() abi.TokenAmount {
+	a.lk.RLock()
+	defer a.lk.RUnlock()
+
+	return a.state.AmtReserved
 }
 
 func (a *fundedAddress) reserve(ctx context.Context, wallet address.Address, amt abi.TokenAmount) (cid.Cid, error) {
@@ -502,11 +514,11 @@ func (a *fundedAddress) processWithdrawals(withdrawals []*fundRequest) (msgCid c
 		// request with an error
 		newWithdrawalAmt := types.BigAdd(withdrawalAmt, amt)
 		if newWithdrawalAmt.GreaterThan(netAvail) {
-			msg := fmt.Sprintf("insufficient funds for withdrawal of %s: ", types.FIL(amt))
+			msg := fmt.Sprintf("insufficient funds for withdrawal of %s: ", types.EPK(amt))
 			msg += fmt.Sprintf("net available (%s) = available (%s) - reserved (%s)",
-				types.FIL(types.BigSub(netAvail, withdrawalAmt)), types.FIL(avail), types.FIL(a.state.AmtReserved))
+				types.EPK(types.BigSub(netAvail, withdrawalAmt)), types.EPK(avail), types.EPK(a.state.AmtReserved))
 			if !withdrawalAmt.IsZero() {
-				msg += fmt.Sprintf(" - queued withdrawals (%s)", types.FIL(withdrawalAmt))
+				msg += fmt.Sprintf(" - queued withdrawals (%s)", types.EPK(withdrawalAmt))
 			}
 			err := xerrors.Errorf(msg)
 			a.debugf("%s", err)

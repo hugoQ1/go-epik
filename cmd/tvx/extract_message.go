@@ -50,7 +50,7 @@ func doExtractMessage(opts extractOpts) error {
 		return fmt.Errorf("failed while fetching circulating supply: %w", err)
 	}
 
-	circSupply := circSupplyDetail.FilCirculating
+	circSupply := circSupplyDetail.EpkCirculating
 
 	log.Printf("message was executed in tipset: %s", execTs.Key())
 	log.Printf("message was included in tipset: %s", incTs.Key())
@@ -108,7 +108,7 @@ func doExtractMessage(opts extractOpts) error {
 			Preroot:    root,
 			Epoch:      execTs.Height(),
 			Message:    m,
-			CircSupply: circSupplyDetail.FilCirculating,
+			CircSupply: circSupplyDetail.EpkCirculating,
 			BaseFee:    basefee,
 			// recorded randomness will be discarded.
 			Rand: conformance.NewRecordingRand(new(conformance.LogReporter), FullAPI),
@@ -144,7 +144,7 @@ func doExtractMessage(opts extractOpts) error {
 			Preroot:    preroot,
 			Epoch:      execTs.Height(),
 			Message:    msg,
-			CircSupply: circSupplyDetail.FilCirculating,
+			CircSupply: circSupplyDetail.EpkCirculating,
 			BaseFee:    basefee,
 			Rand:       recordingRand,
 		})
@@ -176,7 +176,7 @@ func doExtractMessage(opts extractOpts) error {
 			Preroot:    preroot,
 			Epoch:      execTs.Height(),
 			Message:    msg,
-			CircSupply: circSupplyDetail.FilCirculating,
+			CircSupply: circSupplyDetail.EpkCirculating,
 			BaseFee:    basefee,
 			Rand:       recordingRand,
 		})
