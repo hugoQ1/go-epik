@@ -9,7 +9,7 @@ import (
 
 	"github.com/filecoin-project/go-state-types/network"
 
-	"github.com/filecoin-project/lotus/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
@@ -18,13 +18,13 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/crypto"
 
 	runtime2 "github.com/filecoin-project/specs-actors/v2/actors/runtime"
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
@@ -210,7 +210,7 @@ func (ss *syscallShim) VerifyBlockSig(blk *types.BlockHeader) error {
 }
 
 func (ss *syscallShim) workerKeyAtLookback(height abi.ChainEpoch) (address.Address, error) {
-	if ss.networkVersion >= network.Version7 && height < ss.epoch-policy.ChainFinality {
+	if height < ss.epoch-policy.ChainFinality {
 		return address.Undef, xerrors.Errorf("cannot get worker key (currEpoch %d, height %d)", ss.epoch, height)
 	}
 
