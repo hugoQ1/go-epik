@@ -119,6 +119,8 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	// 			break
 	// 		}
 	// 	}
+	// }
+
 	// if params.Wallet == address.Undef {
 	// 	dwallet, err := a.WalletDefaultAddress(ctx)
 	// 	if err != nil {
@@ -199,11 +201,6 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	// 	return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
 	// }
 
-	// rt, err := ffiwrapper.SealProofTypeFromSectorSize(mi.SectorSize)
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("bad sector size: %w", err)
-	// }
-
 	// if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
 	// 	return nil, xerrors.New("data doesn't fit in a sector")
 	// }
@@ -229,7 +226,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	// 	EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
 	// 	Price:         params.EpochPrice,
 	// 	Collateral:    params.ProviderCollateral,
-	// 	Rt:            rt,
+	// 	Rt:            mi.SealProofType,
 	// 	FastRetrieval: params.FastRetrieval,
 	// 	VerifiedDeal:  params.VerifiedDeal,
 	// 	StoreID:       storeID,
@@ -241,87 +238,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 
 	// return &result.ProposalCid, nil
 	return nil, nil
-	// var storeID *multistore.StoreID
-	// if params.Data.TransferType == storagemarket.TTGraphsync {
-	// 	importIDs := a.imgr().List()
-	// 	for _, importID := range importIDs {
-	// 		info, err := a.imgr().Info(importID)
-	// 		if err != nil {
-	// 			continue
-	// 		}
-	// 		if info.Labels[importmgr.LRootCid] == "" {
-	// 			continue
-	// 		}
-	// 		c, err := cid.Parse(info.Labels[importmgr.LRootCid])
-	// 		if err != nil {
-	// 			continue
-	// 		}
-	// 		if c.Equals(params.Data.Root) {
-	// 			storeID = &importID //nolint
-	// 			break
-	// 		}
-	// 	}
-	// }
 
-	// walletKey, err := a.StateAccountKey(ctx, params.Wallet, types.EmptyTSK)
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed resolving params.Wallet addr: %w", params.Wallet)
-	// }
-
-	// exist, err := a.WalletHas(ctx, walletKey)
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed getting addr from wallet: %w", params.Wallet)
-	// }
-	// if !exist {
-	// 	return nil, xerrors.Errorf("provided address doesn't exist in wallet")
-	// }
-
-	// mi, err := a.StateMinerInfo(ctx, params.Miner, types.EmptyTSK)
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed getting peer ID: %w", err)
-	// }
-
-	// md, err := a.StateMinerProvingDeadline(ctx, params.Miner, types.EmptyTSK)
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
-	// }
-
-	// if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
-	// 	return nil, xerrors.New("data doesn't fit in a sector")
-	// }
-
-	// providerInfo := utils.NewStorageProviderInfo(params.Miner, mi.Worker, mi.SectorSize, *mi.PeerId, mi.Multiaddrs)
-
-	// dealStart := params.DealStartEpoch
-	// if dealStart <= 0 { // unset, or explicitly 'epoch undefined'
-	// 	ts, err := a.ChainHead(ctx)
-	// 	if err != nil {
-	// 		return nil, xerrors.Errorf("failed getting chain height: %w", err)
-	// 	}
-
-	// 	blocksPerHour := 60 * 60 / build.BlockDelaySecs
-	// 	dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
-	// }
-
-	// result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
-	// 	Addr:          params.Wallet,
-	// 	Info:          &providerInfo,
-	// 	Data:          params.Data,
-	// 	StartEpoch:    dealStart,
-	// 	EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
-	// 	Price:         params.EpochPrice,
-	// 	Collateral:    params.ProviderCollateral,
-	// 	Rt:            abi.RegisteredSealProof_StackedDrg32GiBV1_1, // all proof types have the same D tree
-	// 	FastRetrieval: params.FastRetrieval,
-	// 	VerifiedDeal:  params.VerifiedDeal,
-	// 	StoreID:       storeID,
-	// })
-
-	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed to start deal: %w", err)
-	// }
-
-	// return &result.ProposalCid, nil
 }
 
 func (a *API) ClientListDeals(ctx context.Context) ([]api.DealInfo, error) {
