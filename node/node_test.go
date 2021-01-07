@@ -93,7 +93,7 @@ func TestDealMining(t *testing.T) {
 	test.TestDealMining(t, builder.MockSbBuilder, 50*time.Millisecond, false)
 }
 
-func TestSDRUpgrade(t *testing.T) {
+/* func TestSDRUpgrade(t *testing.T) {
 	logging.SetLogLevel("miner", "ERROR")
 	logging.SetLogLevel("chainstore", "ERROR")
 	logging.SetLogLevel("chain", "ERROR")
@@ -107,7 +107,7 @@ func TestSDRUpgrade(t *testing.T) {
 	})
 
 	test.TestSDRUpgrade(t, builder.MockSbBuilder, 50*time.Millisecond)
-}
+} */
 
 func TestPledgeSectors(t *testing.T) {
 	logging.SetLogLevel("miner", "ERROR")

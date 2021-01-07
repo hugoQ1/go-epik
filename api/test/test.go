@@ -121,7 +121,7 @@ var FullNodeWithActorsV2At = func(upgradeHeight abi.ChainEpoch) FullNodeOpts {
 	}
 }
 
-var FullNodeWithSDRAt = func(calico, persian abi.ChainEpoch) FullNodeOpts {
+/* var FullNodeWithSDRAt = func(calico, persian abi.ChainEpoch) FullNodeOpts {
 	return FullNodeOpts{
 		Opts: func(nodes []TestNode) node.Option {
 			return node.Override(new(stmgr.UpgradeSchedule), stmgr.UpgradeSchedule{{
@@ -138,7 +138,7 @@ var FullNodeWithSDRAt = func(calico, persian abi.ChainEpoch) FullNodeOpts {
 			}})
 		},
 	}
-}
+} */
 
 var MineNext = miner.MineReq{
 	InjectNulls: 0,

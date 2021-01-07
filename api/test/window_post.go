@@ -3,30 +3,27 @@ package test
 import (
 	"context"
 	"fmt"
-	"sort"
 	"sync/atomic"
 
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/mock"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/filecoin-project/lotus/node/impl"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
 
-func TestSDRUpgrade(t *testing.T, b APIBuilder, blocktime time.Duration) {
+/* func TestSDRUpgrade(t *testing.T, b APIBuilder, blocktime time.Duration) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -108,7 +105,7 @@ func TestSDRUpgrade(t *testing.T, b APIBuilder, blocktime time.Duration) {
 
 	atomic.StoreInt64(&mine, 0)
 	<-done
-}
+} */
 
 func TestPledgeSector(t *testing.T, b APIBuilder, blocktime time.Duration, nSectors int) {
 	ctx, cancel := context.WithCancel(context.Background())
