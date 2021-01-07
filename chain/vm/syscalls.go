@@ -306,7 +306,7 @@ func (ss *syscallShim) BatchVerifySeals(inp map[address.Address][]proof2.SealVer
 				sema <- struct{}{}
 
 				if err := ss.VerifySeal(svi); err != nil {
-					log.Warnw("seal verify in batch failed", "miner", ma, "index", ix, "err", err)
+					log.Warnw("seal verify in batch failed", "miner", ma, "sectorNumber", svi.SectorID.Number, "err", err)
 					res[ix] = false
 				} else {
 					res[ix] = true
