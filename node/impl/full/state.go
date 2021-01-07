@@ -864,9 +864,8 @@ func (a *StateAPI) StateSectorPreCommitInfo(ctx context.Context, maddr address.A
 	pci, err := stmgr.PreCommitInfo(ctx, a.StateManager, maddr, n, ts)
 	if err != nil {
 		return miner.SectorPreCommitOnChainInfo{}, err
-	}
-	if pci == nil {
-		pci = &miner.SectorPreCommitOnChainInfo{}
+	} else if pci == nil {
+		return nil, xerrors.Errorf("precommit info is not exists")
 	}
 	return *pci, err
 }
