@@ -10,7 +10,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	tbig "github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -22,12 +21,6 @@ import (
 var bigBlockGasLimit = big.NewInt(build.BlockGasLimit)
 
 var MaxBlockMessages = 16000
-
-// this is *temporary* mutilation until we have implemented uncapped miner penalties -- it will go
-// away in the next fork.
-func allowNegativeChains(epoch abi.ChainEpoch) bool {
-	return epoch < build.UpgradeBreezeHeight+5
-}
 
 const MaxBlocks = 15
 
