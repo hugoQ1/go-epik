@@ -342,16 +342,14 @@ func (bv *BlockValidator) validateLocalBlock(ctx context.Context, msg *pubsub.Me
 
 	if size := msg.Size(); size > 1<<20-1<<15 {
 		log.Errorf("ignoring oversize block (%dB)", size)
-		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, "oversize_block"))
-		stats.Record(ctx, metrics.BlockValidationFailure.M(1))
+		recordFailure(ctx, metrics.BlockValidationFailure, "oversize_block")
 		return pubsub.ValidationIgnore
 	}
 
 	blk, what, err := bv.decodeAndCheckBlock(msg)
 	if err != nil {
 		log.Errorf("got invalid local block: %s", err)
-		ctx, _ = tag.New(ctx, tag.Insert(metrics.FailureType, what))
-		stats.Record(ctx, metrics.BlockValidationFailure.M(1))
+		recordFailure(ctx, metrics.BlockValidationFailure, what)
 		return pubsub.ValidationIgnore
 	}
 
