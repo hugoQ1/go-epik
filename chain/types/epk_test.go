@@ -13,6 +13,13 @@ func TestEpkShort(t *testing.T) {
 	}{
 		{epk: "1", expect: "1 EPK"},
 		{epk: "1.1", expect: "1.1 EPK"},
+		{epk: "12", expect: "12 EPK"},
+		{epk: "123", expect: "123 EPK"},
+		{epk: "123456", expect: "123456 EPK"},
+		{epk: "123.23", expect: "123.23 EPK"},
+		{epk: "123456.234", expect: "123456.234 EPK"},
+		{epk: "123456.2341234", expect: "123456.234 EPK"},
+		{epk: "123456.234123445", expect: "123456.234 EPK"},
 
 		{epk: "0.1", expect: "100 mEPK"},
 		{epk: "0.01", expect: "10 mEPK"},
