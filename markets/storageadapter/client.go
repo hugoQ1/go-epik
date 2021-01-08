@@ -263,11 +263,11 @@ func (c *ClientNodeAdapter) OnDealExpiredOrSlashed(ctx context.Context, dealID a
 	// Called when there was a match against the state change we're looking for
 	// and the chain has advanced to the confidence height
 	stateChanged := func(ts *types.TipSet, ts2 *types.TipSet, states events.StateChange, h abi.ChainEpoch) (more bool, err error) {
-		/* // Check if the deal has already expired
-		if sd.Proposal.EndEpoch <= ts2.Height() {
+		// Check if the deal has already expired
+		if ts2 == nil /* sd.Proposal.EndEpoch <= ts2.Height()  */ {
 			onDealExpired(nil)
 			return false, nil
-		} */
+		}
 
 		// Timeout waiting for state change
 		if states == nil {
