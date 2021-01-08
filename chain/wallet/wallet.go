@@ -369,7 +369,7 @@ func (w *LocalWallet) WalletDelete(ctx context.Context, addr address.Address) er
 		return xerrors.Errorf("wallet delete: %w", err)
 	}
 
-	if def, err := w.GetDefault(); err == nil {
+	if def, err := w.GetDefault(ctx); err == nil {
 		if def == addr {
 			w.deleteDefault()
 		}
