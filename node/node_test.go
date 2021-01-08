@@ -5,14 +5,12 @@ import (
 	"testing"
 	"time"
 
-	builder "github.com/EpiK-Protocol/go-epik/node/test"
-
-	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
-	"github.com/filecoin-project/go-state-types/abi"
-	logging "github.com/ipfs/go-log/v2"
-
 	"github.com/EpiK-Protocol/go-epik/api/test"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
+	builder "github.com/EpiK-Protocol/go-epik/node/test"
+	"github.com/filecoin-project/go-state-types/abi"
+	logging "github.com/ipfs/go-log/v2"
 )
 
 func init() {
@@ -60,6 +58,9 @@ func TestAPIDealFlow(t *testing.T) {
 	})
 	t.Run("TestFastRetrievalDealFlow", func(t *testing.T) {
 		test.TestFastRetrievalDealFlow(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
+	})
+	t.Run("TestPublishDealsBatching", func(t *testing.T) {
+		test.TestPublishDealsBatching(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
 	})
 }
 
