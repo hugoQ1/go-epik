@@ -9,8 +9,8 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/lotus/chain/types"
-	lcli "github.com/filecoin-project/lotus/cli"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	lcli "github.com/EpiK-Protocol/go-epik/cli"
 )
 
 var blockmsgidCmd = &cli.Command{
