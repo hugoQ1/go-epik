@@ -500,20 +500,20 @@ func BasicDealFilter(user dtypes.StorageDealFilter) func(onlineOk dtypes.Conside
 				return false, "miner error", err
 			}
 
-			if deal.Proposal.VerifiedDeal && !b {
+			/* if deal.Proposal.VerifiedDeal && !b {
 				log.Warnf("verified storage deal consideration disabled; rejecting storage deal proposal from client: %s", deal.Client.String())
 				return false, "miner is not accepting verified storage deals", nil
-			}
+			} */
 
 			b, err = unverifiedOk()
 			if err != nil {
 				return false, "miner error", err
 			}
 
-			if !deal.Proposal.VerifiedDeal && !b {
+			/* if !deal.Proposal.VerifiedDeal && !b {
 				log.Warnf("unverified storage deal consideration disabled; rejecting storage deal proposal from client: %s", deal.Client.String())
 				return false, "miner is not accepting unverified storage deals", nil
-			}
+			} */
 
 			blocklist, err := blocklistFunc()
 			if err != nil {
