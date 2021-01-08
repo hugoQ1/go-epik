@@ -1778,7 +1778,7 @@ var clientBalancesCmd = &cli.Command{
 
 		var addr address.Address
 		if clientFlag := cctx.String("client"); clientFlag != "" {
-			ca, err := address.NewFromString("client")
+			ca, err := address.NewFromString(clientFlag)
 			if err != nil {
 				return err
 			}
