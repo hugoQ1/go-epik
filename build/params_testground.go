@@ -100,6 +100,9 @@ var (
 
 	Devnet      = true
 	ZeroAddress = MustParseAddress("f3yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaby2smx7a")
+
+	BootstrappersFile = ""
+	GenesisFile       = ""
 )
 
 const BootstrapPeerThreshold = 1

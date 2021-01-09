@@ -3,12 +3,12 @@
 package build
 
 import (
-	"math"
-	"os"
-
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/filecoin-project/go-state-types/abi"
 )
+
+const BootstrappersFile = ""
+const GenesisFile = ""
 
 // const UpgradeBreezeHeight = -1
 // const BreezeGasTampingDuration = 0
@@ -33,11 +33,6 @@ func init() {
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
 	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
-
-	if os.Getenv("EPIK_DISABLE_V2_ACTOR_MIGRATION") == "1" {
-		UpgradeActorsV2Height = math.MaxInt64
-		UpgradeLiftoffHeight = 11
-	}
 
 	BuildType |= Build2k
 }
