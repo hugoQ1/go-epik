@@ -483,8 +483,8 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 
 	// Set initial governor
 	_, err = doExecValue(ctx, vm, builtin2.GovernActorAddr, builtin.FoundationAddress, types.NewInt(0), builtin2.MethodsGovern.Grant, mustEnc(&govern.GrantOrRevokeParams{
-		Governor:    builtin.FirstGovernorAddress,
-		Authorities: nil, // Grant all priviledges to FirstGovernorAddress
+		Governor: builtin.FirstGovernorAddress,
+		All:      true,
 	}))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to set initial governor: %w", err)
