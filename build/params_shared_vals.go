@@ -74,10 +74,12 @@ const EpkBase = uint64(1_000_000_000)
 const EpkAllocStorageMining = uint64(700_000_000)
 
 const EpkPrecision = uint64(1_000_000_000_000_000_000)
-const EpkReserved = uint64(300_000_000)
+
+// const EpkReserved = uint64(300_000_000)
 
 var InitialRewardBalance *big.Int
-var InitialEpkReserved *big.Int
+
+// var InitialEpkReserved *big.Int
 
 // TODO: Move other important consts here
 
@@ -85,8 +87,8 @@ func init() {
 	InitialRewardBalance = big.NewInt(int64(EpkAllocStorageMining))
 	InitialRewardBalance = InitialRewardBalance.Mul(InitialRewardBalance, big.NewInt(int64(EpkPrecision)))
 
-	InitialEpkReserved = big.NewInt(int64(EpkReserved))
-	InitialEpkReserved = InitialEpkReserved.Mul(InitialEpkReserved, big.NewInt(int64(EpkPrecision)))
+	// InitialEpkReserved = big.NewInt(int64(EpkReserved))
+	// InitialEpkReserved = InitialEpkReserved.Mul(InitialEpkReserved, big.NewInt(int64(EpkPrecision)))
 
 	if os.Getenv("EPIK_ADDRESS_TYPE") == AddressMainnetEnvVar {
 		SetAddressNetwork(address.Mainnet)

@@ -55,21 +55,21 @@ var (
 
 	EpkBase               uint64 = 1_000_000_000
 	EpkAllocStorageMining uint64 = 700_000_000
-	EpkReserved           uint64 = 300_000_000
+	// EpkReserved           uint64 = 300_000_000
 
-	FilecoinPrecision uint64 = 1_000_000_000_000_000_000
+	EpkPrecision uint64 = 1_000_000_000_000_000_000
 
 	InitialRewardBalance = func() *big.Int {
 		v := big.NewInt(int64(EpkAllocStorageMining))
-		v = v.Mul(v, big.NewInt(int64(FilecoinPrecision)))
+		v = v.Mul(v, big.NewInt(int64(EpkPrecision)))
 		return v
 	}()
 
-	InitialEpkReserved = func() *big.Int {
-		v := big.NewInt(int64(EpkReserved))
-		v = v.Mul(v, big.NewInt(int64(FilecoinPrecision)))
-		return v
-	}()
+	// InitialEpkReserved = func() *big.Int {
+	// 	v := big.NewInt(int64(EpkReserved))
+	// 	v = v.Mul(v, big.NewInt(int64(FilecoinPrecision)))
+	// 	return v
+	// }()
 
 	// Actor consts
 	// TODO: remove it

@@ -166,7 +166,7 @@ replace github.com/supranational/blst => ./extern/blst
 
 // replace github.com/filecoin-project/go-fil-markets => ../go-epik-markets
 
-replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210106151122-30353f6cf7e4
+replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4
 
 // replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20201116140240-9647d22c3d8e
 
