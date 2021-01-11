@@ -73,6 +73,7 @@ type API struct {
 
 	full.ChainAPI
 	full.WalletAPI
+	full.MpoolAPI
 	paych.PaychAPI
 	full.StateAPI
 
@@ -168,13 +169,13 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 				return nil, xerrors.Errorf("serializing params failed: ", err)
 			}
 
-			_, serr := a.PaychAPI.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+			_, serr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
 				To:     eaddr,
 				From:   expertInfo.Owner,
 				Value:  types.NewInt(0),
 				Method: builtin.MethodsExpert.ImportData,
 				Params: expertParams,
-			})
+			}, nil)
 			if serr != nil {
 				return nil, serr
 			}
@@ -197,11 +198,6 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	mi, err := a.StateMinerInfo(ctx, params.Miner, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("failed getting peer ID: %w", err)
-	}
-
-	md, err := a.StateMinerProvingDeadline(ctx, params.Miner, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting miner's deadline info: %w", err)
 	}
 
 	if uint64(params.Data.PieceSize.Padded()) > uint64(mi.SectorSize) {
