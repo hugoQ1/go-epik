@@ -7,6 +7,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
 
 var _ State = (*state2)(nil)
@@ -46,8 +47,16 @@ func (s *state2) Info() (ExpertInfo, error) {
 
 func (s *state2) Datas() ([]*DataOnChainInfo, error) {
 	var datas []*DataOnChainInfo
-	err := s.ForEachData(s.store, func(doci *expert2.DataOnChainInfo) {
-		datas = append(datas, doci)
+	ds, err := adt2.AsMap(s.store, s.State.Datas)
+	if err != nil {
+		return nil, err
+	}
+
+	var info DataOnChainInfo
+	err = ds.ForEach(&info, func(k string) error {
+		cp := info
+		datas = append(datas, &cp)
+		return nil
 	})
 	if err != nil {
 		return nil, err
