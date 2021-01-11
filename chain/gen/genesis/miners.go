@@ -108,7 +108,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 
 		{
 			constructorParams := &power2.CreateMinerParams{
-				Owner:         m.Worker,
+				Owner:         m.Owner,
 				Worker:        m.Worker,
 				Coinbase:      m.Coinbase,
 				Peer:          []byte(m.PeerId),
@@ -131,6 +131,8 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return cid.Undef, xerrors.Errorf("miner assigned wrong address: %s != %s", ma.IDAddress, expma)
 			}
 			minerInfos[i].maddr = ma.IDAddress
+
+			fmt.Printf("create genesis miner %s: Owner %s, Worker %s, Coinbase %s\n", ma.IDAddress, m.Owner, m.Worker, m.Coinbase)
 
 			/* // TODO: ActorUpgrade
 			err = vm.MutateState(ctx, minerInfos[i].maddr, func(cst cbor.IpldStore, st *miner2.State) error {
@@ -160,7 +162,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
 			}
 			eaddr = ma.IDAddress
-			fmt.Printf("create genesis expert: %s\n", ma.IDAddress)
+			fmt.Printf("create genesis expert %s: %s\n", eaddr, m.Owner)
 		}
 
 		// Add market funds

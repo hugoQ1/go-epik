@@ -136,21 +136,21 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 	// check expert
 	eaddr, err := address.NewFromString(params.Data.Expert)
 	if err != nil {
-		return nil, xerrors.Errorf("serializing expert failed: ", err)
+		return nil, xerrors.Errorf("serializing expert failed: %w", err)
 	}
 
 	expertInfo, err := a.StateExpertInfo(ctx, eaddr, types.EmptyTSK)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert info: ", err)
+		return nil, xerrors.Errorf("failed to get expert info: %w", err)
 	}
 	from, err := a.StateAccountKey(ctx, expertInfo.Owner, types.EmptyTSK)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert key: ", err)
+		return nil, xerrors.Errorf("failed to get expert key: %w", err)
 	}
 	if params.Wallet.String() == from.String() {
 		data, err := a.StateExpertDatas(ctx, eaddr, nil, true, types.EmptyTSK)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to get expert data: ", err)
+			return nil, xerrors.Errorf("failed to get expert data: %w", err)
 		}
 		exist := false
 		for _, d := range data {
@@ -166,7 +166,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 				Bounty:  params.Data.Bounty,
 			})
 			if err != nil {
-				return nil, xerrors.Errorf("serializing params failed: ", err)
+				return nil, xerrors.Errorf("serializing params failed: %w", err)
 			}
 
 			_, serr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
