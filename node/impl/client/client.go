@@ -179,6 +179,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 			if serr != nil {
 				return nil, serr
 			}
+			fmt.Printf("import data (ClientStartDeal): expert %s, PieceID %s\n", eaddr, params.Data.Root)
 		}
 	}
 

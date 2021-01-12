@@ -194,6 +194,12 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		if tipset.Height() < m.checkHeight {
+			// null round
+			m.checkHeight++
+			continue
+		}
+		ptsk := tipset.Parents()
 		messages, err := m.api.ChainGetParentMessages(ctx, tipset.Cids()[0])
 		for _, msg := range messages {
 			if msg.Message.Method != builtin2.MethodsMiner.ProveCommitSector {
@@ -201,19 +207,19 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			}
 			var params miner2.ProveCommitSectorParams
 			if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
-				log.Warnf("height:%d unmarshal prove commit: %w", m.checkHeight, err)
+				log.Warnf("failed to unmarshal prove-commit in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
 				continue
 			}
 
-			pci, err := m.api.StateSectorPreCommitInfo(ctx, msg.Message.To, params.SectorNumber, types.EmptyTSK)
-			if err != nil {
-				return err
-			}
 			var dealIDs []abi.DealID
-			if pci.PreCommitEpoch == 0 {
+			pci, err := m.api.StateSectorPreCommitInfo(ctx, msg.Message.To, params.SectorNumber, ptsk)
+			if err != nil {
+				log.Warnf("failed to get pre-commit info in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
+
 				// pre commit may already be deleted for expiration or prove commit
-				sci, err := m.api.StateSectorGetInfo(ctx, msg.Message.To, params.SectorNumber, types.EmptyTSK)
+				sci, err := m.api.StateSectorGetInfo(ctx, msg.Message.To, params.SectorNumber, ptsk)
 				if err != nil {
+					log.Warnf("failed to get sector info in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
 					return err
 				}
 				dealIDs = sci.DealIDs
@@ -222,11 +228,14 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			}
 
 			for _, did := range dealIDs {
-				deal, err := m.api.StateMarketStorageDeal(ctx, did, types.EmptyTSK)
+				deal, err := m.api.StateMarketStorageDeal(ctx, did, ptsk)
 				if err != nil {
+					log.Warnf("failed to get market deal %d in parent tipset %s of height %d: %w", did, ptsk, m.checkHeight, err)
 					return err
 				}
 				if ok, _ := m.isMinerDealed(ctx, cid.Undef, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
+					log.Warnf("ignore miner dealed piece %s, deal id %d, parent tipset %s of height %d",
+						deal.Proposal.PieceCID, did, ptsk, m.checkHeight)
 					continue
 				}
 				dealData := &DealData{
@@ -247,7 +256,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				}
 
 				found := false
-				for _, d := range datas.dealDatas { // TODO: may be slow, change to map?
+				for _, d := range datas.dealDatas {
 					if d.dealID == did {
 						found = true
 						break
@@ -261,7 +270,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
 			}
 		}
-		m.checkHeight++
+		m.checkHeight = tipset.Height() + 1
 	}
 	return nil
 }
