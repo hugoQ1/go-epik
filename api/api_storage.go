@@ -66,8 +66,11 @@ type StorageMiner interface {
 	// SectorGetExpectedSealDuration gets the expected time for a sector to seal
 	SectorGetExpectedSealDuration(context.Context) (time.Duration, error)
 	SectorsUpdate(context.Context, abi.SectorNumber, SectorState) error
+	// SectorRemove removes the sector from storage. It doesn't terminate it on-chain, which can
+	// be done with SectorTerminate. Removing and not terminating live sectors will cause additional penalties.
 	SectorRemove(context.Context, abi.SectorNumber) error
-	/* SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error */
+	// SectorTerminate terminates the sector on-chain, then automatically removes it from storage
+	SectorTerminate(context.Context, abi.SectorNumber) error
 
 	StorageList(ctx context.Context) (map[stores.ID][]stores.Decl, error)
 	StorageLocal(ctx context.Context) (map[stores.ID]string, error)
@@ -216,6 +219,8 @@ const (
 	PreCommitAddr AddrUse = iota
 	CommitAddr
 	PoStAddr
+
+	TerminateSectorsAddr
 )
 
 type AddressConfig struct {

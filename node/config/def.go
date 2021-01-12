@@ -69,6 +69,7 @@ type SealingConfig struct {
 type MinerFeeConfig struct {
 	MaxPreCommitGasFee     types.EPK
 	MaxCommitGasFee        types.EPK
+	MaxTerminateGasFee     types.EPK
 	MaxWindowPoStGasFee    types.EPK
 	MaxPublishDealsFee     types.EPK
 	MaxMarketBalanceAddFee types.EPK
@@ -212,6 +213,7 @@ func DefaultStorageMiner() *StorageMiner {
 		Fees: MinerFeeConfig{
 			MaxPreCommitGasFee:     types.MustParseEPK("0.025"),
 			MaxCommitGasFee:        types.MustParseEPK("0.05"),
+			MaxTerminateGasFee:     types.MustParseEPK("0.5"),
 			MaxWindowPoStGasFee:    types.MustParseEPK("5"),
 			MaxPublishDealsFee:     types.MustParseEPK("0.05"),
 			MaxMarketBalanceAddFee: types.MustParseEPK("0.007"),

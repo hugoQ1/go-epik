@@ -345,7 +345,7 @@ type StorageMinerStruct struct {
 		SectorGetExpectedSealDuration func(context.Context) (time.Duration, error)                                                  `perm:"read"`
 		SectorsUpdate                 func(context.Context, abi.SectorNumber, api.SectorState) error                                `perm:"admin"`
 		SectorRemove                  func(context.Context, abi.SectorNumber) error                                                 `perm:"admin"`
-		/* SectorMarkForUpgrade          func(ctx context.Context, id abi.SectorNumber) error                                          `perm:"admin"` */
+		SectorTerminate               func(context.Context, abi.SectorNumber) error                                                 `perm:"admin"`
 
 		WorkerConnect func(context.Context, string) error                                `perm:"admin" retry:"true"` // TODO: worker perm
 		WorkerStats   func(context.Context) (map[uuid.UUID]storiface.WorkerStats, error) `perm:"admin"`
@@ -1441,9 +1441,9 @@ func (c *StorageMinerStruct) SectorRemove(ctx context.Context, number abi.Sector
 	return c.Internal.SectorRemove(ctx, number)
 }
 
-/* func (c *StorageMinerStruct) SectorMarkForUpgrade(ctx context.Context, number abi.SectorNumber) error {
-	return c.Internal.SectorMarkForUpgrade(ctx, number)
-} */
+func (c *StorageMinerStruct) SectorTerminate(ctx context.Context, number abi.SectorNumber) error {
+	return c.Internal.SectorTerminate(ctx, number)
+}
 
 func (c *StorageMinerStruct) WorkerConnect(ctx context.Context, url string) error {
 	return c.Internal.WorkerConnect(ctx, url)

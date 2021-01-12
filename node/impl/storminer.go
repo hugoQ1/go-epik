@@ -159,7 +159,6 @@ func (sm *StorageMinerAPI) SectorsStatus(ctx context.Context, sid abi.SectorNumb
 		PreCommitMsg: info.PreCommitMessage,
 		CommitMsg:    info.CommitMessage,
 		Retries:      info.InvalidProofs,
-		/* ToUpgrade:    sm.Miner.IsMarkedForUpgrade(sid), */
 
 		LastErr: info.LastErr,
 		Log:     log,
@@ -324,9 +323,9 @@ func (sm *StorageMinerAPI) SectorRemove(ctx context.Context, id abi.SectorNumber
 	return sm.Miner.RemoveSector(ctx, id)
 }
 
-/* func (sm *StorageMinerAPI) SectorMarkForUpgrade(ctx context.Context, id abi.SectorNumber) error {
-	return sm.Miner.MarkForUpgrade(id)
-} */
+func (sm *StorageMinerAPI) SectorTerminate(ctx context.Context, id abi.SectorNumber) error {
+	return sm.Miner.TerminateSector(ctx, id)
+}
 
 func (sm *StorageMinerAPI) WorkerConnect(ctx context.Context, url string) error {
 	w, err := connectRemoteWorker(ctx, sm, url)
