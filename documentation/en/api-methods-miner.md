@@ -94,11 +94,12 @@
 * [Sector](#Sector)
   * [SectorGetExpectedSealDuration](#SectorGetExpectedSealDuration)
   * [SectorGetSealDelay](#SectorGetSealDelay)
-  * [SectorMarkForUpgrade](#SectorMarkForUpgrade)
   * [SectorRemove](#SectorRemove)
   * [SectorSetExpectedSealDuration](#SectorSetExpectedSealDuration)
   * [SectorSetSealDelay](#SectorSetSealDelay)
   * [SectorStartSealing](#SectorStartSealing)
+  * [SectorTerminate](#SectorTerminate)
+  * [SectorTerminateFlush](#SectorTerminateFlush)
 * [Sectors](#Sectors)
   * [SectorsList](#SectorsList)
   * [SectorsListInStates](#SectorsListInStates)
@@ -1460,19 +1461,6 @@ Inputs: `null`
 
 Response: `60000000000`
 
-### SectorMarkForUpgrade
-There are not yet any comments for this method.
-
-Perms: admin
-
-Inputs:
-```json
-[
-  9
-]
-```
-
-Response: `{}`
 
 ### SectorRemove
 There are not yet any comments for this method.
@@ -1534,6 +1522,33 @@ Inputs:
 ```
 
 Response: `{}`
+
+### SectorTerminate
+SectorTerminate terminates the sector on-chain (adding it to a termination batch first), then
+automatically removes it from storage
+
+
+Perms: admin
+
+Inputs:
+```json
+[
+  9
+]
+```
+
+Response: `{}`
+
+### SectorTerminateFlush
+SectorTerminateFlush immediately sends a terminate message with sectors batched for termination.
+Returns null if message wasn't sent
+
+
+Perms: admin
+
+Inputs: `null`
+
+Response: `null`
 
 ## Sectors
 
