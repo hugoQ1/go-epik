@@ -39,6 +39,7 @@ var FaultDeclarationCutoff = miner2.FaultDeclarationCutoff
 
 // Not used / checked in v0
 var DeclarationsMax = miner2.DeclarationsMax
+var AddressedSectorsMax = miner2.AddressedSectorsMax
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
