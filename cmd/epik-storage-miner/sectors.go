@@ -425,9 +425,6 @@ var sectorsTerminateFlushCmd = &cli.Command{
 		}
 		defer closer()
 		ctx := lcli.ReqContext(cctx)
-		if cctx.Args().Len() != 1 {
-			return xerrors.Errorf("must pass sector number")
-		}
 
 		mcid, err := nodeApi.SectorTerminateFlush(ctx)
 		if err != nil {
@@ -452,9 +449,6 @@ var sectorsTerminatePendingCmd = &cli.Command{
 		}
 		defer closer()
 		ctx := lcli.ReqContext(cctx)
-		if cctx.Args().Len() != 1 {
-			return xerrors.Errorf("must pass sector number")
-		}
 
 		pending, err := nodeApi.SectorTerminatePending(ctx)
 		if err != nil {
