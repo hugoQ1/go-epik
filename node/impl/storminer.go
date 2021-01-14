@@ -331,6 +331,10 @@ func (sm *StorageMinerAPI) SectorTerminateFlush(ctx context.Context) (*cid.Cid, 
 	return sm.Miner.TerminateFlush(ctx)
 }
 
+func (sm *StorageMinerAPI) SectorTerminatePending(ctx context.Context) ([]abi.SectorID, error) {
+	return sm.Miner.TerminatePending(ctx)
+}
+
 func (sm *StorageMinerAPI) WorkerConnect(ctx context.Context, url string) error {
 	w, err := connectRemoteWorker(ctx, sm, url)
 	if err != nil {

@@ -53,3 +53,7 @@ func (m *Miner) TerminateSector(ctx context.Context, id abi.SectorNumber) error 
 func (m *Miner) TerminateFlush(ctx context.Context) (*cid.Cid, error) {
 	return m.sealing.TerminateFlush(ctx)
 }
+
+func (m *Miner) TerminatePending(ctx context.Context) ([]abi.SectorID, error) {
+	return m.sealing.TerminatePending(ctx)
+}

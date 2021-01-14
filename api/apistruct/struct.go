@@ -347,6 +347,7 @@ type StorageMinerStruct struct {
 		SectorRemove                  func(context.Context, abi.SectorNumber) error                                                 `perm:"admin"`
 		SectorTerminate               func(context.Context, abi.SectorNumber) error                                                 `perm:"admin"`
 		SectorTerminateFlush          func(ctx context.Context) (*cid.Cid, error)                                                   `perm:"admin"`
+		SectorTerminatePending        func(ctx context.Context) ([]abi.SectorID, error)                                             `perm:"admin"`
 
 		WorkerConnect func(context.Context, string) error                                `perm:"admin" retry:"true"` // TODO: worker perm
 		WorkerStats   func(context.Context) (map[uuid.UUID]storiface.WorkerStats, error) `perm:"admin"`
@@ -1448,6 +1449,10 @@ func (c *StorageMinerStruct) SectorTerminate(ctx context.Context, number abi.Sec
 
 func (c *StorageMinerStruct) SectorTerminateFlush(ctx context.Context) (*cid.Cid, error) {
 	return c.Internal.SectorTerminateFlush(ctx)
+}
+
+func (c *StorageMinerStruct) SectorTerminatePending(ctx context.Context) ([]abi.SectorID, error) {
+	return c.Internal.SectorTerminatePending(ctx)
 }
 
 func (c *StorageMinerStruct) WorkerConnect(ctx context.Context, url string) error {
