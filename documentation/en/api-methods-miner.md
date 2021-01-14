@@ -100,6 +100,7 @@
   * [SectorStartSealing](#SectorStartSealing)
   * [SectorTerminate](#SectorTerminate)
   * [SectorTerminateFlush](#SectorTerminateFlush)
+  * [SectorTerminatePending](#SectorTerminatePending)
 * [Sectors](#Sectors)
   * [SectorsList](#SectorsList)
   * [SectorsListInStates](#SectorsListInStates)
@@ -194,7 +195,8 @@ Response:
 ```json
 {
   "PreCommitControl": null,
-  "CommitControl": null
+  "CommitControl": null,
+  "TerminateControl": null
 }
 ```
 
@@ -1542,6 +1544,16 @@ Response: `{}`
 ### SectorTerminateFlush
 SectorTerminateFlush immediately sends a terminate message with sectors batched for termination.
 Returns null if message wasn't sent
+
+
+Perms: admin
+
+Inputs: `null`
+
+Response: `null`
+
+### SectorTerminatePending
+SectorTerminatePending returns a list of pending sector terminations to be sent in the next batch message
 
 
 Perms: admin
