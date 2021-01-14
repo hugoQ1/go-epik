@@ -37,6 +37,9 @@ var FaultDeclarationCutoff = miner2.FaultDeclarationCutoff
 
 /* const MinSectorExpiration = miner2.MinSectorExpiration */
 
+// Not used / checked in v0
+var DeclarationsMax = miner2.DeclarationsMax
+
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
 	case builtin2.StorageMinerActorCodeID:
