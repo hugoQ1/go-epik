@@ -7,14 +7,14 @@ import (
 	mbig "math/big"
 	"time"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/gen"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/genesis"
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/modules"
-	modtest "github.com/filecoin-project/lotus/node/modules/testing"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/genesis"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	modtest "github.com/EpiK-Protocol/go-epik/node/modules/testing"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/google/uuid"
 
 	"github.com/filecoin-project/go-state-types/big"
@@ -60,13 +60,13 @@ func PrepareBootstrapper(t *TestEnvironment) (*Bootstrapper, error) {
 
 	totalBalance := big.Zero()
 	for _, b := range balances {
-		totalBalance = big.Add(filToAttoFil(b.Balance), totalBalance)
+		totalBalance = big.Add(epkToAttoEpk(b.Balance), totalBalance)
 	}
 
-	totalBalanceFil := attoFilToFil(totalBalance)
-	t.RecordMessage("TOTAL BALANCE: %s AttoFIL (%s FIL)", totalBalance, totalBalanceFil)
-	if max := types.TotalFilecoinInt; totalBalanceFil.GreaterThanEqual(max) {
-		panic(fmt.Sprintf("total sum of balances is greater than max Filecoin ever; sum=%s, max=%s", totalBalance, max))
+	totalBalanceEpk := attoEpkToEpk(totalBalance)
+	t.RecordMessage("TOTAL BALANCE: %s AttoEPK (%s EPK)", totalBalance, totalBalanceEpk)
+	if max := types.TotalEpkInt; totalBalanceEpk.GreaterThanEqual(max) {
+		panic(fmt.Sprintf("total sum of balances is greater than max EPK ever; sum=%s, max=%s", totalBalance, max))
 	}
 
 	// then collect all preseals from miners
@@ -80,8 +80,8 @@ func PrepareBootstrapper(t *TestEnvironment) (*Bootstrapper, error) {
 	var genesisMiners []genesis.Miner
 
 	for _, bm := range balances {
-		balance := filToAttoFil(bm.Balance)
-		t.RecordMessage("balance assigned to actor %s: %s AttoFIL", bm.Addr, balance)
+		balance := epkToAttoEpk(bm.Balance)
+		t.RecordMessage("balance assigned to actor %s: %s AttoEPK", bm.Addr, balance)
 		genesisActors = append(genesisActors,
 			genesis.Actor{
 				Type:    genesis.TAccount,
@@ -95,12 +95,16 @@ func PrepareBootstrapper(t *TestEnvironment) (*Bootstrapper, error) {
 	}
 
 	genesisTemplate := genesis.Template{
-		Accounts:         genesisActors,
-		Miners:           genesisMiners,
-		Timestamp:        uint64(time.Now().Unix()) - uint64(t.IntParam("genesis_timestamp_offset")),
-		VerifregRootKey:  gen.DefaultVerifregRootkeyActor,
-		RemainderAccount: gen.DefaultRemainderAccountActor,
-		NetworkName:      "testground-local-" + uuid.New().String(),
+		Accounts:                genesisActors,
+		Miners:                  genesisMiners,
+		Timestamp:               uint64(time.Now().Unix()) - uint64(t.IntParam("genesis_timestamp_offset")),
+		TeamAccountActor:        gen.DefaultTeamAccountActor,
+		FoundationAccountActor:  gen.DefaultFoundationAccountActor,
+		FundraisingAccountActor: gen.DefaultFundraisingAccountActor,
+		DefaultGovernorActor:    gen.DefaultGovernorActor,
+		DefaultExpertActor:      gen.DefaultExpertActor,
+		DefaultKgFundPayeeActor: gen.DefaultKgFundPayeeActor,
+		NetworkName:             "testground-local-" + uuid.New().String(),
 	}
 
 	// dump the genesis block
@@ -186,17 +190,17 @@ func (b *Bootstrapper) RunDefault() error {
 	return nil
 }
 
-// filToAttoFil converts a fractional filecoin value into AttoFIL, rounding if necessary
-func filToAttoFil(f float64) big.Int {
+// epkToAttoEpk converts a fractional filecoin value into AttoFIL, rounding if necessary
+func epkToAttoEpk(f float64) big.Int {
 	a := mbig.NewFloat(f)
-	a.Mul(a, mbig.NewFloat(float64(build.FilecoinPrecision)))
+	a.Mul(a, mbig.NewFloat(float64(build.EpkPrecision)))
 	i, _ := a.Int(nil)
 	return big.Int{Int: i}
 }
 
-func attoFilToFil(atto big.Int) big.Int {
+func attoEpkToEpk(atto big.Int) big.Int {
 	i := big.NewInt(0)
 	i.Add(i.Int, atto.Int)
-	i.Div(i.Int, big.NewIntUnsigned(build.FilecoinPrecision).Int)
+	i.Div(i.Int, big.NewIntUnsigned(build.EpkPrecision).Int)
 	return i
 }

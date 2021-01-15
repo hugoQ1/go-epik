@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
-
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -95,21 +92,6 @@ func NewDataTransferChannel(hostID peer.ID, channelState datatransfer.ChannelSta
 		channel.OtherPeer = channelState.Sender()
 	}
 	return channel
-}
-
-func NewApiExpertInfo(info expert.ExpertInfo) *ExpertInfo {
-	ex := ExpertInfo{
-		Owner:      info.Owner,
-		PeerId:     *info.PeerId,
-		Multiaddrs: info.Multiaddrs,
-	}
-	return &ex
-}
-
-type ExpertInfo struct {
-	Owner      address.Address // Must be an ID-address.
-	PeerId     peer.ID
-	Multiaddrs []abi.Multiaddrs
 }
 
 type NetBlockList struct {

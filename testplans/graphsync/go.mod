@@ -1,4 +1,4 @@
-module github.com/filecoin-project/lotus/testplans/graphsync
+module github.com/EpiK-Protocol/go-epik/testplans/graphsync
 
 go 1.14
 

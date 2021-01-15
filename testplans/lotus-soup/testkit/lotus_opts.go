@@ -3,12 +3,12 @@ package testkit
 import (
 	"fmt"
 
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/config"
-	"github.com/filecoin-project/lotus/node/modules"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/lotus/node/modules/lp2p"
-	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/config"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/lp2p"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"

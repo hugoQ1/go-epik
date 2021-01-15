@@ -1496,6 +1496,39 @@ func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, f
 	return eas.Datas()
 }
 
+func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (*api.ExpertFileInfo, error) {
+	experts, err := a.StateListExperts(ctx, tsk)
+	if err != nil {
+		return nil, err
+	}
+	for _, eaddr := range experts {
+		act, err := a.StateManager.LoadActorTsk(ctx, eaddr, tsk)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load expert actor: %w", err)
+		}
+
+		st, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
+		}
+
+		di, err := st.Data(pieceCid)
+		if err != nil {
+			return nil, err
+		}
+		if di != nil {
+			return &api.ExpertFileInfo{
+				Expert:     eaddr,
+				PieceID:    di.PieceID,
+				PieceSize:  di.PieceSize,
+				Redundancy: di.Redundancy,
+			}, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
 	if err != nil {

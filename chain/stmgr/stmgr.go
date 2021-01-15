@@ -1238,16 +1238,13 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 		au = big.Add(au, v.InitialVested)
 		vf = big.Add(vf, au)
 		switch addr {
-		case builtin.TeamAddress:
+		case builtin.TeamIDAddress:
 			team = au
-		case builtin.FoundationAddress:
+		case builtin.FoundationIDAddress:
 			foundation = au
-		case builtin.FundraisingAddress:
+		case builtin.FundraisingIDAddress:
 			fundraising = au
-		case builtin.FirstGovernorAddress:
-			// actually no amount
 		default:
-			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("unknown address: %v", addr)
 		}
 	}
 

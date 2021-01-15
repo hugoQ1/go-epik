@@ -454,7 +454,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			TransferType: storagemarket.TTGraphsync,
 			Root:         dealData.dataRef.RootCID,
 			Expert:       dealData.dataRef.Expert,
-			Bounty:       dealData.dataRef.Bounty,
 		}
 		params := &api.StartDealParams{
 			Data:   stData,

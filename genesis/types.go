@@ -105,10 +105,10 @@ type Template struct {
 	NetworkName string
 	Timestamp   uint64 `json:",omitempty"`
 
-	// VerifregRootKey  Actor
-	// RemainderAccount Actor
-	TeamAccountActor          Actor
-	FoundationAccountActor    Actor
-	FundraisingAccountActor   Actor
-	FirstGovernorAccountActor Actor
+	TeamAccountActor        Actor
+	FoundationAccountActor  Actor
+	FundraisingAccountActor Actor
+	DefaultGovernorActor    Actor
+	DefaultExpertActor      Actor
+	DefaultKgFundPayeeActor Actor
 }

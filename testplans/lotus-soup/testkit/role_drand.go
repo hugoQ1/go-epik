@@ -11,6 +11,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/drand/drand/chain"
 	"github.com/drand/drand/client"
 	hclient "github.com/drand/drand/client/http"
@@ -21,12 +22,11 @@ import (
 	dnet "github.com/drand/drand/net"
 	"github.com/drand/drand/protobuf/drand"
 	dtest "github.com/drand/drand/test"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/filecoin-project/oni/lotus-soup/statemachine"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/statemachine"
 )
 
 var (

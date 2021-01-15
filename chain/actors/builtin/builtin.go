@@ -19,10 +19,12 @@ var SystemActorAddr = builtin.SystemActorAddr
 var BurntFundsActorAddr = builtin.BurntFundsActorAddr
 var CronActorAddr = builtin.CronActorAddr
 
-var FoundationAddress = makeAddress("t080")
-var FundraisingAddress = makeAddress("t081")
-var TeamAddress = makeAddress("t082")
-var FirstGovernorAddress = makeAddress("t083")
+var (
+	FoundationIDAddress      = makeAddress("t080")
+	FundraisingIDAddress     = makeAddress("t081")
+	TeamIDAddress            = makeAddress("t082")
+	DefaultGovernorIDAddress = makeAddress("t083")
+)
 
 var (
 	ExpectedLeadersPerEpoch = builtin.ExpectedLeadersPerEpoch

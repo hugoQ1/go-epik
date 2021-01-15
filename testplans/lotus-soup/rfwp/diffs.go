@@ -7,9 +7,9 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
 )
 
 type ChainState struct {
@@ -147,20 +147,20 @@ func recordDiff(mi *MinerInfo, ps *ProvingInfoState, height abi.ChainEpoch) {
 		}
 	}
 
-	{
-		value := big.Int(mi.PreCommitDeposits)
-		cs.DiffHeight[maddr]["PreCommitDeposits"][height] = value
-		cs.DiffValue[maddr]["PreCommitDeposits"][value.String()] = append(cs.DiffValue[maddr]["PreCommitDeposits"][value.String()], height)
+	// {
+	// 	value := big.Int(mi.PreCommitDeposits)
+	// 	cs.DiffHeight[maddr]["PreCommitDeposits"][height] = value
+	// 	cs.DiffValue[maddr]["PreCommitDeposits"][value.String()] = append(cs.DiffValue[maddr]["PreCommitDeposits"][value.String()], height)
 
-		if cs.PrevHeight != -1 {
-			prevValue := cs.DiffHeight[maddr]["PreCommitDeposits"][cs.PrevHeight]
-			cmp := big.Zero()
-			cmp.Sub(value.Int, prevValue.Int) // value - prevValue
-			if big.Cmp(cmp, big.Zero()) != 0 {
-				cs.DiffCmp[maddr]["PreCommitDeposits"][cmp.String()] = append(cs.DiffCmp[maddr]["PreCommitDeposits"][cmp.String()], height)
-			}
-		}
-	}
+	// 	if cs.PrevHeight != -1 {
+	// 		prevValue := cs.DiffHeight[maddr]["PreCommitDeposits"][cs.PrevHeight]
+	// 		cmp := big.Zero()
+	// 		cmp.Sub(value.Int, prevValue.Int) // value - prevValue
+	// 		if big.Cmp(cmp, big.Zero()) != 0 {
+	// 			cs.DiffCmp[maddr]["PreCommitDeposits"][cmp.String()] = append(cs.DiffCmp[maddr]["PreCommitDeposits"][cmp.String()], height)
+	// 		}
+	// 	}
+	// }
 
 	{
 		value := big.Int(mi.LockedFunds)

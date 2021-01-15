@@ -20,14 +20,22 @@ import (
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
-func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []genesis.Actor) (int64, *types.Actor, map[address.Address]address.Address, error) {
+func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.Actor, map[address.Address]address.Address, error) {
+	initialActors := append(tpl.Accounts,
+		tpl.FoundationAccountActor,
+		tpl.FundraisingAccountActor,
+		tpl.TeamAccountActor,
+		tpl.DefaultGovernorActor,
+		tpl.DefaultExpertActor,
+		tpl.DefaultKgFundPayeeActor,
+	)
 	if len(initialActors) > MaxAccounts {
 		return 0, nil, nil, xerrors.New("too many initial actors")
 	}
 
 	var ias init_.State
 	ias.NextID = MinerStart
-	ias.NetworkName = netname
+	ias.NetworkName = tpl.NetworkName
 
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 	amap := adt.MakeEmptyMap(store)

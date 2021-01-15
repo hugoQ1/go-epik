@@ -8,15 +8,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/beacon"
-	"github.com/filecoin-project/lotus/chain/wallet"
-	"github.com/filecoin-project/lotus/metrics"
-	"github.com/filecoin-project/lotus/miner"
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	modtest "github.com/filecoin-project/lotus/node/modules/testing"
-	tstats "github.com/filecoin-project/lotus/tools/stats"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/miner"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	modtest "github.com/EpiK-Protocol/go-epik/node/modules/testing"
+	tstats "github.com/EpiK-Protocol/go-epik/tools/stats"
 
 	influxdb "github.com/kpacha/opencensus-influxdb"
 	ma "github.com/multiformats/go-multiaddr"
@@ -33,6 +33,10 @@ type LotusNode struct {
 	StopFn   node.StopFunc
 	Wallet   *wallet.Key
 	MineOne  func(context.Context, miner.MineReq) error
+}
+
+func (n *LotusNode) SetWallet(ctx context.Context, walletKey *wallet.Key) error {
+	return n.setWallet(ctx, walletKey)
 }
 
 func (n *LotusNode) setWallet(ctx context.Context, walletKey *wallet.Key) error {
@@ -208,7 +212,7 @@ func registerAndExportMetrics(instanceName string) {
 	}
 
 	// Set the metric to one so it is published to the exporter
-	stats.Record(context.Background(), metrics.LotusInfo.M(1))
+	stats.Record(context.Background(), metrics.EpikInfo.M(1))
 
 	// Register our custom exporter to opencensus
 	e, err := influxdb.NewExporter(context.Background(), influxdb.Options{

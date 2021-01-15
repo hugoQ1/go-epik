@@ -1,9 +1,10 @@
 package testkit
 
 import (
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/genesis"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/genesis"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/testground/sdk-go/sync"
 )
@@ -53,6 +54,8 @@ type MinerAddressesMsg struct {
 	MinerNetAddrs  peer.AddrInfo
 	MinerActorAddr address.Address
 	WalletAddr     address.Address
+	GenOwnerAddr   address.Address
+	MinerWallet    *types.KeyInfo
 }
 
 type SlashedMinerMsg struct {

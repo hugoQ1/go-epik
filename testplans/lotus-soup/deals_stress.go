@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/lotus/api"
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 )
 
 func dealsStress(t *testkit.TestEnvironment) error {
@@ -92,11 +92,11 @@ func dealsStress(t *testkit.TestEnvironment) error {
 			go func(i int) {
 				defer wg1.Done()
 				t1 := time.Now()
-				deal := testkit.StartDeal(ctx, minerAddr.MinerActorAddr, client, cids[i], false)
+				deal := testkit.StartDeal(t, ctx, minerAddr, client, cids[i], false)
 				t.RecordMessage("started storage deal %d -> %s", i, deal)
 				time.Sleep(2 * time.Second)
 				t.RecordMessage("waiting for deal %d to be sealed", i)
-				testkit.WaitDealSealed(t, ctx, client, deal)
+				testkit.WaitDealSealed(t, ctx, client, deal, cids[i])
 				t.D().ResettingHistogram(fmt.Sprintf("deal.sealed,miner=%s", minerAddr.MinerActorAddr)).Update(int64(time.Since(t1)))
 			}(i)
 		}
@@ -124,11 +124,11 @@ func dealsStress(t *testkit.TestEnvironment) error {
 	} else {
 
 		for i := 0; i < deals; i++ {
-			deal := testkit.StartDeal(ctx, minerAddr.MinerActorAddr, client, cids[i], false)
+			deal := testkit.StartDeal(t, ctx, minerAddr, client, cids[i], false)
 			t.RecordMessage("started storage deal %d -> %s", i, deal)
 			time.Sleep(2 * time.Second)
 			t.RecordMessage("waiting for deal %d to be sealed", i)
-			testkit.WaitDealSealed(t, ctx, client, deal)
+			testkit.WaitDealSealed(t, ctx, client, deal, cids[i])
 		}
 
 		for i := 0; i < deals; i++ {

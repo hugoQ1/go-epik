@@ -2,7 +2,7 @@ package expert
 
 import (
 	"github.com/ipfs/go-cid"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
@@ -32,17 +32,9 @@ func (s *state2) Info() (ExpertInfo, error) {
 		return ExpertInfo{}, err
 	}
 
-	var pid *peer.ID
-	if peerID, err := peer.IDFromBytes(info.PeerId); err == nil {
-		pid = &peerID
-	}
-
-	mi := ExpertInfo{
-		Owner:      info.Owner,
-		PeerId:     pid,
-		Multiaddrs: info.Multiaddrs,
-	}
-	return mi, nil
+	return ExpertInfo{
+		Owner: info.Owner,
+	}, nil
 }
 
 func (s *state2) Datas() ([]*DataOnChainInfo, error) {
@@ -62,4 +54,21 @@ func (s *state2) Datas() ([]*DataOnChainInfo, error) {
 		return nil, err
 	}
 	return datas, nil
+}
+
+func (s *state2) Data(pieceCID cid.Cid) (*DataOnChainInfo, error) {
+	datas, err := adt2.AsMap(s.store, s.State.Datas)
+	if err != nil {
+		return nil, err
+	}
+
+	var info DataOnChainInfo
+	found, err := datas.Get(adt2.StringKey(pieceCID.String()), &info)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expert data %s: %w", pieceCID, err)
+	}
+	if !found {
+		return nil, nil
+	}
+	return &info, nil
 }

@@ -167,7 +167,8 @@ type FullNodeStruct struct {
 		ClientFindData                            func(ctx context.Context, root cid.Cid, piece *cid.Cid) ([]api.QueryOffer, error)                                 `perm:"read"`
 		ClientMinerQueryOffer                     func(ctx context.Context, miner address.Address, root cid.Cid, piece *cid.Cid) (api.QueryOffer, error)            `perm:"read"`
 		ClientStartDeal                           func(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)                                          `perm:"admin"`
-		ClientImportAndDeal                       func(ctx context.Context, ref api.FileRef, miner address.Address) (*api.ImportRes, error)                         `perm:"admin"`
+		ClientImportAndDeal                       func(ctx context.Context, params *api.ImportAndDealParams) (*api.ImportRes, error)                                `perm:"admin"`
+		ClientExpertRegisterFile                  func(ctx context.Context, params *api.ExpertRegisterFileParams) (*cid.Cid, error)                                 `perm:"admin"`
 		ClientGetDealInfo                         func(context.Context, cid.Cid) (*api.DealInfo, error)                                                             `perm:"read"`
 		ClientGetDealStatus                       func(context.Context, uint64) (string, error)                                                                     `perm:"read"`
 		ClientListDeals                           func(ctx context.Context) ([]api.DealInfo, error)                                                                 `perm:"write"`
@@ -241,6 +242,7 @@ type FullNodeStruct struct {
 		StateListExperts                 func(context.Context, types.TipSetKey) ([]address.Address, error)                                                    `perm:"read"`
 		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)                                  `perm:"read"`
 		StateExpertDatas                 func(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error) `perm:"read"`
+		StateExpertFileInfo              func(context.Context, cid.Cid, types.TipSetKey) (*api.ExpertFileInfo, error)                                         `perm:"read"`
 		StateVoteTally                   func(context.Context, types.TipSetKey) (*vote.Tally, error)                                                          `perm:"read"`
 		StateVoterInfo                   func(context.Context, address.Address, types.TipSetKey) (*vote.VoterInfo, error)                                     `perm:"read"`
 		StateKnowledgeInfo               func(context.Context, types.TipSetKey) (*knowledge.Info, error)                                                      `perm:"read"`
@@ -605,8 +607,12 @@ func (c *FullNodeStruct) ClientStartDeal(ctx context.Context, params *api.StartD
 	return c.Internal.ClientStartDeal(ctx, params)
 }
 
-func (c *FullNodeStruct) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (*api.ImportRes, error) {
-	return c.Internal.ClientImportAndDeal(ctx, ref, miner)
+func (c *FullNodeStruct) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDealParams) (*api.ImportRes, error) {
+	return c.Internal.ClientImportAndDeal(ctx, params)
+}
+
+func (c *FullNodeStruct) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRegisterFileParams) (*cid.Cid, error) {
+	return c.Internal.ClientExpertRegisterFile(ctx, params)
 }
 
 func (c *FullNodeStruct) ClientGetDealInfo(ctx context.Context, deal cid.Cid) (*api.DealInfo, error) {
@@ -1143,6 +1149,10 @@ func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Addre
 
 func (c *FullNodeStruct) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
 	return c.Internal.StateExpertDatas(ctx, addr, filter, filterOut, tsk)
+}
+
+func (c *FullNodeStruct) StateExpertFileInfo(ctx context.Context, pieceCID cid.Cid, tsk types.TipSetKey) (*api.ExpertFileInfo, error) {
+	return c.Internal.StateExpertFileInfo(ctx, pieceCID, tsk)
 }
 
 func (c *FullNodeStruct) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {

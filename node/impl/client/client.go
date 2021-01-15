@@ -133,56 +133,6 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		params.Wallet = dwallet
 	}
 
-	// check expert
-	eaddr, err := address.NewFromString(params.Data.Expert)
-	if err != nil {
-		return nil, xerrors.Errorf("serializing expert failed: %w", err)
-	}
-
-	expertInfo, err := a.StateExpertInfo(ctx, eaddr, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert info: %w", err)
-	}
-	from, err := a.StateAccountKey(ctx, expertInfo.Owner, types.EmptyTSK)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get expert key: %w", err)
-	}
-	if params.Wallet.String() == from.String() {
-		data, err := a.StateExpertDatas(ctx, eaddr, nil, true, types.EmptyTSK)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to get expert data: %w", err)
-		}
-		exist := false
-		for _, d := range data {
-			if d.PieceID == params.Data.Root.String() {
-				exist = true
-				break
-			}
-		}
-
-		if !exist {
-			expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-				PieceID: params.Data.Root,
-				Bounty:  params.Data.Bounty,
-			})
-			if err != nil {
-				return nil, xerrors.Errorf("serializing params failed: %w", err)
-			}
-
-			_, serr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-				To:     eaddr,
-				From:   expertInfo.Owner,
-				Value:  types.NewInt(0),
-				Method: builtin.MethodsExpert.ImportData,
-				Params: expertParams,
-			}, nil)
-			if serr != nil {
-				return nil, serr
-			}
-			fmt.Printf("import data (ClientStartDeal): expert %s, PieceID %s\n", eaddr, params.Data.Root)
-		}
-	}
-
 	walletKey, err := a.StateAccountKey(ctx, params.Wallet, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("failed resolving params.Wallet addr: %w", params.Wallet)
@@ -225,7 +175,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		StartEpoch:    dealStart,
 		Collateral:    abi.NewTokenAmount(0),
 		Rt:            mi.SealProofType,
-		FastRetrieval: params.FastRetrieval,
+		FastRetrieval: true,
 		StoreID:       storeID,
 	})
 
@@ -439,69 +389,156 @@ func (a *API) ClientImport(ctx context.Context, ref api.FileRef) (*api.ImportRes
 	}, nil
 }
 
-func (a *API) ClientImportAndDeal(ctx context.Context, ref api.FileRef, miner address.Address) (*api.ImportRes, error) {
-
-	res, err := a.ClientImport(ctx, ref)
-	if err != nil {
-		return nil, err
-	}
-
-	payer, err := a.WalletDefaultAddress(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDealParams) (*api.ImportRes, error) {
 
 	ts, err := a.ChainHead(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed getting chain height: %w", err)
+		return nil, xerrors.Errorf("failed to get chain height: %w", err)
 	}
-	if miner == address.Undef {
-		miners, err := a.StateListMiners(ctx, ts.Key())
+
+	// expert
+	if params.Expert != address.Undef {
+		info, err := a.StateExpertInfo(ctx, params.Expert, ts.Key())
+		if err != nil {
+			return nil, err
+		}
+		params.From = info.Owner
+	}
+
+	// from
+	if params.From == address.Undef {
+		params.From, err = a.WalletDefaultAddress(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// miner
+	{
+		if params.Miner == address.Undef {
+			miners, err := a.StateListMiners(ctx, ts.Key())
+			if err != nil {
+				return nil, err
+			}
+
+			if len(miners) == 0 {
+				return nil, xerrors.Errorf("miners not found.")
+			}
+			params.Miner = miners[0]
+		}
+
+		mi, err := a.StateMinerInfo(ctx, params.Miner, ts.Key())
+		if err != nil {
+			return nil, xerrors.Errorf("failed to get peerID for miner: %w", err)
+		}
+
+		if *mi.PeerId == peer.ID("SETME") {
+			return nil, xerrors.Errorf("the miner hasn't initialized yet")
+		}
+	}
+
+	// import to local
+	res, err := a.ClientImport(ctx, params.Ref)
+	if err != nil {
+		return nil, err
+	}
+
+	ds, err := a.ClientDealPieceCID(ctx, res.Root)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get piece CID for root %s: %w", res.Root, err)
+	}
+
+	// check if registered
+	existence, err := a.StateExpertFileInfo(ctx, ds.PieceCID, ts.Key())
+	if err != nil {
+		return nil, xerrors.Errorf("failed to check file registered %s: %w", ds.PieceCID, err)
+	}
+	dealExpert := ""
+	if existence == nil {
+		// file not registered
+		if params.Expert == address.Undef {
+			return nil, xerrors.New("file not registered by any expert")
+		}
+
+		// register new file
+		mcid, err := a.ClientExpertRegisterFile(ctx, &api.ExpertRegisterFileParams{
+			Expert:    params.Expert,
+			PieceID:   ds.PieceCID,
+			PieceSize: ds.PieceSize,
+		})
 		if err != nil {
 			return nil, err
 		}
 
-		if len(miners) == 0 {
-			return nil, xerrors.Errorf("miners not found.")
+		fmt.Printf("Send register expert file message: %s\n", mcid)
+
+		_, receipt, _, err := a.Stmgr.WaitForMessage(ctx, *mcid, build.MessageConfidence, abi.ChainEpoch(10))
+		if err != nil {
+			return nil, err
 		}
-		miner = miners[0]
-	}
+		if receipt.ExitCode != 0 {
+			return nil, xerrors.Errorf("register file returned exit %d", receipt.ExitCode)
+		}
 
-	mi, err := a.StateMinerInfo(ctx, miner, ts.Key())
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get peerID for miner: %w", err)
-	}
+		// start deal as an expert
+		dealExpert = params.Expert.String()
+	} else {
+		if params.Expert != address.Undef {
+			return nil, xerrors.Errorf("file already registered by expert %s", existence.Expert)
+		}
 
-	if *mi.PeerId == peer.ID("SETME") {
-		return nil, xerrors.Errorf("the miner hasn't initialized yet")
+		// start deal as a miner
+		dealExpert = existence.Expert.String()
 	}
-
-	/* pid := *mi.PeerId
-	ask, err := a.ClientQueryAsk(ctx, pid, miner)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to query miner:%s, ask: %s", miner, err)
-	} */
 
 	dataRef := &storagemarket.DataRef{
 		TransferType: storagemarket.TTGraphsync,
 		Root:         res.Root,
-		Expert:       ref.Expert,
-		Bounty:       ref.Bounty,
+		Expert:       dealExpert,
 	}
-	params := &api.StartDealParams{
+
+	dealId, err := a.ClientStartDeal(ctx, &api.StartDealParams{
 		Data:   dataRef,
-		Wallet: payer,
-		Miner:  miner,
-		/* EpochPrice:        ask.Price,
-		MinBlocksDuration: uint64(ask.Expiry - ts.Height()), */
-	}
-	dealId, err := a.ClientStartDeal(ctx, params)
+		Wallet: params.From,
+		Miner:  params.Miner,
+	})
 	if err != nil {
 		return nil, err
 	}
-	log.Warnf("start miner:%s, deal: %s", miner, dealId.String())
+
+	log.Warnf("start deal miner: %s, from: %s, expert: %s, pieceCID: %s, deal: %s",
+		params.Miner, params.From, params.Expert, ds.PieceCID, dealId.String())
 
 	return res, nil
+}
+
+func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRegisterFileParams) (*cid.Cid, error) {
+	expertInfo, err := a.StateExpertInfo(ctx, params.Expert, types.EmptyTSK)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expert info: %w", err)
+	}
+
+	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
+		PieceID:   params.PieceID,
+		PieceSize: params.PieceSize,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	sm, err := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     params.Expert,
+		From:   expertInfo.Owner,
+		Value:  types.NewInt(0),
+		Method: builtin.MethodsExpert.ImportData,
+		Params: expertParams,
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	mid := sm.Cid()
+	return &mid, nil
 }
 
 func (a *API) ClientRemoveImport(ctx context.Context, importID multistore.StoreID) error {
@@ -867,7 +904,7 @@ func (a *API) ClientDealPieceCID(ctx context.Context, root cid.Cid) (api.DataCID
 	w := &writer.Writer{}
 	bw := bufio.NewWriterSize(w, int(writer.CommPBuf))
 
-	err := car.WriteCar(ctx, dag, []cid.Cid{root}, w)
+	err := car.WriteCar(ctx, dag, []cid.Cid{root}, bw)
 	if err != nil {
 		return api.DataCIDSize{}, err
 	}

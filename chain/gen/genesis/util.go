@@ -2,9 +2,12 @@ package genesis
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/genesis"
 	"github.com/filecoin-project/go-state-types/network"
+	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -14,6 +17,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
+
+	"github.com/filecoin-project/go-commp-utils/ffiwrapper"
 )
 
 func mustEnc(i cbg.CBORMarshaler) []byte {
@@ -59,3 +64,16 @@ var GenesisNetworkVersion = func() network.Version {
 func genesisNetworkVersion(context.Context, abi.ChainEpoch) network.Version { // TODO: Get from build/
 	return GenesisNetworkVersion // TODO: Get from build/
 } // TODO: Get from build/
+
+// UnsealedCID
+func GeneratePaddedPresealFileCID(pt abi.RegisteredSealProof) (cid.Cid, error) {
+	ssize, err := pt.SectorSize()
+	if err != nil {
+		return cid.Undef, err
+	}
+	unpadded := abi.PaddedPieceSize(ssize).Unpadded()
+	fmt.Printf("generate preseal file piece cid, to read %d bytes\n", unpadded)
+
+	// param proofType could be arbitrary, cause CommD is sector-size independent
+	return ffiwrapper.GeneratePieceCIDFromFile(pt, genesis.NewZeroPaddingPresealFileReader(), unpadded)
+}

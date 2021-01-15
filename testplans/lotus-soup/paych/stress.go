@@ -8,14 +8,14 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 )
 
 var SendersDoneState = sync.State("senders-done")
@@ -103,7 +103,7 @@ func runSender(ctx context.Context, t *testkit.TestEnvironment, clients []*testk
 		// number of vouchers to send on each lane
 		vouchersPerLane = t.IntParam("vouchers_per_lane")
 		// increments in which to send payment vouchers
-		increments = big.Mul(big.NewInt(int64(t.IntParam("increments"))), big.NewInt(int64(build.FilecoinPrecision)))
+		increments = big.Mul(big.NewInt(int64(t.IntParam("increments"))), big.NewInt(int64(build.EpkPrecision)))
 		// channel amount should be enough to cover all vouchers
 		channelAmt = big.Mul(big.NewInt(int64(laneCount*vouchersPerLane)), increments)
 	)

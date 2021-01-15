@@ -7,15 +7,14 @@ import (
 	"math/rand"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
-	"github.com/multiformats/go-multihash"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 
 	"github.com/ipfs/go-cid"
-	cbor "github.com/ipfs/go-ipld-cbor"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	runtime2 "github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -62,7 +60,9 @@ func mkFakedSigSyscalls(base vm.SyscallBuilder) vm.SyscallBuilder {
 	}
 }
 
-func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid, miners []genesis.Miner) (cid.Cid, error) {
+func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid, tpl genesis.Template, inis InitDatas) (cid.Cid, error) {
+	miners := tpl.Miners
+
 	csc := func(context.Context, abi.ChainEpoch, *state.StateTree) (abi.TokenAmount, error) {
 		return big.Zero(), nil
 	}
@@ -88,14 +88,9 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 	}
 
 	minerInfos := make([]struct {
-		maddr address.Address
-
-		/* presealExp abi.ChainEpoch */
-
+		maddr   address.Address
 		dealIDs []abi.DealID
 	}, len(miners))
-
-	var eaddr address.Address
 	for i, m := range miners {
 		// Create miner through power actor
 		i := i
@@ -108,7 +103,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 
 		{
 			constructorParams := &power2.CreateMinerParams{
-				Owner:         m.Owner,
+				Owner:         m.Worker,
 				Worker:        m.Worker,
 				Coinbase:      m.Coinbase,
 				Peer:          []byte(m.PeerId),
@@ -126,43 +121,13 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return cid.Undef, xerrors.Errorf("unmarshaling CreateMinerReturn: %w", err)
 			}
 
-			expma := MinerAddress(uint64(i))
+			expma := MinerAddress(uint64(i) + 1) // plus 1 expert
 			if ma.IDAddress != expma {
 				return cid.Undef, xerrors.Errorf("miner assigned wrong address: %s != %s", ma.IDAddress, expma)
 			}
 			minerInfos[i].maddr = ma.IDAddress
 
 			fmt.Printf("create genesis miner %s: Owner %s, Worker %s, Coinbase %s\n", ma.IDAddress, m.Owner, m.Worker, m.Coinbase)
-
-			/* // TODO: ActorUpgrade
-			err = vm.MutateState(ctx, minerInfos[i].maddr, func(cst cbor.IpldStore, st *miner2.State) error {
-				maxPeriods := miner2.MaxSectorExpirationExtension / miner2.WPoStProvingPeriod
-				minerInfos[i].presealExp = (maxPeriods-1)*miner2.WPoStProvingPeriod + st.ProvingPeriodStart - 1
-
-				return nil
-			})
-			if err != nil {
-				return cid.Undef, xerrors.Errorf("mutating state: %w", err)
-			} */
-		}
-
-		// Add expert
-		if i == 0 {
-			expertCreateParams := &power2.CreateExpertParams{
-				Owner:  m.Owner,
-				PeerId: []byte(m.PeerId),
-			}
-			params := mustEnc(expertCreateParams)
-			rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, m.Owner, big.Zero(), builtin2.MethodsPower.CreateExpert, params)
-			if err != nil {
-				return cid.Undef, xerrors.Errorf("failed to create genesis expert: %w", err)
-			}
-			var ma power2.CreateExpertReturn
-			if err := ma.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {
-				return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
-			}
-			eaddr = ma.IDAddress
-			fmt.Printf("create genesis expert %s: %s\n", eaddr, m.Owner)
 		}
 
 		// Add market funds
@@ -194,10 +159,12 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return nil
 			}
 
-			params := &market.PublishStorageDealsParams{}
+			params := &market.PublishStorageDealsParams{
+				DataRef: market2.PublishStorageDataRef{
+					Expert: inis.Expert.String(),
+				},
+			}
 			for _, preseal := range m.Sectors {
-				/* preseal.Deal.VerifiedDeal = true
-				preseal.Deal.EndEpoch = minerInfos[i].presealExp */
 				params.Deals = append(params.Deals, market.ClientDealProposal{
 					Proposal:        preseal.Deal,
 					ClientSignature: crypto.Signature{Type: crypto.SigTypeBLS}, // TODO: do we want to sign these? Or do we want to fake signatures for genesis setup?
@@ -208,19 +175,8 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 						return cid.Undef, err
 					}
 
-					params = &market.PublishStorageDealsParams{}
+					params.Deals = []market2.ClientDealProposal{}
 				}
-			}
-			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
-
-			{
-				_, err := doExecValue(ctx, vm, eaddr, m.Worker, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{PieceID: rootCID}))
-				if err != nil {
-					return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
-				}
-			}
-			params.DataRef = market2.PublishStorageDataRef{
-				Expert: eaddr.String(),
 			}
 
 			if len(params.Deals) > 0 {
@@ -340,7 +296,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				pledge = big.Add(pcd, pledge)
 
 				fmt.Println(types.EPK(pledge)) */
-				_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, big.Zero() /* pledge */, builtin2.MethodsMiner.PreCommitSector, mustEnc(params))
+				_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, big.Zero(), builtin2.MethodsMiner.PreCommitSector, mustEnc(params))
 				if err != nil {
 					return cid.Undef, xerrors.Errorf("failed to confirm presealed sectors (pre-commit): %w", err)
 				}
@@ -358,25 +314,14 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		}
 	}
 
-	// Sanity-check total network power
-	err = vm.MutateState(ctx, power.Address, func(cst cbor.IpldStore, st *power2.State) error {
-		if !st.TotalRawBytePower.Equals(rawPow) {
-			return xerrors.Errorf("st.TotalRawBytePower %s doesn't match previously calculated rawPow %s", st.TotalRawBytePower, rawPow)
-		}
-
-		if !st.TotalQualityAdjPower.Equals(qaPow) {
-			return xerrors.Errorf("st.TotalQualityAdjPower %s doesn't match previously calculated qaPow %s", st.TotalQualityAdjPower, qaPow)
-		}
-
-		expected := big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos))))
-		if !st.TotalPledgeCollateral.Equals(expected) {
-			return xerrors.Errorf("st.TotalPledgeCollateral %s doesn't match expected %s", st.TotalPledgeCollateral, expected)
-		}
-
-		return nil
-	})
+	err = checkPowerActor(vm, cs.Store(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
 	if err != nil {
-		return cid.Undef, xerrors.Errorf("mutating state: %w", err)
+		return cid.Undef, xerrors.Errorf("check genesis power state: %w", err)
+	}
+
+	err = checkMarketActor(vm, cs.Store(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("check genesis market state: %w", err)
 	}
 
 	// TODO: Should we re-ConstructState for the reward actor using rawPow as currRealizedPower here?
@@ -403,7 +348,62 @@ func (fr *fakeRand) GetBeaconRandomness(ctx context.Context, personalization cry
 	return out, nil
 }
 
-func currentTotalPower(ctx context.Context, vm *vm.VM, maddr address.Address) (*power2.CurrentTotalPowerReturn, error) {
+func checkPowerActor(vm *vm.VM, stor adt.Store, expectRawPower, expectQAPower abi.StoragePower, expectPledge abi.TokenAmount) error {
+	act, err := vm.StateTree().GetActor(power.Address)
+	if err != nil {
+		return err
+	}
+	st, err := power.Load(stor, act)
+	if err != nil {
+		return err
+	}
+	claim, err := st.TotalPower()
+	if err != nil {
+		return err
+	}
+	if !claim.RawBytePower.Equals(expectRawPower) {
+		return xerrors.Errorf("TotalRawBytePower %s doesn't match previously calculated rawPow %s", claim.RawBytePower, expectRawPower)
+	}
+
+	if !claim.QualityAdjPower.Equals(expectQAPower) {
+		return xerrors.Errorf("TotalQualityAdjPower %s doesn't match previously calculated qaPow %s", claim.QualityAdjPower, expectQAPower)
+	}
+
+	locked, err := st.TotalLocked()
+	if err != nil {
+		return err
+	}
+	if !locked.Equals(expectPledge) {
+		return xerrors.Errorf("TotalPledgeCollateral %s doesn't match expected %s", locked, expectPledge)
+	}
+
+	return nil
+}
+
+func checkMarketActor(vm *vm.VM, stor adt.Store, pieceCID cid.Cid, expectQuotaAcquired int64) error {
+	act, err := vm.StateTree().GetActor(market.Address)
+	if err != nil {
+		return err
+	}
+	st, err := market.Load(stor, act)
+	if err != nil {
+		return err
+	}
+	qts, err := st.Quotas()
+	if err != nil {
+		return err
+	}
+	rm, err := qts.RemainingQuota(pieceCID)
+	if err != nil {
+		return xerrors.Errorf("failed to get remaining quota for piece %s: %w", pieceCID, err)
+	}
+	if rm+expectQuotaAcquired != market2.DefaultInitialQuota {
+		return xerrors.Errorf("Remaining genesis file quota %d doesn't match expected %d", rm, market2.DefaultInitialQuota-expectQuotaAcquired)
+	}
+	return nil
+}
+
+/* func currentTotalPower(ctx context.Context, vm *vm.VM, maddr address.Address) (*power2.CurrentTotalPowerReturn, error) {
 	pwret, err := doExecValue(ctx, vm, power.Address, maddr, big.Zero(), builtin2.MethodsPower.CurrentTotalPower, nil)
 	if err != nil {
 		return nil, err
@@ -414,7 +414,7 @@ func currentTotalPower(ctx context.Context, vm *vm.VM, maddr address.Address) (*
 	}
 
 	return &pwr, nil
-}
+} */
 
 func dealWeight(ctx context.Context, vm *vm.VM, maddr address.Address, dealIDs []abi.DealID, sectorStart /* , sectorExpiry  */ abi.ChainEpoch) (market2.VerifyDealsForActivationReturn, error) {
 	params := &market2.VerifyDealsForActivationParams{

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 
 	"github.com/filecoin-project/go-state-types/abi"
 
@@ -40,13 +40,13 @@ func init() {
 
 	policy.SetConsensusMinerMinPower(abi.NewTokenAmount(2048))
 	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
-	policy.SetMinVerifiedDealSize(abi.NewTokenAmount(256))
+	// policy.SetMinVerifiedDealSize(abi.NewTokenAmount(256))
 
 	// Disable upgrades.
-	build.UpgradeSmokeHeight = -1
-	build.UpgradeIgnitionHeight = -2
-	build.UpgradeLiftoffHeight = -3
+	// build.UpgradeSmokeHeight = -1
+	// build.UpgradeIgnitionHeight = -2
+	// build.UpgradeLiftoffHeight = -3
 	// We need to _run_ this upgrade because genesis doesn't support v2, so
 	// we run it at height 0.
-	build.UpgradeActorsV2Height = 0
+	// build.UpgradeActorsV2Height = 0
 }

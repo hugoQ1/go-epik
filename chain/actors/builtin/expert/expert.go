@@ -5,9 +5,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
-	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -24,7 +22,6 @@ func init() {
 }
 
 var (
-	Address = builtin2.ExpertFundActorAddr
 	Methods = builtin2.MethodsExpert
 )
 
@@ -41,12 +38,11 @@ type State interface {
 
 	Info() (ExpertInfo, error)
 	Datas() ([]*DataOnChainInfo, error)
+	Data(cid.Cid) (*DataOnChainInfo, error)
 }
 
 type ExpertInfo struct {
-	Owner      address.Address // Must be an ID-address.
-	PeerId     *peer.ID
-	Multiaddrs []abi.Multiaddrs
+	Owner address.Address // Must be an ID-address.
 }
 
 type DataOnChainInfo = expert2.DataOnChainInfo

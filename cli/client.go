@@ -112,18 +112,15 @@ var clientImportCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "expert",
-			Usage: "specify the data submit expert",
-			Value: "",
-		},
-		&cli.StringFlag{
-			Name:  "bounty",
-			Usage: "specify the data bounty",
-			Value: "",
+			Usage: "specify the data submit expert, '--from' will be ignored if set",
 		},
 		&cli.StringFlag{
 			Name:  "miner",
 			Usage: "specify the data deal miner",
-			Value: "",
+		},
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "specify address to import file as, replaced by expert owner if '--expert' set",
 		},
 		&CidBaseFlag,
 	},
@@ -144,24 +141,69 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
-		ref := lapi.FileRef{
-			Path:   absPath,
-			IsCAR:  cctx.Bool("car"),
-			Expert: cctx.String("expert"),
-			Bounty: cctx.String("bounty"),
+		// from
+		var from address.Address
+		if v := cctx.String("from"); v != "" {
+			from, err = address.NewFromString(v)
+			if err != nil {
+				return xerrors.Errorf("failed to parse 'from' address: %w", err)
+			}
+		} else {
+			from, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
 		}
 
-		miner := address.Undef
-		minerStr := cctx.String("miner")
-		if minerStr != "" {
-			m, err := address.NewFromString(minerStr)
+		// expert
+		var expert address.Address
+		if v := cctx.String("expert"); v != "" {
+			expert, err = address.NewFromString(v)
+			if err != nil {
+				return err
+			}
+			info, err := api.StateExpertInfo(ctx, expert, types.EmptyTSK)
+			if err != nil {
+				return err
+			}
+			from = info.Owner
+		}
+
+		// // check existence
+		// ret, err := api.ClientCalcCommP(ctx, absPath)
+		// if err != nil {
+		// 	return err
+		// }
+		// eaddr, err := address.NewFromString(cctx.String("expert"))
+		// if err != nil {
+		// 	return err
+		// }
+		// existence, err := api.StateExpertFileInfo(ctx, eaddr, ret.Root, types.EmptyTSK)
+		// if err != nil {
+		// 	return err
+		// }
+		// if existence != nil {
+		// 	return xerrors.Errorf("file already imported")
+		// }
+
+		// miner
+		var miner address.Address
+		if minerStr := cctx.String("miner"); minerStr != "" {
+			miner, err = address.NewFromString(minerStr)
 			if err != nil {
 				return xerrors.Errorf("failed to parse 'miner' address: %w", err)
 			}
-			miner = m
 		}
 
-		c, err := api.ClientImportAndDeal(ctx, ref, miner)
+		c, err := api.ClientImportAndDeal(ctx, &lapi.ImportAndDealParams{
+			Ref: lapi.FileRef{
+				Path:  absPath,
+				IsCAR: cctx.Bool("car"),
+			},
+			Miner:  miner,
+			From:   from,
+			Expert: expert,
+		})
 		if err != nil {
 			return err
 		}

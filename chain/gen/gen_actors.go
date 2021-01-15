@@ -4,6 +4,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
@@ -73,10 +74,10 @@ var DefaultFundraisingAccountActor = genesis.Actor{
 	}).ActorMeta(),
 }
 
-/////////////////
-// 	governor
-/////////////////
-var FirstGovernorAccountActor = genesis.Actor{
+//////////////////////
+// 	default governor
+//////////////////////
+var DefaultGovernorActor = genesis.Actor{
 	Type:    genesis.TMultisig,
 	Balance: big.Zero(),
 	Meta: (&genesis.MultisigMeta{
@@ -86,6 +87,28 @@ var FirstGovernorAccountActor = genesis.Actor{
 		Threshold:       1,
 		VestingDuration: 0,
 		VestingStart:    0,
+	}).ActorMeta(),
+}
+
+//////////////////////
+// 	default expert
+//////////////////////
+var DefaultExpertActor = genesis.Actor{
+	Type:    genesis.TAccount,
+	Balance: abi.NewTokenAmount(0),
+	Meta: (&genesis.AccountMeta{
+		Owner: makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
+	}).ActorMeta(),
+}
+
+////////////////////////////////////
+// 	default knowledge fund payee
+////////////////////////////////////
+var DefaultKgFundPayeeActor = genesis.Actor{
+	Type:    genesis.TAccount,
+	Balance: abi.NewTokenAmount(0),
+	Meta: (&genesis.AccountMeta{
+		Owner: makeAddress("t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"),
 	}).ActorMeta(),
 }
 

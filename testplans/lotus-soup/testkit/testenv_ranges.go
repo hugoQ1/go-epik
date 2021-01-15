@@ -39,7 +39,7 @@ func (r *DurationRange) UnmarshalJSON(b []byte) error {
 }
 
 func (r *DurationRange) MarshalJSON() ([]byte, error) {
-	s := []ptypes.Duration{{r.Min}, {r.Max}}
+	s := []ptypes.Duration{{Duration: r.Min}, {Duration: r.Max}}
 	return json.Marshal(s)
 }
 

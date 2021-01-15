@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -303,14 +303,14 @@ func handleClient(t *testkit.TestEnvironment) error {
 	// start deal
 	t1 := time.Now()
 	fastRetrieval := false
-	deal := testkit.StartDeal(ctx, minerAddr.MinerActorAddr, client, fcid.Root, fastRetrieval)
+	deal := testkit.StartDeal(t, ctx, minerAddr, client, fcid.Root, fastRetrieval)
 	t.RecordMessage("started deal: %s", deal)
 
 	// this sleep is only necessary because deals don't immediately get logged in the dealstore, we should fix this
 	time.Sleep(2 * time.Second)
 
 	t.RecordMessage("waiting for deal to be sealed")
-	testkit.WaitDealSealed(t, ctx, client, deal)
+	testkit.WaitDealSealed(t, ctx, client, deal, fcid.Root)
 	t.D().ResettingHistogram("deal.sealed").Update(int64(time.Since(t1)))
 
 	// TODO: wait to stop miner (ideally get a signal, rather than sleep)

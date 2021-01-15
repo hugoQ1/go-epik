@@ -286,7 +286,9 @@ type FullNode interface {
 	// ClientStartDeal proposes a deal with a miner.
 	ClientStartDeal(ctx context.Context, params *StartDealParams) (*cid.Cid, error)
 	// ClientImportAndDeal imports file and deal with all miners found.
-	ClientImportAndDeal(ctx context.Context, ref FileRef, miner address.Address) (*ImportRes, error)
+	ClientImportAndDeal(ctx context.Context, params *ImportAndDealParams) (*ImportRes, error)
+	// ClientExpertRegisterFile registers new piece.
+	ClientExpertRegisterFile(ctx context.Context, params *ExpertRegisterFileParams) (*cid.Cid, error)
 	// ClientGetDealInfo returns the latest information about a given deal.
 	ClientGetDealInfo(context.Context, cid.Cid) (*DealInfo, error)
 	// ClientListDeals returns information about the deals made by the local client.
@@ -470,8 +472,10 @@ type FullNode interface {
 	StateListExperts(context.Context, types.TipSetKey) ([]address.Address, error)
 	// StateExpertInfo returns info about the indicated expert.
 	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)
-	// StateExpertInfo returns expert's data info
+	// StateExpertInfo lists expert's data
 	StateExpertDatas(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
+	// StateExpertFileInfo returns expert's file
+	StateExpertFileInfo(context.Context, cid.Cid, types.TipSetKey) (*ExpertFileInfo, error)
 
 	// StateVoteTally returns voting result at given tipset
 	StateVoteTally(context.Context, types.TipSetKey) (*vote.Tally, error)
@@ -594,9 +598,6 @@ type FullNode interface {
 type FileRef struct {
 	Path  string
 	IsCAR bool
-
-	Expert string
-	Bounty string
 }
 
 type MinerSectors struct {
@@ -1047,4 +1048,24 @@ type QueryResp struct {
 	Root   cid.Cid
 	Status QueryStatus
 	DealId uint64
+}
+
+type ExpertRegisterFileParams struct {
+	Expert    address.Address
+	PieceID   cid.Cid
+	PieceSize abi.PaddedPieceSize
+}
+
+type ImportAndDealParams struct {
+	Ref    FileRef
+	From   address.Address
+	Expert address.Address
+	Miner  address.Address
+}
+
+type ExpertFileInfo struct {
+	Expert     address.Address
+	PieceID    string
+	PieceSize  abi.PaddedPieceSize
+	Redundancy uint64
 }

@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/filecoin-project/oni/lotus-soup/paych"
-	"github.com/filecoin-project/oni/lotus-soup/rfwp"
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
-
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/paych"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/rfwp"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 	"github.com/testground/sdk-go/run"
 )
 

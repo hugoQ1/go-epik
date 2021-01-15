@@ -12,22 +12,22 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/lotus/api/apibstore"
-	"github.com/filecoin-project/lotus/build"
 
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/store"
-	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/store"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/filecoin-project/go-state-types/abi"
-	sealing "github.com/filecoin-project/lotus/extern/storage-sealing"
 
-	"github.com/filecoin-project/lotus/chain/actors/builtin/miner"
-	tstats "github.com/filecoin-project/lotus/tools/stats"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	tstats "github.com/EpiK-Protocol/go-epik/tools/stats"
 )
 
 func UpdateChainState(t *testkit.TestEnvironment, m *testkit.LotusMiner) error {
@@ -563,13 +563,13 @@ type MinerInfo struct {
 	FaultyBytes      big.Int
 	FaultyPercentage float64
 
-	Balance           big.Int
-	PreCommitDeposits big.Int
-	LockedFunds       big.Int
-	AvailableFunds    big.Int
-	WorkerBalance     big.Int
-	MarketEscrow      big.Int
-	MarketLocked      big.Int
+	Balance big.Int
+	// PreCommitDeposits big.Int
+	LockedFunds    big.Int
+	AvailableFunds big.Int
+	WorkerBalance  big.Int
+	MarketEscrow   big.Int
+	MarketLocked   big.Int
 
 	SectorStateCounts map[sealing.SectorState]int
 }
@@ -620,13 +620,13 @@ func (i *MinerInfo) MarshalPlainText() ([]byte, error) {
 		}
 	}
 
-	fmt.Fprintf(w, "Miner Balance: %s\n", types.FIL(i.Balance))
-	fmt.Fprintf(w, "\tPreCommit:   %s\n", types.FIL(i.PreCommitDeposits))
-	fmt.Fprintf(w, "\tLocked:      %s\n", types.FIL(i.LockedFunds))
-	fmt.Fprintf(w, "\tAvailable:   %s\n", types.FIL(i.AvailableFunds))
-	fmt.Fprintf(w, "Worker Balance: %s\n", types.FIL(i.WorkerBalance))
-	fmt.Fprintf(w, "Market (Escrow):  %s\n", types.FIL(i.MarketEscrow))
-	fmt.Fprintf(w, "Market (Locked):  %s\n\n", types.FIL(i.MarketLocked))
+	fmt.Fprintf(w, "Miner Balance: %s\n", types.EPK(i.Balance))
+	// fmt.Fprintf(w, "\tPreCommit:   %s\n", types.EPK(i.PreCommitDeposits))
+	fmt.Fprintf(w, "\tLocked:      %s\n", types.EPK(i.LockedFunds))
+	fmt.Fprintf(w, "\tAvailable:   %s\n", types.EPK(i.AvailableFunds))
+	fmt.Fprintf(w, "Worker Balance: %s\n", types.EPK(i.WorkerBalance))
+	fmt.Fprintf(w, "Market (Escrow):  %s\n", types.EPK(i.MarketEscrow))
+	fmt.Fprintf(w, "Market (Locked):  %s\n\n", types.EPK(i.MarketLocked))
 
 	buckets := i.SectorStateCounts
 
@@ -711,7 +711,7 @@ func info(t *testkit.TestEnvironment, m *testkit.LotusMiner, maddr address.Addre
 	}
 
 	i.Balance = mact.Balance
-	i.PreCommitDeposits = funds.PreCommitDeposits
+	// i.PreCommitDeposits = funds.PreCommitDeposits
 	i.LockedFunds = funds.VestingFunds
 	i.AvailableFunds, err = mas.AvailableBalance(mact.Balance)
 	if err != nil {

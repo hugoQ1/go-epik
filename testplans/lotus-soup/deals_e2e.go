@@ -8,16 +8,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/lotus/api"
 	"github.com/testground/sdk-go/sync"
 
 	mbig "math/big"
 
-	"github.com/filecoin-project/lotus/build"
+	"github.com/EpiK-Protocol/go-epik/build"
 
-	"github.com/filecoin-project/oni/lotus-soup/testkit"
+	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 )
 
 // This is the baseline test; Filecoin 101.
@@ -65,6 +66,15 @@ func dealsE2E(t *testkit.TestEnvironment) error {
 
 	t.RecordMessage("selected %s as the miner", minerAddr.MinerActorAddr)
 
+	minerKey, err := wallet.NewKey(*minerAddr.MinerWallet)
+	if err != nil {
+		return err
+	}
+	err = cl.SetWallet(ctx, minerKey)
+	if err != nil {
+		return err
+	}
+
 	if fastRetrieval {
 		err = initPaymentChannel(t, ctx, cl, minerAddr)
 		if err != nil {
@@ -97,16 +107,17 @@ func dealsE2E(t *testkit.TestEnvironment) error {
 
 	// start deal
 	t1 := time.Now()
-	deal := testkit.StartDeal(ctx, minerAddr.MinerActorAddr, client, fcid.Root, fastRetrieval)
+	deal := testkit.StartDeal(t, ctx, minerAddr, client, fcid.Root, fastRetrieval)
 	t.RecordMessage("started deal: %s", deal)
 
 	// TODO: this sleep is only necessary because deals don't immediately get logged in the dealstore, we should fix this
 	time.Sleep(2 * time.Second)
 
 	t.RecordMessage("waiting for deal to be sealed")
-	testkit.WaitDealSealed(t, ctx, client, deal)
+	testkit.WaitDealSealed(t, ctx, client, deal, fcid.Root)
 	t.D().ResettingHistogram("deal.sealed").Update(int64(time.Since(t1)))
 
+	t.RecordMessage("waiting for 'done-sealing'")
 	// wait for all client deals to be sealed before trying to retrieve
 	t.SyncClient.MustSignalAndWait(ctx, sync.State("done-sealing"), t.IntParam("clients"))
 
@@ -128,17 +139,17 @@ func dealsE2E(t *testkit.TestEnvironment) error {
 	return nil
 }
 
-// filToAttoFil converts a fractional filecoin value into AttoFIL, rounding if necessary
-func filToAttoFil(f float64) big.Int {
+// epkToAttoEpk converts a fractional filecoin value into AttoFIL, rounding if necessary
+func epkToAttoEpk(f float64) big.Int {
 	a := mbig.NewFloat(f)
-	a.Mul(a, mbig.NewFloat(float64(build.FilecoinPrecision)))
+	a.Mul(a, mbig.NewFloat(float64(build.EpkPrecision)))
 	i, _ := a.Int(nil)
 	return big.Int{Int: i}
 }
 
 func initPaymentChannel(t *testkit.TestEnvironment, ctx context.Context, cl *testkit.LotusClient, minerAddr testkit.MinerAddressesMsg) error {
 	recv := minerAddr
-	balance := filToAttoFil(10)
+	balance := epkToAttoEpk(10)
 	t.RecordMessage("my balance: %d", balance)
 	t.RecordMessage("creating payment channel; from=%s, to=%s, funds=%d", cl.Wallet.Address, recv.WalletAddr, balance)
 

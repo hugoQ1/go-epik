@@ -11,27 +11,27 @@ import (
 	"time"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	genesis_chain "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
+	"github.com/EpiK-Protocol/go-epik/miner"
+	"github.com/EpiK-Protocol/go-epik/node"
+	"github.com/EpiK-Protocol/go-epik/node/impl"
+	"github.com/EpiK-Protocol/go-epik/node/modules"
+	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/go-jsonrpc/auth"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-storedcounter"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/apistruct"
-	"github.com/filecoin-project/lotus/build"
-	"github.com/filecoin-project/lotus/chain/actors"
-	genesis_chain "github.com/filecoin-project/lotus/chain/gen/genesis"
-	"github.com/filecoin-project/lotus/chain/types"
-	"github.com/filecoin-project/lotus/chain/wallet"
-	"github.com/filecoin-project/lotus/cmd/lotus-seed/seed"
-	"github.com/filecoin-project/lotus/extern/sector-storage/stores"
-	"github.com/filecoin-project/lotus/miner"
-	"github.com/filecoin-project/lotus/node"
-	"github.com/filecoin-project/lotus/node/impl"
-	"github.com/filecoin-project/lotus/node/modules"
-	"github.com/filecoin-project/lotus/node/repo"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	saminer "github.com/filecoin-project/specs-actors/actors/builtin/miner"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	saminer "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-multierror"
@@ -108,13 +108,13 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 	}
 
 	sectors := t.IntParam("sectors")
-	genMiner, _, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, sectors, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
+	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1_1, 0, sectors, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
 	if err != nil {
 		return nil, err
 	}
 	genMiner.PeerId = minerID
 
-	t.RecordMessage("Miner Info: Owner: %s Worker: %s", genMiner.Owner, genMiner.Worker)
+	t.RecordMessage("Miner Info: Owner: %s Worker: %s Coinbase: %s", genMiner.Owner, genMiner.Worker, genMiner.Coinbase)
 
 	presealMsg := &PresealMsg{Miner: *genMiner, Seqno: seq}
 	t.SyncClient.Publish(ctx, PresealTopic, presealMsg)
@@ -364,6 +364,8 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 		MinerNetAddrs:  minerNetAddrs,
 		MinerActorAddr: minerActor,
 		WalletAddr:     walletKey.Address,
+		GenOwnerAddr:   genMiner.Owner,
+		MinerWallet:    keyInfo,
 	})
 
 	t.RecordMessage("connecting to all other miners")

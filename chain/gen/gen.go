@@ -233,14 +233,16 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 			*genm1,
 			*genm2,
 		},
-		// VerifregRootKey:  DefaultVerifregRootkeyActor,
-		// RemainderAccount: DefaultRemainderAccountActor,
-		FirstGovernorAccountActor: FirstGovernorAccountActor,
-		TeamAccountActor:          DefaultTeamAccountActor,
-		FoundationAccountActor:    DefaultFoundationAccountActor,
-		FundraisingAccountActor:   DefaultFundraisingAccountActor,
-		NetworkName:               uuid.New().String(),
-		Timestamp:                 uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
+
+		TeamAccountActor:        DefaultTeamAccountActor,
+		FoundationAccountActor:  DefaultFoundationAccountActor,
+		FundraisingAccountActor: DefaultFundraisingAccountActor,
+		DefaultGovernorActor:    DefaultGovernorActor,
+		DefaultExpertActor:      DefaultExpertActor,
+		DefaultKgFundPayeeActor: DefaultKgFundPayeeActor,
+
+		NetworkName: uuid.New().String(),
+		Timestamp:   uint64(build.Clock.Now().Add(-500 * time.Duration(build.BlockDelaySecs) * time.Second).Unix()),
 	}
 
 	genb, err := genesis2.MakeGenesisBlock(context.TODO(), j, bs, sys, tpl)
