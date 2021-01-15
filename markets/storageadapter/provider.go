@@ -82,9 +82,7 @@ func (n *ProviderNodeAdapter) PublishDeals(ctx context.Context, deal storagemark
 	params, err := actors.SerializeParams(&market.PublishStorageDealsParams{
 		Deals: []market.ClientDealProposal{deal.ClientDealProposal},
 		DataRef: market.PublishStorageDataRef{
-			RootCID: deal.Ref.Root,
-			Expert:  deal.Ref.Expert,
-			Bounty:  deal.Ref.Bounty,
+			Expert: deal.Ref.Expert,
 		},
 	})
 

@@ -220,9 +220,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				}
 			}
 			params.DataRef = market2.PublishStorageDataRef{
-				RootCID: rootCID,
-				Expert:  eaddr.String(),
-				Bounty:  "",
+				Expert: eaddr.String(),
 			}
 
 			if len(params.Deals) > 0 {
