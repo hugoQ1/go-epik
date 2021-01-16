@@ -487,7 +487,7 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		params := mustEnc(expertCreateParams)
 		rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, builtin.FoundationIDAddress, big.Zero(), builtin2.MethodsPower.CreateExpert, params)
 		if err != nil {
-			return cid.Undef, xerrors.Errorf("failed to create genesis expert: %w", err)
+			return cid.Undef, xerrors.Errorf("failed to create genesis expert %s: %w", ainfo.Owner, err)
 		}
 		var ret power2.CreateExpertReturn
 		if err := ret.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {

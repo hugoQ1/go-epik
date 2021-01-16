@@ -223,7 +223,10 @@ func (rt *Runtime) GetRandomnessFromBeacon(personalization crypto.DomainSeparati
 
 func (rt *Runtime) NewActorAddress() address.Address {
 	var b bytes.Buffer
-	oa, _ := ResolveToKeyAddr(rt.vm.cstate, rt.vm.cst, rt.origin)
+	oa, err := ResolveToKeyAddr(rt.vm.cstate, rt.vm.cst, rt.origin)
+	if err != nil {
+		panic(aerrors.Fatalf("resovling %s to key address: %v", rt.origin, err))
+	}
 	if err := oa.MarshalCBOR(&b); err != nil { // todo: spec says cbor; why not just bytes?
 		panic(aerrors.Fatalf("writing caller address into a buffer: %v", err))
 	}
