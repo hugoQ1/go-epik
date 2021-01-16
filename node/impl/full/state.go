@@ -1746,16 +1746,16 @@ func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk
 	return ret, nil
 }
 
-func (a *StateAPI) StateMinerNoPieces(ctx context.Context, maddr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) error {
+func (a *StateAPI) StateMinerStoredAnyPiece(ctx context.Context, maddr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) (bool, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, maddr, tsk)
 	if err != nil {
-		return xerrors.Errorf("failed to load miner actor: %w", err)
+		return false, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
 	state, err := miner.Load(a.Chain.Store(ctx), act)
 	if err != nil {
-		return xerrors.Errorf("failed to load miner actor state: %w", err)
+		return false, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
 
-	return state.EnsureNoPieces(pieceIDs)
+	return state.ContainsAnyPiece(pieceIDs)
 }

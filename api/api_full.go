@@ -519,8 +519,8 @@ type FullNode interface {
 	// StateDataIndex data index
 	StateDataIndex(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*DataIndex, error)
 
-	// StateMinerNoPieces check miner has storage the data by pieceIDs
-	StateMinerNoPieces(context.Context, address.Address, []cid.Cid, types.TipSetKey) error
+	// StateMinerStoredAnyPiece check miner has storage the data by pieceIDs
+	StateMinerStoredAnyPiece(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
