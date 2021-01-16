@@ -202,7 +202,53 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 		ptsk := tipset.Parents()
 		messages, err := m.api.ChainGetParentMessages(ctx, tipset.Cids()[0])
 		for _, msg := range messages {
-			if msg.Message.Method != builtin2.MethodsMiner.ProveCommitSector {
+			if msg.Message.To == market.Address &&
+				msg.Message.Method == market.Methods.PublishStorageDeals {
+				var params market.PublishStorageDealsParams
+				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
+					// return err
+					log.Warnf("height:%d unmarshal publish: %w", m.checkHeight, err)
+					continue
+				}
+
+				for _, deal := range params.Deals {
+					if ok, _ := m.isMinerDealed(ctx, params.DataRef.RootCID, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
+						continue
+					}
+					mdeal := market.DealProposal{
+						PieceCID: deal.Proposal.PieceCID,
+						PieceSize: deal.Proposal.PieceSize,
+						Client: deal.Proposal.Client,
+						Provider: deal.Proposal.Provider,
+						Label: deal.Proposal.Label,
+						StartEpoch: deal.Proposal.StartEpoch,
+					}
+					dealData := &DealData{
+						deal:    mdeal,
+						dataRef: params.DataRef,
+					}
+					datas := &PieceData{
+						pieceID:   deal.Proposal.PieceCID,
+						dealDatas: []*DealData{},
+					}
+					datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
+					if ok {
+						datas = datasObj.(*PieceData)
+					}
+					found := false
+					for _, d := range datas.dealDatas {
+						if d.deal.Provider == dealData.deal.Provider &&
+							d.deal.Client == dealData.deal.Client {
+							found = true
+							break
+						}
+					}
+					if !found {
+						datas.dealDatas = append(datas.dealDatas, dealData)
+					}
+					m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
+				}
+			} else if msg.Message.Method != builtin2.MethodsMiner.ProveCommitSector {
 				continue
 			}
 			var params miner2.ProveCommitSectorParams

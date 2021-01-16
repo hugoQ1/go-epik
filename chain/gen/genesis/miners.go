@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"math/rand"
 
+	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
+	"github.com/multiformats/go-multihash"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
@@ -159,9 +161,19 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return nil
 			}
 
+			rootCID, _ := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
+
+			{
+				_, err := doExecValue(ctx, vm, inis.Expert, m.Worker, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{PieceID: rootCID, PieceSize: abi.PaddedPieceSize(0)}))
+				if err != nil {
+					return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
+				}
+			}
+
 			params := &market.PublishStorageDealsParams{
 				DataRef: market2.PublishStorageDataRef{
-					Expert: inis.Expert.String(),
+					RootCID: rootCID,
+					Expert:  inis.Expert.String(),
 				},
 			}
 			for _, preseal := range m.Sectors {
