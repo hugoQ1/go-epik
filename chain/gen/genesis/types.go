@@ -9,4 +9,5 @@ type InitDatas struct {
 	Expert          address.Address
 	ExpertOwner     address.Address
 	PresealPieceCID cid.Cid
+	PresealRootCID  cid.Cid // fake genesis root CID
 }

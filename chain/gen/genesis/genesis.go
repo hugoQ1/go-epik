@@ -9,6 +9,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/multiformats/go-multihash"
 
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
@@ -498,10 +499,15 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 	}
 
 	// Register genesis file
+	inis.PresealRootCID, err = cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte{})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to generate genesis file root CID: %w", err)
+	}
+
 	pt := template.Miners[0].Sectors[0].ProofType
 	inis.PresealPieceCID, err = GeneratePaddedPresealFileCID(pt)
 	if err != nil {
-		return cid.Undef, xerrors.Errorf("failed to sum genesis file: %w", err)
+		return cid.Undef, xerrors.Errorf("failed to generate genesis file piece CID: %w", err)
 	}
 	psize, _ := pt.SectorSize()
 	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{
