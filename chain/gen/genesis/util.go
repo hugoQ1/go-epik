@@ -2,6 +2,7 @@ package genesis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -76,4 +77,40 @@ func GeneratePaddedPresealFileCID(pt abi.RegisteredSealProof) (cid.Cid, error) {
 
 	// param proofType could be arbitrary, cause CommD is sector-size independent
 	return ffiwrapper.GeneratePieceCIDFromFile(pt, genesis.NewZeroPaddingPresealFileReader(), unpadded)
+}
+
+func ParseIDAddresses(info genesis.Actor, keyIDs map[address.Address]address.Address) ([]address.Address, error) {
+	var ret []address.Address
+
+	switch info.Type {
+	case genesis.TAccount:
+		var ai genesis.AccountMeta
+		if err := json.Unmarshal(info.Meta, &ai); err != nil {
+			return nil, xerrors.Errorf("unmarshaling account meta: %w", err)
+		}
+		ida, ok := keyIDs[ai.Owner]
+		if !ok {
+			return nil, xerrors.Errorf("account address %s not in id map", ai.Owner)
+		}
+		ret = append(ret, ida)
+
+	case genesis.TMultisig:
+		var mm genesis.MultisigMeta
+		if err := json.Unmarshal(info.Meta, &mm); err != nil {
+			return nil, xerrors.Errorf("unmarshaling multisig meta: %w", err)
+		}
+
+		for _, signer := range mm.Signers {
+			ida, ok := keyIDs[signer]
+			if !ok {
+				return nil, xerrors.Errorf("signer address %s not in id map", signer)
+			}
+			ret = append(ret, ida)
+		}
+
+	default:
+		return nil, xerrors.Errorf("unknown actor type %s", info.Type)
+	}
+
+	return ret, nil
 }

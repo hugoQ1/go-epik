@@ -485,7 +485,11 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 
 		expertCreateParams := &power2.CreateExpertParams{Owner: ainfo.Owner}
 		params := mustEnc(expertCreateParams)
-		rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, builtin.FoundationIDAddress, big.Zero(), builtin2.MethodsPower.CreateExpert, params)
+		idas, err := ParseIDAddresses(template.FoundationAccountActor, keyIDs)
+		if err != nil {
+			return cid.Undef, xerrors.Errorf("failed to parse id addresses: %w", err)
+		}
+		rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, idas[0], big.Zero(), builtin2.MethodsPower.CreateExpert, params)
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to create genesis expert %s: %w", ainfo.Owner, err)
 		}
