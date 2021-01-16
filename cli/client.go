@@ -105,11 +105,6 @@ var clientImportCmd = &cli.Command{
 			Name:  "car",
 			Usage: "import from a car file instead of a regular file",
 		},
-		&cli.BoolFlag{
-			Name:    "quiet",
-			Aliases: []string{"q"},
-			Usage:   "Output root CID only",
-		},
 		&cli.StringFlag{
 			Name:  "expert",
 			Usage: "specify the data submit expert, '--from' will be ignored if set",
@@ -169,23 +164,6 @@ var clientImportCmd = &cli.Command{
 			from = info.Owner
 		}
 
-		// // check existence
-		// ret, err := api.ClientCalcCommP(ctx, absPath)
-		// if err != nil {
-		// 	return err
-		// }
-		// eaddr, err := address.NewFromString(cctx.String("expert"))
-		// if err != nil {
-		// 	return err
-		// }
-		// existence, err := api.StateExpertFileInfo(ctx, eaddr, ret.Root, types.EmptyTSK)
-		// if err != nil {
-		// 	return err
-		// }
-		// if existence != nil {
-		// 	return xerrors.Errorf("file already imported")
-		// }
-
 		// miner
 		var miner address.Address
 		if minerStr := cctx.String("miner"); minerStr != "" {
@@ -208,15 +186,21 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
+		ds, err := api.ClientDealPieceCID(ctx, c.Root)
+		if err != nil {
+			return err
+		}
+
 		encoder, err := GetCidEncoder(cctx)
 		if err != nil {
 			return err
 		}
 
-		if !cctx.Bool("quiet") {
-			fmt.Printf("Import %d, Root ", c.ImportID)
-		}
-		fmt.Println(encoder.Encode(c.Root))
+		fmt.Printf("Import ID: %d\n", c.ImportID)
+		fmt.Printf("Root: %s\n", encoder.Encode(c.Root))
+		fmt.Printf("Piece CID: %s\n", encoder.Encode(ds.PieceCID))
+		fmt.Printf("Piece Size: %d\n", ds.PieceSize)
+		fmt.Printf("Payload Size: %d\n", ds.PayloadSize)
 
 		return nil
 	},

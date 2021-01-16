@@ -437,15 +437,38 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 		}
 	}
 
-	// import to local
-	res, err := a.ClientImport(ctx, params.Ref)
-	if err != nil {
-		return nil, err
-	}
+	// import file
+	var res *api.ImportRes
+	var ds api.DataCIDSize
+	{
+		// check existence
+		impts, err := a.ClientListImports(ctx)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to list imports: %w", err)
+		}
+		for _, impt := range impts {
+			if impt.FilePath == params.Ref.Path {
+				if impt.Err != "" {
+					return nil, xerrors.Errorf("failed import exists: ID %d, Source %s, Path %s, Err %s", impt.Key, impt.Source, impt.FilePath, impt.Err)
+				}
+				res = &api.ImportRes{
+					Root:     *impt.Root,
+					ImportID: impt.Key,
+				}
+			}
+		}
+		// import new
+		if res == nil {
+			res, err = a.ClientImport(ctx, params.Ref)
+			if err != nil {
+				return nil, xerrors.Errorf("failed to import client: %w", err)
+			}
+		}
 
-	ds, err := a.ClientDealPieceCID(ctx, res.Root)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get piece CID for root %s: %w", res.Root, err)
+		ds, err = a.ClientDealPieceCID(ctx, res.Root)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to get data cid/size for root %s: %w", res.Root, err)
+		}
 	}
 
 	// check if registered
@@ -552,7 +575,7 @@ func (a *API) ClientImportLocal(ctx context.Context, f io.Reader) (cid.Cid, erro
 	if err != nil {
 		return cid.Undef, err
 	}
-	if err := a.imgr().AddLabel(id, "source", "import-local"); err != nil {
+	if err := a.imgr().AddLabel(id, importmgr.LSource, "import-local"); err != nil {
 		return cid.Cid{}, err
 	}
 

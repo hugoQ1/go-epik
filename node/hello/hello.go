@@ -1,6 +1,7 @@
 package hello
 
 import (
+	"bufio"
 	"context"
 	"time"
 
@@ -150,7 +151,11 @@ func (hs *Service) SayHello(ctx context.Context, pid peer.ID) error {
 	log.Debug("Sending hello message: ", hts.Cids(), hts.Height(), gen.Cid())
 
 	t0 := build.Clock.Now()
-	if err := cborutil.WriteCborRPC(s, hmsg); err != nil {
+	buffered := bufio.NewWriter(s)
+	if err = cborutil.WriteCborRPC(buffered, hmsg); err == nil {
+		err = buffered.Flush()
+	}
+	if err != nil {
 		return xerrors.Errorf("writing rpc to peer: %w", err)
 	}
 

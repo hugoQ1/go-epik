@@ -111,11 +111,11 @@ var preSealCmd = &cli.Command{
 			Value: "epik is fire",
 			Usage: "set the ticket preimage for sealing randomness",
 		},
-		&cli.IntFlag{
-			Name:  "num-sectors",
-			Value: 1,
-			Usage: "select number of sectors to pre-seal",
-		},
+		// &cli.IntFlag{
+		// 	Name:  "num-sectors",
+		// 	Value: 1,
+		// 	Usage: "select number of sectors to pre-seal",
+		// },
 		&cli.Uint64Flag{
 			Name:  "sector-offset",
 			Value: 0,
@@ -170,7 +170,7 @@ var preSealCmd = &cli.Command{
 			return err
 		}
 
-		gm, key, err := seed.PreSeal(maddr, spt, abi.SectorNumber(c.Uint64("sector-offset")), c.Int("num-sectors"), sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
+		gm, key, err := seed.PreSeal(maddr, spt, abi.SectorNumber(c.Uint64("sector-offset")) /* , c.Int("num-sectors") */, sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
 		if err != nil {
 			return err
 		}

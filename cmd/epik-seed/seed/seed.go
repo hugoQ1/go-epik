@@ -37,7 +37,7 @@ import (
 
 var log = logging.Logger("preseal")
 
-func PreSeal(maddr address.Address, spt abi.RegisteredSealProof, offset abi.SectorNumber, sectors int, sbroot string, preimage []byte, key *types.KeyInfo, fakeSectors bool) (*genesis.Miner, *types.KeyInfo, error) {
+func PreSeal(maddr address.Address, spt abi.RegisteredSealProof, offset abi.SectorNumber /* sectors int, */, sbroot string, preimage []byte, key *types.KeyInfo, fakeSectors bool) (*genesis.Miner, *types.KeyInfo, error) {
 	mid, err := address.IDFromAddress(maddr)
 	if err != nil {
 		return nil, nil, err
@@ -64,26 +64,26 @@ func PreSeal(maddr address.Address, spt abi.RegisteredSealProof, offset abi.Sect
 	}
 
 	var sealedSectors []*genesis.PreSeal
-	for i := 0; i < sectors; i++ {
-		sid := abi.SectorID{Miner: abi.ActorID(mid), Number: next}
-		ref := storage.SectorRef{ID: sid, ProofType: spt}
-		next++
+	// for i := 0; i < sectors; i++ {
+	sid := abi.SectorID{Miner: abi.ActorID(mid), Number: next}
+	ref := storage.SectorRef{ID: sid, ProofType: spt}
+	next++
 
-		var preseal *genesis.PreSeal
-		if !fakeSectors {
-			preseal, err = presealSector(sb, sbfs, ref, ssize, preimage)
-			if err != nil {
-				return nil, nil, err
-			}
-		} else {
-			preseal, err = presealSectorFake(sbfs, ref, ssize)
-			if err != nil {
-				return nil, nil, err
-			}
+	var preseal *genesis.PreSeal
+	if !fakeSectors {
+		preseal, err = presealSector(sb, sbfs, ref, ssize, preimage)
+		if err != nil {
+			return nil, nil, err
 		}
-
-		sealedSectors = append(sealedSectors, preseal)
+	} else {
+		preseal, err = presealSectorFake(sbfs, ref, ssize)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
+
+	sealedSectors = append(sealedSectors, preseal)
+	// }
 
 	var minerAddr *wallet.Key
 	if key != nil {

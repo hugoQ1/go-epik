@@ -415,7 +415,11 @@ func (c *client) sendRequestToPeer(ctx context.Context, peer peer.ID, req *Reque
 
 	// Write request.
 	_ = stream.SetWriteDeadline(time.Now().Add(WriteReqDeadline))
-	if err := cborutil.WriteCborRPC(stream, req); err != nil {
+	buffered := bufio.NewWriter(stream)
+	if err = cborutil.WriteCborRPC(buffered, req); err == nil {
+		err = buffered.Flush()
+	}
+	if err != nil {
 		_ = stream.SetWriteDeadline(time.Time{})
 		c.peerTracker.logFailure(peer, build.Clock.Since(connectionStart), req.Length)
 		// FIXME: Should we also remove peer here?

@@ -230,9 +230,9 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 				},
 				AppSpecificWeight: 1,
 
-				// This sets the IP colocation threshold to 5 peers before we apply penalties
-				IPColocationFactorThreshold: 5,
-				IPColocationFactorWeight:    -100,
+				// // This sets the IP colocation threshold to 5 peers before we apply penalties
+				// IPColocationFactorThreshold: 5,
+				// IPColocationFactorWeight:    -100,
 				// TODO we want to whitelist IPv6 /64s that belong to datacenters etc
 				IPColocationFactorWhitelist: ipWhitelist,
 
@@ -251,9 +251,9 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 				Topics: topicParams,
 			},
 			&pubsub.PeerScoreThresholds{
-				GossipThreshold:             -800,
-				PublishThreshold:            -1500,
-				GraylistThreshold:           -250000,
+				GossipThreshold:             -500,
+				PublishThreshold:            -1000,
+				GraylistThreshold:           -2500,
 				AcceptPXThreshold:           1000,
 				OpportunisticGraftThreshold: 3.5,
 			},
@@ -269,7 +269,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 		pubsub.GossipSubDlo = 0
 		pubsub.GossipSubDhi = 0
 		pubsub.GossipSubDout = 0
-		pubsub.GossipSubDlazy = 128
+		pubsub.GossipSubDlazy = 64
 		pubsub.GossipSubGossipFactor = 0.25
 		pubsub.GossipSubPruneBackoff = 5 * time.Minute
 		// turn on PX

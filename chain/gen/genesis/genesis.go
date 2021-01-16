@@ -498,7 +498,6 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 	}
 
 	// Register genesis file
-	// gpId, err := cid.V1Builder{Codec: cid.DagProtobuf, MhType: multihash.BLAKE2B_MIN}.Sum([]byte(Content))
 	pt := template.Miners[0].Sectors[0].ProofType
 	inis.PresealPieceCID, err = GeneratePaddedPresealFileCID(pt)
 	if err != nil {
