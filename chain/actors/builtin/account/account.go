@@ -12,6 +12,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v3/actors/builtin"
 )
 
 func init() {
@@ -26,6 +27,8 @@ func Load(store adt.Store, act *types.Actor) (State, error) {
 	switch act.Code {
 	case builtin2.AccountActorCodeID:
 		return load2(store, act.Head)
+	case builtin3.AccountActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
