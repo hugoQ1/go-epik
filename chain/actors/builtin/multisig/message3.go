@@ -1,23 +1,23 @@
 package multisig
 
-/* import (
+import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
-	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	init3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
+	multisig3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
-type message2 struct{ message0 }
+type message3 struct{ message0 }
 
-func (m message2) Create(
+func (m message3) Create(
 	signers []address.Address, threshold uint64,
 	unlockStart, unlockDuration abi.ChainEpoch,
 	initialAmount abi.TokenAmount,
@@ -38,7 +38,7 @@ func (m message2) Create(
 	}
 
 	// Set up constructor parameters for multisig
-	msigParams := &multisig2.ConstructorParams{
+	msigParams := &multisig3.ConstructorParams{
 		Signers:               signers,
 		NumApprovalsThreshold: threshold,
 		UnlockDuration:        unlockDuration,
@@ -51,8 +51,8 @@ func (m message2) Create(
 	}
 
 	// new actors are created by invoking 'exec' on the init actor with the constructor params
-	execParams := &init2.ExecParams{
-		CodeCID:           builtin2.MultisigActorCodeID,
+	execParams := &init3.ExecParams{
+		CodeCID:           builtin3.MultisigActorCodeID,
 		ConstructorParams: enc,
 	}
 
@@ -64,8 +64,8 @@ func (m message2) Create(
 	return &types.Message{
 		To:     init_.Address,
 		From:   m.from,
-		Method: builtin2.MethodsInit.Exec,
+		Method: builtin3.MethodsInit.Exec,
 		Params: enc,
 		Value:  initialAmount,
 	}, nil
-} */
+}
