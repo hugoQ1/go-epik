@@ -141,15 +141,9 @@ func (m *StateModule) StateMinerInfo(ctx context.Context, actor address.Address,
 		return miner.MinerInfo{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
 
-	// TODO: You know, this is terrible.
-	// I mean, we _really_ shouldn't do this. Maybe we should convert somewhere else?
 	info, err := mas.Info()
 	if err != nil {
 		return miner.MinerInfo{}, err
-	}
-	if info.SealProofType < abi.RegisteredSealProof_StackedDrg2KiBV1_1 {
-		// info.SealProofType += abi.RegisteredSealProof_StackedDrg2KiBV1_1
-		return miner.MinerInfo{}, xerrors.Errorf("unexpected seal proof type: %d", info.SealProofType)
 	}
 	return info, nil
 }

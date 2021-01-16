@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-padreader"
@@ -189,15 +191,23 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
 	}
 
+	st, err := miner.PreferredSealProofTypeFromWindowPoStType(mi.WindowPoStProofType)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get seal proof type: %w", err)
+	}
+
 	result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
-		Addr:          params.Wallet,
-		Info:          &providerInfo,
-		Data:          params.Data,
-		StartEpoch:    dealStart,
-		Collateral:    abi.NewTokenAmount(0),
-		Rt:            mi.SealProofType,
-		FastRetrieval: true,
-		StoreID:       storeID,
+		Addr:       params.Wallet,
+		Info:       &providerInfo,
+		Data:       params.Data,
+		StartEpoch: dealStart,
+		// EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
+		// Price:         params.EpochPrice,
+		Collateral:    abi.NewTokenAmount(0), //params.ProviderCollateral,
+		Rt:            st,
+		FastRetrieval: true, // params.FastRetrieval,
+		// VerifiedDeal:  params.VerifiedDeal,
+		StoreID: storeID,
 	})
 
 	if err != nil {
