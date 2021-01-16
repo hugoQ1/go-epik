@@ -10,7 +10,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 
-	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
+	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
 
 type Map interface {
@@ -23,18 +23,22 @@ type Map interface {
 	ForEach(v cbor.Unmarshaler, fn func(key string) error) error
 }
 
-func AsMap(store Store, root cid.Cid, version actors.Version) (Map, error) {
+func AsMap(store Store, root cid.Cid, version actors.Version, v3bitwidth int) (Map, error) {
 	switch version {
-	case actors.Version2:
-		return adt2.AsMap(store, root)
+	// case actors.Version2:
+	// 	return adt2.AsMap(store, root)
+	case actors.Version3:
+		return adt.AsMap(store, root, v3bitwidth)
 	}
 	return nil, xerrors.Errorf("unknown network version: %d", version)
 }
 
-func NewMap(store Store, version actors.Version) (Map, error) {
+func NewMap(store Store, version actors.Version, bitwidth int) (Map, error) {
 	switch version {
-	case actors.Version2:
-		return adt2.MakeEmptyMap(store), nil
+	// case actors.Version2:
+	// 	return adt2.MakeEmptyMap(store), nil
+	case actors.Version3:
+		return adt.MakeEmptyMap(store, bitwidth)
 	}
 	return nil, xerrors.Errorf("unknown network version: %d", version)
 }
@@ -50,18 +54,22 @@ type Array interface {
 	ForEach(v cbor.Unmarshaler, fn func(idx int64) error) error
 }
 
-func AsArray(store Store, root cid.Cid, version network.Version) (Array, error) {
+func AsArray(store Store, root cid.Cid, version network.Version, bitwidth int) (Array, error) {
 	switch actors.VersionForNetwork(version) {
-	case actors.Version2:
-		return adt2.AsArray(store, root)
+	// case actors.Version2:
+	// 	return adt2.AsArray(store, root)
+	case actors.Version3:
+		return adt.AsArray(store, root, bitwidth)
 	}
 	return nil, xerrors.Errorf("unknown network version: %d", version)
 }
 
-func NewArray(store Store, version actors.Version) (Array, error) {
+func NewArray(store Store, version actors.Version, bitwidth int) (Array, error) {
 	switch version {
-	case actors.Version2:
-		return adt2.MakeEmptyArray(store), nil
+	// case actors.Version2:
+	// 	return adt2.MakeEmptyArray(store), nil
+	case actors.Version3:
+		return adt.MakeEmptyArray(store, bitwidth)
 	}
 	return nil, xerrors.Errorf("unknown network version: %d", version)
 }
