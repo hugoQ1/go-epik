@@ -122,7 +122,7 @@ var genesisAddMinerCmd = &cli.Command{
 		for mn, miner := range miners {
 			log.Infof("Adding miner %s to genesis template", mn)
 			{
-				id := uint64(genesis2.MinerStart) + uint64(len(template.Miners))
+				id := uint64(genesis2.MinerStart) + uint64(len(template.Miners)+1) // plus 1 expert
 				maddr, err := address.NewFromString(mn)
 				if err != nil {
 					return xerrors.Errorf("parsing miner address: %w", err)

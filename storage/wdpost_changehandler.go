@@ -6,11 +6,12 @@ import (
 
 	"github.com/filecoin-project/go-state-types/abi"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-state-types/dline"
 )
 
 const SubmitConfidence = 4
@@ -396,9 +397,17 @@ func (s *submitHandler) processHeadChange(ctx context.Context, revert *types.Tip
 		}
 	}
 
+	h := advance.Height()
+	if revert != nil && revert.Height() < h {
+		h = revert.Height()
+	}
+
 	// Apply the change to all post windows
-	for _, pw := range s.postWindows {
+	for epoch, pw := range s.postWindows {
 		s.processHeadChangeForPW(ctx, revert, advance, pw)
+		if h > policy.ChainFinality && epoch < h-policy.ChainFinality {
+			delete(s.postWindows, epoch)
+		}
 	}
 }
 
