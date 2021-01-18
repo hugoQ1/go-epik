@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/ipfs/go-cid"
 
 	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
@@ -38,6 +39,12 @@ func dealsStress(t *testkit.TestEnvironment) error {
 	}
 
 	t.RecordMessage("selected %s as the miner", minerAddr.MinerActorAddr)
+
+	addr, err := cl.ImportPrivateKey(ctx, gen.TestPrivKey)
+	if err != nil {
+		return err
+	}
+	t.RecordMessage("import wallet %s by private key string", addr)
 
 	time.Sleep(12 * time.Second)
 
@@ -96,7 +103,7 @@ func dealsStress(t *testkit.TestEnvironment) error {
 				t.RecordMessage("started storage deal %d -> %s", i, deal)
 				time.Sleep(2 * time.Second)
 				t.RecordMessage("waiting for deal %d to be sealed", i)
-				testkit.WaitDealSealed(t, ctx, client, deal, cids[i])
+				testkit.WaitDealSealed(t, ctx, client, deal)
 				t.D().ResettingHistogram(fmt.Sprintf("deal.sealed,miner=%s", minerAddr.MinerActorAddr)).Update(int64(time.Since(t1)))
 			}(i)
 		}
@@ -128,7 +135,7 @@ func dealsStress(t *testkit.TestEnvironment) error {
 			t.RecordMessage("started storage deal %d -> %s", i, deal)
 			time.Sleep(2 * time.Second)
 			t.RecordMessage("waiting for deal %d to be sealed", i)
-			testkit.WaitDealSealed(t, ctx, client, deal, cids[i])
+			testkit.WaitDealSealed(t, ctx, client, deal)
 		}
 
 		for i := 0; i < deals; i++ {

@@ -97,7 +97,7 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 	// pick unique sequence number for each miner, no matter in which group they are
 	seq := t.SyncClient.MustSignalAndWait(ctx, StateMinerPickSeqNum, t.IntParam("miners"))
 
-	minerAddr, err := address.NewIDAddress(genesis_chain.MinerStart + uint64(seq-1))
+	minerAddr, err := address.NewIDAddress(genesis_chain.MinerStart + uint64(seq))
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +107,15 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 		return nil, err
 	}
 
-	sectors := t.IntParam("sectors")
-	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1_1, 0, sectors, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
+	sectors := 1 //t.IntParam("sectors")
+	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1_1, 0, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
 	if err != nil {
 		return nil, err
 	}
 	genMiner.PeerId = minerID
 
-	t.RecordMessage("Miner Info: Owner: %s Worker: %s Coinbase: %s", genMiner.Owner, genMiner.Worker, genMiner.Coinbase)
+	t.RecordMessage("Miner %s Info: Owner: %s Worker: %s Coinbase: %s", minerAddr, genMiner.Owner, genMiner.Worker, genMiner.Coinbase)
+	t.RecordMessage("---presel deal--->", genMiner.Sectors[0].CommD, genMiner.Sectors[0].CommR, genMiner.Sectors[0].Deal.PieceCID, genMiner.Sectors[0].Deal.StartEpoch)
 
 	presealMsg := &PresealMsg{Miner: *genMiner, Seqno: seq}
 	t.SyncClient.Publish(ctx, PresealTopic, presealMsg)

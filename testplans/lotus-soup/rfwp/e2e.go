@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/testplans/lotus-soup/testkit"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -277,6 +278,12 @@ func handleClient(t *testkit.TestEnvironment) error {
 
 	t.RecordMessage("selected %s as the miner", minerAddr.MinerActorAddr)
 
+	addr, err := cl.ImportPrivateKey(ctx, gen.TestPrivKey)
+	if err != nil {
+		return err
+	}
+	t.RecordMessage("import wallet %s by private key string", addr)
+
 	time.Sleep(2 * time.Second)
 
 	// generate 1800 bytes of random data
@@ -310,7 +317,7 @@ func handleClient(t *testkit.TestEnvironment) error {
 	time.Sleep(2 * time.Second)
 
 	t.RecordMessage("waiting for deal to be sealed")
-	testkit.WaitDealSealed(t, ctx, client, deal, fcid.Root)
+	testkit.WaitDealSealed(t, ctx, client, deal)
 	t.D().ResettingHistogram("deal.sealed").Update(int64(time.Since(t1)))
 
 	// TODO: wait to stop miner (ideally get a signal, rather than sleep)

@@ -2,14 +2,18 @@ package testkit
 
 import (
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/miner"
@@ -17,6 +21,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	modtest "github.com/EpiK-Protocol/go-epik/node/modules/testing"
 	tstats "github.com/EpiK-Protocol/go-epik/tools/stats"
+	"github.com/filecoin-project/go-address"
 
 	influxdb "github.com/kpacha/opencensus-influxdb"
 	ma "github.com/multiformats/go-multiaddr"
@@ -37,6 +42,26 @@ type LotusNode struct {
 
 func (n *LotusNode) SetWallet(ctx context.Context, walletKey *wallet.Key) error {
 	return n.setWallet(ctx, walletKey)
+}
+
+func (n *LotusNode) ImportPrivateKey(ctx context.Context, privK string) (address.Address, error) {
+	data, err := hex.DecodeString(strings.TrimSpace(privK))
+	if err != nil {
+		return address.Undef, err
+	}
+
+	var ki types.KeyInfo
+	if err := json.Unmarshal(data, &ki); err != nil {
+		return address.Undef, err
+	}
+
+	addr, err := n.FullApi.WalletImport(ctx, &ki)
+	if err != nil {
+		return address.Undef, err
+	}
+
+	err = n.FullApi.WalletSetDefault(ctx, addr)
+	return addr, err
 }
 
 func (n *LotusNode) setWallet(ctx context.Context, walletKey *wallet.Key) error {

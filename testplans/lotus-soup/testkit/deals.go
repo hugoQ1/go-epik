@@ -6,9 +6,11 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 
 	tstats "github.com/EpiK-Protocol/go-epik/tools/stats"
 )
@@ -19,31 +21,61 @@ func StartDeal(t *TestEnvironment, ctx context.Context, maMsg MinerAddressesMsg,
 		panic(err)
 	}
 
-	experts, err := client.StateListExperts(ctx, types.EmptyTSK)
-	if err != nil {
-		panic(err)
-	}
-	if len(experts) == 0 {
-		panic("no experts")
-	}
-	t.RecordMessage("expert list: %v", experts)
+	expert := getExpertByOwner(t, ctx, client, addr)
 
-	expertInfo, err := client.StateExpertInfo(ctx, experts[0], types.EmptyTSK)
+	ds, err := client.ClientDealPieceCID(ctx, fcid)
 	if err != nil {
 		panic(err)
 	}
-	t.RecordMessage("start deal with expert %s ( owner %s ), wallet %s, fcid %s", experts[0], expertInfo.Owner, addr, fcid.String())
+
+	// register file
+	failCount := 0
+	for {
+		mcid, err := client.ClientExpertRegisterFile(ctx, &api.ExpertRegisterFileParams{
+			Expert:    expert,
+			PieceID:   ds.PieceCID,
+			PieceSize: ds.PieceSize,
+		})
+		if err != nil {
+			panic(err)
+		}
+		t.RecordMessage("send register file message: %s", mcid)
+
+		mlk, err := client.StateWaitMsg(ctx, *mcid, 2)
+		if err != nil {
+			panic(err)
+		}
+		if mlk.Receipt.ExitCode == 0 {
+			t.RecordMessage("register file success: %s", mcid)
+
+			infos, err := client.StateExpertDatas(ctx, expert, nil, false, types.EmptyTSK)
+			if err != nil {
+				panic(err)
+			}
+
+			if len(infos) == 0 {
+				panic(xerrors.Errorf("registered but no data: %s", expert))
+			}
+
+			break
+		}
+		t.RecordFailure(fmt.Errorf("message %s return failed code: %d", mcid, mlk.Receipt.ExitCode))
+		failCount++
+		if failCount > 10 {
+			panic("failed to register file: " + fcid.String())
+		}
+	}
+
+	t.RecordMessage("start deal with wallet %s, fcid %s, piece %s, piece size %d", addr, fcid.String(), ds.PieceCID, ds.PayloadSize)
 
 	deal, err := client.ClientStartDeal(ctx, &api.StartDealParams{
 		Data: &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
 			Root:         fcid,
-			Expert:       experts[0].String(),
+			Expert:       addr.String(),
 		},
-		Wallet: addr,
-		Miner:  maMsg.MinerActorAddr,
-		// EpochPrice:        types.NewInt(1000),
-		// MinBlocksDuration: 640000,
+		Wallet:         addr,
+		Miner:          maMsg.MinerActorAddr,
 		DealStartEpoch: 200,
 		FastRetrieval:  fastRetrieval,
 	})
@@ -53,7 +85,7 @@ func StartDeal(t *TestEnvironment, ctx context.Context, maMsg MinerAddressesMsg,
 	return deal
 }
 
-func WaitDealSealed(t *TestEnvironment, ctx context.Context, client api.FullNode, deal *cid.Cid, fcid cid.Cid) {
+func WaitDealSealed(t *TestEnvironment, ctx context.Context, client api.FullNode, deal *cid.Cid) {
 	height := 0
 	headlag := 3
 
@@ -65,32 +97,7 @@ func WaitDealSealed(t *TestEnvironment, ctx context.Context, client api.FullNode
 		panic(err)
 	}
 
-	experts, err := client.StateListExperts(ctx, types.EmptyTSK)
-	if err != nil {
-		panic(err)
-	}
-
-	imported := false
 	for tipset := range tipsetsCh {
-		if !imported {
-			infos, err := client.StateExpertDatas(ctx, experts[0], nil, false, types.EmptyTSK)
-			if err != nil {
-				panic(err)
-			}
-
-			for _, info := range infos {
-				if info.PieceID == fcid.String() {
-					imported = true
-					t.RecordMessage("piece %s of expert %s imported", info.PieceID, experts[0])
-					break
-				}
-			}
-		}
-
-		if !imported {
-			continue
-		}
-
 		di, err := client.ClientGetDealInfo(ctx, *deal)
 		if err != nil {
 			panic(err)
@@ -109,4 +116,36 @@ func WaitDealSealed(t *TestEnvironment, ctx context.Context, client api.FullNode
 
 		t.RecordMessage("height %d, deal state: %s", tipset.Height(), storagemarket.DealStates[di.State])
 	}
+}
+
+func getExpertByOwner(t *TestEnvironment, ctx context.Context, client api.FullNode, owner address.Address) address.Address {
+	ida, err := client.StateLookupID(ctx, owner, types.EmptyTSK)
+	if err != nil {
+		panic(err)
+	}
+
+	experts, err := client.StateListExperts(ctx, types.EmptyTSK)
+	if err != nil {
+		panic(err)
+	}
+	if len(experts) == 0 {
+		panic("no experts")
+	}
+
+	var myExpert address.Address
+	for _, e := range experts {
+		expertInfo, err := client.StateExpertInfo(ctx, e, types.EmptyTSK)
+		if err != nil {
+			panic(err)
+		}
+		if expertInfo.Owner == ida {
+			myExpert = e
+			break
+		}
+		t.RecordMessage("expert %s owner %s", e, expertInfo.Owner)
+	}
+	if myExpert == address.Undef {
+		panic("default wallet not an expert owner: " + ida.String())
+	}
+	return myExpert
 }

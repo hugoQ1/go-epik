@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/wallet"
+	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/testground/sdk-go/sync"
@@ -66,14 +66,11 @@ func dealsE2E(t *testkit.TestEnvironment) error {
 
 	t.RecordMessage("selected %s as the miner", minerAddr.MinerActorAddr)
 
-	minerKey, err := wallet.NewKey(*minerAddr.MinerWallet)
+	addr, err := cl.ImportPrivateKey(ctx, gen.TestPrivKey)
 	if err != nil {
 		return err
 	}
-	err = cl.SetWallet(ctx, minerKey)
-	if err != nil {
-		return err
-	}
+	t.RecordMessage("import wallet %s by private key string", addr)
 
 	if fastRetrieval {
 		err = initPaymentChannel(t, ctx, cl, minerAddr)
@@ -114,7 +111,7 @@ func dealsE2E(t *testkit.TestEnvironment) error {
 	time.Sleep(2 * time.Second)
 
 	t.RecordMessage("waiting for deal to be sealed")
-	testkit.WaitDealSealed(t, ctx, client, deal, fcid.Root)
+	testkit.WaitDealSealed(t, ctx, client, deal)
 	t.D().ResettingHistogram("deal.sealed").Update(int64(time.Since(t1)))
 
 	t.RecordMessage("waiting for 'done-sealing'")
