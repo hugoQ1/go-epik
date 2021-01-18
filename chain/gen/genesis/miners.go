@@ -316,6 +316,13 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		}
 	}
 
+	// TODO: Should we re-ConstructState for the reward actor using rawPow as currRealizedPower here?
+
+	c, err := vm.Flush(ctx)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("flushing vm: %w", err)
+	}
+
 	err = checkPowerActor(vm, cs.Store(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis power state: %w", err)
@@ -326,12 +333,6 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.Errorf("check genesis market state: %w", err)
 	}
 
-	// TODO: Should we re-ConstructState for the reward actor using rawPow as currRealizedPower here?
-
-	c, err := vm.Flush(ctx)
-	if err != nil {
-		return cid.Undef, xerrors.Errorf("flushing vm: %w", err)
-	}
 	return c, nil
 }
 
@@ -353,15 +354,15 @@ func (fr *fakeRand) GetBeaconRandomness(ctx context.Context, personalization cry
 func checkPowerActor(vm *vm.VM, stor adt.Store, expectRawPower, expectQAPower abi.StoragePower, expectPledge abi.TokenAmount) error {
 	act, err := vm.StateTree().GetActor(power.Address)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to get power actor %s: %w", power.Address, err)
 	}
 	st, err := power.Load(stor, act)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to load power state: %w", err)
 	}
 	claim, err := st.TotalPower()
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to get total power: %w", err)
 	}
 	if !claim.RawBytePower.Equals(expectRawPower) {
 		return xerrors.Errorf("TotalRawBytePower %s doesn't match previously calculated rawPow %s", claim.RawBytePower, expectRawPower)
@@ -373,7 +374,7 @@ func checkPowerActor(vm *vm.VM, stor adt.Store, expectRawPower, expectQAPower ab
 
 	locked, err := st.TotalLocked()
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to get total locked: %w", err)
 	}
 	if !locked.Equals(expectPledge) {
 		return xerrors.Errorf("TotalPledgeCollateral %s doesn't match expected %s", locked, expectPledge)
@@ -385,11 +386,11 @@ func checkPowerActor(vm *vm.VM, stor adt.Store, expectRawPower, expectQAPower ab
 func checkMarketActor(vm *vm.VM, stor adt.Store, pieceCID cid.Cid, expectQuotaAcquired int64) error {
 	act, err := vm.StateTree().GetActor(market.Address)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to get market actor %s: %w", market.Address, err)
 	}
 	st, err := market.Load(stor, act)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to load market state: %w", err)
 	}
 	qts, err := st.Quotas()
 	if err != nil {
