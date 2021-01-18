@@ -98,7 +98,7 @@ var preSealCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "miner-addr",
-			Value: "t01000",
+			Value: "t01001", // t01000 is initial expert
 			Usage: "specify the future address of your miner",
 		},
 		&cli.StringFlag{

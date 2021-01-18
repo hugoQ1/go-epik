@@ -167,7 +167,7 @@ type SectorInfo struct {
 	// On Chain Info
 	SealProof  abi.RegisteredSealProof // The seal proof type implies the PoSt proof/s
 	Activation abi.ChainEpoch          // Epoch during which the sector proof was accepted
-	PieceSizes []uint64
+	PieceSizes []abi.PaddedPieceSize
 	DealWins   []builtin.BoolValue
 	/* Expiration         abi.ChainEpoch          // Epoch during which the sector expires
 	DealWeight         abi.DealWeight          // Integral of active deals over sector lifetime

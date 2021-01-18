@@ -245,17 +245,18 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 					SealedCID:     preseal.CommR,
 					SealRandEpoch: -1,
 					DealIDs:       []abi.DealID{minerInfos[i].dealIDs[pi]},
-					/* Expiration:    minerInfos[i].presealExp, // TODO: Allow setting externally! */
 				}
 
-				dweight, err := dealWeight(ctx, vm, minerInfos[i].maddr, params.DealIDs, 0)
+				dealsInfo, err := dealWeight(ctx, vm, minerInfos[i].maddr, params.DealIDs, 0)
 				if err != nil {
 					return cid.Undef, xerrors.Errorf("getting deal weight: %w", err)
 				}
-				qa := miner2.QAPowerForWeight(true, dweight.PieceSizes[0])
-				qaPow = big.Add(qaPow, qa)
-				raw := miner2.QAPowerForWeight(false, dweight.PieceSizes[0])
-				rawPow = big.Add(rawPow, raw)
+				for _, d := range dealsInfo.ValidDeals {
+					qa := miner2.QAPowerForWeight(true, uint64(d.PieceSize))
+					qaPow = big.Add(qaPow, qa)
+					raw := miner2.QAPowerForWeight(false, uint64(d.PieceSize))
+					rawPow = big.Add(rawPow, raw)
+				}
 
 				/* dweight, err := dealWeight(ctx, vm, minerInfos[i].maddr, params.DealIDs, 0, minerInfos[i].presealExp)
 				if err != nil {

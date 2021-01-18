@@ -104,7 +104,7 @@ type SectorOnChainInfo struct {
 	SealedCID    cid.Cid
 	DealIDs      []abi.DealID
 	Activation   abi.ChainEpoch
-	PieceSizes   []uint64
+	PieceSizes   []abi.PaddedPieceSize
 	DealWins     []builtin2.BoolValue
 	/* Expiration            abi.ChainEpoch
 	DealWeight            abi.DealWeight
@@ -119,7 +119,7 @@ type SectorPreCommitInfo = miner2.SectorPreCommitInfo
 type SectorPreCommitOnChainInfo struct {
 	Info           SectorPreCommitInfo
 	PreCommitEpoch abi.ChainEpoch
-	PieceSizes     []uint64
+	PieceSizes     []abi.PaddedPieceSize
 	/* PreCommitDeposit   abi.TokenAmount
 	DealWeight         abi.DealWeight
 	VerifiedDealWeight abi.DealWeight */
