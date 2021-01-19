@@ -1146,6 +1146,10 @@ var slashConsensusFault = &cli.Command{
 	ArgsUsage: "[blockCid1 blockCid2]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to report consensus from",
+		},
+		&cli.StringFlag{
 			Name:  "extra",
 			Usage: "Extra block cid",
 		},
@@ -1182,9 +1186,21 @@ var slashConsensusFault = &cli.Command{
 			return xerrors.Errorf("block1.miner:%s block2.miner:%s", b1.Miner, b2.Miner)
 		}
 
-		def, err := api.WalletDefaultAddress(ctx)
-		if err != nil {
-			return err
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
 		}
 
 		bh1, err := cborutil.Dump(b1)
@@ -1228,7 +1244,7 @@ var slashConsensusFault = &cli.Command{
 
 		msg := &types.Message{
 			To:     b2.Miner,
-			From:   def,
+			From:   fromAddr,
 			Value:  types.NewInt(0),
 			Method: builtin.MethodsMiner.ReportConsensusFault,
 			Params: enc,
