@@ -33,7 +33,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	blst "github.com/supranational/blst/bindings/go"
+
+	ffi "github.com/filecoin-project/filecoin-ffi"
 
 	// named msgarray here to make it clear that these are the types used by
 	// messages, regardless of specs-actors version.
@@ -54,7 +55,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 )
 
@@ -1173,17 +1173,21 @@ func (syncer *Syncer) verifyBlsAggregate(ctx context.Context, sig *crypto.Signat
 		trace.Int64Attribute("msgCount", int64(len(msgs))),
 	)
 
-	msgsS := make([]blst.Message, len(msgs))
+	msgsS := make([]ffi.Message, len(msgs))
+	pubksS := make([]ffi.PublicKey, len(msgs))
 	for i := 0; i < len(msgs); i++ {
 		msgsS[i] = msgs[i].Bytes()
+		copy(pubksS[i][:], pubks[i][:ffi.PublicKeyBytes])
 	}
+
+	sigS := new(ffi.Signature)
+	copy(sigS[:], sig.Data[:ffi.SignatureBytes])
 
 	if len(msgs) == 0 {
 		return nil
 	}
 
-	valid := new(bls.Signature).AggregateVerifyCompressed(sig.Data, pubks,
-		msgsS, []byte(bls.DST))
+	valid := ffi.HashVerify(sigS, msgsS, pubksS)
 	if !valid {
 		return xerrors.New("bls aggregate signature failed to verify")
 	}
