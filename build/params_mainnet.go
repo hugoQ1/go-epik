@@ -20,29 +20,33 @@ var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 const BootstrappersFile = "bootstrappers.pi"
 const GenesisFile = "testnet.car"
 
-// const UpgradeBreezeHeight = 41280
-// const BreezeGasTampingDuration = 120
+/*
+const UpgradeBreezeHeight = 41280
+const BreezeGasTampingDuration = 120
 
-// const UpgradeSmokeHeight = 51000
+const UpgradeSmokeHeight = 51000
 
-// const UpgradeIgnitionHeight = 94000
-// const UpgradeRefuelHeight = 130800
+const UpgradeIgnitionHeight = 94000
+const UpgradeRefuelHeight = 130800
 
-// var UpgradeActorsV2Height = abi.ChainEpoch(138720)
+var UpgradeActorsV2Height = abi.ChainEpoch(138720)
 
-// const UpgradeTapeHeight = 140760
+const UpgradeTapeHeight = 140760
 
-// This signals our tentative epoch for mainnet launch. Can make it later, but not earlier.
-// Miners, clients, developers, custodians all need time to prepare.
-// We still have upgrades and state changes to do, but can happen after signaling timing here.
-// const UpgradeLiftoffHeight = 148888
+This signals our tentative epoch for mainnet launch. Can make it later, but not earlier.
+Miners, clients, developers, custodians all need time to prepare.
+We still have upgrades and state changes to do, but can happen after signaling timing here.
+const UpgradeLiftoffHeight = 148888
 
-// const UpgradeKumquatHeight = 170000
+const UpgradeKumquatHeight = 170000
 
-// // TODO: Height??
-// const UpgradeCalicoHeight = 999999
-// const UpgradePersianHeight = UpgradeCalicoHeight + (builtin2.EpochsInDay * 2)
+// TODO: Height??
+const UpgradeCalicoHeight = 999999
+const UpgradePersianHeight = UpgradeCalicoHeight + (builtin2.EpochsInDay * 2)
 
+// TODO
+const UpgradeActorsV3Height = 999999999
+*/
 func init() {
 	policy.SetConsensusMinerMinPower(abi.NewStoragePower(1))
 

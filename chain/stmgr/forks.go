@@ -91,8 +91,9 @@ func DefaultUpgradeSchedule() UpgradeSchedule {
 			Expensive: true,
 			Migration: UpgradeActorsV2,
 		}, {
-			Height:  build.UpgradeTapeHeight,
-			Network: network.Version5,
+			Height:    build.UpgradeTapeHeight,
+			Network:   network.Version5,
+			Migration: nil,
 		}, {
 			Height:    build.UpgradeLiftoffHeight,
 			Network:   network.Version5,
@@ -101,6 +102,22 @@ func DefaultUpgradeSchedule() UpgradeSchedule {
 			Height:    build.UpgradeKumquatHeight,
 			Network:   network.Version6,
 			Migration: nil,
+		}, {
+			Height:    build.UpgradeCalicoHeight,
+			Network:   network.Version7,
+			Migration: UpgradeCalico,
+		}, {
+			Height:    build.UpgradePersianHeight,
+			Network:   network.Version8,
+			Migration: nil,
+		}, {
+			Height:    build.UpgradeOrangeHeight,
+			Network:   network.Version9,
+			Migration: nil,
+		}, {
+			Height:    build.UpgradeActorsV3Height,
+			Network:   network.Version10,
+			Migration: UpgradeActorsV3,
 		} */}
 
 	for _, u := range updates {
@@ -676,6 +693,73 @@ func UpgradeCalico(ctx context.Context, sm *StateManager, cb ExecCallback, root 
 		return cid.Undef, xerrors.Errorf("state-root mismatch: %s != %s", newRoot, newRoot2)
 	} else if _, err := newSm.GetActor(builtin0.InitActorAddr); err != nil {
 		return cid.Undef, xerrors.Errorf("failed to load init actor after upgrade: %w", err)
+	}
+
+	return newRoot, nil
+}
+
+func UpgradeActorsV3(ctx context.Context, sm *StateManager, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+	buf := bufbstore.NewTieredBstore(sm.cs.Blockstore(), bstore.NewTemporarySync())
+	store := store.ActorStore(ctx, buf)
+
+	// Load the state root.
+
+	var stateRoot types.StateRoot
+	if err := store.Get(ctx, root, &stateRoot); err != nil {
+		return cid.Undef, xerrors.Errorf("failed to decode state root: %w", err)
+	}
+
+	if stateRoot.Version != types.StateTreeVersion1 {
+		return cid.Undef, xerrors.Errorf(
+			"expected state root version 1 for actors v3 upgrade, got %d",
+			stateRoot.Version,
+		)
+	}
+
+	// Perform the migration
+
+	// TODO: store this somewhere and pre-migrate
+	cache := nv9.NewMemMigrationCache()
+	// TODO: tune this.
+	config := nv9.Config{MaxWorkers: 1}
+	newHamtRoot, err := nv9.MigrateStateTree(ctx, store, stateRoot.Actors, epoch, config, migrationLogger{}, cache)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("upgrading to actors v2: %w", err)
+	}
+
+	// Persist the result.
+
+	newRoot, err := store.Put(ctx, &types.StateRoot{
+		Version: types.StateTreeVersion2,
+		Actors:  newHamtRoot,
+		Info:    stateRoot.Info,
+	})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to persist new state root: %w", err)
+	}
+
+	// Check the result.
+
+	// perform some basic sanity checks to make sure everything still works.
+	if newSm, err := state.LoadStateTree(store, newRoot); err != nil {
+		return cid.Undef, xerrors.Errorf("state tree sanity load failed: %w", err)
+	} else if newRoot2, err := newSm.Flush(ctx); err != nil {
+		return cid.Undef, xerrors.Errorf("state tree sanity flush failed: %w", err)
+	} else if newRoot2 != newRoot {
+		return cid.Undef, xerrors.Errorf("state-root mismatch: %s != %s", newRoot, newRoot2)
+	} else if _, err := newSm.GetActor(init_.Address); err != nil {
+		return cid.Undef, xerrors.Errorf("failed to load init actor after upgrade: %w", err)
+	}
+
+	// Persist the new tree.
+
+	{
+		from := buf
+		to := buf.Read()
+
+		if err := vm.Copy(ctx, from, to, newRoot); err != nil {
+			return cid.Undef, xerrors.Errorf("copying migrated tree: %w", err)
+		}
 	}
 
 	return newRoot, nil

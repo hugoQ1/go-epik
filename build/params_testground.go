@@ -77,20 +77,23 @@ var (
 
 	PackingEfficiencyNum   int64 = 4
 	PackingEfficiencyDenom int64 = 5
+	/*
+		UpgradeBreezeHeight      abi.ChainEpoch = -1
+		BreezeGasTampingDuration abi.ChainEpoch = 0
 
-	// UpgradeBreezeHeight      abi.ChainEpoch = -1
-	// BreezeGasTampingDuration abi.ChainEpoch = 0
-
-	// UpgradeSmokeHeight    abi.ChainEpoch = -1
-	// UpgradeIgnitionHeight abi.ChainEpoch = -2
-	// UpgradeRefuelHeight   abi.ChainEpoch = -3
-	// UpgradeTapeHeight     abi.ChainEpoch = -4
-	// UpgradeActorsV2Height abi.ChainEpoch = 10
-	// UpgradeLiftoffHeight  abi.ChainEpoch = -5
-	// UpgradeKumquatHeight  abi.ChainEpoch = -6
-	// UpgradeCalicoHeight   abi.ChainEpoch = -7
-	// UpgradePersianHeight  abi.ChainEpoch = -8
-
+		UpgradeSmokeHeight    abi.ChainEpoch = -1
+		UpgradeIgnitionHeight abi.ChainEpoch = -2
+		UpgradeRefuelHeight   abi.ChainEpoch = -3
+		UpgradeTapeHeight     abi.ChainEpoch = -4
+		UpgradeActorsV2Height abi.ChainEpoch = 10
+		UpgradeLiftoffHeight  abi.ChainEpoch = -5
+		UpgradeKumquatHeight  abi.ChainEpoch = -6
+		UpgradeCalicoHeight   abi.ChainEpoch = -7
+		UpgradePersianHeight  abi.ChainEpoch = -8
+		UpgradeOrangeHeight   abi.ChainEpoch = -9
+		UpgradeClausHeight    abi.ChainEpoch = -10
+		UpgradeActorsV3Height abi.ChainEpoch = -11
+	*/
 	DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 		0: DrandMainnet,
 	}

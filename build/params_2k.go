@@ -10,21 +10,25 @@ import (
 const BootstrappersFile = ""
 const GenesisFile = ""
 
-// const UpgradeBreezeHeight = -1
-// const BreezeGasTampingDuration = 0
+/*
+const UpgradeBreezeHeight = -1
+const BreezeGasTampingDuration = 0
 
-// const UpgradeSmokeHeight = -1
-// const UpgradeIgnitionHeight = -2
-// const UpgradeRefuelHeight = -3
-// const UpgradeTapeHeight = -4
+const UpgradeSmokeHeight = -1
+const UpgradeIgnitionHeight = -2
+const UpgradeRefuelHeight = -3
+const UpgradeTapeHeight = -4
 
-// var UpgradeActorsV2Height = abi.ChainEpoch(0)
-// var UpgradeLiftoffHeight = abi.ChainEpoch(-5)
+var UpgradeActorsV2Height = abi.ChainEpoch(0)
+var UpgradeLiftoffHeight = abi.ChainEpoch(-5)
 
-// const UpgradeKumquatHeight = 15
-// const UpgradeCalicoHeight = 20
-// const UpgradePersianHeight = 25
+const UpgradeKumquatHeight = 15
+const UpgradeCalicoHeight = 20
+const UpgradePersianHeight = 25
 
+// TODO
+const UpgradeActorsV3Height = -5
+*/
 var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 	0: DrandMainnet,
 }
