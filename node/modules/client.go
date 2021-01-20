@@ -120,7 +120,11 @@ func RegisterClientValidator(crv dtypes.ClientRequestValidator, dtm dtypes.Clien
 // uses the clients's Client DAG service for transfers
 func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Graphsync, ds dtypes.MetadataDS, r repo.LockedRepo) (dtypes.ClientDataTransfer, error) {
 	sc := storedcounter.New(ds, datastore.NewKey("/datatransfer/client/counter"))
-	net := dtnet.NewFromLibp2pHost(h)
+
+	// go-data-transfer protocol retries:
+	// 1s, 5s, 25s, 2m5s, 5m x 11 ~= 1 hour
+	dtRetryParams := dtnet.RetryParameters(time.Second, 5*time.Minute, 15, 5)
+	net := dtnet.NewFromLibp2pHost(h, dtRetryParams)
 
 	dtDs := namespace.Wrap(ds, datastore.NewKey("/datatransfer/client/transfers"))
 	transport := dtgstransport.NewTransport(h.ID(), gs)
