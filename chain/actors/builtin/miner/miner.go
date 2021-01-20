@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -130,8 +131,7 @@ type DeclareFaultsRecoveredParams = miner3.DeclareFaultsRecoveredParams
 type SubmitWindowedPoStParams = miner3.SubmitWindowedPoStParams
 type ProveCommitSectorParams = miner3.ProveCommitSectorParams
 
-// TODO: This may need to be epoch-sensitive
-func PreferredSealProofTypeFromWindowPoStType(proof abi.RegisteredPoStProof) (abi.RegisteredSealProof, error) {
+func PreferredSealProofTypeFromWindowPoStType(nver network.Version, proof abi.RegisteredPoStProof) (abi.RegisteredSealProof, error) {
 	switch proof {
 	case abi.RegisteredPoStProof_StackedDrgWindow2KiBV1:
 		return abi.RegisteredSealProof_StackedDrg2KiBV1_1, nil
