@@ -22,6 +22,7 @@ import (
 	"github.com/filecoin-project/go-state-types/rt"
 
 	exported2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
+	exported3 "github.com/filecoin-project/specs-actors/v3/actors/builtin/exported"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -568,6 +569,7 @@ func init() {
 	var actors []rt.VMActor
 	/* actors = append(actors, exported0.BuiltinActors()...) */
 	actors = append(actors, exported2.BuiltinActors()...)
+	actors = append(actors, exported3.BuiltinActors()...)
 
 	for _, actor := range actors {
 		exports := actor.Exports()
