@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ipfs/go-cid"
-	cbor "github.com/ipfs/go-ipld-cbor"
 	logging "github.com/ipfs/go-log/v2"
 	"golang.org/x/xerrors"
 
@@ -23,12 +22,9 @@ import (
 	"github.com/filecoin-project/go-state-types/exitcode"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/events/state"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -46,6 +42,7 @@ var log = logging.Logger("storageadapter")
 
 type ProviderNodeAdapter struct {
 	api.FullNode
+	*apiWrapper
 
 	// this goes away with the data transfer module
 	dag dtypes.StagingDAG
@@ -60,7 +57,8 @@ type ProviderNodeAdapter struct {
 func NewProviderNodeAdapter(fc *config.MinerFeeConfig) func(dag dtypes.StagingDAG, secb *sectorblocks.SectorBlocks, full api.FullNode) storagemarket.StorageProviderNode {
 	return func(dag dtypes.StagingDAG, secb *sectorblocks.SectorBlocks, full api.FullNode) storagemarket.StorageProviderNode {
 		na := &ProviderNodeAdapter{
-			FullNode: full,
+			FullNode:   full,
+			apiWrapper: &apiWrapper{api: full},
 
 			dag:       dag,
 			secb:      secb,
@@ -73,35 +71,6 @@ func NewProviderNodeAdapter(fc *config.MinerFeeConfig) func(dag dtypes.StagingDA
 		}
 		return na
 	}
-}
-
-func (n *ProviderNodeAdapter) diffPreCommits(ctx context.Context, actor address.Address, pre, cur types.TipSetKey) (*miner.PreCommitChanges, error) {
-	store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(n)))
-
-	preAct, err := n.StateGetActor(ctx, actor, pre)
-	if err != nil {
-		return nil, xerrors.Errorf("getting pre actor: %w", err)
-	}
-	curAct, err := n.StateGetActor(ctx, actor, cur)
-	if err != nil {
-		return nil, xerrors.Errorf("getting cur actor: %w", err)
-	}
-
-	preSt, err := miner.Load(store, preAct)
-	if err != nil {
-		return nil, xerrors.Errorf("loading miner actor: %w", err)
-	}
-	curSt, err := miner.Load(store, curAct)
-	if err != nil {
-		return nil, xerrors.Errorf("loading miner actor: %w", err)
-	}
-
-	diff, err := miner.DiffPreCommits(preSt, curSt)
-	if err != nil {
-		return nil, xerrors.Errorf("diff precommits: %w", err)
-	}
-
-	return diff, err
 }
 
 func (n *ProviderNodeAdapter) PublishDeals(ctx context.Context, deal storagemarket.MinerDeal) (cid.Cid, error) {
