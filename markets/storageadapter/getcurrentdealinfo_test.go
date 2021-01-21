@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	test "github.com/EpiK-Protocol/go-epik/chain/events/state/mock"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/exitcode"
-	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
-	test "github.com/EpiK-Protocol/go-epik/chain/events/state/mock"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
@@ -236,16 +237,8 @@ type mockGetCurrentDealInfoAPI struct {
 	MarketDeals map[marketDealKey]*api.MarketDeal
 }
 
-func (mapi *mockGetCurrentDealInfoAPI) StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error) {
-	panic("implement me")
-}
-
-func (mapi *mockGetCurrentDealInfoAPI) ChainReadObj(ctx context.Context, c cid.Cid) ([]byte, error) {
-	panic("implement me")
-}
-
-func (mapi *mockGetCurrentDealInfoAPI) ChainHasObj(ctx context.Context, c cid.Cid) (bool, error) {
-	panic("implement me")
+func (mapi *mockGetCurrentDealInfoAPI) diffPreCommits(ctx context.Context, actor address.Address, pre, cur types.TipSetKey) (*miner.PreCommitChanges, error) {
+	return &miner.PreCommitChanges{}, nil
 }
 
 func (mapi *mockGetCurrentDealInfoAPI) StateMarketStorageDeal(ctx context.Context, dealID abi.DealID, ts types.TipSetKey) (*api.MarketDeal, error) {
