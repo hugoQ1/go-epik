@@ -601,8 +601,23 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 			log.Infow("computing window post", "batch", batchIdx, "elapsed", elapsed)
 
 			if err == nil {
+				// If we proved nothing, something is very wrong.
 				if len(postOut) == 0 {
 					return nil, xerrors.Errorf("received no proofs back from generate window post")
+				}
+
+				// If we generated an incorrect proof, try again.
+				if correct, err := s.verifier.VerifyWindowPoSt(ctx, proof2.WindowPoStVerifyInfo{
+					Randomness:        abi.PoStRandomness(rand),
+					Proofs:            postOut,
+					ChallengedSectors: sinfos,
+					Prover:            abi.ActorID(mid),
+				}); err != nil {
+					log.Errorw("window post verification failed", "post", postOut, "error", err)
+					continue
+				} else if !correct {
+					log.Errorw("generated incorrect window post proof", "post", postOut, "error", err)
+					continue
 				}
 
 				// Proof generation successful, stop retrying
