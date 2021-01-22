@@ -25,6 +25,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
@@ -1592,4 +1593,38 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 		return nil, xerrors.Errorf("failed to load govern actor state: %w", err)
 	}
 	return govState.ListGovrnors()
+}
+
+func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalState, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, retrieval.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
+	}
+
+	state, err := retrieval.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
+	}
+	balance, err := state.EscrowBalance(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
+	}
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+	expend, err := state.DayExpend(ts.Height(), addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
+	}
+	locked, err := state.LockedState(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
+	}
+	return &api.RetrievalState{
+		Balance:     balance,
+		DayExpend:   expend,
+		Locked:      locked.Amount,
+		LockedEpoch: locked.ApplyEpoch,
+	}, nil
 }

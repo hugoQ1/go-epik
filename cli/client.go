@@ -87,6 +87,10 @@ var clientCmd = &cli.Command{
 		WithCategory("data", clientStat),
 		WithCategory("retrieval", clientFindCmd),
 		WithCategory("retrieval", clientRetrieveCmd),
+		WithCategory("retrieval", clientRetrievePledgeCmd),
+		WithCategory("retrieval", clientRetrievePledgeStateCmd),
+		WithCategory("retrieval", clientRetrieveApplyForWithdrawCmd),
+		WithCategory("retrieval", clientRetrieveWithdrawCmd),
 		WithCategory("util", clientCommPCmd),
 		WithCategory("util", clientCarGenCmd),
 		WithCategory("util", clientBalancesCmd),
@@ -1164,6 +1168,209 @@ var clientRetrieveCmd = &cli.Command{
 				return xerrors.Errorf("retrieval timed out")
 			}
 		}
+	},
+}
+
+var clientRetrievePledgeCmd = &cli.Command{
+	Name:      "retrieve-pledge",
+	Usage:     "pledge amount for retrieval",
+	ArgsUsage: "[amount]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+		msg, err := api.ClientRetrievalPledge(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
+		}
+		fmt.Println("retrieve pledge: %s", msg)
+		return nil
+	},
+}
+
+var clientRetrievePledgeStateCmd = &cli.Command{
+	Name:      "retrieve-state",
+	Usage:     "pledge state for retrieval",
+	ArgsUsage: "query pledge state",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		state, err := api.StateRetrievalPledge(ctx, fromAddr, types.EmptyTSK)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
+		}
+		fmt.Println("Retrieve Balance: %w", state.Balance)
+		fmt.Println("Retrieve Day expend: %w", state.DayExpend)
+		fmt.Println("Locked Balance: %w", state.Locked)
+		fmt.Println("Locked Epoch: %w", state.LockedEpoch)
+		return nil
+	},
+}
+
+var clientRetrieveApplyForWithdrawCmd = &cli.Command{
+	Name:      "retrieve-apply",
+	Usage:     "apply for withdraw amount for retrieval",
+	ArgsUsage: "[amount]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+		msg, err := api.ClientRetrievalApplyForWithdraw(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to apply for withdraw: %w", err))
+		}
+		fmt.Println("retrieve apply for withdraw: %s", msg)
+		return nil
+	},
+}
+
+var clientRetrieveWithdrawCmd = &cli.Command{
+	Name:      "retrieve-withdraw",
+	Usage:     "withdraw amount for retrieval",
+	ArgsUsage: "[amount]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+		msg, err := api.ClientRetrievalWithdraw(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to withdraw retrival: %w", err))
+		}
+		fmt.Println("retrieve withdraw: %s", msg)
+		return nil
 	},
 }
 

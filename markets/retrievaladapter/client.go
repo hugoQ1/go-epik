@@ -9,8 +9,12 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multiaddr"
+	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
@@ -20,12 +24,51 @@ type retrievalClientNode struct {
 	chainAPI full.ChainAPI
 	payAPI   payapi.PaychAPI
 	stateAPI full.StateAPI
+	mpoolAPI full.MpoolAPI
 }
 
 // NewRetrievalClientNode returns a new node adapter for a retrieval client that talks to the
 // Epik Node
-func NewRetrievalClientNode(payAPI payapi.PaychAPI, chainAPI full.ChainAPI, stateAPI full.StateAPI) retrievalmarket.RetrievalClientNode {
-	return &retrievalClientNode{payAPI: payAPI, chainAPI: chainAPI, stateAPI: stateAPI}
+func NewRetrievalClientNode(payAPI payapi.PaychAPI, chainAPI full.ChainAPI, stateAPI full.StateAPI, mpoolAPI full.MpoolAPI) retrievalmarket.RetrievalClientNode {
+	return &retrievalClientNode{payAPI: payAPI, chainAPI: chainAPI, stateAPI: stateAPI, mpoolAPI: mpoolAPI}
+}
+
+// SubmitDataPledge submit data pledge
+func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddress, minerAddress address.Address, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
+	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
+		PieceID:  pieceCid,
+		Size:     size,
+		Provider: minerAddress,
+	})
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	msg := types.Message{
+		To:     retrievalactor.Address,
+		From:   clientAddress,
+		Value:  abi.NewTokenAmount(0),
+		Method: retrievalactor.Methods.RetrievalData,
+		Params: params,
+	}
+	sm, err := rcn.mpoolAPI.MpoolPushMessage(ctx, &msg, nil)
+	if err != nil {
+		return cid.Undef, err
+	}
+	return sm.Cid(), nil
+}
+
+// WaitForDataPledgeReady wait data pledge ready
+func (rcn *retrievalClientNode) WaitForDataPledgeReady(ctx context.Context, waitSentinel cid.Cid) error {
+	ret, err := rcn.stateAPI.StateWaitMsg(ctx, waitSentinel, build.MessageConfidence)
+
+	if err != nil {
+		return xerrors.Errorf("waiting for data pledge message: %w", err)
+	}
+	if ret.Receipt.ExitCode != 0 {
+		return xerrors.Errorf("data pledge failed: exit=%d", ret.Receipt.ExitCode)
+	}
+	return nil
 }
 
 // GetOrCreatePaymentChannel sets up a new payment channel if one does not exist

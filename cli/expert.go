@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -13,6 +14,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
+	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
@@ -20,9 +22,10 @@ import (
 
 var expertCmd = &cli.Command{
 	Name:  "expert",
-	Usage: "Manage expert",
+	Usage: "Manage expert and file",
 	Subcommands: []*cli.Command{
 		expertInitCmd,
+		expertFileCmd,
 	},
 }
 
@@ -146,4 +149,60 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 
 	log.Infof("New expert address is: %s (%s)", retval.IDAddress, retval.RobustAddress)
 	return retval.IDAddress, nil
+}
+
+var expertFileCmd = &cli.Command{
+	Name:  "file",
+	Usage: "register file",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "expert",
+			Aliases: []string{"e"},
+			Usage:   "expert address",
+		},
+		&cli.StringFlag{
+			Name:    "root",
+			Aliases: []string{"e"},
+			Usage:   "expert address",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+
+		expert, err := address.NewFromString(cctx.String("expert"))
+		if err != nil {
+			return err
+		}
+
+		ctx := ReqContext(cctx)
+
+		// log.Info("Trying to connect to full node RPC")
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		var root cid.Cid
+		if cctx.String("root") != "" {
+			parsed, err := cid.Parse(cctx.String("root"))
+			if err != nil {
+				return err
+			}
+			root = parsed
+		}
+
+		ds, err := api.ClientDealPieceCID(ctx, root)
+		if err != nil {
+			return xerrors.Errorf("failed to get data cid/size for root %s: %w", root, err)
+		}
+
+		msg, err := api.ClientExpertRegisterFile(ctx, &lapi.ExpertRegisterFileParams{
+			Expert:    expert,
+			PieceID:   ds.PieceCID,
+			PieceSize: ds.PieceSize,
+		})
+		fmt.Println("register CID: ", msg)
+		return nil
+	},
 }

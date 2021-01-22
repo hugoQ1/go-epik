@@ -60,6 +60,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
+
+	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 )
 
 var DefaultHashFunction = uint64(mh.BLAKE2B_MIN + 31)
@@ -1210,4 +1212,73 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 		Status: api.QueryPending,
 		DealId: uint64(dealID),
 	}, nil
+}
+
+func (a *API) ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&wallet)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     retrievalactor.Address,
+		From:   wallet,
+		Value:  amount,
+		Method: retrievalactor.Methods.AddBalance,
+		Params: params,
+	}, nil)
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
+}
+
+func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrievalactor.WithdrawBalanceParams{
+		ProviderOrClientAddress: wallet,
+		Amount:                  amount,
+	})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     retrievalactor.Address,
+		From:   wallet,
+		Value:  abi.NewTokenAmount(0),
+		Method: retrievalactor.Methods.ApplyForWithdraw,
+		Params: params,
+	}, nil)
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
+}
+
+func (a *API) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrievalactor.WithdrawBalanceParams{
+		ProviderOrClientAddress: wallet,
+		Amount:                  amount,
+	})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     retrievalactor.Address,
+		From:   wallet,
+		Value:  abi.NewTokenAmount(0),
+		Method: retrievalactor.Methods.WithdrawBalance,
+		Params: params,
+	}, nil)
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
 }

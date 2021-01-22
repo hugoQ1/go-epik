@@ -343,6 +343,15 @@ type FullNode interface {
 	// ClientQuery query file status by file root or retrieve id
 	ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*QueryResp, error)
 
+	// ClientRetrievalPledge retrieval pledge amount
+	ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+
+	// ClientRetrievalApplyForWithdraw apply for withdraw
+	ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+
+	// ClientRetrievalWithdraw withdraw
+	ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// Most methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.
@@ -488,6 +497,9 @@ type FullNode interface {
 	StateGovernSupervisor(context.Context, types.TipSetKey) (address.Address, error)
 	// StateGovernorList returns all governors
 	StateGovernorList(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)
+
+	// StateRetrievalPledge retrieval pledge state
+	StateRetrievalPledge(context.Context, address.Address, types.TipSetKey) (*RetrievalState, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
@@ -1068,4 +1080,11 @@ type ExpertFileInfo struct {
 	PieceID    string
 	PieceSize  abi.PaddedPieceSize
 	Redundancy uint64
+}
+
+type RetrievalState struct {
+	Balance     abi.TokenAmount
+	DayExpend   abi.TokenAmount
+	Locked      abi.TokenAmount
+	LockedEpoch abi.ChainEpoch
 }

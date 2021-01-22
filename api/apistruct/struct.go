@@ -187,6 +187,9 @@ type FullNodeStruct struct {
 		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                  `perm:"admin"`
 		ClientQuery                               func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                             `perm:"read"`
+		ClientRetrievalPledge                     func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientRetrievalApplyForWithdraw           func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientRetrievalWithdraw                   func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 
 		StateNetworkName          func(context.Context) (dtypes.NetworkName, error)                                                               `perm:"read"`
 		StateMinerSectors         func(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error) `perm:"read"`
@@ -248,6 +251,7 @@ type FullNodeStruct struct {
 		StateKnowledgeInfo               func(context.Context, types.TipSetKey) (*knowledge.Info, error)                                                      `perm:"read"`
 		StateGovernSupervisor            func(context.Context, types.TipSetKey) (address.Address, error)                                                      `perm:"read"`
 		StateGovernorList                func(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)                                               `perm:"read"`
+		StateRetrievalPledge             func(context.Context, address.Address, types.TipSetKey) (*api.RetrievalState, error)                                 `perm:"read"`
 
 		MsigGetAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                                                    `perm:"read"`
 		MsigGetVestingSchedule  func(context.Context, address.Address, types.TipSetKey) (api.MsigVesting, error)                                                                 `perm:"read"`
@@ -685,6 +689,18 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 
 func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
 	return c.Internal.ClientQuery(ctx, root, miner)
+}
+
+func (c *FullNodeStruct) ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrievalPledge(ctx, wallet, amount)
+}
+
+func (c *FullNodeStruct) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrievalApplyForWithdraw(ctx, wallet, amount)
+}
+
+func (c *FullNodeStruct) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrievalWithdraw(ctx, wallet, amount)
 }
 
 func (c *FullNodeStruct) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (types.BigInt, error) {
@@ -1173,6 +1189,10 @@ func (c *FullNodeStruct) StateGovernSupervisor(ctx context.Context, tsk types.Ti
 
 func (c *FullNodeStruct) StateGovernorList(ctx context.Context, tsk types.TipSetKey) ([]*govern.GovernorInfo, error) {
 	return c.Internal.StateGovernorList(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateRetrievalPledge(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalState, error) {
+	return c.Internal.StateRetrievalPledge(ctx, addr, tsk)
 }
 
 func (c *FullNodeStruct) MsigGetAvailableBalance(ctx context.Context, a address.Address, tsk types.TipSetKey) (types.BigInt, error) {
