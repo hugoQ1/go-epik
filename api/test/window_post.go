@@ -24,7 +24,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	minerActor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	bminer "github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
@@ -744,7 +744,7 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 
 	// OBJECTION! The good miner files a DISPUTE!!!!
 	{
-		params := &miner.DisputeWindowedPoStParams{
+		params := &minerActor.DisputeWindowedPoStParams{
 			Deadline:  evilSectorLoc.Deadline,
 			PoStIndex: 0,
 		}
@@ -754,7 +754,7 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 
 		msg := &types.Message{
 			To:     evilMinerAddr,
-			Method: miner.Methods.DisputeWindowedPoSt,
+			Method: minerActor.Methods.DisputeWindowedPoSt,
 			Params: enc,
 			Value:  types.NewInt(0),
 			From:   defaultFrom,
@@ -766,7 +766,6 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 		rec, err := client.StateWaitMsg(ctx, sm.Cid(), build.MessageConfidence)
 		require.NoError(t, err)
 		require.Zero(t, rec.Receipt.ExitCode, "dispute not accepted: %s", rec.Receipt.ExitCode.Error())
-		fmt.Println("GASS!!!: ", rec.Receipt.GasUsed)
 	}
 
 	// Objection SUSTAINED!
@@ -784,8 +783,8 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 		minerInfo, err := client.StateMinerInfo(ctx, evilMinerAddr, types.EmptyTSK)
 		require.NoError(t, err)
 
-		params := &miner.DeclareFaultsRecoveredParams{
-			Recoveries: []miner.RecoveryDeclaration{{
+		params := &minerActor.DeclareFaultsRecoveredParams{
+			Recoveries: []minerActor.RecoveryDeclaration{{
 				Deadline:  evilSectorLoc.Deadline,
 				Partition: evilSectorLoc.Partition,
 				Sectors:   bitfield.NewFromSet([]uint64{uint64(evilSectorNo)}),
@@ -797,7 +796,7 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 
 		msg := &types.Message{
 			To:     evilMinerAddr,
-			Method: miner.Methods.DeclareFaultsRecovered,
+			Method: minerActor.Methods.DeclareFaultsRecovered,
 			Params: enc,
 			Value:  types.FromFil(30), // repay debt.
 			From:   minerInfo.Owner,
@@ -856,11 +855,11 @@ func submitBadProof(
 	if err != nil {
 		return err
 	}
-	params := &miner.SubmitWindowedPoStParams{
+	params := &minerActor.SubmitWindowedPoStParams{
 		ChainCommitEpoch: commEpoch,
 		ChainCommitRand:  commRand,
 		Deadline:         dlIdx,
-		Partitions:       []miner.PoStPartition{{Index: partIdx}},
+		Partitions:       []minerActor.PoStPartition{{Index: partIdx}},
 		Proofs: []proof3.PoStProof{{
 			PoStProof:  minerInfo.WindowPoStProofType,
 			ProofBytes: []byte("I'm soooo very evil."),
@@ -874,7 +873,7 @@ func submitBadProof(
 
 	msg := &types.Message{
 		To:     maddr,
-		Method: miner.Methods.SubmitWindowedPoSt,
+		Method: minerActor.Methods.SubmitWindowedPoSt,
 		Params: enc,
 		Value:  types.NewInt(0),
 		From:   from,
@@ -892,4 +891,133 @@ func submitBadProof(
 		return rec.Receipt.ExitCode
 	}
 	return nil
+}
+
+func TestWindowPostDisputeFails(t *testing.T, b APIBuilder, blocktime time.Duration) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	n, sn := b(t, []FullNodeOpts{FullNodeWithActorsV3At(2)}, OneMiner)
+
+	client := n[0].FullNode.(*impl.FullNodeAPI)
+	miner := sn[0]
+
+	{
+		addrinfo, err := client.NetAddrsListen(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := miner.NetConnect(ctx, addrinfo); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	defaultFrom, err := client.WalletDefaultAddress(ctx)
+	require.NoError(t, err)
+
+	maddr, err := miner.ActorAddress(ctx)
+	require.NoError(t, err)
+
+	build.Clock.Sleep(time.Second)
+
+	// Mine with the _second_ node (the good one).
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for ctx.Err() == nil {
+			build.Clock.Sleep(blocktime)
+			if err := miner.MineOne(ctx, MineNext); err != nil {
+				if ctx.Err() != nil {
+					// context was canceled, ignore the error.
+					return
+				}
+				t.Error(err)
+			}
+		}
+	}()
+	defer func() {
+		cancel()
+		<-done
+	}()
+
+	pledgeSectors(t, ctx, miner, 10, 0, nil)
+
+	di, err := client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+	require.NoError(t, err)
+
+	fmt.Printf("Running one proving period\n")
+	fmt.Printf("End for head.Height > %d\n", di.PeriodStart+di.WPoStProvingPeriod*2)
+
+	for {
+		head, err := client.ChainHead(ctx)
+		require.NoError(t, err)
+
+		if head.Height() > di.PeriodStart+di.WPoStProvingPeriod*2 {
+			fmt.Printf("Now head.Height = %d\n", head.Height())
+			break
+		}
+		build.Clock.Sleep(blocktime)
+	}
+
+	ssz, err := miner.ActorSectorSize(ctx, maddr)
+	require.NoError(t, err)
+	expectedPower := types.NewInt(uint64(ssz) * (GenesisPreseals + 10))
+
+	p, err := client.StateMinerPower(ctx, maddr, types.EmptyTSK)
+	require.NoError(t, err)
+
+	// make sure it has gained power.
+	require.Equal(t, p.MinerPower.RawBytePower, expectedPower)
+
+	// Wait until a proof has been submitted.
+	var targetDeadline uint64
+waitForProof:
+	for {
+		deadlines, err := client.StateMinerDeadlines(ctx, maddr, types.EmptyTSK)
+		require.NoError(t, err)
+		for dlIdx, dl := range deadlines {
+			nonEmpty, err := dl.PostSubmissions.IsEmpty()
+			require.NoError(t, err)
+			if nonEmpty {
+				targetDeadline = uint64(dlIdx)
+				break waitForProof
+			}
+		}
+
+		build.Clock.Sleep(blocktime)
+	}
+
+	for {
+		di, err := client.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+		require.NoError(t, err)
+		// wait until the deadline finishes.
+		if di.Index == ((targetDeadline + 1) % di.WPoStPeriodDeadlines) {
+			break
+		}
+
+		build.Clock.Sleep(blocktime)
+	}
+
+	// Try to object to the proof. This should fail.
+	{
+		params := &minerActor.DisputeWindowedPoStParams{
+			Deadline:  targetDeadline,
+			PoStIndex: 0,
+		}
+
+		enc, aerr := actors.SerializeParams(params)
+		require.NoError(t, aerr)
+
+		msg := &types.Message{
+			To:     maddr,
+			Method: minerActor.Methods.DisputeWindowedPoSt,
+			Params: enc,
+			Value:  types.NewInt(0),
+			From:   defaultFrom,
+		}
+		_, err := client.MpoolPushMessage(ctx, msg, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to dispute valid post (RetCode=16)")
+	}
 }
