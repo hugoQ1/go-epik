@@ -79,7 +79,7 @@ func (s *state3) ProposalsChanged(otherState State) (bool, error) {
 }
 
 func (s *state3) Proposals() (DealProposals, error) {
-	proposalArray, err := adt3.AsArray(s.store, s.State.Proposals, market3.StatesAmtBitwidth)
+	proposalArray, err := adt3.AsArray(s.store, s.State.Proposals, market3.ProposalsAmtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *state3) EscrowTable() (BalanceTable, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &balanceTable2{bt}, nil
+	return &balanceTable3{bt}, nil
 }
 
 func (s *state3) LockedTable() (BalanceTable, error) {
@@ -99,7 +99,7 @@ func (s *state3) LockedTable() (BalanceTable, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &balanceTable2{bt}, nil
+	return &balanceTable3{bt}, nil
 }
 
 func (s *state3) Quotas() (Quotas, error) {
@@ -121,11 +121,11 @@ func (s *state3) DataIndexes() (DataIndexes, error) {
 	return indexes, nil
 }
 
-type balanceTable2 struct {
+type balanceTable3 struct {
 	*adt3.BalanceTable
 }
 
-func (bt *balanceTable2) ForEach(cb func(address.Address, abi.TokenAmount) error) error {
+func (bt *balanceTable3) ForEach(cb func(address.Address, abi.TokenAmount) error) error {
 	asMap := (*adt3.Map)(bt.BalanceTable)
 	var ta abi.TokenAmount
 	return asMap.ForEach(&ta, func(key string) error {
