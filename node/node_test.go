@@ -194,8 +194,12 @@ func TestPaymentChannels(t *testing.T) {
 	logging.SetLogLevel("chain", "ERROR")
 }
 
-/* func TestSectorsDist(t *testing.T) {
-	setLogLevel("ERROR")
-	test.TestSectorsDist(t, mockSbBuilder, 5*time.Millisecond, 10)
+func TestWindowPostDispute(t *testing.T) {
+	logging.SetLogLevel("miner", "ERROR")
+	logging.SetLogLevel("chainstore", "ERROR")
+	logging.SetLogLevel("chain", "ERROR")
+	logging.SetLogLevel("sub", "ERROR")
+	logging.SetLogLevel("storageminer", "ERROR")
+
+	test.TestWindowPostDispute(t, builder.MockSbBuilder, 2*time.Millisecond)
 }
-*/

@@ -130,6 +130,7 @@ type DeclareFaultsParams = miner3.DeclareFaultsParams
 type DeclareFaultsRecoveredParams = miner3.DeclareFaultsRecoveredParams
 type SubmitWindowedPoStParams = miner3.SubmitWindowedPoStParams
 type ProveCommitSectorParams = miner3.ProveCommitSectorParams
+type DisputeWindowedPoStParams = miner3.DisputeWindowedPoStParams
 
 func PreferredSealProofTypeFromWindowPoStType(nver network.Version, proof abi.RegisteredPoStProof) (abi.RegisteredSealProof, error) {
 	switch proof {
