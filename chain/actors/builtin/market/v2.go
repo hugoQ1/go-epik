@@ -112,12 +112,13 @@ func (s *state2) Quotas() (Quotas, error) {
 	}, nil
 }
 
-/* func (s *state2) VerifyDealsForActivation(
-	minerAddr address.Address, deals []abi.DealID, currEpoch, sectorExpiry abi.ChainEpoch,
-) (weight, verifiedWeight abi.DealWeight, err error) {
-	w, vw, _, err := market2.ValidateDealsForActivation(&s.State, s.store, deals, minerAddr, sectorExpiry, currEpoch)
-	return w, vw, err
-} */
+func (s *state2) DataIndexes() (DataIndexes, error) {
+	indexes, err := market2.AsIndexMultimap(s.store, s.State.DataIndexesByEpoch)
+	if err != nil {
+		return nil, err
+	}
+	return indexes, nil
+}
 
 type balanceTable2 struct {
 	*adt2.BalanceTable

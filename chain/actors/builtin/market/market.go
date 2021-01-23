@@ -10,6 +10,7 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -47,9 +48,7 @@ type State interface {
 	ProposalsChanged(State) (bool, error)
 	Proposals() (DealProposals, error)
 	Quotas() (Quotas, error)
-	/* VerifyDealsForActivation(
-		minerAddr address.Address, deals []abi.DealID, currEpoch, sectorExpiry abi.ChainEpoch,
-	) (weight, verifiedWeight abi.DealWeight, err error) */
+	DataIndexes() (DataIndexes, error)
 }
 
 type BalanceTable interface {
@@ -63,6 +62,10 @@ type DealStates interface {
 
 	array() adt.Array
 	decode(*cbg.Deferred) (*DealState, error)
+}
+
+type DataIndexes interface {
+	ForEach(epoch abi.ChainEpoch, cb func(provider address.Address, index market.DataIndex) error) error
 }
 
 type DealProposals interface {
