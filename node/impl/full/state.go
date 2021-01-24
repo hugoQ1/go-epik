@@ -1621,11 +1621,16 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
 	}
 
+	ida, err := a.StateLookupID(ctx, addr, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to lookup id: %w", err)
+	}
+
 	state, err := retrieval.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
 	}
-	balance, err := state.EscrowBalance(addr)
+	balance, err := state.EscrowBalance(ida)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
 	}
@@ -1633,11 +1638,11 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	if err != nil {
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
-	expend, err := state.DayExpend(ts.Height(), addr)
+	expend, err := state.DayExpend(ts.Height(), ida)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
 	}
-	locked, err := state.LockedState(addr)
+	locked, err := state.LockedState(ida)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
