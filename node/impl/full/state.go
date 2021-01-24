@@ -20,6 +20,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -1513,36 +1514,41 @@ func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, f
 }
 
 func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (*api.ExpertFileInfo, error) {
-	experts, err := a.StateListExperts(ctx, tsk)
+	act, err := a.StateManager.LoadActorTsk(ctx, expertfund.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor: %w", err)
+	}
+
+	st, err := expertfund.Load(a.StateManager.ChainStore().Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
+	}
+
+	expertAddr, err := st.DataExpert(pieceCid)
 	if err != nil {
 		return nil, err
 	}
-	for _, eaddr := range experts {
-		act, err := a.StateManager.LoadActorTsk(ctx, eaddr, tsk)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to load expert actor: %w", err)
-		}
 
-		st, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
-		}
-
-		di, err := st.Data(pieceCid)
-		if err != nil {
-			return nil, err
-		}
-		if di != nil {
-			return &api.ExpertFileInfo{
-				Expert:     eaddr,
-				PieceID:    di.PieceID,
-				PieceSize:  di.PieceSize,
-				Redundancy: di.Redundancy,
-			}, nil
-		}
+	expertAct, err := a.StateManager.LoadActorTsk(ctx, expertAddr, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	return nil, nil
+	expertSt, err := expert.Load(a.StateManager.ChainStore().Store(ctx), expertAct)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
+	}
+
+	data, err := expertSt.Data(pieceCid)
+	if err != nil {
+		return nil, err
+	}
+	return &api.ExpertFileInfo{
+		Expert:     expertAddr,
+		PieceID:    data.PieceID,
+		PieceSize:  data.PieceSize,
+		Redundancy: data.Redundancy,
+	}, nil
 }
 
 func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {
@@ -1652,4 +1658,35 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 		Locked:      locked.Amount,
 		LockedEpoch: locked.ApplyEpoch,
 	}, nil
+}
+
+func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) ([]*api.DataIndex, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, market.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load market actor: %w", err)
+	}
+
+	state, err := market.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+
+	dataIndex, err := state.DataIndexes()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load state index: %w", err)
+	}
+
+	var ret []*api.DataIndex
+	err = dataIndex.ForEach(epoch, func(provider address.Address, data market.DataIndex) error {
+		ret = append(ret, &api.DataIndex{
+			Miner:    provider,
+			RootCID:  data.RootCID,
+			PieceCID: data.PieceCID,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

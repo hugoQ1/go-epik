@@ -4,6 +4,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/cbor"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -34,4 +35,6 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 
 type State interface {
 	cbor.Marshaler
+
+	DataExpert(cid.Cid) (address.Address, error)
 }

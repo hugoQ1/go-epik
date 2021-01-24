@@ -1,7 +1,6 @@
 package miner
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -10,10 +9,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -35,17 +30,11 @@ var (
 	RetrieveTryCountMax = 50
 )
 
-type DealData struct {
-	dealID   abi.DealID
-	deal     market.DealProposal
-	dataRef  market.PublishStorageDataRef
-	state    market.DealState
+type DataRef struct {
+	pieceID  cid.Cid
+	rootCID  cid.Cid
+	miners   []address.Address
 	tryCount int
-}
-
-type PieceData struct {
-	pieceID   cid.Cid
-	dealDatas []*DealData
 }
 
 type MinerData struct {
@@ -154,34 +143,8 @@ func (m *MinerData) niceSleep(d time.Duration) bool {
 	}
 }
 
-func (m *MinerData) needCheckData(ctx context.Context) (bool, error) {
-	sync, err := m.api.SyncState(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, ss := range sync.ActiveSyncs {
-		var heightDiff int64
-		if ss.Base != nil {
-			heightDiff = int64(ss.Base.Height())
-		}
-		if ss.Target != nil {
-			heightDiff = int64(ss.Target.Height()) - heightDiff
-		} else {
-			heightDiff = 0
-		}
-		if heightDiff > 0 {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func (m *MinerData) checkChainData(ctx context.Context) error {
 	head, err := m.api.ChainHead(ctx)
-	if err != nil {
-		return err
-	}
-	localDeals, err := m.api.ClientListDeals(ctx)
 	if err != nil {
 		return err
 	}
@@ -190,163 +153,39 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 		if m.stopping != nil {
 			break
 		}
-		tipset, err := m.api.ChainGetTipSetByHeight(ctx, m.checkHeight, types.EmptyTSK)
+
+		datas, err := m.api.StateDataIndex(ctx, m.checkHeight, types.EmptyTSK)
 		if err != nil {
 			return err
 		}
-		if tipset.Height() < m.checkHeight {
-			// null round
-			m.checkHeight++
-			continue
+		for _, data := range datas {
+			var dataRef *DataRef
+			ref, ok := m.dataRefs.Get(data.PieceCID.String())
+			if !ok {
+				dataRef = &DataRef{
+					pieceID: data.PieceCID,
+					rootCID: data.RootCID,
+					miners:  []address.Address{},
+				}
+			}
+
+			dataRef = ref.(*DataRef)
+			dataRef.miners = append(dataRef.miners, data.Miner)
+			m.dataRefs.Add(data.PieceCID.String(), dataRef)
 		}
-		ptsk := tipset.Parents()
-		messages, err := m.api.ChainGetParentMessages(ctx, tipset.Cids()[0])
-		for _, msg := range messages {
-			if msg.Message.To == market.Address &&
-				msg.Message.Method == market.Methods.PublishStorageDeals {
-				var params market.PublishStorageDealsParams
-				if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
-					// return err
-					log.Warnf("height:%d unmarshal publish: %w", m.checkHeight, err)
-					continue
-				}
 
-				for _, deal := range params.Deals {
-					if ok, _ := m.isMinerDealed(ctx, params.DataRef.RootCID, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
-						continue
-					}
-					mdeal := market.DealProposal{
-						PieceCID: deal.Proposal.PieceCID,
-						PieceSize: deal.Proposal.PieceSize,
-						Client: deal.Proposal.Client,
-						Provider: deal.Proposal.Provider,
-						Label: deal.Proposal.Label,
-						StartEpoch: deal.Proposal.StartEpoch,
-					}
-					dealData := &DealData{
-						deal:    mdeal,
-						dataRef: params.DataRef,
-					}
-					datas := &PieceData{
-						pieceID:   deal.Proposal.PieceCID,
-						dealDatas: []*DealData{},
-					}
-					datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
-					if ok {
-						datas = datasObj.(*PieceData)
-					}
-					found := false
-					for _, d := range datas.dealDatas {
-						if d.deal.Provider == dealData.deal.Provider &&
-							d.deal.Client == dealData.deal.Client {
-							found = true
-							break
-						}
-					}
-					if !found {
-						datas.dealDatas = append(datas.dealDatas, dealData)
-					}
-					m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
-				}
-			} else if msg.Message.Method != builtin2.MethodsMiner.ProveCommitSector {
-				continue
-			}
-			var params miner2.ProveCommitSectorParams
-			if err := params.UnmarshalCBOR(bytes.NewReader(msg.Message.Params)); err != nil {
-				log.Warnf("failed to unmarshal prove-commit in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
-				continue
-			}
-
-			var dealIDs []abi.DealID
-			pci, err := m.api.StateSectorPreCommitInfo(ctx, msg.Message.To, params.SectorNumber, ptsk)
-			if err != nil {
-				log.Warnf("failed to get pre-commit info in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
-
-				// pre commit may already be deleted for expiration or prove commit
-				sci, err := m.api.StateSectorGetInfo(ctx, msg.Message.To, params.SectorNumber, ptsk)
-				if err != nil {
-					log.Warnf("failed to get sector info in parent tipset %s of height %d: %w", ptsk, m.checkHeight, err)
-					return err
-				}
-				dealIDs = sci.DealIDs
-			} else {
-				dealIDs = pci.Info.DealIDs
-			}
-
-			for _, did := range dealIDs {
-				deal, err := m.api.StateMarketStorageDeal(ctx, did, ptsk)
-				if err != nil {
-					log.Warnf("failed to get market deal %d in parent tipset %s of height %d: %w", did, ptsk, m.checkHeight, err)
-					return err
-				}
-				if ok, _ := m.isMinerDealed(ctx, cid.Undef, deal.Proposal.Provider, deal.Proposal.PieceCID, localDeals); ok {
-					log.Warnf("ignore miner dealed piece %s, deal id %d, parent tipset %s of height %d",
-						deal.Proposal.PieceCID, did, ptsk, m.checkHeight)
-					continue
-				}
-				dealData := &DealData{
-					deal:   deal.Proposal,
-					dealID: did,
-					state:  deal.State,
-				}
-
-				var datas *PieceData
-				datasObj, ok := m.dataRefs.Get(deal.Proposal.PieceCID.String())
-				if ok {
-					datas = datasObj.(*PieceData)
-				} else {
-					datas = &PieceData{
-						pieceID:   deal.Proposal.PieceCID,
-						dealDatas: []*DealData{},
-					}
-				}
-
-				found := false
-				for _, d := range datas.dealDatas {
-					if d.dealID == did {
-						found = true
-						break
-					}
-				}
-				if found {
-					log.Warnf("miner %s stored duplicate deal %d at height %d", msg.Message.To, did, m.checkHeight)
-					continue
-				}
-				datas.dealDatas = append(datas.dealDatas, dealData)
-				m.dataRefs.Add(dealData.deal.PieceCID.String(), datas)
-			}
-		}
-		m.checkHeight = tipset.Height() + 1
+		m.checkHeight++
 	}
 	return nil
-}
-
-func (m *MinerData) isMinerDealed(ctx context.Context, root cid.Cid, provider address.Address, PieceCID cid.Cid, localDeals []api.DealInfo) (bool, error) {
-	if provider == m.address {
-		return true, nil
-	}
-
-	for _, lDeal := range localDeals {
-		if lDeal.PieceCID == PieceCID &&
-			lDeal.State != storagemarket.StorageDealProposalNotFound &&
-			lDeal.State != storagemarket.StorageDealProposalRejected &&
-			lDeal.State != storagemarket.StorageDealFailing &&
-			lDeal.State != storagemarket.StorageDealError {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (m *MinerData) retrieveChainData(ctx context.Context) error {
 	retrieveKeys := m.retrievals.Keys()
 	for _, rk := range retrieveKeys {
 		dataObj, _ := m.dataRefs.Get(rk)
-		data := dataObj.(*PieceData)
-		dealData := data.dealDatas[0]
+		data := dataObj.(*DataRef)
 
-		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
+		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
 		if err != nil {
 			return err
 		}
@@ -362,20 +201,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		dataObj, _ := m.dataRefs.Get(rk)
-		datas := dataObj.(*PieceData)
+		data := dataObj.(*DataRef)
 
-		dealDatas := []*DealData{}
-		for _, d := range datas.dealDatas {
-			if d.dealID > 0 && d.state.SectorStartEpoch > 0 {
-				dealDatas = append(dealDatas, d)
-			}
-		}
-		if len(dealDatas) == 0 {
-			continue
-		}
-		dealData := dealDatas[rand.Intn(len(dealDatas))]
-
-		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
+		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
 		if err != nil {
 			return err
 		}
@@ -385,26 +213,27 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		if m.retrievals.Contains(dealData.deal.PieceCID.String()) {
+		if m.retrievals.Contains(data.pieceID.String()) {
 			continue
 		}
 
-		resp, err := m.api.ClientQuery(ctx, dealData.dataRef.RootCID, dealData.deal.Provider)
+		miner := data.miners[rand.Intn(len(data.miners))]
+		resp, err := m.api.ClientQuery(ctx, data.rootCID, miner)
 		if err != nil {
-			dealData.tryCount++
-			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", dealData.deal.Provider, dealData.dataRef.RootCID, dealData.tryCount, err)
-			// if dealData.tryCount > RetrieveTryCountMax {
-			// 	for index, d := range datas.dealDatas {
-			// 		if d.deal.Provider == dealData.deal.Provider {
-			// 			datas.dealDatas = append(datas.dealDatas[:index], datas.dealDatas[index+1:]...)
+			data.tryCount++
+			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", miner, data.rootCID, data.tryCount, err)
+			// if data.tryCount > RetrieveTryCountMax {
+			// 	for index, m := range data.miners {
+			// 		if m == miner {
+			// 			data.miners = append(data.miners[:index], data.miners[index+1:]...)
 			// 			break
 			// 		}
 			// 	}
-			// 	m.dataRefs.Add(rk, datas)
+			// 	m.dataRefs.Add(rk, data)
 			// }
 			continue
 		}
-		log.Warnf("client retrieve miner:%s, data:%s", dealData.deal.Provider, dealData.dataRef.RootCID)
+		log.Warnf("client retrieve miner:%s, data:%s", miner, data.rootCID)
 		if resp.Status == api.QuerySuccess {
 			m.retrievals.Remove(rk)
 		} else {
@@ -446,10 +275,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		dataObj, _ := m.dataRefs.Get(rk)
-		data := dataObj.(*PieceData)
-		dealData := data.dealDatas[0]
+		data := dataObj.(*DataRef)
 
-		has, err := m.api.ClientHasLocal(ctx, dealData.dataRef.RootCID)
+		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
 		if err != nil {
 			return err
 		}
@@ -459,16 +287,12 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
-		if m.deals.Contains(rk) {
-			continue
-		}
-
 		// if miner is dealing, go to next one
 		if m.deals.Contains(rk) {
 			continue
 		}
 
-		offer, err := m.api.ClientMinerQueryOffer(ctx, m.address, dealData.dataRef.RootCID, nil)
+		offer, err := m.api.ClientMinerQueryOffer(ctx, m.address, data.rootCID, nil)
 		if err != nil {
 			return err
 		}
@@ -476,11 +300,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			m.dataRefs.Remove(rk)
 			continue
 		}
-
-		/* ts, err := m.api.ChainHead(ctx)
-		if err != nil {
-			return err
-		} */
 
 		mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
 		if err != nil {
@@ -498,8 +317,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		stData := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
-			Root:         dealData.dataRef.RootCID,
-			Expert:       dealData.dataRef.Expert,
+			Root:         data.rootCID,
 		}
 		params := &api.StartDealParams{
 			Data:   stData,
