@@ -6,6 +6,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	"github.com/ipfs/go-cid"
 
@@ -38,49 +39,61 @@ func (s *state) Tally() (*Tally, error) {
 
 	var amt abi.TokenAmount
 	err = candidates.ForEach(&amt, func(k string) error {
-		a, err := address.NewFromBytes([]byte(k))
-		if err != nil {
-			return err
-		}
-		ret[a.String()] = amt.Copy()
+		ret[k] = amt
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	return &Tally{
-		TotalVotes: s.State.TotalVotes,
-		Candidates: ret,
+		TotalVotes:       s.State.TotalVotes,
+		UnownedFunds:     s.State.UnownedFunds,
+		FallbackReceiver: s.State.FallbackReceiver,
+		Candidates:       ret,
 	}, nil
 }
 
-func (s *state) VoterInfo(addr address.Address) (*VoterInfo, error) {
-	voter, err := getVoter(s, addr)
+func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInfo, error) {
+	voter, err := getVoter(s, vaddr)
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.EstimateSettle(s.store, voter, curr)
+	if err != nil {
+		return nil, err
+	}
+
 	tally, err := adt2.AsMap(s.store, voter.Tally)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make(map[string]abi.TokenAmount)
-
+	// Valid votes of each candidate that vaddr voted
+	cands := make(map[string]abi.TokenAmount)
+	unlocking := big.Zero()
+	unlocked := big.Zero()
 	var info vote.VotesInfo
 	err = tally.ForEach(&info, func(k string) error {
-		a, err := address.NewFromBytes([]byte(k))
-		if err != nil {
-			return err
+		cands[k] = info.Votes
+		if !info.RescindingVotes.IsZero() {
+			if curr <= info.LastRescindEpoch+vote.RescindingUnlockDelay {
+				unlocking = big.Add(unlocking, info.RescindingVotes)
+			} else {
+				unlocked = big.Add(unlocked, info.RescindingVotes)
+			}
 		}
-		ret[a.String()] = info.Votes.Copy()
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return &VoterInfo{
-		Withdrawable: voter.Withdrawable,
-		Candidates:   ret,
+		UnlockingVotes:      unlocking,
+		UnlockedVotes:       unlocked,
+		WithdrawableRewards: voter.Withdrawable,
+		Candidates:          cands,
 	}, nil
 }
 

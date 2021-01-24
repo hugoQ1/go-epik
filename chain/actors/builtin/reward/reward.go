@@ -39,18 +39,15 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
-	ThisEpochReward() (abi.StoragePower, error)
-	TotalStoragePowerReward() (abi.TokenAmount, error)
-	/* ThisEpochBaselinePower() (abi.StoragePower, error)
-	ThisEpochRewardSmoothed() (builtin.FilterEstimate, error)
+	ThisEpochReward() (abi.TokenAmount, error)
+	TotalMined() (abi.TokenAmount, error)
+	TotalMinedDetail() (*TotalMinedDetail, error)
+}
 
-	EffectiveBaselinePower() (abi.StoragePower, error)
-	EffectiveNetworkTime() (abi.ChainEpoch, error)
-
-
-	CumsumBaseline() (abi.StoragePower, error)
-	CumsumRealized() (abi.StoragePower, error)
-
-	InitialPledgeForPower(abi.StoragePower, abi.TokenAmount, *builtin.FilterEstimate, abi.TokenAmount) (abi.TokenAmount, error)
-	PreCommitDepositForPower(builtin.FilterEstimate, abi.StoragePower) (abi.TokenAmount, error) */
+type TotalMinedDetail struct {
+	TotalExpertReward       abi.TokenAmount // to expert fund actor
+	TotalVoteReward         abi.TokenAmount // to vote fund actor
+	TotalKnowledgeReward    abi.TokenAmount // to knowledge fund actor
+	TotalRetrievalReward    abi.TokenAmount // to retrieval fund actor
+	TotalStoragePowerReward abi.TokenAmount // to block miners
 }

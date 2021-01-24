@@ -26,6 +26,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
@@ -1413,6 +1414,19 @@ func (m *StateModule) StateDealProviderCollateralBounds(ctx context.Context, siz
 	}, nil
 } */
 
+func (a *StateAPI) StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
+	sTree, err := a.stateForTs(ctx, ts)
+	if err != nil {
+		return nil, err
+	}
+	return a.StateManager.GetTotalMinedDetail(ctx, sTree)
+}
+
 func (a *StateAPI) StateCirculatingSupply(ctx context.Context, tsk types.TipSetKey) (abi.TokenAmount, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
@@ -1429,6 +1443,7 @@ func (a *StateAPI) StateCirculatingSupply(ctx context.Context, tsk types.TipSetK
 func (a *StateAPI) StateVMCirculatingSupplyInternal(ctx context.Context, tsk types.TipSetKey) (api.CirculatingSupply, error) {
 	return stateVMCirculatingSupplyInternal(ctx, tsk, a.Chain, a.StateManager)
 }
+
 func stateVMCirculatingSupplyInternal(
 	ctx context.Context,
 	tsk types.TipSetKey,
@@ -1544,6 +1559,11 @@ func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vo
 }
 
 func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*vote.VoterInfo, error) {
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get tipset by key: %w", err)
+	}
+
 	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load power actor: %w", err)
@@ -1553,7 +1573,7 @@ func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
-	return voteState.VoterInfo(addr)
+	return voteState.VoterInfo(addr, ts.Height()-1)
 }
 
 func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {

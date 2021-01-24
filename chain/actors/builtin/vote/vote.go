@@ -35,15 +35,19 @@ type State interface {
 	cbor.Marshaler
 
 	Tally() (*Tally, error)
-	VoterInfo(addr address.Address) (*VoterInfo, error)
+	VoterInfo(addr address.Address, curr abi.ChainEpoch) (*VoterInfo, error)
 }
 
 type Tally struct {
-	TotalVotes abi.TokenAmount
-	Candidates map[string]abi.TokenAmount // key is candidate address
+	TotalVotes       abi.TokenAmount
+	UnownedFunds     abi.TokenAmount
+	FallbackReceiver address.Address
+	Candidates       map[string]abi.TokenAmount // key is candidate address
 }
 
 type VoterInfo struct {
-	Withdrawable abi.TokenAmount
-	Candidates   map[string]abi.TokenAmount // key is candidate address
+	UnlockingVotes      abi.TokenAmount
+	UnlockedVotes       abi.TokenAmount
+	WithdrawableRewards abi.TokenAmount
+	Candidates          map[string]abi.TokenAmount // key is candidate address
 }

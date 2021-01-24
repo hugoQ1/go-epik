@@ -53,7 +53,7 @@ func (rw *rewardActorInfo) set(s reward.State) (err error) {
 		return xerrors.Errorf("getting effective baseline power (@ %s): %w", rw.common.stateroot.String(), err)
 	} */
 
-	rw.totalMinedReward, err = s.TotalStoragePowerReward()
+	rw.totalMinedReward, err = s.TotalMined()
 	if err != nil {
 		return xerrors.Errorf("getting  total mined (@ %s): %w", rw.common.stateroot.String(), err)
 	}

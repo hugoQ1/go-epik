@@ -2,6 +2,7 @@ package reward
 
 import (
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -29,55 +30,22 @@ func (s *state2) ThisEpochReward() (abi.TokenAmount, error) {
 	return s.State.ThisEpochReward, nil
 }
 
-func (s *state2) TotalStoragePowerReward() (abi.TokenAmount, error) {
-	return s.State.TotalStoragePowerReward, nil
-}
-
-/* func (s *state2) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
-	return builtin.FilterEstimate{
-		PositionEstimate: s.State.ThisEpochRewardSmoothed.PositionEstimate,
-		VelocityEstimate: s.State.ThisEpochRewardSmoothed.VelocityEstimate,
-	}, nil
-}
-
-func (s *state2) ThisEpochBaselinePower() (abi.StoragePower, error) {
-	return s.State.ThisEpochBaselinePower, nil
-}
-
-func (s *state2) EffectiveBaselinePower() (abi.StoragePower, error) {
-	return s.State.EffectiveBaselinePower, nil
-}
-
-func (s *state2) EffectiveNetworkTime() (abi.ChainEpoch, error) {
-	return s.State.EffectiveNetworkTime, nil
-}
-
-func (s *state2) CumsumBaseline() (reward2.Spacetime, error) {
-	return s.State.CumsumBaseline, nil
-}
-
-func (s *state2) CumsumRealized() (reward2.Spacetime, error) {
-	return s.State.CumsumRealized, nil
-}
-
-func (s *state2) InitialPledgeForPower(qaPower abi.StoragePower, networkTotalPledge abi.TokenAmount, networkQAPower *builtin.FilterEstimate, circSupply abi.TokenAmount) (abi.TokenAmount, error) {
-	return miner2.InitialPledgeForPower(
-		qaPower,
-		s.State.ThisEpochBaselinePower,
-		s.State.ThisEpochRewardSmoothed,
-		smoothing2.FilterEstimate{
-			PositionEstimate: networkQAPower.PositionEstimate,
-			VelocityEstimate: networkQAPower.VelocityEstimate,
-		},
-		circSupply,
+func (s *state2) TotalMined() (abi.TokenAmount, error) {
+	return big.Sum(
+		s.State.TotalExpertReward,
+		s.State.TotalKnowledgeReward,
+		s.State.TotalRetrievalReward,
+		s.State.TotalStoragePowerReward,
+		s.State.TotalVoteReward,
 	), nil
 }
 
-func (s *state2) PreCommitDepositForPower(networkQAPower builtin.FilterEstimate, sectorWeight abi.StoragePower) (abi.TokenAmount, error) {
-	return miner2.PreCommitDepositForPower(s.State.ThisEpochRewardSmoothed,
-		smoothing2.FilterEstimate{
-			PositionEstimate: networkQAPower.PositionEstimate,
-			VelocityEstimate: networkQAPower.VelocityEstimate,
-		},
-		sectorWeight), nil
-} */
+func (s *state2) TotalMinedDetail() (*TotalMinedDetail, error) {
+	return &TotalMinedDetail{
+		TotalExpertReward:       s.State.TotalExpertReward,
+		TotalKnowledgeReward:    s.State.TotalKnowledgeReward,
+		TotalRetrievalReward:    s.State.TotalRetrievalReward,
+		TotalStoragePowerReward: s.State.TotalStoragePowerReward,
+		TotalVoteReward:         s.State.TotalVoteReward,
+	}, nil
+}

@@ -39,6 +39,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -239,6 +240,7 @@ type FullNodeStruct struct {
 		StateVerifiedClientStatus         func(context.Context, address.Address, types.TipSetKey) (*abi.StoragePower, error)                                   `perm:"read"`
 		StateVerifiedRegistryRootKey      func(ctx context.Context, tsk types.TipSetKey) (address.Address, error)                                              `perm:"read"`
 		StateDealProviderCollateralBounds func(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (api.DealCollateralBounds, error)                 `perm:"read"`  */
+		StateTotalMinedDetail            func(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error)                                     `perm:"read"`
 		StateCirculatingSupply           func(context.Context, types.TipSetKey) (abi.TokenAmount, error)                                                      `perm:"read"`
 		StateVMCirculatingSupplyInternal func(context.Context, types.TipSetKey) (api.CirculatingSupply, error)                                                `perm:"read"`
 		StateNetworkVersion              func(context.Context, types.TipSetKey) (stnetwork.Version, error)                                                    `perm:"read"`
@@ -1142,6 +1144,10 @@ func (c *FullNodeStruct) StateVerifiedRegistryRootKey(ctx context.Context, tsk t
 func (c *FullNodeStruct) StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) {
 	return c.Internal.StateDealProviderCollateralBounds(ctx, size, verified, tsk)
 } */
+
+func (c *FullNodeStruct) StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error) {
+	return c.Internal.StateTotalMinedDetail(ctx, tsk)
+}
 
 func (c *FullNodeStruct) StateCirculatingSupply(ctx context.Context, tsk types.TipSetKey) (abi.TokenAmount, error) {
 	return c.Internal.StateCirculatingSupply(ctx, tsk)

@@ -1989,6 +1989,8 @@ var stateVoteTallyCmd = &cli.Command{
 		}
 
 		fmt.Printf("Total Votes: %s\n", types.EPK(tally.TotalVotes))
+		fmt.Printf("Unowned Funds: %s\n", types.EPK(tally.UnownedFunds))
+		fmt.Printf("Fallback Receiver: %s\n", tally.FallbackReceiver)
 		fmt.Printf("Candidates:\n")
 		for cand, amt := range tally.Candidates {
 			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
@@ -2035,7 +2037,9 @@ var stateVoteVoterCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("Withdrawable: %s\n", types.EPK(info.Withdrawable))
+		fmt.Printf("Unlocking Votes: %s\n", types.EPK(info.UnlockingVotes))
+		fmt.Printf("Unlocked Votes: %s\n", types.EPK(info.UnlockedVotes))
+		fmt.Printf("Withdrawable Rewards: %s\n", types.EPK(info.WithdrawableRewards))
 		fmt.Printf("Candidates:\n")
 		for cand, amt := range info.Candidates {
 			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))

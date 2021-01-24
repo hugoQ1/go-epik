@@ -18,6 +18,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -469,6 +470,7 @@ type FullNode interface {
 	// can issue. It takes the deal size and verified status as parameters.
 	StateDealProviderCollateralBounds(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (DealCollateralBounds, error) */
 
+	StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error)
 	// StateCirculatingSupply returns the exact circulating supply of Filecoin at the given tipset.
 	// This is not used anywhere in the protocol itself, and is only for external consumption.
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
