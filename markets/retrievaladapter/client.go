@@ -14,6 +14,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
@@ -38,7 +39,8 @@ func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddr
 	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
 		PieceID:  pieceCid,
 		Size:     size,
-		Provider: minerAddress,
+		Client:   clientAddress,
+		Provider: clientAddress,
 	})
 	if aerr != nil {
 		return cid.Undef, aerr
@@ -69,6 +71,32 @@ func (rcn *retrievalClientNode) WaitForDataPledgeReady(ctx context.Context, wait
 		return xerrors.Errorf("data pledge failed: exit=%d", ret.Receipt.ExitCode)
 	}
 	return nil
+}
+
+// ConfirmComplete confirm deal complete
+func (rcn *retrievalClientNode) ConfirmComplete(ctx context.Context, clientAddress, minerAddress address.Address, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
+	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
+		PieceID:  pieceCid,
+		Size:     size,
+		Client:   clientAddress,
+		Provider: minerAddress,
+	})
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	msg := types.Message{
+		To:     retrieval.Address,
+		From:   clientAddress,
+		Value:  abi.NewTokenAmount(0),
+		Method: retrieval.Methods.ConfirmData,
+		Params: params,
+	}
+	sm, err := rcn.mpoolAPI.MpoolPushMessage(ctx, &msg, nil)
+	if err != nil {
+		return cid.Undef, err
+	}
+	return sm.Cid(), nil
 }
 
 // GetOrCreatePaymentChannel sets up a new payment channel if one does not exist

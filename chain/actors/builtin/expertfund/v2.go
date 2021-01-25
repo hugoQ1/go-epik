@@ -1,9 +1,11 @@
 package expertfund
 
 import (
-	"github.com/ipfs/go-cid"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
+	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-address"
 	expertfund2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 )
 
@@ -21,4 +23,16 @@ func load2(store adt.Store, root cid.Cid) (State, error) {
 type state2 struct {
 	expertfund2.State
 	store adt.Store
+}
+
+func (s *state2) DataExpert(pieceCID cid.Cid) (address.Address, error) {
+	expert, found, err := s.State.GetData(s.store, pieceCID.String())
+	if err != nil {
+		return address.Undef, err
+	}
+
+	if !found {
+		return address.Undef, xerrors.Errorf("failed to find expert with data: %s", pieceCID)
+	}
+	return expert, nil
 }

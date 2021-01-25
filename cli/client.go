@@ -1218,7 +1218,7 @@ var clientRetrievePledgeCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
-		fmt.Println("retrieve pledge: %s", msg)
+		fmt.Printf("retrieve pledge: %s\n", msg)
 		return nil
 	},
 }
@@ -1249,6 +1249,7 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 			}
 
 			fromAddr = defaddr
+			fmt.Printf("Retrieve pledge address: %s\n", fromAddr)
 		} else {
 			addr, err := address.NewFromString(from)
 			if err != nil {
@@ -1262,10 +1263,10 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
 		}
-		fmt.Println("Retrieve Balance: %w", state.Balance)
-		fmt.Println("Retrieve Day expend: %w", state.DayExpend)
-		fmt.Println("Locked Balance: %w", state.Locked)
-		fmt.Println("Locked Epoch: %w", state.LockedEpoch)
+		fmt.Printf("Retrieve Balance: %s\n", state.Balance)
+		fmt.Printf("Retrieve Day expend: %s\n", state.DayExpend)
+		fmt.Printf("Locked Balance: %s\n", state.Locked)
+		fmt.Printf("Locked Epoch: %s\n", state.LockedEpoch)
 		return nil
 	},
 }
@@ -1317,7 +1318,7 @@ var clientRetrieveApplyForWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to apply for withdraw: %w", err))
 		}
-		fmt.Println("retrieve apply for withdraw: %s", msg)
+		fmt.Printf("retrieve apply for withdraw: %s\n", msg)
 		return nil
 	},
 }
@@ -1369,7 +1370,7 @@ var clientRetrieveWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to withdraw retrival: %w", err))
 		}
-		fmt.Println("retrieve withdraw: %s", msg)
+		fmt.Printf("retrieve withdraw: %s\n", msg)
 		return nil
 	},
 }

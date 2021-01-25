@@ -127,6 +127,25 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		}
 	}
 
+	if params.Data.PieceCid == nil {
+		ds, err := a.ClientDealPieceCID(ctx, params.Data.Root)
+		if err != nil {
+			if err != nil {
+				return nil, err
+			}
+		}
+		params.Data.PieceCid = &ds.PieceCID
+		params.Data.PieceSize = abi.UnpaddedPieceSize(ds.PieceSize)
+	}
+
+	if params.Data.Expert == "" {
+		existence, err := a.StateExpertFileInfo(ctx, *params.Data.PieceCid, types.EmptyTSK)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to check file registered in expert %s: %w", *params.Data.PieceCid, err)
+		}
+		params.Data.Expert = existence.Expert.String()
+	}
+
 	if params.Wallet == address.Undef {
 		dwallet, err := a.WalletDefaultAddress(ctx)
 		if err != nil {
@@ -497,7 +516,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 		fmt.Printf("Send register expert file message: %s\n", mcid)
 
-		_, receipt, _, err := a.Stmgr.WaitForMessage(ctx, *mcid, build.MessageConfidence, abi.ChainEpoch(10))
+		_, receipt, _, err := a.Stmgr.WaitForMessage(ctx, *mcid, build.MessageConfidence, abi.ChainEpoch(build.MessageConfidence))
 		if err != nil {
 			return nil, err
 		}

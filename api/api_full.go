@@ -503,6 +503,9 @@ type FullNode interface {
 	// StateRetrievalPledge retrieval pledge state
 	StateRetrievalPledge(context.Context, address.Address, types.TipSetKey) (*RetrievalState, error)
 
+	// StateDataIndex data index
+	StateDataIndex(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*DataIndex, error)
+
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
 	// filecoin network
@@ -1089,4 +1092,10 @@ type RetrievalState struct {
 	DayExpend   abi.TokenAmount
 	Locked      abi.TokenAmount
 	LockedEpoch abi.ChainEpoch
+}
+
+type DataIndex struct {
+	Miner    address.Address
+	RootCID  cid.Cid
+	PieceCID cid.Cid
 }

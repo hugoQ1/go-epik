@@ -10,7 +10,6 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -65,7 +64,7 @@ type DealStates interface {
 }
 
 type DataIndexes interface {
-	ForEach(epoch abi.ChainEpoch, cb func(provider address.Address, index market.DataIndex) error) error
+	ForEach(epoch abi.ChainEpoch, cb func(provider address.Address, index DataIndex) error) error
 }
 
 type DealProposals interface {
@@ -88,6 +87,7 @@ type VerifyDealsForActivationParams = market2.VerifyDealsForActivationParams
 type WithdrawBalanceParams = market2.WithdrawBalanceParams
 
 type ClientDealProposal = market2.ClientDealProposal
+type DataIndex = market2.DataIndex
 
 type DealState struct {
 	SectorStartEpoch abi.ChainEpoch // -1 if not yet included in proven sector

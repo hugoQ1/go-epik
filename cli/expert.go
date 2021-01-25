@@ -26,6 +26,7 @@ var expertCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		expertInitCmd,
 		expertFileCmd,
+		expertListCmd,
 	},
 }
 
@@ -162,7 +163,7 @@ var expertFileCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:    "root",
-			Aliases: []string{"e"},
+			Aliases: []string{"r"},
 			Usage:   "expert address",
 		},
 	},
@@ -203,6 +204,32 @@ var expertFileCmd = &cli.Command{
 			PieceSize: ds.PieceSize,
 		})
 		fmt.Println("register CID: ", msg)
+		return nil
+	},
+}
+
+var expertListCmd = &cli.Command{
+	Name:  "list",
+	Usage: "expert list",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		// log.Info("Trying to connect to full node RPC")
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		list, err := api.StateListExperts(ctx, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		for index, addr := range list {
+			fmt.Printf("expert %d: %s\n", index, addr)
+		}
 		return nil
 	},
 }
