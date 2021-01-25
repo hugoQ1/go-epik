@@ -30,7 +30,7 @@ func (blsSigner) GenPrivate() ([]byte, error) {
 	}
 	// Note private keys seem to be serialized little-endian!
 	sk := ffi.PrivateKeyGenerateWithSeed(ikm)
-	return ([]byte)(sk[:]), nil
+	return sk[:], nil
 }
 
 func (blsSigner) GenPrivateFromSeed(seed []byte) ([]byte, error) {
@@ -52,7 +52,7 @@ func (blsSigner) ToPublic(priv []byte) ([]byte, error) {
 
 	pubkey := ffi.PrivateKeyPublicKey(*sk)
 
-	return ([]byte)(pubkey[:]), nil
+	return pubkey[:], nil
 }
 
 func (blsSigner) Sign(p []byte, msg []byte) ([]byte, error) {
@@ -65,7 +65,7 @@ func (blsSigner) Sign(p []byte, msg []byte) ([]byte, error) {
 
 	sig := ffi.PrivateKeySign(*sk, msg)
 
-	return ([]byte)(sig[:]), nil
+	return sig[:], nil
 }
 
 func (blsSigner) Verify(sig []byte, a address.Address, msg []byte) error {
