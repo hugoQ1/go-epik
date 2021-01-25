@@ -38,8 +38,10 @@ func (blsSigner) GenPrivateFromSeed(seed []byte) ([]byte, error) {
 		return nil, fmt.Errorf("bls signature seed not byte(32)")
 	}
 	// Note private keys seem to be serialized little-endian!
-	pk := blst.KeyGen(seed[:32]).ToLEndian()
-	return pk, nil
+	var ikm [32]byte
+	copy(ikm[:], seed[:32])
+	sk := ffi.PrivateKeyGenerateWithSeed(ikm)
+	return sk[:], nil
 }
 
 func (blsSigner) ToPublic(priv []byte) ([]byte, error) {
