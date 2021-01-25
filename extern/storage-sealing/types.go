@@ -13,6 +13,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 )
 
 // Piece is a tuple of piece and deal info
@@ -31,6 +32,7 @@ type Piece struct {
 type DealInfo struct {
 	PublishCid   *cid.Cid
 	DealID       abi.DealID
+	DealProposal *market.DealProposal
 	DealSchedule DealSchedule
 	KeepUnsealed bool
 }
