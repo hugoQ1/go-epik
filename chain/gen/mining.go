@@ -12,8 +12,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
-
 	ffi "github.com/filecoin-project/filecoin-ffi"
 )
 
@@ -153,11 +151,13 @@ func aggregateSignatures(sigs []crypto.Signature) (*crypto.Signature, error) {
 			return nil, xerrors.Errorf("bls.Aggregate returned nil with %d signatures", len(sigs))
 		}
 
+		zeroSig := ffi.CreateZeroSignature()
+
 		// Note: for blst this condition should not happen - nil should not
 		// be returned
 		return &crypto.Signature{
 			Type: crypto.SigTypeBLS,
-			Data: new(bls.Signature)[:], // TODO: verify this is okay
+			Data: zeroSig[:],
 		}, nil
 	}
 	return &crypto.Signature{
