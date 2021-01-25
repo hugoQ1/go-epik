@@ -1416,16 +1416,16 @@ func (m *StateModule) StateDealProviderCollateralBounds(ctx context.Context, siz
 } */
 
 func (a *StateAPI) StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error) {
-	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	act, err := a.StateGetActor(ctx, reward.Address, tsk)
 	if err != nil {
-		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+		return nil, xerrors.Errorf("failed to load reward actor state: %w", err)
 	}
 
-	sTree, err := a.stateForTs(ctx, ts)
+	rst, err := reward.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, err
 	}
-	return a.StateManager.GetTotalMinedDetail(ctx, sTree)
+	return rst.TotalMinedDetail()
 }
 
 func (a *StateAPI) StateCirculatingSupply(ctx context.Context, tsk types.TipSetKey) (abi.TokenAmount, error) {
@@ -1552,34 +1552,39 @@ func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, ts
 }
 
 func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vote.Tally, error) {
-	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
+	act, err := a.StateGetActor(ctx, vote.Address, tsk)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+		return nil, xerrors.Errorf("failed to get vote actor: %w", err)
 	}
 
-	voteState, err := vote.Load(a.Chain.Store(ctx), act)
+	vst, err := vote.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
-	return voteState.Tally()
+	return vst.Tally()
 }
 
 func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*vote.VoterInfo, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get tipset by key: %w", err)
+		return nil, xerrors.Errorf("failed to get tipset: %w", err)
 	}
 
-	act, err := a.StateManager.LoadActorTsk(ctx, vote.Address, tsk)
+	sTree, err := a.stateForTs(ctx, ts)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+		return nil, xerrors.Errorf("failed to get tipset state: %w", err)
 	}
 
-	voteState, err := vote.Load(a.Chain.Store(ctx), act)
+	act, err := sTree.GetActor(vote.Address)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load vote actor: %w", err)
+	}
+
+	vst, err := vote.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
-	return voteState.VoterInfo(addr, ts.Height()-1)
+	return vst.VoterInfo(addr, ts.Height())
 }
 
 func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {

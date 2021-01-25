@@ -1446,19 +1446,6 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 	}, nil
 }
 
-func (sm *StateManager) GetTotalMinedDetail(ctx context.Context, st *state.StateTree) (*reward.TotalMinedDetail, error) {
-	ractor, err := st.GetActor(reward.Address)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load reward actor state: %w", err)
-	}
-
-	rst, err := reward.Load(adt.WrapStore(ctx, st.Store), ractor)
-	if err != nil {
-		return nil, err
-	}
-	return rst.TotalMinedDetail()
-}
-
 func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (abi.TokenAmount, error) {
 	circ := big.Zero()
 	unCirc := big.Zero()
