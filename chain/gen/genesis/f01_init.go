@@ -55,7 +55,7 @@ func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.A
 					continue
 				}
 
-				fmt.Printf("init set %s t0%d\n", e, counter)
+				fmt.Printf("init set %s t0%d (msig)\n", e, counter)
 
 				value := cbg.CborInt(counter)
 				if err := amap.Put(abi.AddrKey(e), &value); err != nil {
@@ -82,6 +82,10 @@ func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.A
 			return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
 		}
 
+		if _, ok := keyToId[ainfo.Owner]; ok {
+			continue
+		}
+
 		fmt.Printf("init set %s t0%d\n", ainfo.Owner, counter)
 
 		value := cbg.CborInt(counter)
@@ -96,40 +100,6 @@ func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.A
 			return 0, nil, nil, err
 		}
 	}
-
-	// if rootVerifier.Type == genesis.TAccount {
-	// 	var ainfo genesis.AccountMeta
-	// 	if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
-	// 		return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
-	// 	}
-	// 	value := cbg.CborInt(80)
-	// 	if err := amap.Put(abi.AddrKey(ainfo.Owner), &value); err != nil {
-	// 		return 0, nil, nil, err
-	// 	}
-	// } else if rootVerifier.Type == genesis.TMultisig {
-	// 	var ainfo genesis.MultisigMeta
-	// 	if err := json.Unmarshal(rootVerifier.Meta, &ainfo); err != nil {
-	// 		return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
-	// 	}
-	// 	for _, e := range ainfo.Signers {
-	// 		if _, ok := keyToId[e]; ok {
-	// 			continue
-	// 		}
-	// 		fmt.Printf("init set %s t0%d\n", e, counter)
-
-	// 		value := cbg.CborInt(counter)
-	// 		if err := amap.Put(abi.AddrKey(e), &value); err != nil {
-	// 			return 0, nil, nil, err
-	// 		}
-	// 		counter = counter + 1
-	// 		var err error
-	// 		keyToId[e], err = address.NewIDAddress(uint64(value))
-	// 		if err != nil {
-	// 			return 0, nil, nil, err
-	// 		}
-
-	// 	}
-	// }
 
 	amapaddr, err := amap.Root()
 	if err != nil {
