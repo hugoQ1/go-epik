@@ -2,11 +2,13 @@ package vote
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	"github.com/ipfs/go-cid"
 
@@ -115,13 +117,24 @@ func getVoter(s *state, addr address.Address) (*vote.Voter, error) {
 		return nil, err
 	}
 
+	var voterAddrs []string
+	voters.ForEach(&builtin.Discard{}, func(k string) error {
+		a, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		voterAddrs = append(voterAddrs, a.String())
+		return nil
+	})
+	fmt.Printf("voters: query %s, {%s}\n", addr, strings.Join(voterAddrs, ","))
+
 	var voter vote.Voter
 	found, err := voters.Get(abi.AddrKey(addr), &voter)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("not found")
+		return nil, fmt.Errorf("voter not found: %s", addr)
 	}
 	return &voter, nil
 }
