@@ -161,7 +161,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 
 			params := &market.PublishStorageDealsParams{
 				DataRef: market2.PublishStorageDataRef{
-					RootCID: inis.PresealRootCID,
+					RootCID: inis.PresealPieceCID, // NOTE Piece CID
 					Expert:  inis.Expert.String(),
 				},
 			}
