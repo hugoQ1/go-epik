@@ -318,8 +318,8 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
-	// query total retrieval collateral
-	totalCollateral, err := getRetrievalTotalCollateral(ctx, pstatetree)
+
+	circ, err := sm.GetVMCirculatingSupplyDetailed(ctx, epoch-1, pstatetree)
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
@@ -353,12 +353,13 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		}
 
 		params, err := actors.SerializeParams(&reward.AwardBlockRewardParams{
-			Miner:            b.Miner,
-			Penalty:          penalty,
-			GasReward:        gasReward,
-			WinCount:         b.WinCount,
-			ShareCount:       int64(len(bms)),
-			RetrievalPledged: totalCollateral,
+			Miner:                 b.Miner,
+			Penalty:               penalty,
+			GasReward:             gasReward,
+			WinCount:              b.WinCount,
+			ShareCount:            int64(len(bms)),
+			ParentRetrievalPledge: circ.TotalRetrievalPledge,
+			ParentCircSupply:      circ.EpkCirculating,
 		})
 		if err != nil {
 			return cid.Undef, cid.Undef, xerrors.Errorf("failed to serialize award params: %w", err)
@@ -1427,6 +1428,11 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 		ret = big.Zero()
 	}
 
+	trtp, err := getRetrievalTotalCollateral(ctx, st)
+	if err != nil {
+		return api.CirculatingSupply{}, xerrors.Errorf("failed to get total retrieval pledge: %w", err)
+	}
+
 	return api.CirculatingSupply{
 		EpkVested:            epkVested,
 		EpkTeamVested:        team,
@@ -1436,6 +1442,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 		EpkBurnt:             epkBurnt,
 		EpkLocked:            epkLocked,
 		EpkCirculating:       ret,
+		TotalRetrievalPledge: trtp,
 	}, nil
 }
 

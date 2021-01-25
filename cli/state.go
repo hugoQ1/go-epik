@@ -1753,6 +1753,7 @@ var stateCircSupplyCmd = &cli.Command{
 			fmt.Println("Team vested: ", types.EPK(circ.EpkTeamVested))
 			fmt.Println("Burnt: ", types.EPK(circ.EpkBurnt))
 			fmt.Println("Locked: ", types.EPK(circ.EpkLocked))
+			fmt.Println("Total Retrieval Pledge: ", types.EPK(circ.TotalRetrievalPledge))
 		} else {
 			circ, err := api.StateCirculatingSupply(ctx, ts.Key())
 			if err != nil {

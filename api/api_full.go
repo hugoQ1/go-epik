@@ -970,6 +970,7 @@ type CirculatingSupply struct {
 	EpkBurnt             abi.TokenAmount
 	EpkLocked            abi.TokenAmount
 	EpkCirculating       abi.TokenAmount
+	TotalRetrievalPledge abi.TokenAmount
 }
 
 type MiningBaseInfo struct {
