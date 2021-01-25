@@ -34,8 +34,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/zstd v1.4.1 h1:3oxKN3wbHibqx897utPC2LTQU4J+IHWWJO+glkAkpFM=
 github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210125144627-c3b1c2b54f45 h1:TB16H6r45BDgieTCTeV9W/pweuYJ5Oz634wjlbVL4GE=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210125144627-c3b1c2b54f45/go.mod h1:lHfNv0IoCuKViCCGuLajvVaiNu+KGEgTLIZv+QaN7Ik=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210125170530-b96e7f9ce2b5 h1:tBPyFR2AyRN7RVpBd6h99pDwM+otvhwtC8IV2pux524=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210125170530-b96e7f9ce2b5/go.mod h1:lHfNv0IoCuKViCCGuLajvVaiNu+KGEgTLIZv+QaN7Ik=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210124192011-85f3030d119e h1:ubwTlVMm0S3f/6yvUfScdMst7fGPCBwK1FTd+xbQKvk=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210124192011-85f3030d119e/go.mod h1:jr48fWfAxHhv5lxKD/4HWnSEhYeHqRGeFUE83EkpAYg=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4 h1:VqXg3SYH5FlHLclagcT6oIQ9r1knlcvKe/OF02/dT08=

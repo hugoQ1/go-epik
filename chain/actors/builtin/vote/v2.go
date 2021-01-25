@@ -37,9 +37,13 @@ func (s *state) Tally() (*Tally, error) {
 
 	ret := make(map[string]abi.TokenAmount)
 
-	var amt abi.TokenAmount
-	err = candidates.ForEach(&amt, func(k string) error {
-		ret[k] = amt
+	var out vote.Candidate
+	err = candidates.ForEach(&out, func(k string) error {
+		a, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		ret[a.String()] = out.Votes
 		return nil
 	})
 	if err != nil {
@@ -75,7 +79,11 @@ func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInf
 	unlocked := big.Zero()
 	var info vote.VotesInfo
 	err = tally.ForEach(&info, func(k string) error {
-		cands[k] = info.Votes
+		a, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		cands[a.String()] = info.Votes
 		if !info.RescindingVotes.IsZero() {
 			if curr <= info.LastRescindEpoch+vote.RescindingUnlockDelay {
 				unlocking = big.Add(unlocking, info.RescindingVotes)
