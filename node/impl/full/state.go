@@ -1496,7 +1496,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	if err != nil {
 		return nil, err
 	}
-	return &info, nil
+	return info, nil
 }
 
 func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {

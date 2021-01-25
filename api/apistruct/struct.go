@@ -191,6 +191,7 @@ type FullNodeStruct struct {
 		ClientRetrievalPledge                     func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 		ClientRetrievalApplyForWithdraw           func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 		ClientRetrievalWithdraw                   func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                        `perm:"admin"`
 
 		StateNetworkName          func(context.Context) (dtypes.NetworkName, error)                                                               `perm:"read"`
 		StateMinerSectors         func(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error) `perm:"read"`
@@ -704,6 +705,10 @@ func (c *FullNodeStruct) ClientRetrievalApplyForWithdraw(ctx context.Context, wa
 
 func (c *FullNodeStruct) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	return c.Internal.ClientRetrievalWithdraw(ctx, wallet, amount)
+}
+
+func (c *FullNodeStruct) ClientExpertNominate(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error) {
+	return c.Internal.ClientExpertNominate(ctx, wallet, expert)
 }
 
 func (c *FullNodeStruct) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (types.BigInt, error) {

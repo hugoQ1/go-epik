@@ -26,15 +26,8 @@ type state2 struct {
 	store adt.Store
 }
 
-func (s *state2) Info() (ExpertInfo, error) {
-	info, err := s.State.GetInfo(s.store)
-	if err != nil {
-		return ExpertInfo{}, err
-	}
-
-	return ExpertInfo{
-		Owner: info.Owner,
-	}, nil
+func (s *state2) Info() (*ExpertInfo, error) {
+	return s.State.GetInfo(s.store)
 }
 
 func (s *state2) Datas() ([]*DataOnChainInfo, error) {

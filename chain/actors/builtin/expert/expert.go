@@ -4,7 +4,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/cbor"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -36,13 +35,12 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
-	Info() (ExpertInfo, error)
+	Info() (*ExpertInfo, error)
 	Datas() ([]*DataOnChainInfo, error)
 	Data(cid.Cid) (*DataOnChainInfo, error)
 }
 
-type ExpertInfo struct {
-	Owner address.Address // Must be an ID-address.
-}
-
+type ExpertInfo = expert2.ExpertInfo
+type ExpertDataParams = expert2.ExpertDataParams
 type DataOnChainInfo = expert2.DataOnChainInfo
+type NominateExpertParams = expert2.NominateExpertParams

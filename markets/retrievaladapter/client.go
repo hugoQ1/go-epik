@@ -15,7 +15,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
-	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
@@ -36,7 +35,7 @@ func NewRetrievalClientNode(payAPI payapi.PaychAPI, chainAPI full.ChainAPI, stat
 
 // SubmitDataPledge submit data pledge
 func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddress, minerAddress address.Address, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
+	params, aerr := actors.SerializeParams(&retrieval.RetrievalData{
 		PieceID:  pieceCid,
 		Size:     size,
 		Client:   clientAddress,
@@ -47,10 +46,10 @@ func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddr
 	}
 
 	msg := types.Message{
-		To:     retrievalactor.Address,
+		To:     retrieval.Address,
 		From:   clientAddress,
 		Value:  abi.NewTokenAmount(0),
-		Method: retrievalactor.Methods.RetrievalData,
+		Method: retrieval.Methods.RetrievalData,
 		Params: params,
 	}
 	sm, err := rcn.mpoolAPI.MpoolPushMessage(ctx, &msg, nil)
@@ -75,7 +74,7 @@ func (rcn *retrievalClientNode) WaitForDataPledgeReady(ctx context.Context, wait
 
 // ConfirmComplete confirm deal complete
 func (rcn *retrievalClientNode) ConfirmComplete(ctx context.Context, clientAddress, minerAddress address.Address, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
+	params, aerr := actors.SerializeParams(&retrieval.RetrievalData{
 		PieceID:  pieceCid,
 		Size:     size,
 		Client:   clientAddress,

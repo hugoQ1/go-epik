@@ -27,6 +27,7 @@ var expertCmd = &cli.Command{
 		expertInitCmd,
 		expertFileCmd,
 		expertListCmd,
+		expertNominateCmd,
 	},
 }
 
@@ -230,6 +231,43 @@ var expertListCmd = &cli.Command{
 		for index, addr := range list {
 			fmt.Printf("expert %d: %s\n", index, addr)
 		}
+		return nil
+	},
+}
+
+//expertNominateCmd
+var expertNominateCmd = &cli.Command{
+	Name:  "nominate",
+	Usage: "expert nominate <expert> <target>",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		if cctx.Args().Len() != 2 {
+			return fmt.Errorf("usage: nominate <expert> <target>")
+		}
+
+		expert, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		target, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		msg, err := api.ClientExpertNominate(ctx, expert, target)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("expert nominate: %s\n", msg)
 		return nil
 	},
 }

@@ -353,6 +353,9 @@ type FullNode interface {
 	// ClientRetrievalWithdraw withdraw
 	ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
+	// ClientExpertNominate nominate expert
+	ClientExpertNominate(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)
+
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
 	// Most methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.

@@ -8,7 +8,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
-	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
@@ -86,7 +85,7 @@ func (rpn *retrievalProviderNode) SavePaymentVoucher(ctx context.Context, paymen
 }
 
 func (rpn *retrievalProviderNode) ConfirmComplete(ctx context.Context, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&retrievalactor.RetrievalData{
+	params, aerr := actors.SerializeParams(&retrieval.RetrievalData{
 		PieceID:  pieceCid,
 		Size:     size,
 		Provider: rpn.miner.Address(),

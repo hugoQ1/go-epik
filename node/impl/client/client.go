@@ -13,7 +13,6 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-cidutil"
@@ -53,6 +52,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/markets/utils"
@@ -60,8 +61,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
-
-	retrievalactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 )
 
 var DefaultHashFunction = uint64(mh.BLAKE2B_MIN + 31)
@@ -1240,10 +1239,10 @@ func (a *API) ClientRetrievalPledge(ctx context.Context, wallet address.Address,
 	}
 
 	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-		To:     retrievalactor.Address,
+		To:     retrieval.Address,
 		From:   wallet,
 		Value:  amount,
-		Method: retrievalactor.Methods.AddBalance,
+		Method: retrieval.Methods.AddBalance,
 		Params: params,
 	}, nil)
 	if aerr != nil {
@@ -1255,7 +1254,7 @@ func (a *API) ClientRetrievalPledge(ctx context.Context, wallet address.Address,
 }
 
 func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&retrievalactor.WithdrawBalanceParams{
+	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
 		ProviderOrClientAddress: wallet,
 		Amount:                  amount,
 	})
@@ -1264,10 +1263,10 @@ func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet addres
 	}
 
 	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-		To:     retrievalactor.Address,
+		To:     retrieval.Address,
 		From:   wallet,
 		Value:  abi.NewTokenAmount(0),
-		Method: retrievalactor.Methods.ApplyForWithdraw,
+		Method: retrieval.Methods.ApplyForWithdraw,
 		Params: params,
 	}, nil)
 	if aerr != nil {
@@ -1279,7 +1278,7 @@ func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet addres
 }
 
 func (a *API) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&retrievalactor.WithdrawBalanceParams{
+	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
 		ProviderOrClientAddress: wallet,
 		Amount:                  amount,
 	})
@@ -1288,13 +1287,41 @@ func (a *API) ClientRetrievalWithdraw(ctx context.Context, wallet address.Addres
 	}
 
 	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
-		To:     retrievalactor.Address,
+		To:     retrieval.Address,
 		From:   wallet,
 		Value:  abi.NewTokenAmount(0),
-		Method: retrievalactor.Methods.WithdrawBalance,
+		Method: retrieval.Methods.WithdrawBalance,
 		Params: params,
 	}, nil)
 	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
+}
+
+func (a *API) ClientExpertNominate(ctx context.Context, expertAddr address.Address, targetExpert address.Address) (cid.Cid, error) {
+	params, aerr := actors.SerializeParams(&expert.NominateExpertParams{
+		Expert: targetExpert,
+	})
+	if aerr != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", aerr)
+	}
+
+	info, err := a.StateAPI.StateExpertInfo(ctx, expertAddr, types.EmptyTSK)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("failed to get expert info: %w", err)
+	}
+
+	sm, err := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     expertAddr,
+		From:   info.Owner,
+		Value:  abi.NewTokenAmount(0),
+		Method: expert.Methods.Nominate,
+		Params: params,
+	}, nil)
+	if err != nil {
 		return cid.Undef, aerr
 	}
 
