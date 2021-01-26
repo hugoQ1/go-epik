@@ -320,6 +320,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	totalEpkAllocated := big.Zero()
 	err = state.ForEach(func(addr address.Address, act *types.Actor) error {
 		totalEpkAllocated = big.Add(totalEpkAllocated, act.Balance)
+		fmt.Printf("genesis %s balance: %s\n", addr, types.EPK(act.Balance))
 		return nil
 	})
 	if err != nil {
@@ -331,6 +332,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if template.FoundationAccountActor.Balance.Sign() < 0 {
 		return nil, nil, xerrors.Errorf("somehow overallocated epk (allocated = %s)", types.EPK(totalEpkAllocated))
 	}
+	fmt.Printf("genesis foundation balance: %s\n", types.EPK(template.FoundationAccountActor.Balance))
 
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FoundationIDAddress, template.FoundationAccountActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up foundation account: %w", err)
