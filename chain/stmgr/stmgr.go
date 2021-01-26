@@ -1026,6 +1026,8 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 				return xerrors.Errorf("resolving address: %w", err)
 			}
 
+			fmt.Printf("add genesisActors: %s, %s\n", kid, types.EPK(act.Balance))
+
 			gi.genesisActors = append(gi.genesisActors, genesisActor{
 				addr:    kid,
 				initBal: act.Balance,
@@ -1259,6 +1261,7 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 		diff := big.Sub(v.initBal, act.Balance)
 		if diff.GreaterThan(big.Zero()) {
 			vf = big.Add(vf, diff)
+			fmt.Printf("@%d genesisActors vested: %s, %s\n", height, v.addr, types.EPK(diff))
 		}
 	}
 
