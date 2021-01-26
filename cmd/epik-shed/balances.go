@@ -184,7 +184,7 @@ var chainBalanceStateCmd = &cli.Command{
 			}
 		}()
 
-		mds, err := lkrepo.Datastore("/metadata")
+		mds, err := lkrepo.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}
@@ -406,7 +406,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 			}
 		}()
 
-		mds, err := lkrepo.Datastore("/metadata")
+		mds, err := lkrepo.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}

@@ -8,6 +8,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/backupds"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
@@ -27,8 +28,9 @@ func KeyStore(lr repo.LockedRepo) (types.KeyStore, error) {
 	return lr.KeyStore()
 }
 
-func Datastore(r repo.LockedRepo) (dtypes.MetadataDS, error) {
-	mds, err := r.Datastore("/metadata")
+func Datastore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.MetadataDS, error) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	mds, err := r.Datastore(ctx, "/metadata")
 	if err != nil {
 		return nil, err
 	}

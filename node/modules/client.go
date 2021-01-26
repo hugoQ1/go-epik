@@ -39,6 +39,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
 	"github.com/EpiK-Protocol/go-epik/node/repo/retrievalstoremgr"
@@ -78,8 +79,9 @@ func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full
 	})
 }
 
-func ClientMultiDatastore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.ClientMultiDstore, error) {
-	ds, err := r.Datastore("/client")
+func ClientMultiDatastore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.ClientMultiDstore, error) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	ds, err := r.Datastore(ctx, "/client")
 	if err != nil {
 		return nil, xerrors.Errorf("getting datastore out of reop: %w", err)
 	}
