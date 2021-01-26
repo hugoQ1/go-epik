@@ -1261,7 +1261,6 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 		diff := big.Sub(v.initBal, act.Balance)
 		if diff.GreaterThan(big.Zero()) {
 			vf = big.Add(vf, diff)
-			fmt.Printf("@%d genesisActors vested: %s, %s\n", height, v.addr, types.EPK(diff))
 		}
 	}
 
