@@ -635,7 +635,7 @@ var walletVote = &cli.Command{
 var walletVoteSend = &cli.Command{
 	Name:      "send",
 	Usage:     "Send votes for candidate",
-	ArgsUsage: "[candidateAddress] [amount (EPK), one AttoEPK one AttoVote]",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one EPK one Vote]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
@@ -708,7 +708,7 @@ var walletVoteSend = &cli.Command{
 var walletVoteRescind = &cli.Command{
 	Name:      "rescind",
 	Usage:     "Rescind votes for candidate",
-	ArgsUsage: "[candidateAddress] [amount (EPK), one AttoEPK one AttoVote]",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one EPK one Vote]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
