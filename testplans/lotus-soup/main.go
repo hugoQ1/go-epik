@@ -14,6 +14,8 @@ var cases = map[string]interface{}{
 	"drand-halting":                 testkit.WrapTestEnvironment(dealsE2E),
 	"drand-outage":                  testkit.WrapTestEnvironment(dealsE2E),
 	"paych-stress":                  testkit.WrapTestEnvironment(paych.Stress),
+	"eco-vote":                      testkit.WrapTestEnvironment(ecoVote),
+	"eco-retrieve-pledge":           testkit.WrapTestEnvironment(ecoRetrievePledge),
 }
 
 func main() {

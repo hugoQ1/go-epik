@@ -1,6 +1,9 @@
 package testkit
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type RoleName = string
 
@@ -52,4 +55,17 @@ func HandleDefaultRole(t *TestEnvironment) error {
 		panic(fmt.Sprintf("unrecognized role: %s", t.Role))
 	}
 	return f(t)
+}
+
+func Float64Param(t *TestEnvironment, name string) float64 {
+	v, ok := t.TestInstanceParams[name]
+	if !ok {
+		return -1.0
+	}
+
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }

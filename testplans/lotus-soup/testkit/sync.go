@@ -18,6 +18,8 @@ var (
 	SlashedMinerTopic = sync.NewTopic("slashed_miner", &SlashedMinerMsg{})
 	PubsubTracerTopic = sync.NewTopic("pubsub_tracer", &PubsubTracerMsg{})
 	DrandConfigTopic  = sync.NewTopic("drand_config", &DrandRuntimeInfo{})
+
+	CheckedClientAddrsTopic = sync.NewTopic("checked_client_addrs", &CheckedClientsAddressesMsg{})
 )
 
 var (
@@ -26,6 +28,8 @@ var (
 	StateStopMining      = sync.State("stop-mining")
 	StateMinerPickSeqNum = sync.State("miner-pick-seq-num")
 	StateAbortTest       = sync.State("abort-test")
+	StateVoterDone       = sync.State("voter-done")
+	StatePledgerDone     = sync.State("pledger-done")
 )
 
 type InitialBalanceMsg struct {
@@ -47,6 +51,11 @@ type ClientAddressesMsg struct {
 	PeerNetAddr peer.AddrInfo
 	WalletAddr  address.Address
 	GroupSeq    int64
+}
+
+type CheckedClientsAddressesMsg struct {
+	WalletAddr address.Address
+	WithdrawTo address.Address
 }
 
 type MinerAddressesMsg struct {

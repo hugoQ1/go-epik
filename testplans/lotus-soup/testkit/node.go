@@ -164,6 +164,23 @@ func CollectClientAddrs(t *TestEnvironment, ctx context.Context, clients int) ([
 	return addrs, nil
 }
 
+func CollectCheckedClientAddrs(t *TestEnvironment, ctx context.Context, voters int) ([]*CheckedClientsAddressesMsg, error) {
+	ch := make(chan *CheckedClientsAddressesMsg)
+	sub := t.SyncClient.MustSubscribe(ctx, CheckedClientAddrsTopic, ch)
+
+	addrs := make([]*CheckedClientsAddressesMsg, 0, voters)
+	for i := 0; i < voters; i++ {
+		select {
+		case a := <-ch:
+			addrs = append(addrs, a)
+		case err := <-sub.Done():
+			return nil, fmt.Errorf("got error while waiting for checked client addrs: %w", err)
+		}
+	}
+
+	return addrs, nil
+}
+
 func GetPubsubTracerMaddr(ctx context.Context, t *TestEnvironment) (string, error) {
 	if !t.BooleanParam("enable_pubsub_tracer") {
 		return "", nil

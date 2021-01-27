@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
-	github.com/EpiK-Protocol/go-epik v0.4.2-0.20210118174742-7551005addc0
+	github.com/EpiK-Protocol/go-epik v0.4.2-0.20210127093358-c5ed513234e0
 	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/davecgh/go-spew v1.1.1
 	github.com/drand/drand v1.2.1
@@ -43,9 +43,7 @@ require (
 // as an "extra source" in the manifest.
 replace github.com/filecoin-project/filecoin-ffi => ../../extern/filecoin-ffi
 
-// replace github.com/filecoin-project/filecoin-ffi => github.com/EpiK-Protocol/go-epik-ffi v0.30.4-0.20210106120422-5c04c857a46c
-
-replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210118125041-e6b397de17f5
+replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210127084610-c6b31c363dfb
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210118113533-a97b5b7f5c90
 
@@ -54,5 +52,3 @@ replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go
 replace github.com/supranational/blst => ../../extern/blst
 
 replace launchpad.net/gocheck => github.com/go-check/check v0.0.0-20140401040844-163297374fe1
-
-// replace github.com/EpiK-Protocol/go-epik => ../../
