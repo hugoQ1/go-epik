@@ -788,8 +788,12 @@ var walletVoteWithdraw = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
-			Usage:   "optionally specify the account to withdraw from",
+			Usage:   "specify the voter account to withdraw",
 			Aliases: []string{"f"},
+		},
+		&cli.StringFlag{
+			Name:  "to",
+			Usage: "send withdrawn funds to a given address, same with 'from' by default",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -802,7 +806,7 @@ var walletVoteWithdraw = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		var fromAddr address.Address
+		var fromAddr, toAddr address.Address
 		if from := cctx.String("from"); from == "" {
 			defaddr, err := api.WalletDefaultAddress(ctx)
 			if err != nil {
@@ -819,11 +823,27 @@ var walletVoteWithdraw = &cli.Command{
 			fromAddr = addr
 		}
 
+		if to := cctx.String("to"); to == "" {
+			toAddr = fromAddr
+		} else {
+			addr, err := address.NewFromString(to)
+			if err != nil {
+				return err
+			}
+			toAddr = addr
+		}
+
+		sp, err := actors.SerializeParams(&toAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
 		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
 			To:     builtin.VoteFundActorAddr,
 			From:   fromAddr,
 			Value:  big.Zero(),
 			Method: builtin.MethodsVote.Withdraw,
+			Params: sp,
 		}, nil)
 		if err != nil {
 			return xerrors.Errorf("Submitting withdraw message: %w", err)

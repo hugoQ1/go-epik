@@ -1584,7 +1584,12 @@ func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
-	return vst.VoterInfo(addr, ts.Height())
+
+	ida, err := a.StateManager.LookupID(ctx, addr, ts)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to look up id for %s: %w", addr, err)
+	}
+	return vst.VoterInfo(ida, ts.Height())
 }
 
 func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {
