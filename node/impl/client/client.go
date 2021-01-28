@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"golang.org/x/xerrors"
 
@@ -134,7 +135,7 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 			}
 		}
 		params.Data.PieceCid = &ds.PieceCID
-		params.Data.PieceSize = abi.UnpaddedPieceSize(ds.PieceSize)
+		params.Data.PieceSize = ds.PieceSize.Unpadded()
 	}
 
 	if params.Data.Expert == "" {
@@ -493,7 +494,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 	// check if registered
 	existence, err := a.StateExpertFileInfo(ctx, ds.PieceCID, ts.Key())
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "failed to find expert with data") {
 		return nil, xerrors.Errorf("failed to check file registered %s: %w", ds.PieceCID, err)
 	}
 	dealExpert := ""
@@ -515,7 +516,8 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 		fmt.Printf("Send register expert file message: %s\n", mcid)
 
-		_, receipt, _, err := a.Stmgr.WaitForMessage(ctx, *mcid, build.MessageConfidence, abi.ChainEpoch(build.MessageConfidence))
+		// TODO: wait time may change to build.MessageConfidence
+		_, receipt, _, err := a.Stmgr.WaitForMessage(ctx, *mcid, build.MessageConfidence, abi.ChainEpoch(1))
 		if err != nil {
 			return nil, err
 		}
@@ -526,8 +528,8 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 		// start deal as an expert
 		dealExpert = params.Expert.String()
 	} else {
-		if params.Expert != address.Undef {
-			return nil, xerrors.Errorf("file already registered by expert %s", existence.Expert)
+		if params.Expert != existence.Expert {
+			return nil, xerrors.Errorf("file already registered by expert %s, not %s", existence.Expert, params.Expert)
 		}
 
 		// start deal as a miner
@@ -541,9 +543,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 	}
 
 	dealId, err := a.ClientStartDeal(ctx, &api.StartDealParams{
-		Data:   dataRef,
-		Wallet: params.From,
-		Miner:  params.Miner,
+		Data:           dataRef,
+		Wallet:         params.From,
+		Miner:          params.Miner,
+		DealStartEpoch: abi.ChainEpoch(-1),
+		FastRetrieval:  true,
 	})
 	if err != nil {
 		return nil, err

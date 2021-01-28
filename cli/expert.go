@@ -13,6 +13,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -25,6 +26,7 @@ var expertCmd = &cli.Command{
 	Usage: "Manage expert and file",
 	Subcommands: []*cli.Command{
 		expertInitCmd,
+		expertInfoCmd,
 		expertFileCmd,
 		expertListCmd,
 		expertNominateCmd,
@@ -151,6 +153,46 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 
 	log.Infof("New expert address is: %s (%s)", retval.IDAddress, retval.RobustAddress)
 	return retval.IDAddress, nil
+}
+
+//expertInfoCmd
+var expertInfoCmd = &cli.Command{
+	Name:  "info",
+	Usage: "expert info <expert>",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		if cctx.Args().Len() != 1 {
+			return fmt.Errorf("usage: info <expert>")
+		}
+
+		expertAddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		info, err := api.StateExpertInfo(ctx, expertAddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Expert: %s\n", expertAddr)
+		fmt.Printf("Expert owner: %s\n", info.Owner)
+		fmt.Printf("Expert proposer: %s\n", info.Proposer)
+		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
+		expertType := "foundation"
+		if info.Type == expert.ExpertNormal {
+			expertType = "normal"
+		}
+		fmt.Printf("Expert type: %s\n", expertType)
+		return nil
+	},
 }
 
 var expertFileCmd = &cli.Command{

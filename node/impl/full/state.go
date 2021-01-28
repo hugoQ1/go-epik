@@ -1688,9 +1688,13 @@ func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk
 
 	var ret []*api.DataIndex
 	err = dataIndex.ForEach(epoch, func(provider address.Address, data market.DataIndex) error {
+		root, err := cid.Parse(data.RootCID)
+		if err != nil {
+			return err
+		}
 		ret = append(ret, &api.DataIndex{
 			Miner:    provider,
-			RootCID:  data.RootCID,
+			RootCID:  root,
 			PieceCID: data.PieceCID,
 		})
 		return nil
