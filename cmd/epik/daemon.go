@@ -179,6 +179,7 @@ var DaemonCmd = &cli.Command{
 		case "bootstrapper":
 			isBootstrapper = true
 		case "":
+			isBootstrapper = true
 			// do nothing
 		default:
 			return fmt.Errorf("unrecognized profile type: %q", profile)

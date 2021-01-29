@@ -663,6 +663,7 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 	params, err := actors.SerializeParams(&power2.CreateMinerParams{
 		Owner:         owner,
 		Worker:        worker,
+		Coinbase:      owner,
 		SealProofType: spt,
 		Peer:          abi.PeerID(peerid),
 	})
