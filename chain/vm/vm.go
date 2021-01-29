@@ -28,6 +28,7 @@ import (
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-state-types/network"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
@@ -36,9 +37,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 const MaxCallDepth = 4096
@@ -204,7 +202,7 @@ type VM struct {
 	cstate         *state.StateTree
 	base           cid.Cid
 	cst            *cbor.BasicIpldStore
-	buf            *bufbstore.BufferedBS
+	buf            *blockstore.BufferedBlockstore
 	blockHeight    abi.ChainEpoch
 	areg           *ActorRegistry
 	rand           Rand
@@ -220,7 +218,7 @@ type VMOpts struct {
 	StateBase      cid.Cid
 	Epoch          abi.ChainEpoch
 	Rand           Rand
-	Bstore         bstore.Blockstore
+	Bstore         blockstore.Blockstore
 	Syscalls       SyscallBuilder
 	CircSupplyCalc CircSupplyCalculator
 	NtwkVersion    NtwkVersionGetter // TODO: stebalien: In what cases do we actually need this? It seems like even when creating new networks we want to use the 'global'/build-default version getter
@@ -229,7 +227,7 @@ type VMOpts struct {
 }
 
 func NewVM(ctx context.Context, opts *VMOpts) (*VM, error) {
-	buf := bufbstore.NewBufferedBstore(opts.Bstore)
+	buf := blockstore.NewBuffered(opts.Bstore)
 	cst := cbor.NewCborStore(buf)
 	state, err := state.LoadStateTree(cst, opts.StateBase)
 	if err != nil {

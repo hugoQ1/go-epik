@@ -30,9 +30,9 @@ import (
 	"github.com/ipfs/go-datastore/namespace"
 	"github.com/libp2p/go-libp2p-core/host"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"

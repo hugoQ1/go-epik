@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/modules/testing"
 	"github.com/google/uuid"
 	"github.com/mitchellh/go-homedir"

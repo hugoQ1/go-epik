@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -58,7 +58,7 @@ var provingFaultsCmd = &cli.Command{
 
 		ctx := lcli.ReqContext(cctx)
 
-		stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(api))
+		stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(api))
 
 		maddr, err := getActorAddress(ctx, nodeApi, cctx.String("actor"))
 		if err != nil {
@@ -133,7 +133,7 @@ var provingInfoCmd = &cli.Command{
 			return err
 		}
 
-		stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(api))
+		stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(api))
 
 		mas, err := miner.Load(stor, mact)
 		if err != nil {

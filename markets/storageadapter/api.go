@@ -10,7 +10,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/filecoin-project/go-address"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
@@ -24,7 +24,7 @@ type apiWrapper struct {
 }
 
 func (ca *apiWrapper) diffPreCommits(ctx context.Context, actor address.Address, pre, cur types.TipSetKey) (*miner.PreCommitChanges, error) {
-	store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(ca.api)))
+	store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(ca.api)))
 
 	preAct, err := ca.api.StateGetActor(ctx, actor, pre)
 	if err != nil {

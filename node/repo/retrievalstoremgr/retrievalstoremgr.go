@@ -3,9 +3,9 @@ package retrievalstoremgr
 import (
 	"errors"
 
-	"github.com/filecoin-project/go-multistore"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
+	"github.com/filecoin-project/go-multistore"
 	"github.com/ipfs/go-blockservice"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	ipldformat "github.com/ipfs/go-ipld-format"

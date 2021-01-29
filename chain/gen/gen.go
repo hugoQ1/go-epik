@@ -26,6 +26,7 @@ import (
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -39,7 +40,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )

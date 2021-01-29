@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multiaddr"
 

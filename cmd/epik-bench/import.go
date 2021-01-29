@@ -25,13 +25,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -229,7 +229,7 @@ var importBenchCmd = &cli.Command{
 		if ds != nil {
 			ds = measure.New("dsbench", ds)
 			defer ds.Close() //nolint:errcheck
-			bs = blockstore.NewBlockstore(ds)
+			bs = blockstore.FromDatastore(ds)
 		}
 
 		if c, ok := bs.(io.Closer); ok {

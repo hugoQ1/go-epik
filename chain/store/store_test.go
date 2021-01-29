@@ -11,12 +11,12 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
@@ -104,7 +104,7 @@ func TestChainExportImport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nbs := blockstore.NewTemporary()
+	nbs := blockstore.NewMemory()
 	cs := store.NewChainStore(nbs, nbs, datastore.NewMapDatastore(), nil, nil)
 	defer cs.Close() //nolint:errcheck
 
@@ -139,7 +139,7 @@ func TestChainExportImportFull(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nbs := blockstore.NewTemporary()
+	nbs := blockstore.NewMemory()
 	cs := store.NewChainStore(nbs, nbs, datastore.NewMapDatastore(), nil, nil)
 	defer cs.Close() //nolint:errcheck
 

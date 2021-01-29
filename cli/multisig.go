@@ -29,7 +29,7 @@ import (
 	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
 	msig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -202,7 +202,7 @@ var msigInspectCmd = &cli.Command{
 		defer closer()
 		ctx := ReqContext(cctx)
 
-		store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(api)))
+		store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
 
 		maddr, err := address.NewFromString(cctx.Args().First())
 		if err != nil {

@@ -56,6 +56,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -63,7 +64,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/gen/slashfilter"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
@@ -402,7 +402,7 @@ func StagingBlockstore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRe
 		return nil, err
 	}
 
-	return blockstore.NewBlockstore(stagingds), nil
+	return blockstore.FromDatastore(stagingds), nil
 }
 
 // StagingDAG is a DAGService for the StagingBlockstore

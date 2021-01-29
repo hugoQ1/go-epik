@@ -3,8 +3,8 @@ package genesis
 import (
 	"context"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/knowledge"

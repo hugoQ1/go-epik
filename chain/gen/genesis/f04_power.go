@@ -9,8 +9,8 @@ import (
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 func SetupStoragePowerActor(bs bstore.Blockstore) (*types.Actor, error) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	u "github.com/ipfs/go-ipfs-util"

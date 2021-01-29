@@ -22,9 +22,9 @@ import (
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	tutils "github.com/filecoin-project/specs-actors/v2/support/testing"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 var dummyCid cid.Cid

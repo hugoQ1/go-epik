@@ -17,7 +17,7 @@ import (
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -187,7 +187,7 @@ func (s SealingAPIAdapter) StateSectorPreCommitInfo(ctx context.Context, maddr a
 		return nil, xerrors.Errorf("handleSealFailed(%d): temp error: %+v", sectorNumber, err)
 	}
 
-	stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(s.delegate))
+	stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(s.delegate))
 
 	state, err := miner.Load(stor, act)
 	if err != nil {

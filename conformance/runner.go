@@ -26,9 +26,9 @@ import (
 
 	"github.com/filecoin-project/test-vectors/schema"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 // FallbackBlockstoreGetter is a fallback blockstore to use for resolving CIDs
@@ -306,7 +306,7 @@ func writeStateToTempCAR(bs blockstore.Blockstore, roots ...cid.Cid) (string, er
 }
 
 func LoadBlockstore(vectorCAR schema.Base64EncodedBytes) (blockstore.Blockstore, error) {
-	bs := blockstore.Blockstore(blockstore.NewTemporary())
+	bs := blockstore.Blockstore(blockstore.NewMemory())
 
 	// Read the base64-encoded CAR from the vector, and inflate the gzip.
 	buf := bytes.NewReader(vectorCAR)

@@ -15,9 +15,9 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.Actor, map[address.Address]address.Address, error) {

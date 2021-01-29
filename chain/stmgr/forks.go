@@ -34,7 +34,7 @@ import (
 		"github.com/EpiK-Protocol/go-epik/chain/store"
 		"github.com/EpiK-Protocol/go-epik/chain/types"
 		"github.com/EpiK-Protocol/go-epik/chain/vm"
-		bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
+		bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 		"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 	*/
 	"context"
@@ -807,7 +807,7 @@ func UpgradeRefuel(ctx context.Context, sm *StateManager, _ MigrationCache, cb E
 }
 
 func UpgradeActorsV2(ctx context.Context, sm *StateManager, _ MigrationCache, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
-	buf := bufbstore.NewTieredBstore(sm.cs.Blockstore(), bstore.NewTemporarySync())
+	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewTemporarySync())
 	store := store.ActorStore(ctx, buf)
 
 	info, err := store.Put(ctx, new(types.StateInfo0))
@@ -1024,7 +1024,7 @@ func upgradeActorsV3Common(
 	root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet,
 	config nv10.Config,
 ) (cid.Cid, error) {
-	buf := bufbstore.NewTieredBstore(sm.cs.Blockstore(), bstore.NewTemporarySync())
+	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewTemporarySync())
 	store := store.ActorStore(ctx, buf)
 
 	// Load the state root.

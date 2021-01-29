@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/filecoin-project/go-address"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 )

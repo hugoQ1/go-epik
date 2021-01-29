@@ -11,10 +11,10 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 

@@ -45,6 +45,7 @@ import (
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -55,7 +56,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 )
@@ -322,7 +322,7 @@ func (syncer *Syncer) ValidateMsgMeta(fblk *types.FullBlock) error {
 
 	// We use a temporary bstore here to avoid writing intermediate pieces
 	// into the blockstore.
-	blockstore := bstore.NewTemporary()
+	blockstore := bstore.NewMemory()
 	cst := cbor.NewCborStore(blockstore)
 
 	var bcids, scids []cid.Cid
@@ -1109,7 +1109,7 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 	}
 
 	// Validate message arrays in a temporary blockstore.
-	tmpbs := bstore.NewTemporary()
+	tmpbs := bstore.NewMemory()
 	tmpstore := blockadt.WrapStore(ctx, cbor.NewCborStore(tmpbs))
 
 	bmArr, err := blockadt.MakeEmptyArray(tmpstore, adt.DefaultMsgAmtBitwidth)
@@ -1566,7 +1566,7 @@ func (syncer *Syncer) iterFullTipsets(ctx context.Context, headers []*types.TipS
 
 		for bsi := 0; bsi < len(bstout); bsi++ {
 			// temp storage so we don't persist data we dont want to
-			bs := bstore.NewTemporary()
+			bs := bstore.NewMemory()
 			blks := cbor.NewCborStore(bs)
 
 			this := headers[i-bsi]

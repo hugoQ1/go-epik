@@ -16,7 +16,7 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 )
 
 func TestDiffAdtArray(t *testing.T) {

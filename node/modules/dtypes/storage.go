@@ -14,7 +14,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/piecestore"
 	"github.com/filecoin-project/go-statestore"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
 	"github.com/EpiK-Protocol/go-epik/node/repo/retrievalstoremgr"
 )

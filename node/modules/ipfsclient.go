@@ -6,8 +6,7 @@ import (
 
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/ipfsbstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
@@ -26,9 +25,9 @@ func IpfsClientBlockstore(ipfsMaddr string, onlineMode bool) func(helpers.Metric
 			if err != nil {
 				return nil, xerrors.Errorf("parsing ipfs multiaddr: %w", err)
 			}
-			ipfsbs, err = ipfsbstore.NewRemoteIpfsBstore(helpers.LifecycleCtx(mctx, lc), ma, onlineMode)
+			ipfsbs, err = blockstore.NewRemoteIpfsBstore(helpers.LifecycleCtx(mctx, lc), ma, onlineMode)
 		} else {
-			ipfsbs, err = ipfsbstore.NewIpfsBstore(helpers.LifecycleCtx(mctx, lc), onlineMode)
+			ipfsbs, err = blockstore.NewIpfsBstore(helpers.LifecycleCtx(mctx, lc), onlineMode)
 		}
 		if err != nil {
 			return nil, xerrors.Errorf("constructing ipfs blockstore: %w", err)

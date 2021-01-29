@@ -19,7 +19,7 @@ import (
 
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -308,7 +308,7 @@ var actorRepayDebtCmd = &cli.Command{
 				return err
 			}
 
-			store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(api)))
+			store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
 
 			mst, err := miner.Load(store, mact)
 			if err != nil {

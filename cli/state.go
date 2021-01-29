@@ -33,7 +33,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	lapi "github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
@@ -46,7 +46,7 @@ var stateCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "tipset",
-			Usage: "specify tipset to call method on (pass comma separated array of cids, or '@head' or '@{height}')",
+			Usage: "specify tipset to call method on (pass comma separated array of cids)",
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -1000,7 +1000,7 @@ var stateComputeStateCmd = &cli.Command{
 		}
 
 		if cctx.Bool("html") {
-			st, err := state.LoadStateTree(cbor.NewCborStore(apibstore.NewAPIBlockstore(api)), stout.Root)
+			st, err := state.LoadStateTree(cbor.NewCborStore(blockstore.NewAPIBlockstore(api)), stout.Root)
 			if err != nil {
 				return xerrors.Errorf("loading state tree: %w", err)
 			}

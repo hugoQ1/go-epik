@@ -20,6 +20,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/journal"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -30,9 +31,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
-	"github.com/EpiK-Protocol/go-epik/lib/timedbs"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -46,10 +44,10 @@ func ChainBitswap(mctx helpers.MetricsCtx, lc fx.Lifecycle, host host.Host, rt r
 
 	// Write all incoming bitswap blocks into a temporary blockstore for two
 	// block times. If they validate, they'll be persisted later.
-	cache := timedbs.NewTimedCacheBS(2 * time.Duration(build.BlockDelaySecs) * time.Second)
+	cache := blockstore.NewTimedCacheBS(2 * time.Duration(build.BlockDelaySecs) * time.Second)
 	lc.Append(fx.Hook{OnStop: cache.Stop, OnStart: cache.Start})
 
-	bitswapBs := bufbstore.NewTieredBstore(bs, cache)
+	bitswapBs := blockstore.NewTieredBstore(bs, cache)
 
 	// Use just exch.Close(), closing the context is not needed
 	exch := bitswap.New(mctx, bitswapNetwork, bitswapBs, bitswapOptions...)

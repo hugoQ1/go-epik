@@ -17,15 +17,13 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 var infoCmd = &cli.Command{
@@ -102,7 +100,7 @@ func infoCmdAct(cctx *cli.Context) error {
 		return err
 	}
 
-	tbs := bufbstore.NewTieredBstore(apibstore.NewAPIBlockstore(api), blockstore.NewTemporary())
+	tbs := blockstore.NewTieredBstore(blockstore.NewAPIBlockstore(api), blockstore.NewMemory())
 	mas, err := miner.Load(adt.WrapStore(ctx, cbor.NewCborStore(tbs)), mact)
 	if err != nil {
 		return err

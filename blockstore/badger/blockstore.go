@@ -16,7 +16,7 @@ import (
 	logger "github.com/ipfs/go-log/v2"
 	pool "github.com/libp2p/go-buffer-pool"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 )
 
 var (

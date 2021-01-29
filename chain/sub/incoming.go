@@ -24,6 +24,7 @@ import (
 
 	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -31,7 +32,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/impl/client"
@@ -396,7 +396,7 @@ func (bv *BlockValidator) isChainNearSynced() bool {
 func (bv *BlockValidator) validateMsgMeta(ctx context.Context, msg *types.BlockMsg) error {
 	// TODO there has to be a simpler way to do this without the blockstore dance
 	// block headers use adt0
-	store := blockadt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewTemporary()))
+	store := blockadt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewMemory()))
 	bmArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
 	if err != nil {
 		return err

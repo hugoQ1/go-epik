@@ -1,7 +1,7 @@
 package repo
 
 import (
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 )
 
 // BadgerBlockstoreOptions returns the badger options to apply for the provided
