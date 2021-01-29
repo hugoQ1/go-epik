@@ -167,9 +167,9 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					rootCID: data.RootCID,
 					miners:  []address.Address{},
 				}
+			} else {
+				dataRef = ref.(*DataRef)
 			}
-
-			dataRef = ref.(*DataRef)
 			dataRef.miners = append(dataRef.miners, data.Miner)
 			m.dataRefs.Add(data.PieceCID.String(), dataRef)
 		}

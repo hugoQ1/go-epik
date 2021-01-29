@@ -11,7 +11,6 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
@@ -39,7 +38,7 @@ func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddr
 		PieceID:  pieceCid,
 		Size:     size,
 		Client:   clientAddress,
-		Provider: clientAddress,
+		Provider: minerAddress,
 	})
 	if aerr != nil {
 		return cid.Undef, aerr
@@ -61,7 +60,8 @@ func (rcn *retrievalClientNode) SubmitDataPledge(ctx context.Context, clientAddr
 
 // WaitForDataPledgeReady wait data pledge ready
 func (rcn *retrievalClientNode) WaitForDataPledgeReady(ctx context.Context, waitSentinel cid.Cid) error {
-	ret, err := rcn.stateAPI.StateWaitMsg(ctx, waitSentinel, build.MessageConfidence)
+	// TODO: change to build.MessageConfidence
+	ret, err := rcn.stateAPI.StateWaitMsg(ctx, waitSentinel, 1)
 
 	if err != nil {
 		return xerrors.Errorf("waiting for data pledge message: %w", err)
