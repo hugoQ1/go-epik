@@ -807,7 +807,7 @@ func UpgradeRefuel(ctx context.Context, sm *StateManager, _ MigrationCache, cb E
 }
 
 func UpgradeActorsV2(ctx context.Context, sm *StateManager, _ MigrationCache, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
-	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewTemporarySync())
+	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewMemorySync())
 	store := store.ActorStore(ctx, buf)
 
 	info, err := store.Put(ctx, new(types.StateInfo0))
@@ -1024,7 +1024,7 @@ func upgradeActorsV3Common(
 	root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet,
 	config nv10.Config,
 ) (cid.Cid, error) {
-	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewTemporarySync())
+	buf := blockstore.NewTieredBstore(sm.cs.Blockstore(), blockstore.NewMemorySync())
 	store := store.ActorStore(ctx, buf)
 
 	// Load the state root.

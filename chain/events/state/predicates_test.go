@@ -35,7 +35,7 @@ func init() {
 
 func TestMarketPredicates(t *testing.T) {
 	ctx := context.Background()
-	bs := bstore.NewTemporarySync()
+	bs := bstore.NewMemorySync()
 	store := adt2.WrapStore(ctx, cbornode.NewCborStore(bs))
 
 	oldDeal1 := &market2.DealState{
@@ -333,7 +333,7 @@ func TestMarketPredicates(t *testing.T) {
 
 func TestMinerSectorChange(t *testing.T) {
 	ctx := context.Background()
-	bs := bstore.NewTemporarySync()
+	bs := bstore.NewMemorySync()
 	store := adt2.WrapStore(ctx, cbornode.NewCborStore(bs))
 
 	nextID := uint64(0)
