@@ -292,7 +292,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
-		offer, err := m.api.ClientMinerQueryOffer(ctx, m.address, data.rootCID, nil)
+		offer, err := m.api.ClientMinerQueryOffer(ctx, m.address, data.rootCID, &data.pieceID)
 		if err != nil {
 			return err
 		}
