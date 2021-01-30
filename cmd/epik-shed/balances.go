@@ -171,7 +171,7 @@ var chainBalanceStateCmd = &cli.Command{
 
 		defer lkrepo.Close() //nolint:errcheck
 
-		bs, err := lkrepo.Blockstore(repo.BlockstoreChain)
+		bs, err := lkrepo.Blockstore(ctx, repo.BlockstoreChain)
 		if err != nil {
 			return fmt.Errorf("failed to open blockstore: %w", err)
 		}
@@ -393,7 +393,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 
 		defer lkrepo.Close() //nolint:errcheck
 
-		bs, err := lkrepo.Blockstore(repo.BlockstoreChain)
+		bs, err := lkrepo.Blockstore(ctx, repo.BlockstoreChain)
 		if err != nil {
 			return xerrors.Errorf("failed to open blockstore: %w", err)
 		}
