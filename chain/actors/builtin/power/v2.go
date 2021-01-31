@@ -11,7 +11,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -61,7 +60,7 @@ func (s *state2) MinerPower(addr address.Address) (Claim, bool, error) {
 	if err != nil {
 		return Claim{}, false, err
 	}
-	if claim.TotalMiningPledge.LessThan(power.ConsensusMinerMinPledge) {
+	if claim.TotalMiningPledge.LessThan(power2.ConsensusMinerMinPledge) {
 		return Claim{
 			RawBytePower:    big.Zero(),
 			QualityAdjPower: big.Zero(),
@@ -140,6 +139,12 @@ func (s *state2) ForEachClaim(cb func(miner address.Address, claim Claim) error)
 		a, err := address.NewFromBytes([]byte(k))
 		if err != nil {
 			return err
+		}
+		if claim.TotalMiningPledge.LessThan(power2.ConsensusMinerMinPledge) {
+			return cb(a, Claim{
+				RawBytePower:    big.Zero(),
+				QualityAdjPower: big.Zero(),
+			})
 		}
 		return cb(a, Claim{
 			RawBytePower:    claim.RawBytePower,
