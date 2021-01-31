@@ -5,11 +5,13 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -58,6 +60,12 @@ func (s *state2) MinerPower(addr address.Address) (Claim, bool, error) {
 	ok, err := claims.Get(abi.AddrKey(addr), &claim)
 	if err != nil {
 		return Claim{}, false, err
+	}
+	if claim.TotalMiningPledge.LessThan(power.ConsensusMinerMinPledge) {
+		return Claim{
+			RawBytePower:    big.Zero(),
+			QualityAdjPower: big.Zero(),
+		}, ok, nil
 	}
 	return Claim{
 		RawBytePower:    claim.RawBytePower,
