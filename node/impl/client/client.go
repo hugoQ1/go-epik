@@ -1194,6 +1194,10 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, min
 		return nil, err
 	}
 
+	if offer.Err != "" {
+		return nil, xerrors.Errorf("query offer failed:%s", offer.Err)
+	}
+
 	order := offer.Order(payer)
 	if order.Size == 0 {
 		return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")

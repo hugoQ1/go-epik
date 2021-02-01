@@ -23,9 +23,9 @@ var (
 	//LoopWaitingSeconds data check loop waiting seconds
 	LoopWaitingSeconds = time.Second * 10
 	// RetrieveParallelNum num
-	RetrieveParallelNum = 16
+	RetrieveParallelNum = 64
 	// DealParallelNum deal thread parallel num
-	DealParallelNum = 16
+	DealParallelNum = 64
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
 )
@@ -176,6 +176,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 
 		m.checkHeight++
 	}
+	log.Infof("sync data index height:%d, count:%d", m.checkHeight, m.dataRefs.Len())
 	return nil
 }
 
@@ -193,7 +194,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			m.retrievals.Remove(rk)
 		}
 	}
-	if m.retrievals.Len() > RetrieveParallelNum {
+	if m.retrievals.Len() >= RetrieveParallelNum {
 		log.Infof("wait for retrieval:%d", m.retrievals.Len())
 		return nil
 	}
@@ -240,7 +241,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			m.retrievals.Add(rk, resp)
 		}
 
-		if m.retrievals.Len() > RetrieveParallelNum {
+		if m.retrievals.Len() >= RetrieveParallelNum {
 			log.Infof("wait for retrieval:%d", m.retrievals.Len())
 			break
 		}
@@ -257,17 +258,18 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		if lDeal.State == storagemarket.StorageDealActive {
+		if lDeal.State == storagemarket.StorageDealAwaitingPreCommit ||
+			lDeal.State == storagemarket.StorageDealActive {
 			m.dataRefs.Remove(rk)
 			m.deals.Remove(rk)
-		} else if lDeal.State == storagemarket.StorageDealProposalNotFound &&
-			lDeal.State == storagemarket.StorageDealProposalRejected &&
-			lDeal.State == storagemarket.StorageDealFailing &&
+		} else if lDeal.State == storagemarket.StorageDealProposalNotFound ||
+			lDeal.State == storagemarket.StorageDealProposalRejected ||
+			lDeal.State == storagemarket.StorageDealFailing ||
 			lDeal.State == storagemarket.StorageDealError {
 			m.deals.Remove(rk)
 		}
 	}
-	if m.deals.Len() > DealParallelNum {
+	if m.deals.Len() >= DealParallelNum {
 		log.Infof("wait for deal:%d", m.deals.Len())
 		return nil
 	}
@@ -336,7 +338,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 
 		m.deals.Add(rk, *dealID)
 
-		if m.deals.Len() > DealParallelNum {
+		if m.deals.Len() >= DealParallelNum {
 			log.Infof("wait for deal:%d", m.deals.Len())
 			break
 		}

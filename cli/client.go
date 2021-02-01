@@ -1258,10 +1258,11 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
 		}
-		fmt.Printf("Retrieve Balance: %s\n", state.Balance)
-		fmt.Printf("Retrieve Day expend: %s\n", state.DayExpend)
-		fmt.Printf("Locked Balance: %s\n", state.Locked)
-		fmt.Printf("Locked Epoch: %s\n", state.LockedEpoch)
+
+		fmt.Printf("Retrieve Balance: %s\n", types.EPK(state.Balance).String())
+		fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
+		fmt.Printf("Locked Balance: %s\n", types.EPK(state.Locked).String())
+		fmt.Printf("Locked Epoch: %d\n", state.LockedEpoch)
 		return nil
 	},
 }
