@@ -1209,7 +1209,7 @@ var clientRetrievePledgeCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalPledge(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		msg, err := api.ClientRetrievalPledge(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
@@ -1309,7 +1309,7 @@ var clientRetrieveApplyForWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalApplyForWithdraw(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		msg, err := api.ClientRetrievalApplyForWithdraw(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to apply for withdraw: %w", err))
 		}
@@ -1361,7 +1361,7 @@ var clientRetrieveWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalWithdraw(ctx, fromAddr, abi.NewTokenAmount(val.Int64()))
+		msg, err := api.ClientRetrievalWithdraw(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to withdraw retrival: %w", err))
 		}
