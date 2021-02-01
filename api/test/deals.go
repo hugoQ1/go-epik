@@ -22,7 +22,6 @@ import (
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/markets/storageadapter"
 	"github.com/EpiK-Protocol/go-epik/node"
-	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -101,8 +100,8 @@ func TestPublishDealsBatching(t *testing.T, b APIBuilder, blocktime time.Duratio
 		Full: 0,
 		Opts: node.Override(
 			new(*storageadapter.DealPublisher),
-			storageadapter.NewDealPublisher(nil, &config.PublishMsgConfig{
-				PublishPeriod:  config.Duration(publishPeriod),
+			storageadapter.NewDealPublisher(nil, storageadapter.PublishMsgConfig{
+				Period:         publishPeriod,
 				MaxDealsPerMsg: maxDealsPerMsg,
 			})),
 		Preseal: PresealGenesis,
