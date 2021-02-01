@@ -161,11 +161,6 @@ var clientImportCmd = &cli.Command{
 			if err != nil {
 				return err
 			}
-			info, err := api.StateExpertInfo(ctx, expert, types.EmptyTSK)
-			if err != nil {
-				return err
-			}
-			from = info.Owner
 		}
 
 		// miner

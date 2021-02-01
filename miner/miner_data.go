@@ -218,7 +218,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		}
 
 		miner := data.miners[rand.Intn(len(data.miners))]
-		resp, err := m.api.ClientQuery(ctx, data.rootCID, miner)
+		resp, err := m.api.ClientQuery(ctx, data.rootCID, &data.pieceID, miner)
 		if err != nil {
 			data.tryCount++
 			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", miner, data.rootCID, data.tryCount, err)

@@ -419,11 +419,11 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 	// expert
 	if params.Expert != address.Undef {
-		info, err := a.StateExpertInfo(ctx, params.Expert, ts.Key())
+		_, err := a.StateExpertInfo(ctx, params.Expert, ts.Key())
 		if err != nil {
 			return nil, err
 		}
-		params.From = info.Owner
+		// params.From = info.Owner
 	}
 
 	// from
@@ -1165,7 +1165,7 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return cid.Undef, nil
 }
 
-func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
+func (a *API) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error) {
 	has, err := a.ClientHasLocal(ctx, root)
 	if err != nil {
 		return nil, err
@@ -1189,7 +1189,7 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, miner address.Addre
 	// 	return nil, errors.New("Failed to find file")
 	// }
 	// offer := offers[rand.Intn(len(offers))]
-	offer, err := a.ClientMinerQueryOffer(ctx, miner, root, nil)
+	offer, err := a.ClientMinerQueryOffer(ctx, miner, root, piece)
 	if err != nil {
 		return nil, err
 	}

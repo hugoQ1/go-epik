@@ -187,7 +187,7 @@ type FullNodeStruct struct {
 		ClientCancelDataTransfer                  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
 		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                  `perm:"admin"`
-		ClientQuery                               func(ctx context.Context, cid cid.Cid, miner address.Address) (*api.QueryResp, error)                             `perm:"read"`
+		ClientQuery                               func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error)            `perm:"read"`
 		ClientRetrievalPledge                     func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 		ClientRetrievalApplyForWithdraw           func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 		ClientRetrievalWithdraw                   func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
@@ -691,8 +691,8 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 	return c.Internal.ClientRemove(ctx, root, wallet)
 }
 
-func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, miner address.Address) (*api.QueryResp, error) {
-	return c.Internal.ClientQuery(ctx, root, miner)
+func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error) {
+	return c.Internal.ClientQuery(ctx, root, piece, miner)
 }
 
 func (c *FullNodeStruct) ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
