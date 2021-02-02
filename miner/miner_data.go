@@ -51,6 +51,10 @@ type MinerData struct {
 	dataRefs   *lru.ARCCache
 	retrievals *lru.ARCCache
 	deals      *lru.ARCCache
+
+	totalDataCount     uint64
+	totalRetrieveCount uint64
+	totalDealCount     uint64
 }
 
 func newMinerData(api api.FullNode, addr address.Address) *MinerData {
@@ -67,12 +71,15 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 		panic(err)
 	}
 	return &MinerData{
-		api:         api,
-		address:     addr,
-		dataRefs:    data,
-		retrievals:  retrievals,
-		deals:       deals,
-		checkHeight: 10,
+		api:                api,
+		address:            addr,
+		dataRefs:           data,
+		retrievals:         retrievals,
+		deals:              deals,
+		checkHeight:        10,
+		totalDataCount:     0,
+		totalRetrieveCount: 0,
+		totalDealCount:     0,
 	}
 }
 
@@ -130,6 +137,7 @@ func (m *MinerData) syncData(ctx context.Context) {
 		if err := m.dealChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
 		}
+		log.Infof("sync data height:%d, data:%d, retrieve:%d, deal:%d, wait deal:%d", m.checkHeight, m.totalDataCount, m.totalRetrieveCount, m.totalDealCount, m.dataRefs.Len())
 		m.niceSleep(LoopWaitingSeconds)
 	}
 }
@@ -172,11 +180,11 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			}
 			dataRef.miners = append(dataRef.miners, data.Miner)
 			m.dataRefs.Add(data.PieceCID.String(), dataRef)
+			m.totalDataCount++
 		}
 
 		m.checkHeight++
 	}
-	log.Infof("sync data index height:%d, count:%d", m.checkHeight, m.dataRefs.Len())
 	return nil
 }
 
@@ -211,6 +219,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 
 		if has {
 			m.retrievals.Remove(rk)
+			m.totalRetrieveCount++
 			continue
 		}
 
@@ -235,6 +244,8 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 		log.Warnf("client retrieve miner:%s, data:%s", miner, data.rootCID)
+		m.totalRetrieveCount++
+
 		if resp.Status == api.QuerySuccess {
 			m.retrievals.Remove(rk)
 		} else {
@@ -262,6 +273,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			lDeal.State == storagemarket.StorageDealActive {
 			m.dataRefs.Remove(rk)
 			m.deals.Remove(rk)
+			m.totalDealCount++
 		} else if lDeal.State == storagemarket.StorageDealProposalNotFound ||
 			lDeal.State == storagemarket.StorageDealProposalRejected ||
 			lDeal.State == storagemarket.StorageDealFailing ||
@@ -300,6 +312,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 		if offer.Err == "" {
 			m.dataRefs.Remove(rk)
+			m.totalDealCount++
 			continue
 		}
 
