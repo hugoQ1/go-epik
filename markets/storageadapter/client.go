@@ -7,11 +7,12 @@ import (
 	"context"
 	"math"
 
-	"github.com/filecoin-project/go-address"
-	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/ipfs/go-cid"
+	"go.uber.org/fx"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-address"
+	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filecoin-project/go-fil-markets/shared"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -31,6 +32,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/markets/utils"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
 
 type ClientNodeAdapter struct {
@@ -48,9 +50,11 @@ type clientApi struct {
 	full.MpoolAPI
 }
 
-func NewClientNodeAdapter(stateapi full.StateAPI, chain full.ChainAPI, mpool full.MpoolAPI, fundmgr *market.FundManager) storagemarket.StorageClientNode {
+func NewClientNodeAdapter(mctx helpers.MetricsCtx, lc fx.Lifecycle, stateapi full.StateAPI, chain full.ChainAPI, mpool full.MpoolAPI, fundmgr *market.FundManager) storagemarket.StorageClientNode {
 	capi := &clientApi{chain, stateapi, mpool}
-	ev := events.NewEvents(context.TODO(), capi)
+	ctx := helpers.LifecycleCtx(mctx, lc)
+
+	ev := events.NewEvents(ctx, capi)
 	a := &ClientNodeAdapter{
 		clientApi: capi,
 
