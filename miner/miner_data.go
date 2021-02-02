@@ -175,12 +175,12 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 					rootCID: data.RootCID,
 					miners:  []address.Address{},
 				}
+				m.totalDataCount++
 			} else {
 				dataRef = ref.(*DataRef)
 			}
 			dataRef.miners = append(dataRef.miners, data.Miner)
 			m.dataRefs.Add(data.PieceCID.String(), dataRef)
-			m.totalDataCount++
 		}
 
 		m.checkHeight++
@@ -219,7 +219,6 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 
 		if has {
 			m.retrievals.Remove(rk)
-			m.totalRetrieveCount++
 			continue
 		}
 
