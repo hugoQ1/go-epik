@@ -39,3 +39,11 @@ func (s *state) LockedState(fromAddr address.Address) (*LockedState, error) {
 func (s *state) TotalCollateral() (abi.TokenAmount, error) {
 	return s.State.TotalCollateral, nil
 }
+
+func (s *state) TotalRetrievalReward() (abi.TokenAmount, error) {
+	return s.State.TotalRetrievalReward, nil
+}
+
+func (s *state) PendingReward() (abi.TokenAmount, error) {
+	return s.State.PendingReward, nil
+}

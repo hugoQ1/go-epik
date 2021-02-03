@@ -43,4 +43,6 @@ type State interface {
 	DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.TokenAmount, error)
 	LockedState(fromAddr address.Address) (*LockedState, error)
 	TotalCollateral() (abi.TokenAmount, error)
+	TotalRetrievalReward() (abi.TokenAmount, error)
+	PendingReward() (abi.TokenAmount, error)
 }

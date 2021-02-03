@@ -503,6 +503,9 @@ type FullNode interface {
 	// StateGovernorList returns all governors
 	StateGovernorList(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)
 
+	// StateRetrievalInfo retrieval pledge info
+	StateRetrievalInfo(context.Context, types.TipSetKey) (*RetrievalInfo, error)
+
 	// StateRetrievalPledge retrieval pledge state
 	StateRetrievalPledge(context.Context, address.Address, types.TipSetKey) (*RetrievalState, error)
 
@@ -1091,6 +1094,11 @@ type ExpertFileInfo struct {
 	Redundancy uint64
 }
 
+type RetrievalInfo struct {
+	TotalPledge   abi.TokenAmount
+	TotalReward   abi.TokenAmount
+	PendingReward abi.TokenAmount
+}
 type RetrievalState struct {
 	Balance     abi.TokenAmount
 	DayExpend   abi.TokenAmount

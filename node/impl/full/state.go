@@ -1631,6 +1631,36 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 	return govState.ListGovrnors()
 }
 
+func (a *StateAPI) StateRetrievalInfo(ctx context.Context, tsk types.TipSetKey) (*api.RetrievalInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, retrieval.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
+	}
+
+	state, err := retrieval.Load(a.Chain.Store(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
+	}
+	pledge, err := state.TotalCollateral()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval TotalCollateral: %w", err)
+	}
+
+	reward, err := state.TotalRetrievalReward()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval total reward: %w", err)
+	}
+	pending, err := state.PendingReward()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval pending reward: %w", err)
+	}
+	return &api.RetrievalInfo{
+		TotalPledge:   pledge,
+		TotalReward:   reward,
+		PendingReward: pending,
+	}, nil
+}
+
 func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalState, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, retrieval.Address, tsk)
 	if err != nil {

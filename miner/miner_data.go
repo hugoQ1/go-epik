@@ -31,10 +31,12 @@ var (
 )
 
 type DataRef struct {
-	pieceID  cid.Cid
-	rootCID  cid.Cid
-	miners   []address.Address
-	tryCount int
+	pieceID     cid.Cid
+	rootCID     cid.Cid
+	miners      []address.Address
+	tryCount    int
+	isRetrieved bool
+	isDealed    bool
 }
 
 type MinerData struct {
@@ -62,11 +64,11 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 	if err != nil {
 		panic(err)
 	}
-	retrievals, err := lru.NewARC(1000000)
+	retrievals, err := lru.NewARC(1000)
 	if err != nil {
 		panic(err)
 	}
-	deals, err := lru.NewARC(1000000)
+	deals, err := lru.NewARC(1000)
 	if err != nil {
 		panic(err)
 	}
@@ -171,9 +173,11 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			ref, ok := m.dataRefs.Get(data.PieceCID.String())
 			if !ok {
 				dataRef = &DataRef{
-					pieceID: data.PieceCID,
-					rootCID: data.RootCID,
-					miners:  []address.Address{},
+					pieceID:     data.PieceCID,
+					rootCID:     data.RootCID,
+					miners:      []address.Address{},
+					isRetrieved: false,
+					isDealed:    false,
 				}
 				m.totalDataCount++
 			} else {
@@ -199,6 +203,8 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			return err
 		}
 		if has {
+			data.isRetrieved = true
+			m.totalRetrieveCount++
 			m.retrievals.Remove(rk)
 		}
 	}
@@ -212,12 +218,18 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		dataObj, _ := m.dataRefs.Get(rk)
 		data := dataObj.(*DataRef)
 
+		if data.isRetrieved {
+			continue
+		}
+
 		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
 		if err != nil {
 			return err
 		}
 
 		if has {
+			data.isRetrieved = true
+			m.totalRetrieveCount++
 			m.retrievals.Remove(rk)
 			continue
 		}
@@ -243,7 +255,6 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 		log.Warnf("client retrieve miner:%s, data:%s", miner, data.rootCID)
-		m.totalRetrieveCount++
 
 		if resp.Status == api.QuerySuccess {
 			m.retrievals.Remove(rk)
@@ -270,9 +281,12 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 		if lDeal.State == storagemarket.StorageDealAwaitingPreCommit ||
 			lDeal.State == storagemarket.StorageDealActive {
-			m.dataRefs.Remove(rk)
-			m.deals.Remove(rk)
+			dataObj, _ := m.dataRefs.Get(rk)
+			data := dataObj.(*DataRef)
+			data.isDealed = true
 			m.totalDealCount++
+
+			m.deals.Remove(rk)
 		} else if lDeal.State == storagemarket.StorageDealProposalNotFound ||
 			lDeal.State == storagemarket.StorageDealProposalRejected ||
 			lDeal.State == storagemarket.StorageDealFailing ||
@@ -289,6 +303,10 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 	for _, rk := range keys {
 		dataObj, _ := m.dataRefs.Get(rk)
 		data := dataObj.(*DataRef)
+
+		if data.isDealed {
+			continue
+		}
 
 		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
 		if err != nil {
@@ -310,7 +328,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			return err
 		}
 		if offer.Err == "" {
-			m.dataRefs.Remove(rk)
+			data.isDealed = true
 			m.totalDealCount++
 			continue
 		}

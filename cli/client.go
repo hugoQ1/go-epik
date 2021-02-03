@@ -88,6 +88,7 @@ var clientCmd = &cli.Command{
 		WithCategory("retrieval", clientFindCmd),
 		WithCategory("retrieval", clientRetrieveCmd),
 		WithCategory("retrieval", clientRetrievePledgeCmd),
+		WithCategory("retrieval", clientRetrieveInfoCmd),
 		WithCategory("retrieval", clientRetrievePledgeStateCmd),
 		WithCategory("retrieval", clientRetrieveApplyForWithdrawCmd),
 		WithCategory("retrieval", clientRetrieveWithdrawCmd),
@@ -1214,6 +1215,49 @@ var clientRetrievePledgeCmd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
 		fmt.Printf("retrieve pledge: %s\n", msg)
+		return nil
+	},
+}
+
+var clientRetrieveInfoCmd = &cli.Command{
+	Name:      "retrieve-info",
+	Usage:     "global info for retrieval",
+	ArgsUsage: "query pledge info",
+	Flags:     []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+			fmt.Printf("Retrieve pledge address: %s\n", fromAddr)
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		state, err := api.StateRetrievalInfo(ctx, types.EmptyTSK)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
+		}
+
+		fmt.Printf("Retrieve Total Pledge: %s\n", types.EPK(state.TotalPledge).String())
+		fmt.Printf("Retrieve Total Reward: %s\n", types.EPK(state.TotalReward).String())
+		fmt.Printf("Retrieve Pending Reward: %s\n", types.EPK(state.PendingReward).String())
 		return nil
 	},
 }
