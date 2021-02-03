@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -12,6 +13,7 @@ import (
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -21,6 +23,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
@@ -156,8 +159,64 @@ func infoCmdAct(cctx *cli.Context) error {
 			faultyPercentage)
 	}
 
+	// mining start countdown
+	{
+		var lbr abi.ChainEpoch
+		if head.Height() > policy.ChainFinality {
+			lbr = head.Height() - policy.ChainFinality
+		}
+
+		nextTs, err := api.ChainGetTipSetByHeight(ctx, lbr+1, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		count := uint64(0)
+		if nextTs.Height() > lbr {
+			actives, err := api.StateMinerActives(ctx, maddr, nextTs.Key())
+			if err != nil {
+				if !strings.Contains(err.Error(), "actor not found") {
+					return err
+				}
+			} else {
+				count, err = actives.Count()
+				if err != nil {
+					return err
+				}
+			}
+		}
+		if count == 0 {
+			// find the earliest sector
+			actives, err := api.StateMinerActives(ctx, maddr, types.EmptyTSK)
+			if err != nil {
+				if !strings.Contains(err.Error(), "actor not found") {
+					return err
+				}
+			} else {
+				empty := false
+				sno, err := actives.First()
+				if err != nil {
+					if err == bitfield.ErrNoBitsSet {
+						empty = true
+					} else {
+						return err
+					}
+				}
+				all, _ := actives.All(10000)
+				fmt.Printf("TEMP: all sectors: %v\n", all)
+				if !empty {
+					si, err := api.StateSectorGetInfo(ctx, maddr, abi.SectorNumber(sno), types.EmptyTSK)
+					if err != nil {
+						return err
+					}
+					fmt.Printf("TEMP: head height %d, sector %d activated at %d\n", head.Height(), sno, si.Activation)
+					fmt.Printf("Estimated time of mining starts: in %d epoch(s)\n", policy.ChainFinality-(head.Height()-si.Activation))
+				}
+			}
+		}
+	}
+
 	if !pow.HasMinPower {
-		fmt.Print("Below minimum power threshold, no blocks will be won")
+		fmt.Print("Below minimum power threshold, no blocks will be won\n")
 	} else {
 		expWinChance := float64(types.BigMul(qpercI, types.NewInt(build.BlocksPerEpoch)).Int64()) / 1000000
 		if expWinChance > 0 {
@@ -179,8 +238,8 @@ func infoCmdAct(cctx *cli.Context) error {
 		return err
 	}
 
-	var nactiveDeals /* nVerifDeals, */, ndeals uint64
-	var activeDealBytes /* activeVerifDealBytes, */, dealBytes abi.PaddedPieceSize
+	var nactiveDeals, ndeals uint64
+	var activeDealBytes, dealBytes abi.PaddedPieceSize
 	for _, deal := range deals {
 		if deal.State == storagemarket.StorageDealError {
 			continue
@@ -192,16 +251,11 @@ func infoCmdAct(cctx *cli.Context) error {
 		if deal.State == storagemarket.StorageDealActive {
 			nactiveDeals++
 			activeDealBytes += deal.Proposal.PieceSize
-
-			/* if deal.Proposal.VerifiedDeal {
-				nVerifDeals++
-				activeVerifDealBytes += deal.Proposal.PieceSize
-			} */
 		}
 	}
 
 	fmt.Printf("Deals: %d, %s\n", ndeals, types.SizeStr(types.NewInt(uint64(dealBytes))))
-	fmt.Printf("\tActive: %d, %s\n", nactiveDeals, types.SizeStr(types.NewInt(uint64(activeDealBytes))) /* , nVerifDeals, types.SizeStr(types.NewInt(uint64(activeVerifDealBytes))) */)
+	fmt.Printf("\tActive: %d, %s\n", nactiveDeals, types.SizeStr(types.NewInt(uint64(activeDealBytes))))
 	fmt.Println()
 
 	spendable := big.Zero()
@@ -218,19 +272,15 @@ func infoCmdAct(cctx *cli.Context) error {
 	}
 	spendable = big.Add(spendable, availBalance)
 
-	fmt.Printf("Miner Balance:    %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
-	fmt.Printf("      Vesting:    %s\n", types.EPK(lockedFunds.VestingFunds).Short())
-	color.Green("      Available:  %s", types.EPK(availBalance).Short())
-
-	mb, err := api.StateMarketBalance(ctx, maddr, types.EmptyTSK)
+	mpledge, err := mas.TotalPledge()
 	if err != nil {
-		return xerrors.Errorf("getting market balance: %w", err)
+		return xerrors.Errorf("getting mining pledge: %w", err)
 	}
-	spendable = big.Add(spendable, big.Sub(mb.Escrow, mb.Locked))
 
-	fmt.Printf("Market Balance:   %s\n", types.EPK(mb.Escrow).Short())
-	fmt.Printf("       Locked:    %s\n", types.EPK(mb.Locked).Short())
-	color.Green("       Available: %s\n", types.EPK(big.Sub(mb.Escrow, mb.Locked)).Short())
+	fmt.Printf("Miner Balance:        %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
+	fmt.Printf("      Vesting:        %s\n", types.EPK(lockedFunds.VestingFunds).Short())
+	color.Green("      Available:      %s", types.EPK(availBalance).Short())
+	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(mpledge))
 
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {

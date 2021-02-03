@@ -225,13 +225,16 @@ func GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, sm *S
 	}
 
 	out := make([]builtin.SectorInfo, len(sectors))
+	snos := make([]uint64, len(sectors))
 	for i, sinfo := range sectors {
 		out[i] = builtin.SectorInfo{
 			SealProof:    sinfo.SealProof,
 			SectorNumber: sinfo.SectorNumber,
 			SealedCID:    sinfo.SealedCID,
 		}
+		snos[i] = uint64(sinfo.SectorNumber)
 	}
+	log.Infof("GetSectorsForWinningPoSt: %v", snos)
 
 	return out, nil
 }

@@ -202,12 +202,13 @@ type FullNodeStruct struct {
 		StateMinerDeadlines       func(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)                                 `perm:"read"`
 		StateMinerPartitions      func(ctx context.Context, m address.Address, dlIdx uint64, tsk types.TipSetKey) ([]api.Partition, error)        `perm:"read"`
 		StateMinerFaults          func(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)                              `perm:"read"`
+		StateMinerActives         func(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)                              `perm:"read"`
 		StateAllMinerFaults       func(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*api.Fault, error)                                    `perm:"read"`
 		StateMinerRecoveries      func(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)                              `perm:"read"`
 		/* StateMinerPreCommitDepositForPower func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"`
 		StateMinerInitialPledgeCollateral  func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"` */
 		StateMinerAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
-		StateMinerTotalPledge      func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
+		StateMiningPledge          func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
 		StateMinerSectorAllocated  func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)                             `perm:"read"`
 		StateSectorPreCommitInfo   func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error) `perm:"read"`
 		StateSectorGetInfo         func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorOnChainInfo, error)         `perm:"read"`
@@ -1000,6 +1001,10 @@ func (c *FullNodeStruct) StateMinerFaults(ctx context.Context, actor address.Add
 	return c.Internal.StateMinerFaults(ctx, actor, tsk)
 }
 
+func (c *FullNodeStruct) StateMinerActives(ctx context.Context, actor address.Address, tsk types.TipSetKey) (bitfield.BitField, error) {
+	return c.Internal.StateMinerActives(ctx, actor, tsk)
+}
+
 func (c *FullNodeStruct) StateAllMinerFaults(ctx context.Context, cutoff abi.ChainEpoch, endTsk types.TipSetKey) ([]*api.Fault, error) {
 	return c.Internal.StateAllMinerFaults(ctx, cutoff, endTsk)
 }
@@ -1020,8 +1025,8 @@ func (c *FullNodeStruct) StateMinerAvailableBalance(ctx context.Context, maddr a
 	return c.Internal.StateMinerAvailableBalance(ctx, maddr, tsk)
 }
 
-func (c *FullNodeStruct) StateMinerTotalPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
-	return c.Internal.StateMinerTotalPledge(ctx, maddr, tsk)
+func (c *FullNodeStruct) StateMiningPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+	return c.Internal.StateMiningPledge(ctx, maddr, tsk)
 }
 
 func (c *FullNodeStruct) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {

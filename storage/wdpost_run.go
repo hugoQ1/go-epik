@@ -574,12 +574,19 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 				break
 			}
 
+			snos := make([]uint64, 0, len(sinfos))
+			for _, si := range sinfos {
+				snos = append(snos, uint64(si.SectorNumber))
+			}
+
 			// Generate proof
 			log.Infow("running window post",
 				"chain-random", rand,
 				"deadline", di,
 				"height", ts.Height(),
-				"skipped", skipCount)
+				"skipped", skipCount,
+				"sectorlen", len(sinfos),
+				"sectornumbers", snos)
 
 			tsStart := build.Clock.Now()
 

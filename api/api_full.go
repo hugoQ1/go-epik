@@ -396,6 +396,8 @@ type FullNode interface {
 	StateMinerPartitions(ctx context.Context, m address.Address, dlIdx uint64, tsk types.TipSetKey) ([]Partition, error)
 	// StateMinerFaults returns a bitfield indicating the faulty sectors of the given miner
 	StateMinerFaults(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
+	// StateMinerActives returns a bitfield indicating the active sectors of the given miner
+	StateMinerActives(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
 	// StateAllMinerFaults returns all non-expired Faults that occur within lookback epochs of the given tipset
 	StateAllMinerFaults(ctx context.Context, lookback abi.ChainEpoch, ts types.TipSetKey) ([]*Fault, error)
 	// StateMinerRecoveries returns a bitfield indicating the recovering sectors of the given miner
@@ -406,8 +408,8 @@ type FullNode interface {
 	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
 	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
-	// StateMinerTotalPledge returns the total pledge collateral for mining
-	StateMinerTotalPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	// StateMiningPledge returns the total pledge collateral for mining
+	StateMiningPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	// StateMinerSectorAllocated checks if a sector is allocated
 	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)
 	// StateSectorPreCommitInfo returns the PreCommit info for the specified miner's sector

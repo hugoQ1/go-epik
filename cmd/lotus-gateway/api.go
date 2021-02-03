@@ -61,11 +61,12 @@ type gatewayDepsAPI interface {
 	StateReadState(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*api.ActorState, error)
 	StateMinerPower(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
 	StateMinerFaults(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
+	StateMinerActives(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
 	StateMinerRecoveries(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
 	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
-	StateMinerTotalPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	StateMiningPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
 	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
 	StateSectorGetInfo(ctx context.Context, maddr address.Address, n abi.SectorNumber, tsk types.TipSetKey) (*miner.SectorOnChainInfo, error)
@@ -324,6 +325,14 @@ func (a *GatewayAPI) StateMinerFaults(ctx context.Context, m address.Address, ts
 	}
 	return a.api.StateMinerFaults(ctx, m, tsk)
 }
+
+func (a *GatewayAPI) StateMinerActives(ctx context.Context, m address.Address, tsk types.TipSetKey) (bitfield.BitField, error) {
+	if err := a.checkTipsetKey(ctx, tsk); err != nil {
+		return bitfield.BitField{}, err
+	}
+	return a.api.StateMinerActives(ctx, m, tsk)
+}
+
 func (a *GatewayAPI) StateMinerRecoveries(ctx context.Context, m address.Address, tsk types.TipSetKey) (bitfield.BitField, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
 		return bitfield.BitField{}, err
@@ -352,11 +361,11 @@ func (a *GatewayAPI) StateMinerAvailableBalance(ctx context.Context, m address.A
 	return a.api.StateMinerAvailableBalance(ctx, m, tsk)
 }
 
-func (a *GatewayAPI) StateMinerTotalPledge(ctx context.Context, m address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+func (a *GatewayAPI) StateMiningPledge(ctx context.Context, m address.Address, tsk types.TipSetKey) (types.BigInt, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
 		return types.BigInt{}, err
 	}
-	return a.api.StateMinerTotalPledge(ctx, m, tsk)
+	return a.api.StateMiningPledge(ctx, m, tsk)
 }
 
 func (a *GatewayAPI) StateMinerProvingDeadline(ctx context.Context, m address.Address, tsk types.TipSetKey) (*dline.Info, error) {

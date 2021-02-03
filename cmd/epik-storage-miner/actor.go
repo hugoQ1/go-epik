@@ -492,12 +492,12 @@ var actorWithdrawPledgeCmd = &cli.Command{
 		}
 		amount := abi.TokenAmount(f)
 
-		available, err := api.StateMinerTotalPledge(ctx, maddr, types.EmptyTSK)
+		mpledge, err := api.StateMiningPledge(ctx, maddr, types.EmptyTSK)
 		if err != nil {
 			return err
 		}
-		if amount.GreaterThan(available) {
-			return xerrors.Errorf("can't withdraw more funds than available; requested: %s; available: %s", amount, available)
+		if amount.GreaterThan(mpledge) {
+			return xerrors.Errorf("can't withdraw more funds than available; requested: %s; available: %s", types.EPK(amount), types.EPK(mpledge))
 		}
 
 		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{

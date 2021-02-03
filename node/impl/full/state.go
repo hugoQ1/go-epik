@@ -281,6 +281,20 @@ func (a *StateAPI) StateMinerFaults(ctx context.Context, addr address.Address, t
 	return miner.AllPartSectors(mas, miner.Partition.FaultySectors)
 }
 
+func (a *StateAPI) StateMinerActives(ctx context.Context, addr address.Address, tsk types.TipSetKey) (bitfield.BitField, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
+	if err != nil {
+		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor: %w", err)
+	}
+
+	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	if err != nil {
+		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor state: %w", err)
+	}
+
+	return miner.AllPartSectors(mas, miner.Partition.ActiveSectors)
+}
+
 func (a *StateAPI) StateAllMinerFaults(ctx context.Context, lookback abi.ChainEpoch, endTsk types.TipSetKey) ([]*api.Fault, error) {
 	return nil, xerrors.Errorf("fixme")
 
@@ -1243,7 +1257,7 @@ func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address
 	return types.BigAdd(abal, vested), nil
 }
 
-func (a *StateAPI) StateMinerTotalPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+func (a *StateAPI) StateMiningPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("loading tipset %s: %w", tsk, err)
