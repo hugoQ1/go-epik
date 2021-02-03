@@ -1232,24 +1232,6 @@ var clientRetrieveInfoCmd = &cli.Command{
 		defer closer()
 		ctx := ReqContext(cctx)
 
-		var fromAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-			fmt.Printf("Retrieve pledge address: %s\n", fromAddr)
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
-		}
-
 		state, err := api.StateRetrievalInfo(ctx, types.EmptyTSK)
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
