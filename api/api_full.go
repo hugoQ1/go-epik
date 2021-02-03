@@ -1078,6 +1078,7 @@ type QueryResp struct {
 
 type ExpertRegisterFileParams struct {
 	Expert    address.Address
+	RootID    cid.Cid
 	PieceID   cid.Cid
 	PieceSize abi.PaddedPieceSize
 }

@@ -507,6 +507,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 		// register new file
 		mcid, err := a.ClientExpertRegisterFile(ctx, &api.ExpertRegisterFileParams{
 			Expert:    params.Expert,
+			RootID:    res.Root,
 			PieceID:   ds.PieceCID,
 			PieceSize: ds.PieceSize,
 		})
@@ -566,6 +567,7 @@ func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRe
 	}
 
 	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
+		RootID:    params.RootID,
 		PieceID:   params.PieceID,
 		PieceSize: params.PieceSize,
 	})
