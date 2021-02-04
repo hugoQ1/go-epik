@@ -567,7 +567,7 @@ func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRe
 	}
 
 	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-		RootID:    params.RootID,
+		RootID:    params.RootID.String(),
 		PieceID:   params.PieceID,
 		PieceSize: params.PieceSize,
 	})
