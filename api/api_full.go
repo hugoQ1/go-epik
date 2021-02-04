@@ -535,6 +535,12 @@ type FullNode interface {
 	// MsigGetVested returns the amount of EPK that vested in a multisig in a certain period.
 	// It takes the following params: <multisig address>, <start epoch>, <end epoch>
 	MsigGetVested(context.Context, address.Address, types.TipSetKey, types.TipSetKey) (types.BigInt, error)
+
+	//MsigGetPending returns pending transactions for the given multisig
+	//wallet. Once pending transactions are fully approved, they will no longer
+	//appear here.
+	MsigGetPending(context.Context, address.Address, types.TipSetKey) ([]*MsigTransaction, error)
+
 	// MsigCreate creates a multisig wallet
 	// It takes the following params: <required number of senders>, <approving addresses>, <unlock duration>
 	//<initial balance>, <sender address of the create msg>, <gas price>
@@ -1120,4 +1126,14 @@ type RetrievalDeal struct {
 	MinerWallet  address.Address
 	Status       retrievalmarket.DealStatus
 	Message      string
+}
+
+type MsigTransaction struct {
+	ID     int64
+	To     address.Address
+	Value  abi.TokenAmount
+	Method abi.MethodNum
+	Params []byte
+
+	Approved []address.Address
 }
