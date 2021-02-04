@@ -284,6 +284,9 @@ func (a *StateAPI) StateMinerFaults(ctx context.Context, addr address.Address, t
 func (a *StateAPI) StateMinerActives(ctx context.Context, addr address.Address, tsk types.TipSetKey) (bitfield.BitField, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
 	if err != nil {
+		if err == types.ErrActorNotFound {
+			return bitfield.BitField{}, nil
+		}
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 

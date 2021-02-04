@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -174,43 +173,40 @@ func infoCmdAct(cctx *cli.Context) error {
 		if nextTs.Height() > lbr {
 			actives, err := api.StateMinerActives(ctx, maddr, nextTs.Key())
 			if err != nil {
-				if !strings.Contains(err.Error(), "actor not found") {
-					return err
-				}
-			} else {
-				count, err = actives.Count()
-				if err != nil {
-					return err
-				}
+				return err
+			}
+			count, err = actives.Count()
+			if err != nil {
+				return err
 			}
 		}
 		if count == 0 {
 			// find the earliest sector
 			actives, err := api.StateMinerActives(ctx, maddr, types.EmptyTSK)
 			if err != nil {
-				if !strings.Contains(err.Error(), "actor not found") {
+				return err
+			}
+			empty := false
+			sno, err := actives.First()
+			if err != nil {
+				if err == bitfield.ErrNoBitsSet {
+					empty = true
+				} else {
 					return err
 				}
-			} else {
-				empty := false
-				sno, err := actives.First()
+			}
+			if !empty {
+				all, err := actives.All(10000)
 				if err != nil {
-					if err == bitfield.ErrNoBitsSet {
-						empty = true
-					} else {
-						return err
-					}
+					return err
 				}
-				all, _ := actives.All(10000)
-				fmt.Printf("TEMP: all sectors: %v\n", all)
-				if !empty {
-					si, err := api.StateSectorGetInfo(ctx, maddr, abi.SectorNumber(sno), types.EmptyTSK)
-					if err != nil {
-						return err
-					}
-					fmt.Printf("TEMP: head height %d, sector %d activated at %d\n", head.Height(), sno, si.Activation)
-					fmt.Printf("Estimated time of mining starts: in %d epoch(s)\n", policy.ChainFinality-(head.Height()-si.Activation))
+				fmt.Printf("TEMP: all sectors: %v, first: %d\n", all, sno)
+				si, err := api.StateSectorGetInfo(ctx, maddr, abi.SectorNumber(sno), types.EmptyTSK)
+				if err != nil {
+					return err
 				}
+				fmt.Printf("TEMP: head height %d, sector %d activated at %d\n", head.Height(), sno, si.Activation)
+				fmt.Printf("Estimated time of mining starts: in %d epoch(s)\n", policy.ChainFinality-(head.Height()-si.Activation))
 			}
 		}
 	}

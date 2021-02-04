@@ -15,6 +15,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
