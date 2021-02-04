@@ -76,8 +76,9 @@ func NewMiner(api api.FullNode, epp gen.WinningPoStProver, addr address.Address,
 		evtTypes: [...]journal.EventType{
 			evtTypeBlockMined: j.RegisterEventType("miner", "block_mined"),
 		},
-		journal:   j,
-		minerData: newMinerData(api, addr),
+		journal:          j,
+		minerData:        newMinerData(api, addr),
+		isMineOneRunning: false,
 	}
 }
 
@@ -101,7 +102,8 @@ type Miner struct {
 	evtTypes [1]journal.EventType
 	journal  journal.Journal
 
-	minerData *MinerData
+	minerData        *MinerData
+	isMineOneRunning bool
 }
 
 func (m *Miner) Address() address.Address {
@@ -368,6 +370,15 @@ func (m *Miner) GetBestMiningCandidate(ctx context.Context) (*MiningBase, error)
 //
 //  1.
 func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg, error) {
+	//WinningPost is a cost time operation, if miner WinningPost running, cancel the next mining
+	if m.isMineOneRunning {
+		return nil, xerrors.Errorf("mineOne cannot be executed twice at once")
+	}
+	m.isMineOneRunning = true
+	defer func() {
+		m.isMineOneRunning = false
+	}()
+
 	log.Debugw("attempting to mine a block", "tipset", types.LogCids(base.TipSet.Cids()))
 	start := build.Clock.Now()
 
