@@ -474,6 +474,7 @@ type GatewayStruct struct {
 		StateMinerPower           func(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
 		StateMarketBalance        func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
 		StateMarketStorageDeal    func(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
+		StateReadState            func(context.Context, address.Address, types.TipSetKey) (*api.ActorState, error)
 		StateNetworkVersion       func(ctx context.Context, tsk types.TipSetKey) (stnetwork.Version, error)
 		StateSearchMsg            func(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error)
 		StateSectorGetInfo        func(ctx context.Context, maddr address.Address, n abi.SectorNumber, tsk types.TipSetKey) (*miner.SectorOnChainInfo, error)
@@ -1920,6 +1921,10 @@ func (g GatewayStruct) StateSectorGetInfo(ctx context.Context, maddr address.Add
 
 func (g GatewayStruct) StateWaitMsg(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error) {
 	return g.Internal.StateWaitMsg(ctx, msg, confidence)
+}
+
+func (g GatewayStruct) StateReadState(ctx context.Context, addr address.Address, ts types.TipSetKey) (*api.ActorState, error) {
+	return g.Internal.StateReadState(ctx, addr, ts)
 }
 
 func (c *WalletStruct) WalletNew(ctx context.Context, typ types.KeyType) (address.Address, error) {
