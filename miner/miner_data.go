@@ -334,7 +334,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 					m.totalDealCount++
 				}
 				if !isFinish {
-					m.deals.Add(rk, d.DealID)
+					m.deals.Add(rk, d.ProposalCid)
 				}
 				break
 			}
