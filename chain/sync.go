@@ -33,6 +33,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/go-state-types/network"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 
@@ -723,6 +724,8 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 		return xerrors.Errorf("load parent tipset failed (%s): %w", h.Parents, err)
 	}
 
+	winPoStNv := syncer.sm.GetNtwkVersion(ctx, baseTs.Height())
+
 	lbts, lbst, err := stmgr.GetLookbackTipSetForRound(ctx, syncer.sm, baseTs, h.Height)
 	if err != nil {
 		return xerrors.Errorf("failed to get lookback tipset for block: %w", err)
@@ -894,7 +897,9 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 			return xerrors.Errorf("failed to marshal miner address to cbor: %w", err)
 		}
 
+		// if h.Height > build.UpgradeSmokeHeight {
 		buf.Write(baseTs.MinTicket().VRFProof)
+		// }
 
 		beaconBase := *prevBeacon
 		if len(h.BeaconEntries) != 0 {
@@ -914,7 +919,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 	})
 
 	wproofCheck := async.Err(func() error {
-		if err := syncer.VerifyWinningPoStProof(ctx, h, *prevBeacon, lbst, waddr); err != nil {
+		if err := syncer.VerifyWinningPoStProof(ctx, winPoStNv, h, *prevBeacon, lbst, waddr); err != nil {
 			return xerrors.Errorf("invalid election post: %w", err)
 		}
 		return nil
@@ -966,7 +971,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 	return nil
 }
 
-func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, h *types.BlockHeader, prevBeacon types.BeaconEntry, lbst cid.Cid, waddr address.Address) error {
+func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, nv network.Version, h *types.BlockHeader, prevBeacon types.BeaconEntry, lbst cid.Cid, waddr address.Address) error {
 	if build.InsecurePoStValidation {
 		if len(h.WinPoStProof) == 0 {
 			return xerrors.Errorf("[INSECURE-POST-VALIDATION] No winning post proof given")
@@ -998,7 +1003,7 @@ func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, h *types.Block
 		return xerrors.Errorf("failed to get ID from miner address %s: %w", h.Miner, err)
 	}
 
-	sectors, err := stmgr.GetSectorsForWinningPoSt(ctx, syncer.verifier, syncer.sm, lbst, h.Miner, rand)
+	sectors, err := stmgr.GetSectorsForWinningPoSt(ctx, nv, syncer.verifier, syncer.sm, lbst, h.Miner, rand)
 	if err != nil {
 		return xerrors.Errorf("getting winning post sector set: %w", err)
 	}
@@ -1328,7 +1333,7 @@ loop:
 		// NB: GetBlocks validates that the blocks are in-fact the ones we
 		// requested, and that they are correctly linked to one another. It does
 		// not validate any state transitions.
-		window := int(build.ForkLengthThreshold)
+		window := 500
 		if gap := int(blockSet[len(blockSet)-1].Height() - untilHeight); gap < window {
 			window = gap
 		}
