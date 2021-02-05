@@ -30,6 +30,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/markets/storageadapter"
 	"github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node/impl/common"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -53,9 +54,10 @@ type StorageMinerAPI struct {
 	IStorageMgr       sectorstorage.SectorManager
 	*stores.Index
 	storiface.WorkerReturn
-	DataTransfer dtypes.ProviderDataTransfer
-	Host         host.Host
-	AddrSel      *storage.AddressSelector
+	DataTransfer  dtypes.ProviderDataTransfer
+	Host          host.Host
+	AddrSel       *storage.AddressSelector
+	DealPublisher *storageadapter.DealPublisher
 
 	DS dtypes.MetadataDS
 
@@ -490,6 +492,15 @@ func (sm *StorageMinerAPI) MarketDataTransferUpdates(ctx context.Context) (<-cha
 	}()
 
 	return channels, nil
+}
+
+func (sm *StorageMinerAPI) MarketPendingDeals(ctx context.Context) (api.PendingDealInfo, error) {
+	return sm.DealPublisher.PendingDeals(), nil
+}
+
+func (sm *StorageMinerAPI) MarketPublishPendingDeals(ctx context.Context) error {
+	sm.DealPublisher.ForcePublishPendingDeals()
+	return nil
 }
 
 func (sm *StorageMinerAPI) DealsList(ctx context.Context) ([]api.MarketDeal, error) {
