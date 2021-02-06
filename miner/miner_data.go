@@ -243,18 +243,19 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		for _, d := range deals {
-			if d.PieceCID.Equals(data.pieceID) {
-				if retrievalmarket.IsTerminalSuccess(d.Status) {
-					data.isRetrieved = true
-					m.totalRetrieveCount++
-				}
-				if !retrievalmarket.IsTerminalStatus(d.Status) {
-					m.retrievals.Add(rk, d)
-				}
-				break
-			}
-		}
+		// TODO: temp ignore
+		// for _, d := range deals {
+		// 	if d.PieceCID.Equals(data.pieceID) {
+		// 		if retrievalmarket.IsTerminalSuccess(d.Status) {
+		// 			data.isRetrieved = true
+		// 			m.totalRetrieveCount++
+		// 		}
+		// 		if !retrievalmarket.IsTerminalStatus(d.Status) {
+		// 			m.retrievals.Add(rk, d)
+		// 		}
+		// 		break
+		// 	}
+		// }
 
 		if m.retrievals.Contains(rk) {
 			continue
