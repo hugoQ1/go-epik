@@ -1222,7 +1222,7 @@ var clientRetrieveListCmd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to get retrival list: %w", err))
 		}
 
-		fmt.Fprintf(tm.Screen, "\nRetrieve lists\n\n")
+		fmt.Fprintf(cctx.App.Writer, "\nRetrieve lists\n\n")
 		w := tablewriter.New(tablewriter.Col("DealId"),
 			tablewriter.Col("RootID"),
 			// tablewriter.Col("PieceCID"),
@@ -1243,7 +1243,7 @@ var clientRetrieveListCmd = &cli.Command{
 			})
 		}
 
-		return w.Flush(tm.Screen)
+		return w.Flush(cctx.App.Writer)
 	},
 }
 

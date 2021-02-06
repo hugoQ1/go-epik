@@ -229,6 +229,10 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		dataObj, _ := m.dataRefs.Get(rk)
 		data := dataObj.(*DataRef)
 
+		if data.isRetrieved {
+			continue
+		}
+
 		for _, d := range deals {
 			if d.PieceCID.Equals(data.pieceID) {
 				if retrievalmarket.IsTerminalSuccess(d.Status) {
@@ -242,10 +246,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			}
 		}
 
-		if data.isRetrieved {
-			continue
-		}
-		if m.retrievals.Contains(data.pieceID.String()) {
+		if m.retrievals.Contains(rk) {
 			continue
 		}
 
@@ -326,6 +327,10 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
+		if data.isDealed {
+			continue
+		}
+
 		for _, d := range deals {
 			if d.PieceCID.Equals(data.pieceID) {
 				isFinish, isDealed := checkDealStatus(&d)
@@ -340,9 +345,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			}
 		}
 
-		if data.isDealed {
-			continue
-		}
 		// if miner is dealing, go to next one
 		if m.deals.Contains(rk) {
 			continue
