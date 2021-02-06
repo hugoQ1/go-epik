@@ -233,11 +233,8 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
-		if err != nil {
-			return err
-		}
-		if has {
+		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+			log.Infof("data has been storaged:%s", data.pieceID)
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 			continue
@@ -295,6 +292,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 
 func checkDealStatus(deal *api.DealInfo) (bool, bool) {
 	isDealed := (deal.State == storagemarket.StorageDealAwaitingPreCommit ||
+		deal.State == storagemarket.StorageDealSealing ||
 		deal.State == storagemarket.StorageDealActive)
 	isError := (deal.State == storagemarket.StorageDealProposalNotFound ||
 		deal.State == storagemarket.StorageDealProposalRejected ||
@@ -375,7 +373,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 
 		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Infof("data has been storaged", m.address, data.pieceID)
+			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
+			data.isDealed = true
+			m.totalDealCount++
 			continue
 		}
 
