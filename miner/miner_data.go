@@ -233,6 +233,16 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
+		has, err := m.api.ClientHasLocal(ctx, data.rootCID)
+		if err != nil {
+			return err
+		}
+		if has {
+			data.isRetrieved = true
+			m.totalRetrieveCount++
+			continue
+		}
+
 		for _, d := range deals {
 			if d.PieceCID.Equals(data.pieceID) {
 				if retrievalmarket.IsTerminalSuccess(d.Status) {
