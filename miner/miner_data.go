@@ -257,6 +257,10 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			}
 		}
 
+		if data.isRetrieved {
+			continue
+		}
+
 		if m.retrievals.Contains(rk) {
 			continue
 		}
@@ -354,6 +358,10 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 				}
 				break
 			}
+		}
+
+		if data.isDealed {
+			continue
 		}
 
 		// if miner is dealing, go to next one
