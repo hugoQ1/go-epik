@@ -1131,6 +1131,38 @@ func (a *API) ClientRetrieveTryRestartInsufficientFunds(ctx context.Context, pay
 	return a.Retrieval.TryRestartInsufficientFunds(paymentChannel)
 }
 
+func (a *API) ClientRetrieveGetDeal(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error) {
+	state, err := a.Retrieval.GetDeal(dealID)
+	if err != nil {
+		return nil, err
+	}
+	return convertRetrieveState(&state), nil
+}
+
+func convertRetrieveState(state *rm.ClientDealState) *api.RetrievalDeal {
+	return &api.RetrievalDeal{
+		DealID:       state.ID,
+		RootCID:      state.PayloadCID,
+		PieceCID:     state.PieceCID,
+		ClientWallet: state.ClientWallet,
+		MinerWallet:  state.MinerWallet,
+		Status:       state.Status,
+		Message:      state.Message,
+	}
+}
+
+func (a *API) ClientRetrieveListDeals(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error) {
+	deals, err := a.Retrieval.ListDeals()
+	if err != nil {
+		return nil, err
+	}
+	dealMap := make(map[retrievalmarket.DealID]*api.RetrievalDeal)
+	for _, deal := range deals {
+		dealMap[deal.ID] = convertRetrieveState(&deal)
+	}
+	return dealMap, nil
+}
+
 func (a *API) ClientGetDealStatus(ctx context.Context, statusCode uint64) (string, error) {
 	ststr, ok := storagemarket.DealStates[statusCode]
 	if !ok {
@@ -1167,17 +1199,7 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return cid.Undef, nil
 }
 
-func (a *API) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error) {
-	has, err := a.ClientHasLocal(ctx, root)
-	if err != nil {
-		return nil, err
-	}
-
-	if has {
-		return &api.QueryResp{Root: root, Status: api.QuerySuccess}, nil
-	}
-
-	// TODO(larry): check if it has Retrieve
+func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
 	payer, err := a.WalletDefaultAddress(ctx)
 	if err != nil {
 		return nil, err
@@ -1235,14 +1257,10 @@ func (a *API) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, min
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}
 
-	return &api.QueryResp{
-		Root:   root,
-		Status: api.QueryPending,
-		DealId: uint64(dealID),
-	}, nil
+	return a.ClientRetrieveGetDeal(ctx, dealID)
 }
 
-func (a *API) ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&wallet)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
@@ -1263,7 +1281,7 @@ func (a *API) ClientRetrievalPledge(ctx context.Context, wallet address.Address,
 	return mid, nil
 }
 
-func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
 		ProviderOrClientAddress: wallet,
 		Amount:                  amount,
@@ -1287,7 +1305,7 @@ func (a *API) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet addres
 	return mid, nil
 }
 
-func (a *API) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+func (a *API) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
 		ProviderOrClientAddress: wallet,
 		Amount:                  amount,

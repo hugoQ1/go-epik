@@ -186,11 +186,13 @@ type FullNodeStruct struct {
 		ClientRestartDataTransfer                 func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
 		ClientCancelDataTransfer                  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
 		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
+		ClientRetrieveGetDeal                     func(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error)                              `perm:"read"`
+		ClientRetrieveListDeals                   func(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error)                                  `perm:"read"`
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                  `perm:"admin"`
-		ClientQuery                               func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error)            `perm:"read"`
-		ClientRetrievalPledge                     func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
-		ClientRetrievalApplyForWithdraw           func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
-		ClientRetrievalWithdraw                   func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientRetrieveQuery                       func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)        `perm:"read"`
+		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
+		ClientRetrieveWithdraw                    func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
 		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                        `perm:"admin"`
 
 		StateNetworkName          func(context.Context) (dtypes.NetworkName, error)                                                               `perm:"read"`
@@ -691,24 +693,32 @@ func (c *FullNodeStruct) ClientRetrieveTryRestartInsufficientFunds(ctx context.C
 	return c.Internal.ClientRetrieveTryRestartInsufficientFunds(ctx, paymentChannel)
 }
 
+func (c *FullNodeStruct) ClientRetrieveGetDeal(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error) {
+	return c.Internal.ClientRetrieveGetDeal(ctx, dealID)
+}
+
+func (c *FullNodeStruct) ClientRetrieveListDeals(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error) {
+	return c.Internal.ClientRetrieveListDeals(ctx)
+}
+
 func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
 	return c.Internal.ClientRemove(ctx, root, wallet)
 }
 
-func (c *FullNodeStruct) ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.QueryResp, error) {
-	return c.Internal.ClientQuery(ctx, root, piece, miner)
+func (c *FullNodeStruct) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
+	return c.Internal.ClientRetrieveQuery(ctx, root, piece, miner)
 }
 
-func (c *FullNodeStruct) ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	return c.Internal.ClientRetrievalPledge(ctx, wallet, amount)
+func (c *FullNodeStruct) ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrievePledge(ctx, wallet, amount)
 }
 
-func (c *FullNodeStruct) ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	return c.Internal.ClientRetrievalApplyForWithdraw(ctx, wallet, amount)
+func (c *FullNodeStruct) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrieveApplyForWithdraw(ctx, wallet, amount)
 }
 
-func (c *FullNodeStruct) ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	return c.Internal.ClientRetrievalWithdraw(ctx, wallet, amount)
+func (c *FullNodeStruct) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrieveWithdraw(ctx, wallet, amount)
 }
 
 func (c *FullNodeStruct) ClientExpertNominate(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error) {

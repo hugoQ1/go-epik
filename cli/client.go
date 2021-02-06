@@ -87,6 +87,8 @@ var clientCmd = &cli.Command{
 		WithCategory("data", clientStat),
 		WithCategory("retrieval", clientFindCmd),
 		WithCategory("retrieval", clientRetrieveCmd),
+		WithCategory("retrieval", clientRetrieveDealCmd),
+		WithCategory("retrieval", clientRetrieveListCmd),
 		WithCategory("retrieval", clientRetrievePledgeCmd),
 		WithCategory("retrieval", clientRetrieveInfoCmd),
 		WithCategory("retrieval", clientRetrievePledgeStateCmd),
@@ -1146,9 +1148,8 @@ var clientRetrieveCmd = &cli.Command{
 			select {
 			case evt, ok := <-updates:
 				if ok {
-					afmt.Printf("> Recv: %s, Paid %s, %s (%s)\n",
+					afmt.Printf("> Recv: %s, %s (%s)\n",
 						types.SizeStr(types.NewInt(evt.BytesReceived)),
-						types.EPK(evt.FundsSpent),
 						retrievalmarket.ClientEvents[evt.Event],
 						retrievalmarket.DealStatuses[evt.Status],
 					)
@@ -1164,6 +1165,85 @@ var clientRetrieveCmd = &cli.Command{
 				return xerrors.Errorf("retrieval timed out")
 			}
 		}
+	},
+}
+
+var clientRetrieveDealCmd = &cli.Command{
+	Name:      "retrieve-deal",
+	Usage:     "retrieve deal info",
+	ArgsUsage: "[dealID]",
+	Flags:     []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		dealID, err := strconv.ParseUint(cctx.Args().Get(0), 10, 64)
+		if err != nil {
+			return err
+		}
+		deal, err := api.ClientRetrieveGetDeal(ctx, retrievalmarket.DealID(dealID))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to get retrival deal: %w", err))
+		}
+		fmt.Printf("Retrieve ID: %d\n", deal.DealID)
+		fmt.Printf("Retrieve RootID: %s\n", deal.RootCID)
+		fmt.Printf("Retrieve PieceID: %s\n", deal.PieceCID)
+		fmt.Printf("Retrieve Client: %s\n", deal.ClientWallet)
+		fmt.Printf("Retrieve Miner: %s\n", deal.MinerWallet)
+		fmt.Printf("Retrieve Status: %s\n", retrievalmarket.DealStatuses[deal.Status])
+		fmt.Printf("Retrieve Message: %s\n", deal.Message)
+		return nil
+	},
+}
+
+var clientRetrieveListCmd = &cli.Command{
+	Name:      "retrieve-list",
+	Usage:     "list retrieval deals",
+	ArgsUsage: "",
+	Flags:     []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		deals, err := api.ClientRetrieveListDeals(ctx)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to get retrival list: %w", err))
+		}
+
+		fmt.Fprintf(cctx.App.Writer, "\nRetrieve lists\n\n")
+		w := tablewriter.New(tablewriter.Col("DealId"),
+			tablewriter.Col("RootID"),
+			// tablewriter.Col("PieceCID"),
+			// tablewriter.Col("Client"),
+			// tablewriter.Col("Provider"),
+			tablewriter.Col("Status"),
+			tablewriter.NewLineCol("Message"))
+
+		for _, d := range deals {
+			w.Write(map[string]interface{}{
+				"DealId": d.DealID,
+				"RootID": d.RootCID,
+				// "PieceCID": d.PieceCID,
+				// "Client":   d.ClientWallet,
+				// "Provider": d.MinerWallet,
+				"Status":  retrievalmarket.DealStatuses[d.Status],
+				"Message": d.Message,
+			})
+		}
+
+		return w.Flush(cctx.App.Writer)
 	},
 }
 
@@ -1210,7 +1290,7 @@ var clientRetrievePledgeCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalPledge(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrievePledge(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
@@ -1336,7 +1416,7 @@ var clientRetrieveApplyForWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalApplyForWithdraw(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrieveApplyForWithdraw(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to apply for withdraw: %w", err))
 		}
@@ -1388,7 +1468,7 @@ var clientRetrieveWithdrawCmd = &cli.Command{
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievalWithdraw(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrieveWithdraw(ctx, fromAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to withdraw retrival: %w", err))
 		}

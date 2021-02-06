@@ -330,6 +330,11 @@ type FullNode interface {
 	// which are stuck due to insufficient funds
 	ClientRetrieveTryRestartInsufficientFunds(ctx context.Context, paymentChannel address.Address) error
 
+	// ClientRetrieveGetDeal return retrieve deal state
+	ClientRetrieveGetDeal(ctx context.Context, dealID retrievalmarket.DealID) (*RetrievalDeal, error)
+	// ClientRetrieveListDeals list retrieve deals
+	ClientRetrieveListDeals(ctx context.Context) (map[retrievalmarket.DealID]*RetrievalDeal, error)
+
 	// ClientUnimport removes references to the specified file from filestore
 	//ClientUnimport(path string)
 
@@ -341,17 +346,17 @@ type FullNode interface {
 	// ClientRemove removes file storage from system, returns message cid.
 	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
 
-	// ClientQuery query file status by file root or retrieve id
-	ClientQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*QueryResp, error)
+	// ClientRetrieveQuery query file status by file root or retrieve id
+	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
-	// ClientRetrievalPledge retrieval pledge amount
-	ClientRetrievalPledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	// ClientRetrievePledge retrieval pledge amount
+	ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
-	// ClientRetrievalApplyForWithdraw apply for withdraw
-	ClientRetrievalApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	// ClientRetrieveApplyForWithdraw apply for withdraw
+	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
-	// ClientRetrievalWithdraw withdraw
-	ClientRetrievalWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	// ClientRetrieveWithdraw withdraw
+	ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
 	// ClientExpertNominate nominate expert
 	ClientExpertNominate(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)
@@ -1062,20 +1067,6 @@ type MessageMatch struct {
 	From address.Address
 }
 
-type QueryStatus int
-
-const (
-	QueryFailed QueryStatus = iota
-	QuerySuccess
-	QueryPending
-)
-
-type QueryResp struct {
-	Root   cid.Cid
-	Status QueryStatus
-	DealId uint64
-}
-
 type ExpertRegisterFileParams struct {
 	Expert    address.Address
 	RootID    cid.Cid
@@ -1113,4 +1104,14 @@ type DataIndex struct {
 	Miner    address.Address
 	RootCID  cid.Cid
 	PieceCID cid.Cid
+}
+
+type RetrievalDeal struct {
+	DealID       retrievalmarket.DealID
+	RootCID      cid.Cid
+	PieceCID     *cid.Cid
+	ClientWallet address.Address
+	MinerWallet  address.Address
+	Status       retrievalmarket.DealStatus
+	Message      string
 }
