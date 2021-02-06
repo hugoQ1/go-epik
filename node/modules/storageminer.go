@@ -323,7 +323,16 @@ func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.S
 		return nil, err
 	}
 
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc)
+	limit := 0
+	err = readCfg(r, func(cfg *config.StorageMiner) {
+		limit = cfg.Dealmaking.MaxOngoingServedRetrievals
+	})
+	if err != nil {
+		log.Warnf("failed to read MaxOngoingServedRetrievals config: %w", err)
+	}
+	limitOpt := dtimpl.MaxServePullNumOpt(limit)
+
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, limitOpt)
 	if err != nil {
 		return nil, err
 	}

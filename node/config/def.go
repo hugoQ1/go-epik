@@ -51,6 +51,8 @@ type DealmakingConfig struct {
 
 	Filter          string
 	RetrievalFilter string
+
+	MaxOngoingServedRetrievals int
 }
 
 type SealingConfig struct {
@@ -208,6 +210,8 @@ func DefaultStorageMiner() *StorageMiner {
 			PieceCidBlocklist: []cid.Cid{},
 			// TODO: It'd be nice to set this based on sector size
 			ExpectedSealDuration: Duration(time.Hour * 24),
+
+			MaxOngoingServedRetrievals: 12,
 		},
 
 		Fees: MinerFeeConfig{

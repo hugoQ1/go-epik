@@ -34,14 +34,12 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/zstd v1.4.1 h1:3oxKN3wbHibqx897utPC2LTQU4J+IHWWJO+glkAkpFM=
 github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210201170406-9e20f12c5793 h1:J5/fRzl7U/d45+y96LQLDEOfjtx1FzuHs/DJKJ59QUE=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210201170406-9e20f12c5793/go.mod h1:lHfNv0IoCuKViCCGuLajvVaiNu+KGEgTLIZv+QaN7Ik=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210203192219-a68c11a45db9 h1:+6QgBRFo5N0iBaleiYHx/VoWrkkGeeFgRTxFW0FqJzQ=
-github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210203192219-a68c11a45db9/go.mod h1:lHfNv0IoCuKViCCGuLajvVaiNu+KGEgTLIZv+QaN7Ik=
+github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210206075139-70e857f801e4 h1:EVHEbh4uz/kTKUefqslf/VwYEjWLoXzUE0q85Q2B0Wo=
+github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210206075139-70e857f801e4/go.mod h1:mvjZ+C3NkBX10JP4JMu27DCjUouHFjHwUGh+Xc4yvDA=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210204033040-6b8a2ae50003 h1:Ir+kp9oYQUjixeOUpK5Sp729P5Bcjklv8Q8agd7oVFU=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.0.0-20210204033040-6b8a2ae50003/go.mod h1:lHfNv0IoCuKViCCGuLajvVaiNu+KGEgTLIZv+QaN7Ik=
-github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210129091539-d39b3d6e9bec h1:miKBV/atrI9hfzj0NVEQkxXIGZgyLDxgeYd3fpY5loI=
-github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210129091539-d39b3d6e9bec/go.mod h1:jr48fWfAxHhv5lxKD/4HWnSEhYeHqRGeFUE83EkpAYg=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210206075320-acd5ae697df5 h1:ARbQqUDT9CYrgXULZz2im71Mq8StWk7GidBjMEN2Pb4=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210206075320-acd5ae697df5/go.mod h1:2iLNRJYJzZhDU8+1b+YnDLEFAXOA0MLcpx8wcpFL03c=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4 h1:VqXg3SYH5FlHLclagcT6oIQ9r1knlcvKe/OF02/dT08=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4/go.mod h1:kmKOGzuaPgIShW+JiPnALWb59tLkTkfWBrUr79JJzCk=
 github.com/GeertJohan/go.incremental v1.0.0 h1:7AH+pY1XUgQE4Y1HcXYaMqAI0m9yrFqo/jt0CW30vsg=
@@ -265,8 +263,6 @@ github.com/filecoin-project/go-commp-utils v0.0.0-20201119054358-b88f7a96a434 h1
 github.com/filecoin-project/go-commp-utils v0.0.0-20201119054358-b88f7a96a434/go.mod h1:6s95K91mCyHY51RPWECZieD3SGWTqIFLf1mPOes9l5U=
 github.com/filecoin-project/go-crypto v0.0.0-20191218222705-effae4ea9f03 h1:2pMXdBnCiXjfCYx/hLqFxccPoqsSveQFxVLvNxy9bus=
 github.com/filecoin-project/go-crypto v0.0.0-20191218222705-effae4ea9f03/go.mod h1:+viYnvGtUTgJRdy6oaeF4MTFKAfatX071MPDPBL11EQ=
-github.com/filecoin-project/go-data-transfer v1.2.5 h1:38Ym4DdRxjP6a+JT6LYwcM6Gld0V6RTR7Tftj7q9Hkc=
-github.com/filecoin-project/go-data-transfer v1.2.5/go.mod h1:mvjZ+C3NkBX10JP4JMu27DCjUouHFjHwUGh+Xc4yvDA=
 github.com/filecoin-project/go-ds-versioning v0.1.0 h1:y/X6UksYTsK8TLCI7rttCKEvl8btmWxyFMEeeWGUxIQ=
 github.com/filecoin-project/go-ds-versioning v0.1.0/go.mod h1:mp16rb4i2QPmxBnmanUx8i/XANp+PFCCJWiAb+VW4/s=
 github.com/filecoin-project/go-fil-commcid v0.0.0-20200716160307-8f644712406f/go.mod h1:Eaox7Hvus1JgPrL5+M3+h7aSPHc0cVqpSxA+TxIEpZQ=
