@@ -76,9 +76,9 @@ out:
 	return nil
 }
 
-func (m *Miner) doWinPoStWarmup(ctx context.Context) {
-	err := m.winPoStWarmup(ctx)
-	if err != nil {
-		log.Errorw("winning PoSt warmup failed", "error", err)
-	}
-}
+// func (m *Miner) doWinPoStWarmup(ctx context.Context) error {
+// 	err := m.winPoStWarmup(ctx)
+// 	if err != nil {
+// 		log.Errorw("winning PoSt warmup failed", "error", err)
+// 	}
+// }

@@ -120,7 +120,11 @@ func (m *Miner) Start(ctx context.Context) error {
 		return fmt.Errorf("miner already started")
 	}
 	m.stop = make(chan struct{})
-	go m.mine(context.TODO())
+	if err := m.winPoStWarmup(ctx); err != nil {
+		return xerrors.Errorf("winning PoSt warmup failed: %w", err)
+	}
+	log.Infof("winning PoSt warmup done")
+	go m.mine(ctx)
 
 	m.minerData.Start(ctx)
 	return nil
@@ -161,7 +165,7 @@ func (m *Miner) mine(ctx context.Context) {
 	ctx, span := trace.StartSpan(ctx, "/mine")
 	defer span.End()
 
-	go m.doWinPoStWarmup(ctx)
+	// go m.doWinPoStWarmup(ctx)
 
 	var lastBase MiningBase
 minerLoop:
