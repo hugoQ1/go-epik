@@ -152,7 +152,7 @@ func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds 
 
 	s.sectors = statemachine.New(namespace.Wrap(ds, datastore.NewKey(SectorStorePrefix)), s, SectorInfo{})
 
-	s.unsealedInfoMap.lk.Lock() // released after initialized in .Run()
+	// s.unsealedInfoMap.lk.Lock() // released after initialized in .Run()
 
 	return s
 }
