@@ -15,6 +15,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
+	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -328,6 +329,14 @@ func (s *state2) Info() (MinerInfo, error) {
 
 func (s *state2) DeadlineInfo(epoch abi.ChainEpoch) (*dline.Info, error) {
 	return s.State.DeadlineInfo(epoch), nil
+}
+
+func (s *state2) EnsureNoPieces(pieceCIDs []cid.Cid) error {
+	var params []builtin2.CheckedCID
+	for _, id := range pieceCIDs {
+		params = append(params, builtin2.CheckedCID{CID: id})
+	}
+	return s.State.MustNotContainAnyPiece(s.store, params)
 }
 
 func (s *state2) sectors() (adt.Array, error) {

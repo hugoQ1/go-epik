@@ -374,6 +374,11 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			break
 		}
 
+		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+			log.Infof("data has been storaged", m.address, data.pieceID)
+			continue
+		}
+
 		// mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
 		// if err != nil {
 		// 	return err
