@@ -13,6 +13,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 )
 
 func parseTipSet(ctx context.Context, api api.FullNode, vals []string) (*types.TipSet, error) {
@@ -36,6 +37,8 @@ func parseTipSet(ctx context.Context, api api.FullNode, vals []string) (*types.T
 
 func EpochTime(curr, e abi.ChainEpoch) string {
 	switch {
+	case e == miner.NoExpireEpoch:
+		return fmt.Sprint("never")
 	case curr > e:
 		return fmt.Sprintf("%d (%s ago)", e, durafmt.Parse(time.Second*time.Duration(int64(build.BlockDelaySecs)*int64(curr-e))).LimitFirstN(2))
 	case curr == e:
