@@ -1958,7 +1958,7 @@ func outputStorageDeals(ctx context.Context, out io.Writer, full lapi.FullNode, 
 				//	transferPct = fmt.Sprintf("%d%%", pct)
 				//}
 			}
-			fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%v\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 				d.LocalDeal.CreationTime.Format(time.Stamp),
 				d.LocalDeal.ProposalCid,
 				d.LocalDeal.DealID,
