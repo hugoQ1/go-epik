@@ -331,8 +331,9 @@ func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.S
 		log.Warnf("failed to read MaxOngoingServedRetrievals config: %w", err)
 	}
 	limitOpt := dtimpl.MaxServePullNumOpt(limit)
+	timeoutOpt := dtimpl.ChannelRemoveTimeout(30 * time.Minute)
 
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, limitOpt)
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, limitOpt, timeoutOpt)
 	if err != nil {
 		return nil, err
 	}

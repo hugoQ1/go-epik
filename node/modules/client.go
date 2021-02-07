@@ -129,7 +129,9 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 		return nil, err
 	}
 
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc)
+	timeoutOpt := dtimpl.ChannelRemoveTimeout(30 * time.Minute)
+
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, timeoutOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +195,9 @@ func RetrievalClient(lc fx.Lifecycle, h host.Host, mds dtypes.ClientMultiDstore,
 			client.SubscribeToEvents(markets.RetrievalClientJournaler(j, evtType))
 
 			return client.Start(ctx)
+		},
+		OnStop: func(context.Context) error {
+			return client.Stop()
 		},
 	})
 	return client, nil
