@@ -1320,7 +1320,7 @@ loop:
 		// NB: GetBlocks validates that the blocks are in-fact the ones we
 		// requested, and that they are correctly linked to one another. It does
 		// not validate any state transitions.
-		window := 500
+		window := int(build.ForkLengthThreshold)
 		if gap := int(blockSet[len(blockSet)-1].Height() - untilHeight); gap < window {
 			window = gap
 		}

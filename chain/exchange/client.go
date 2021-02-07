@@ -77,11 +77,10 @@ func (c *client) doRequest(
 	if req.Length == 0 {
 		return nil, xerrors.Errorf("invalid request of length 0")
 	}
-	// TODO: temp remove this check
-	// if req.Length > MaxRequestLength {
-	// 	return nil, xerrors.Errorf("request length (%d) above maximum (%d)",
-	// 		req.Length, MaxRequestLength)
-	// }
+	if req.Length > MaxRequestLength {
+		return nil, xerrors.Errorf("request length (%d) above maximum (%d)",
+			req.Length, MaxRequestLength)
+	}
 	if req.Options == 0 {
 		return nil, xerrors.Errorf("request with no options set")
 	}
