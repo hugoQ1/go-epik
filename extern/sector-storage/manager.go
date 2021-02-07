@@ -521,6 +521,10 @@ func (m *Manager) SealCommit2(ctx context.Context, sector storage.SectorRef, pha
 		return out, waitErr
 	}
 
+	if err := m.index.StorageLock(ctx, sector.ID, storiface.FTSealed, storiface.FTCache); err != nil {
+		return nil, xerrors.Errorf("acquiring sector lock: %w", err)
+	}
+
 	selector := newTaskSelector()
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit2, selector, schedNop, func(ctx context.Context, w Worker) error {
