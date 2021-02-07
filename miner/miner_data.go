@@ -23,9 +23,9 @@ var (
 	//LoopWaitingSeconds data check loop waiting seconds
 	LoopWaitingSeconds = time.Second * 30
 	// RetrieveParallelNum num
-	RetrieveParallelNum = 32
+	RetrieveParallelNum = 64
 	// DealParallelNum deal thread parallel num
-	DealParallelNum = 32
+	DealParallelNum = 64
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
 )
@@ -291,9 +291,10 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 }
 
 func checkDealStatus(deal *api.DealInfo) (bool, bool) {
-	isDealed := (deal.State == storagemarket.StorageDealAwaitingPreCommit ||
-		deal.State == storagemarket.StorageDealSealing ||
-		deal.State == storagemarket.StorageDealActive)
+	// isDealed := (deal.State == storagemarket.StorageDealAwaitingPreCommit ||
+	// 	deal.State == storagemarket.StorageDealSealing ||
+	// 	deal.State == storagemarket.StorageDealActive)
+	isDealed := deal.State == storagemarket.StorageDealActive
 	isError := (deal.State == storagemarket.StorageDealProposalNotFound ||
 		deal.State == storagemarket.StorageDealProposalRejected ||
 		deal.State == storagemarket.StorageDealFailing ||
