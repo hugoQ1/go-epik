@@ -1225,21 +1225,21 @@ var clientRetrieveListCmd = &cli.Command{
 		fmt.Fprintf(cctx.App.Writer, "\nRetrieve lists\n\n")
 		w := tablewriter.New(tablewriter.Col("DealId"),
 			tablewriter.Col("RootID"),
-			// tablewriter.Col("PieceCID"),
+			tablewriter.Col("PieceCID"),
 			// tablewriter.Col("Client"),
-			// tablewriter.Col("Provider"),
+			tablewriter.Col("Provider"),
 			tablewriter.Col("Status"),
 			tablewriter.NewLineCol("Message"))
 
 		for _, d := range deals {
 			w.Write(map[string]interface{}{
-				"DealId": d.DealID,
-				"RootID": d.RootCID,
-				// "PieceCID": d.PieceCID,
+				"DealId":   d.DealID,
+				"RootID":   d.RootCID,
+				"PieceCID": d.PieceCID,
 				// "Client":   d.ClientWallet,
-				// "Provider": d.MinerWallet,
-				"Status":  retrievalmarket.DealStatuses[d.Status],
-				"Message": d.Message,
+				"Provider": d.MinerWallet,
+				"Status":   retrievalmarket.DealStatuses[d.Status],
+				"Message":  d.Message,
 			})
 		}
 
