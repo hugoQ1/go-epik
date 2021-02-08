@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -210,7 +211,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 		}
-		if retrievalmarket.IsTerminalStatus(nDeal.Status) {
+		if nDeal.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
 		}
 	}
@@ -234,10 +235,12 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		}
 
 		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Infof("data has been storaged:%s", data.pieceID)
-			data.isRetrieved = true
-			m.totalRetrieveCount++
-			continue
+			if strings.Contains(err.Error(), "piece in active") {
+				log.Infof("data has been storaged:%s", data.pieceID)
+				data.isRetrieved = true
+				m.totalRetrieveCount++
+				continue
+			}
 		}
 
 		for _, d := range deals {
@@ -246,10 +249,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 					data.isRetrieved = true
 					m.totalRetrieveCount++
 				}
-				// // TODO: temp ignore
-				// if !retrievalmarket.IsTerminalStatus(d.Status) {
-				// 	m.retrievals.Add(rk, d)
-				// }
+				if !(d.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(d.Status)) {
+					m.retrievals.Add(rk, d)
+				}
 				break
 			}
 		}
@@ -374,10 +376,12 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 
 		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
-			data.isDealed = true
-			m.totalDealCount++
-			continue
+			if strings.Contains(err.Error(), "piece in active") {
+				log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
+				data.isDealed = true
+				m.totalDealCount++
+				continue
+			}
 		}
 
 		// mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
