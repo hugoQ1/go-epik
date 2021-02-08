@@ -11,8 +11,6 @@ import (
 var DefaultTransports = simpleOpt(libp2p.DefaultTransports)
 var QUIC = simpleOpt(libp2p.Transport(libp2pquic.NewTransport))
 
-var BwReporter = metrics.NewBandwidthCounter()
-
 func Security(enabled, preferTLS bool) interface{} {
 	if !enabled {
 		return func() (opts Libp2pOpts) {

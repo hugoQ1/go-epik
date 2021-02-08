@@ -48,7 +48,6 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 		libp2p.NoListenAddrs,
 		libp2p.Ping(true),
 		libp2p.UserAgent("epik-" + build.UserVersion()),
-		libp2p.BandwidthReporter(BwReporter),
 	}
 	for _, o := range params.Opts {
 		opts = append(opts, o...)
