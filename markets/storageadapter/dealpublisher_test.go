@@ -201,6 +201,12 @@ func publishDeal(t *testing.T, dp *DealPublisher, ctxCancelled bool, expired boo
 
 	go func() {
 		_, err := dp.Publish(pctx, deal)
+
+		// If the test has completed just bail out without checking for errors
+		if ctx.Err() != nil {
+			return
+		}
+
 		if ctxCancelled || expired {
 			require.Error(t, err)
 		} else {
