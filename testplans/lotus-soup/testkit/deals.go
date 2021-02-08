@@ -75,7 +75,7 @@ func StartDeal(t *TestEnvironment, ctx context.Context, maMsg MinerAddressesMsg,
 			Expert:       addr.String(),
 		},
 		Wallet:         addr,
-		Miner:          maMsg.MinerActorAddr,
+		Miner:          minerActorAddr,
 		DealStartEpoch: 200,
 		FastRetrieval:  fastRetrieval,
 	})

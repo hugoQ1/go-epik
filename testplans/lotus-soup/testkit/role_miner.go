@@ -108,7 +108,7 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 	}
 
 	sectors := 1 //t.IntParam("sectors")
-	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1_1, 0, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
+	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
 	if err != nil {
 		return nil, err
 	}

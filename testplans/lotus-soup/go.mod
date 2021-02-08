@@ -1,6 +1,6 @@
 module github.com/EpiK-Protocol/go-epik/testplans/lotus-soup
 
-go 1.14
+go 1.15
 
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
@@ -8,8 +8,8 @@ require (
 	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/davecgh/go-spew v1.1.1
 	github.com/drand/drand v1.2.1
-	github.com/filecoin-project/go-address v0.0.5-0.20201103152444-f2023ef3f5bb
-	github.com/filecoin-project/go-fil-markets v1.1.1
+	github.com/filecoin-project/go-address v0.0.5
+	github.com/filecoin-project/go-fil-markets v1.1.2
 	github.com/filecoin-project/go-jsonrpc v0.1.2
 	github.com/filecoin-project/go-state-types v0.0.0-20201102161440-c8033295a1fc
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
@@ -34,8 +34,8 @@ require (
 	github.com/multiformats/go-multiaddr-net v0.2.0
 	github.com/testground/sdk-go v0.2.6
 	go.opencensus.io v0.22.5
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 )
 
 // This will work in all build modes: docker:go, exec:go, and local go build.
