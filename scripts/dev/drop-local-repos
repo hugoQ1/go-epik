@@ -2,4 +2,4 @@
 
 set -o xtrace
 
-rm -rf ~/.epik ~/.epikstorage/ ~/.genesis-sectors ~/.epikworker
+rm -rf ~/.epik ~/.epikminer/ ~/.genesis-sectors ~/.epikworker

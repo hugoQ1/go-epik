@@ -3,11 +3,11 @@ package storage
 import (
 	"context"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	sealing "github.com/filecoin-project/storage-fsm"
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 )
 
 var _ sealing.Events = new(EventsAdapter)

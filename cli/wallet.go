@@ -9,13 +9,19 @@ import (
 	"os"
 	"strings"
 
-	types "github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/chain/wallet"
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/crypto"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/urfave/cli/v2"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
+
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 )
 
 var walletCmd = &cli.Command{
@@ -32,6 +38,8 @@ var walletCmd = &cli.Command{
 		walletSign,
 		walletVerify,
 		walletDelete,
+		walletMarket,
+		walletVote,
 	},
 }
 
@@ -52,7 +60,7 @@ var walletNew = &cli.Command{
 			t = "secp256k1"
 		}
 
-		nk, err := api.WalletNew(ctx, wallet.ActSigType(t))
+		nk, err := api.WalletNew(ctx, types.KeyType(t))
 		if err != nil {
 			return err
 		}
@@ -66,6 +74,23 @@ var walletNew = &cli.Command{
 var walletList = &cli.Command{
 	Name:  "list",
 	Usage: "List wallet address",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "addr-only",
+			Usage:   "Only print addresses",
+			Aliases: []string{"a"},
+		},
+		&cli.BoolFlag{
+			Name:    "id",
+			Usage:   "Output ID addresses",
+			Aliases: []string{"i"},
+		},
+		&cli.BoolFlag{
+			Name:    "market",
+			Usage:   "Output market balances",
+			Aliases: []string{"m"},
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -79,9 +104,72 @@ var walletList = &cli.Command{
 			return err
 		}
 
+		// Assume an error means no default key is set
+		def, _ := api.WalletDefaultAddress(ctx)
+
+		tw := tablewriter.New(
+			tablewriter.Col("Address"),
+			tablewriter.Col("ID"),
+			tablewriter.Col("Balance"),
+			tablewriter.Col("Market(Avail)"),
+			tablewriter.Col("Market(Locked)"),
+			tablewriter.Col("Nonce"),
+			tablewriter.Col("Default"),
+			tablewriter.NewLineCol("Error"))
+
 		for _, addr := range addrs {
-			fmt.Println(addr.String())
+			if cctx.Bool("addr-only") {
+				fmt.Println(addr.String())
+			} else {
+				a, err := api.StateGetActor(ctx, addr, types.EmptyTSK)
+				if err != nil {
+					if !strings.Contains(err.Error(), "actor not found") {
+						tw.Write(map[string]interface{}{
+							"Address": addr,
+							"Error":   err,
+						})
+						continue
+					}
+
+					a = &types.Actor{
+						Balance: big.Zero(),
+					}
+				}
+
+				row := map[string]interface{}{
+					"Address": addr,
+					"Balance": types.EPK(a.Balance),
+					"Nonce":   a.Nonce,
+				}
+				if addr == def {
+					row["Default"] = "X"
+				}
+
+				if cctx.Bool("id") {
+					id, err := api.StateLookupID(ctx, addr, types.EmptyTSK)
+					if err != nil {
+						row["ID"] = "n/a"
+					} else {
+						row["ID"] = id
+					}
+				}
+
+				if cctx.Bool("market") {
+					mbal, err := api.StateMarketBalance(ctx, addr, types.EmptyTSK)
+					if err == nil {
+						row["Market(Avail)"] = types.EPK(types.BigSub(mbal.Escrow, mbal.Locked))
+						row["Market(Locked)"] = types.EPK(mbal.Locked)
+					}
+				}
+
+				tw.Write(row)
+			}
 		}
+
+		if !cctx.Bool("addr-only") {
+			return tw.Flush(os.Stdout)
+		}
+
 		return nil
 	},
 }
@@ -215,6 +303,10 @@ var walletImport = &cli.Command{
 			Usage: "specify input format for key",
 			Value: "hex-epik",
 		},
+		&cli.BoolFlag{
+			Name:  "as-default",
+			Usage: "import the given key as your new default key",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -272,9 +364,9 @@ var walletImport = &cli.Command{
 			ki.PrivateKey = gk.PrivateKey
 			switch gk.SigType {
 			case 1:
-				ki.Type = wallet.KTSecp256k1
+				ki.Type = types.KTSecp256k1
 			case 2:
-				ki.Type = wallet.KTBLS
+				ki.Type = types.KTBLS
 			default:
 				return fmt.Errorf("unrecognized key type: %d", gk.SigType)
 			}
@@ -285,6 +377,12 @@ var walletImport = &cli.Command{
 		addr, err := api.WalletImport(ctx, &ki)
 		if err != nil {
 			return err
+		}
+
+		if cctx.Bool("as-default") {
+			if err := api.WalletSetDefault(ctx, addr); err != nil {
+				return fmt.Errorf("failed to set default key: %w", err)
+			}
 		}
 
 		fmt.Printf("imported key %s successfully!\n", addr)
@@ -372,13 +470,16 @@ var walletVerify = &cli.Command{
 			return err
 		}
 
-		if api.WalletVerify(ctx, addr, msg, &sig) {
+		ok, err := api.WalletVerify(ctx, addr, msg, &sig)
+		if err != nil {
+			return err
+		}
+		if ok {
 			fmt.Println("valid")
 			return nil
-		} else {
-			fmt.Println("invalid")
-			return NewCliError("CLI Verify called with invalid signature")
 		}
+		fmt.Println("invalid")
+		return NewCliError("CLI Verify called with invalid signature")
 	},
 }
 
@@ -404,5 +505,423 @@ var walletDelete = &cli.Command{
 		}
 
 		return api.WalletDelete(ctx, addr)
+	},
+}
+
+var walletMarket = &cli.Command{
+	Name:  "market",
+	Usage: "Interact with market balances",
+	Subcommands: []*cli.Command{
+		walletMarketWithdraw,
+		walletMarketAdd,
+	},
+}
+
+var walletMarketWithdraw = &cli.Command{
+	Name:      "withdraw",
+	Usage:     "Withdraw funds from the Storage Market Actor",
+	ArgsUsage: "[amount (EPK) optional, otherwise will withdraw max available]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "wallet",
+			Usage:   "Specify address to withdraw funds to, otherwise it will use the default wallet address",
+			Aliases: []string{"w"},
+		},
+		&cli.StringFlag{
+			Name:    "address",
+			Usage:   "Market address to withdraw from (account or miner actor address, defaults to --wallet address)",
+			Aliases: []string{"a"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return xerrors.Errorf("getting node API: %w", err)
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var wallet address.Address
+		if cctx.String("wallet") != "" {
+			wallet, err = address.NewFromString(cctx.String("wallet"))
+			if err != nil {
+				return xerrors.Errorf("parsing from address: %w", err)
+			}
+		} else {
+			wallet, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return xerrors.Errorf("getting default wallet address: %w", err)
+			}
+		}
+
+		addr := wallet
+		if cctx.String("address") != "" {
+			addr, err = address.NewFromString(cctx.String("address"))
+			if err != nil {
+				return xerrors.Errorf("parsing market address: %w", err)
+			}
+		}
+
+		// Work out if there are enough unreserved, unlocked funds to withdraw
+		bal, err := api.StateMarketBalance(ctx, addr, types.EmptyTSK)
+		if err != nil {
+			return xerrors.Errorf("getting market balance for address %s: %w", addr.String(), err)
+		}
+
+		reserved, err := api.MarketGetReserved(ctx, addr)
+		if err != nil {
+			return xerrors.Errorf("getting market reserved amount for address %s: %w", addr.String(), err)
+		}
+
+		avail := big.Subtract(big.Subtract(bal.Escrow, bal.Locked), reserved)
+
+		notEnoughErr := func(msg string) error {
+			return xerrors.Errorf("%s; "+
+				"available (%s) = escrow (%s) - locked (%s) - reserved (%s)",
+				msg, types.EPK(avail), types.EPK(bal.Escrow), types.EPK(bal.Locked), types.EPK(reserved))
+		}
+
+		if avail.IsZero() || avail.LessThan(big.Zero()) {
+			avail = big.Zero()
+			return notEnoughErr("no funds available to withdraw")
+		}
+
+		// Default to withdrawing all available funds
+		amt := avail
+
+		// If there was an amount argument, only withdraw that amount
+		if cctx.Args().Present() {
+			f, err := types.ParseEPK(cctx.Args().First())
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+
+			amt = abi.TokenAmount(f)
+		}
+
+		// Check the amount is positive
+		if amt.IsZero() || amt.LessThan(big.Zero()) {
+			return xerrors.Errorf("amount must be > 0")
+		}
+
+		// Check there are enough available funds
+		if amt.GreaterThan(avail) {
+			msg := fmt.Sprintf("can't withdraw more funds than available; requested: %s", types.EPK(amt))
+			return notEnoughErr(msg)
+		}
+
+		fmt.Printf("Submitting WithdrawBalance message for amount %s for address %s\n", types.EPK(amt), wallet.String())
+		smsg, err := api.MarketWithdraw(ctx, wallet, addr, amt)
+		if err != nil {
+			return xerrors.Errorf("fund manager withdraw error: %w", err)
+		}
+
+		fmt.Printf("WithdrawBalance message cid: %s\n", smsg)
+
+		return nil
+	},
+}
+
+var walletVote = &cli.Command{
+	Name:  "vote",
+	Usage: "Manage votes for experts",
+	Subcommands: []*cli.Command{
+		walletVoteSend,
+		walletVoteRescind,
+		walletVoteWithdraw,
+	},
+}
+
+var walletVoteSend = &cli.Command{
+	Name:      "send",
+	Usage:     "Send votes for candidate",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one EPK one Vote]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the account to send votes from",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'send' expects two arguments, candidate and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		candidateAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse candidate address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		sp, err := actors.SerializeParams(&candidateAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  types.BigInt(val),
+			Method: builtin.MethodsVote.Vote,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting vote message: %w", err)
+		}
+
+		fmt.Printf("Vote message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletVoteRescind = &cli.Command{
+	Name:      "rescind",
+	Usage:     "Rescind votes for candidate",
+	ArgsUsage: "[candidateAddress] [amount (EPK), one EPK one Vote]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the account to rescind votes from",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'send' expects two arguments, candidate and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		candidateAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse candidate address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		p := vote.RescindParams{
+			Candidate: candidateAddr,
+			Votes:     types.BigInt(val),
+		}
+		sp, err := actors.SerializeParams(&p)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Rescind,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting rescind message: %w", err)
+		}
+
+		fmt.Printf("Rescind message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletVoteWithdraw = &cli.Command{
+	Name:  "withdraw",
+	Usage: "Withdraw all unlocked votes and rewards",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "specify the voter account to withdraw",
+			Aliases: []string{"f"},
+		},
+		&cli.StringFlag{
+			Name:  "to",
+			Usage: "send withdrawn funds to a given address, same with 'from' by default",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		var fromAddr, toAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		if to := cctx.String("to"); to == "" {
+			toAddr = fromAddr
+		} else {
+			addr, err := address.NewFromString(to)
+			if err != nil {
+				return err
+			}
+			toAddr = addr
+		}
+
+		sp, err := actors.SerializeParams(&toAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Withdraw,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting withdraw message: %w", err)
+		}
+
+		fmt.Printf("Withdraw message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletMarketAdd = &cli.Command{
+	Name:      "add",
+	Usage:     "Add funds to the Storage Market Actor",
+	ArgsUsage: "<amount>",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "Specify address to move funds from, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+		&cli.StringFlag{
+			Name:    "address",
+			Usage:   "Market address to move funds to (account or miner actor address, defaults to --from address)",
+			Aliases: []string{"a"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return xerrors.Errorf("getting node API: %w", err)
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		// Get amount param
+		if !cctx.Args().Present() {
+			return fmt.Errorf("must pass amount to add")
+		}
+		f, err := types.ParseEPK(cctx.Args().First())
+		if err != nil {
+			return xerrors.Errorf("parsing 'amount' argument: %w", err)
+		}
+
+		amt := abi.TokenAmount(f)
+
+		// Get from param
+		var from address.Address
+		if cctx.String("from") != "" {
+			from, err = address.NewFromString(cctx.String("from"))
+			if err != nil {
+				return xerrors.Errorf("parsing from address: %w", err)
+			}
+		} else {
+			from, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return xerrors.Errorf("getting default wallet address: %w", err)
+			}
+		}
+
+		// Get address param
+		addr := from
+		if cctx.String("address") != "" {
+			addr, err = address.NewFromString(cctx.String("address"))
+			if err != nil {
+				return xerrors.Errorf("parsing market address: %w", err)
+			}
+		}
+
+		// Add balance to market actor
+		fmt.Printf("Submitting Add Balance message for amount %s for address %s\n", types.EPK(amt), addr)
+		smsg, err := api.MarketAddBalance(ctx, from, addr, amt)
+		if err != nil {
+			return xerrors.Errorf("add balance error: %w", err)
+		}
+
+		fmt.Printf("AddBalance message cid: %s\n", smsg)
+
+		return nil
 	},
 }

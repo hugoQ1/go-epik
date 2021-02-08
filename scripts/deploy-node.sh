@@ -11,7 +11,7 @@ HOST=$1
 
 FILES_TO_SEND=(
 	./epik
-	./epik-storage-miner
+	./epik-miner
 	scripts/epik-daemon.service
 	scripts/louts-miner.service
 )
@@ -21,14 +21,14 @@ rsync -P "${FILES_TO_SEND[@]}" "$HOST:~/epik-stage/"
 ssh "$HOST" 'bash -s' << 'EOF'
 set -euo pipefail
 
-systemctl stop epik-storage-miner
+systemctl stop epik-miner
 systemctl stop epik-daemon
-mkdir -p .epik .epikstorage
+mkdir -p .epik .epikminer
 
 cd "$HOME/epik-stage/"
-cp -f epik epik-storage-miner /usr/local/bin
+cp -f epik epik-miner /usr/local/bin
 cp -f epik-daemon.service /etc/systemd/system/epik-daemon.service
-cp -f epik-miner.service /etc/systemd/system/epik-storage-miner.service
+cp -f epik-miner.service /etc/systemd/system/epik-miner.service
 
 systemctl daemon-reload
 systemctl start epik-daemon

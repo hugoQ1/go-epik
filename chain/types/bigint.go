@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"math/big"
 
-	big2 "github.com/filecoin-project/specs-actors/actors/abi/big"
+	big2 "github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 )
 
 const BigIntMaxSerializedLen = 128 // is this big enough? or too big?
 
-var TotalFilecoinInt = FromFil(build.TotalFilecoin)
+var TotalEpkInt = FromEpk(build.EpkBase)
 
 var EmptyInt = BigInt{}
 
@@ -21,8 +21,8 @@ func NewInt(i uint64) BigInt {
 	return BigInt{Int: big.NewInt(0).SetUint64(i)}
 }
 
-func FromFil(i uint64) BigInt {
-	return BigMul(NewInt(i), NewInt(build.FilecoinPrecision))
+func FromEpk(i uint64) BigInt {
+	return BigMul(NewInt(i), NewInt(build.EpkPrecision))
 }
 
 func BigFromBytes(b []byte) BigInt {

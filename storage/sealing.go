@@ -4,10 +4,12 @@ import (
 	"context"
 	"io"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/ipfs/go-cid"
 
-	sealing "github.com/filecoin-project/storage-fsm"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 )
 
 // TODO: refactor this to be direct somehow
@@ -16,12 +18,12 @@ func (m *Miner) Address() address.Address {
 	return m.sealing.Address()
 }
 
-func (m *Miner) AllocatePiece(size abi.UnpaddedPieceSize) (sectorID abi.SectorNumber, offset uint64, err error) {
-	return m.sealing.AllocatePiece(size)
+func (m *Miner) AddPieceToAnySector(ctx context.Context, size abi.UnpaddedPieceSize, r io.Reader, d sealing.DealInfo) (abi.SectorNumber, abi.PaddedPieceSize, error) {
+	return m.sealing.AddPieceToAnySector(ctx, size, r, d)
 }
 
-func (m *Miner) SealPiece(ctx context.Context, size abi.UnpaddedPieceSize, r io.Reader, sectorID abi.SectorNumber, d sealing.DealInfo) error {
-	return m.sealing.SealPiece(ctx, size, r, sectorID, d)
+func (m *Miner) StartPackingSector(sectorNum abi.SectorNumber) error {
+	return m.sealing.StartPacking(sectorNum)
 }
 
 func (m *Miner) ListSectors() ([]sealing.SectorInfo, error) {
@@ -42,4 +44,16 @@ func (m *Miner) ForceSectorState(ctx context.Context, id abi.SectorNumber, state
 
 func (m *Miner) RemoveSector(ctx context.Context, id abi.SectorNumber) error {
 	return m.sealing.Remove(ctx, id)
+}
+
+func (m *Miner) TerminateSector(ctx context.Context, id abi.SectorNumber) error {
+	return m.sealing.Terminate(ctx, id)
+}
+
+func (m *Miner) TerminateFlush(ctx context.Context) (*cid.Cid, error) {
+	return m.sealing.TerminateFlush(ctx)
+}
+
+func (m *Miner) TerminatePending(ctx context.Context) ([]abi.SectorID, error) {
+	return m.sealing.TerminatePending(ctx)
 }

@@ -1,7 +1,12 @@
 [submodule "extern/filecoin-ffi"]
 	path = extern/filecoin-ffi
-	url = https://github.com/filecoin-project/filecoin-ffi.git
-	branch = master
+	url = https://github.com/EpiK-Protocol/go-epik-ffi.git
 [submodule "extern/serialization-vectors"]
 	path = extern/serialization-vectors
-	url = https://github.com/filecoin-project/serialization-vectors
+	url = https://github.com/filecoin-project/serialization-vectors.git
+[submodule "extern/test-vectors"]
+	path = extern/test-vectors
+	url = https://github.com/filecoin-project/test-vectors.git
+[submodule "extern/blst"]
+	path = extern/blst
+	url = https://github.com/supranational/blst.git

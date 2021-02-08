@@ -1,0 +1,77 @@
+[metadata]
+  name = "lotus-soup"
+  author = ""
+
+[global]
+  plan = "lotus-soup"
+  case = "eco-vote"
+  total_instances = 5     # 3 clients + 1 miner + 1 bootstrapper
+  builder = "docker:go"
+  runner = "local:docker"
+
+[global.build]
+  selectors = ["testground"]
+
+[global.run_config]
+  exposed_ports = { pprof = "6060", node_rpc = "1234", miner_rpc = "2345" }
+
+[global.build_config]
+  enable_go_build_cache = true
+
+[global.run.test_params]
+  clients = "3"    # include 1 checker
+  miners = "1"
+  genesis_timestamp_offset = "0"
+  balance = "20000000"  # EPK
+  random_beacon_type = "mock"
+  mining_mode = "natural"
+
+[[groups]]
+  id = "bootstrapper"
+  [groups.instances]
+    count = 1
+    percentage = 0.0
+  [groups.run]
+    [groups.run.test_params]
+      role = "bootstrapper"
+
+[[groups]]
+  id = "miners"
+  [groups.instances]
+    count = 1
+    percentage = 0.0
+  [groups.run]
+    [groups.run.test_params]
+      role = "miner"
+
+[[groups]]
+  id = "client-voter1"
+  [groups.instances]
+    count = 1
+    percentage = 0.0
+  [groups.run]
+    [groups.run.test_params]
+      role = "client"
+      vote_send_amount = "0.9"  # EPK
+
+[[groups]]
+  id = "client-voter2"
+  [groups.instances]
+    count = 1
+    percentage = 0.0
+  [groups.run]
+    [groups.run.test_params]
+      role = "client"
+      vote_send_amount = "1.8"  # EPK
+      vote_rescind_amount = "0.9" # EPK
+      do_withdraw = "true"
+
+[[groups]]
+  id = "clients-checker"
+  [groups.instances]
+    count = 1
+    percentage = 0.0
+  [groups.run]
+    [groups.run.test_params]
+      role = "client"
+      clients_checker = "true"

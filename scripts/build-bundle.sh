@@ -20,8 +20,8 @@ pushd bundle
 
 BINARIES=(
     "epik"
-    "epik-storage-miner"
-    "epik-seal-worker"
+    "epik-miner"
+    "epik-worker"
 )
 
 export IPFS_PATH=`mktemp -d`
@@ -45,8 +45,8 @@ do
     popd
     rm -rf "${ARCH}"
 
-    sha512sum "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f1 > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.sha512"
+    sha512sum "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.sha512"
 
-    ipfs add "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" | cut -d" " -f2 > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.cid"
+    ipfs add -q "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz" > "epik_${CIRCLE_TAG}_${ARCH}-amd64.tar.gz.cid"
 done
 popd

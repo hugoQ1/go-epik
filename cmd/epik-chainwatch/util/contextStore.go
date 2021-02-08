@@ -11,7 +11,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 )
 
-// TODO extract this to a common location in lotus and reuse the code
+// TODO extract this to a common location in epik and reuse the code
 
 // APIIpldStore is required for AMT and HAMT access.
 type APIIpldStore struct {

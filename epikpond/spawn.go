@@ -11,23 +11,21 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/EpiK-Protocol/go-epik/chain/types"
-
+	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 
 	genesis2 "github.com/EpiK-Protocol/go-epik/chain/gen/genesis"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
+	"github.com/filecoin-project/go-state-types/abi"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
 
 func init() {
-	miner.SupportedProofTypes = map[abi.RegisteredSealProof]struct{}{
-		abi.RegisteredSealProof_StackedDrg2KiBV1: {},
-	}
+	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
 }
 
 func (api *api) Spawn() (nodeInfo, error) {
@@ -49,7 +47,7 @@ func (api *api) Spawn() (nodeInfo, error) {
 		}
 
 		sbroot := filepath.Join(dir, "preseal")
-		genm, ki, err := seed.PreSeal(genMiner, abi.RegisteredSealProof_StackedDrg2KiBV1, 0, 2, sbroot, []byte("8"), nil, false)
+		genm, ki, err := seed.PreSeal(genMiner, abi.RegisteredSealProof_StackedDrg2KiBV1, 0 /* 2, */, sbroot, []byte("8"), nil, false)
 		if err != nil {
 			return nodeInfo{}, xerrors.Errorf("preseal failed: %w", err)
 		}
@@ -66,9 +64,12 @@ func (api *api) Spawn() (nodeInfo, error) {
 		template.Miners = append(template.Miners, *genm)
 		template.Accounts = append(template.Accounts, genesis.Actor{
 			Type:    genesis.TAccount,
-			Balance: types.FromFil(5000000),
+			Balance: types.FromEpk(5000000),
 			Meta:    (&genesis.AccountMeta{Owner: genm.Owner}).ActorMeta(),
 		})
+		// template.VerifregRootKey = gen.DefaultVerifregRootkeyActor
+		// template.RemainderAccount = gen.DefaultRemainderAccountActor
+		template.NetworkName = "pond-" + uuid.New().String()
 
 		tb, err := json.Marshal(&template)
 		if err != nil {
@@ -176,10 +177,10 @@ func (api *api) SpawnStorage(fullNodeRepo string) (nodeInfo, error) {
 	}
 
 	id := atomic.AddInt32(&api.cmds, 1)
-	cmd := exec.Command("./epik-storage-miner", initArgs...)
+	cmd := exec.Command("./epik-miner", initArgs...)
 	cmd.Stderr = io.MultiWriter(os.Stderr, errlogfile)
 	cmd.Stdout = io.MultiWriter(os.Stdout, logfile)
-	cmd.Env = append(os.Environ(), "EPIK_STORAGE_PATH="+dir, "EPIK_PATH="+fullNodeRepo)
+	cmd.Env = append(os.Environ(), "EPIK_MINER_PATH="+dir, "EPIK_PATH="+fullNodeRepo)
 	if err := cmd.Run(); err != nil {
 		return nodeInfo{}, err
 	}
@@ -188,10 +189,10 @@ func (api *api) SpawnStorage(fullNodeRepo string) (nodeInfo, error) {
 
 	mux := newWsMux()
 
-	cmd = exec.Command("./epik-storage-miner", "run", "--api", fmt.Sprintf("%d", 2500+id), "--nosync")
+	cmd = exec.Command("./epik-miner", "run", "--miner-api", fmt.Sprintf("%d", 2500+id), "--nosync")
 	cmd.Stderr = io.MultiWriter(os.Stderr, errlogfile, mux.errpw)
 	cmd.Stdout = io.MultiWriter(os.Stdout, logfile, mux.outpw)
-	cmd.Env = append(os.Environ(), "EPIK_STORAGE_PATH="+dir, "EPIK_PATH="+fullNodeRepo)
+	cmd.Env = append(os.Environ(), "EPIK_MINER_PATH="+dir, "EPIK_PATH="+fullNodeRepo)
 	if err := cmd.Start(); err != nil {
 		return nodeInfo{}, err
 	}
@@ -248,7 +249,7 @@ func (api *api) RestartNode(id int32) (nodeInfo, error) {
 
 	var cmd *exec.Cmd
 	if nd.meta.Storage {
-		cmd = exec.Command("./epik-storage-miner", "run", "--api", fmt.Sprintf("%d", 2500+id), "--nosync")
+		cmd = exec.Command("./epik-miner", "run", "--miner-api", fmt.Sprintf("%d", 2500+id), "--nosync")
 	} else {
 		cmd = exec.Command("./epik", "daemon", "--api", fmt.Sprintf("%d", 2500+id))
 	}

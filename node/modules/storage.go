@@ -6,6 +6,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/backupds"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
@@ -27,5 +28,10 @@ func KeyStore(lr repo.LockedRepo) (types.KeyStore, error) {
 }
 
 func Datastore(r repo.LockedRepo) (dtypes.MetadataDS, error) {
-	return r.Datastore("/metadata")
+	mds, err := r.Datastore("/metadata")
+	if err != nil {
+		return nil, err
+	}
+
+	return backupds.Wrap(mds), nil
 }

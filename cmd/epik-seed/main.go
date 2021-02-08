@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/docker/go-units"
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
-
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
@@ -31,7 +32,7 @@ func main() {
 
 	local := []*cli.Command{
 		genesisCmd,
-
+		newKeyCmd,
 		preSealCmd,
 		aggregateManifestsCmd,
 	}
@@ -56,12 +57,48 @@ func main() {
 	}
 }
 
+var newKeyCmd = &cli.Command{
+	Name:      "new-key",
+	Usage:     "Generate a new key of the given type",
+	ArgsUsage: "[bls|secp256k1 (default secp256k1)]",
+	Action: func(c *cli.Context) error {
+
+		typ := c.Args().First()
+		if typ == "" {
+			typ = "secp256k1"
+		}
+
+		nk, err := wallet.GenerateKey(types.KeyType(typ))
+		if err != nil {
+			return err
+		}
+
+		cur, err := homedir.Expand(".")
+		if err != nil {
+			return err
+		}
+
+		b, err := json.Marshal(nk.KeyInfo)
+		if err != nil {
+			return err
+		}
+
+		// TODO: allow providing key
+		if err := ioutil.WriteFile(filepath.Join(cur, nk.Address.String()+".key"), []byte(hex.EncodeToString(b)), 0664); err != nil {
+			return err
+		}
+
+		fmt.Println(nk.Address.String())
+		return nil
+	},
+}
+
 var preSealCmd = &cli.Command{
 	Name: "pre-seal",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "miner-addr",
-			Value: "t01000",
+			Value: "t01001", // t01000 is initial expert
 			Usage: "specify the future address of your miner",
 		},
 		&cli.StringFlag{
@@ -74,11 +111,11 @@ var preSealCmd = &cli.Command{
 			Value: "epik is fire",
 			Usage: "set the ticket preimage for sealing randomness",
 		},
-		&cli.IntFlag{
-			Name:  "num-sectors",
-			Value: 1,
-			Usage: "select number of sectors to pre-seal",
-		},
+		// &cli.IntFlag{
+		// 	Name:  "num-sectors",
+		// 	Value: 1,
+		// 	Usage: "select number of sectors to pre-seal",
+		// },
 		&cli.Uint64Flag{
 			Name:  "sector-offset",
 			Value: 0,
@@ -114,6 +151,9 @@ var preSealCmd = &cli.Command{
 				return err
 			}
 			kb, err := hex.DecodeString(string(kh))
+			if err != nil {
+				return err
+			}
 			if err := json.Unmarshal(kb, k); err != nil {
 				return err
 			}
@@ -125,12 +165,12 @@ var preSealCmd = &cli.Command{
 		}
 		sectorSize := abi.SectorSize(sectorSizeInt)
 
-		rp, err := ffiwrapper.SealProofTypeFromSectorSize(sectorSize)
+		spt, err := miner.SealProofTypeFromSectorSize(sectorSize, build.NewestNetworkVersion)
 		if err != nil {
 			return err
 		}
 
-		gm, key, err := seed.PreSeal(maddr, rp, abi.SectorNumber(c.Uint64("sector-offset")), c.Int("num-sectors"), sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
+		gm, key, err := seed.PreSeal(maddr, spt, abi.SectorNumber(c.Uint64("sector-offset")) /* , c.Int("num-sectors") */, sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
 		if err != nil {
 			return err
 		}
@@ -155,6 +195,9 @@ var aggregateManifestsCmd = &cli.Command{
 			}
 
 			inputs = append(inputs, val)
+			if err := fi.Close(); err != nil {
+				return err
+			}
 		}
 
 		output := make(map[string]genesis.Miner)
@@ -186,6 +229,7 @@ func mergeGenMiners(a, b genesis.Miner) genesis.Miner {
 	return genesis.Miner{
 		Owner:         a.Owner,
 		Worker:        a.Worker,
+		Coinbase:      a.Coinbase,
 		PeerId:        a.PeerId,
 		MarketBalance: big.Zero(),
 		PowerBalance:  big.Zero(),

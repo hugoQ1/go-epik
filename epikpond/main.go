@@ -27,7 +27,7 @@ var onCmd = &cli.Command{
 	Name:  "on",
 	Usage: "run a command on a given node",
 	Action: func(cctx *cli.Context) error {
-		client, err := apiClient()
+		client, err := apiClient(cctx.Context)
 		if err != nil {
 			return err
 		}
@@ -45,9 +45,9 @@ var onCmd = &cli.Command{
 				"EPIK_PATH=" + node.Repo,
 			}
 		} else {
-			cmd = exec.Command("./epik-storage-miner")
+			cmd = exec.Command("./epik-miner")
 			cmd.Env = []string{
-				"EPIK_STORAGE_PATH=" + node.Repo,
+				"EPIK_MINER_PATH=" + node.Repo,
 				"EPIK_PATH=" + node.FullNode,
 			}
 		}
@@ -65,7 +65,7 @@ var shCmd = &cli.Command{
 	Name:  "sh",
 	Usage: "spawn shell with node shell variables set",
 	Action: func(cctx *cli.Context) error {
-		client, err := apiClient()
+		client, err := apiClient(cctx.Context)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ var shCmd = &cli.Command{
 			}
 		} else {
 			shcmd.Env = []string{
-				"EPIK_STORAGE_PATH=" + node.Repo,
+				"EPIK_MINER_PATH=" + node.Repo,
 				"EPIK_PATH=" + node.FullNode,
 			}
 		}

@@ -3,16 +3,19 @@ package cli
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/builtin/power"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
+	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
@@ -20,9 +23,13 @@ import (
 
 var expertCmd = &cli.Command{
 	Name:  "expert",
-	Usage: "Manage expert",
+	Usage: "Manage expert and file",
 	Subcommands: []*cli.Command{
 		expertInitCmd,
+		expertInfoCmd,
+		expertFileCmd,
+		expertListCmd,
+		expertNominateCmd,
 	},
 }
 
@@ -37,7 +44,7 @@ var expertInitCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "gas-price",
-			Usage: "set gas price for initialization messages in AttoFIL",
+			Usage: "set gas price for initialization messages in AttoEPK",
 			Value: "0",
 		},
 		&cli.BoolFlag{
@@ -64,7 +71,7 @@ var expertInitCmd = &cli.Command{
 		log.Info("Checking full node sync status")
 
 		if !cctx.Bool("nosync") {
-			if err := SyncWait(ctx, api); err != nil {
+			if err := SyncWait(ctx, api, false); err != nil {
 				return xerrors.Errorf("sync wait: %w", err)
 			}
 		}
@@ -120,12 +127,9 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 
 		Method: builtin.MethodsPower.CreateExpert,
 		Params: params,
-
-		GasLimit: 10000000,
-		GasPrice: gasPrice,
 	}
 
-	signed, err := api.MpoolPushMessage(ctx, createMessage)
+	signed, err := api.MpoolPushMessage(ctx, createMessage, nil)
 	if err != nil {
 		return address.Undef, err
 	}
@@ -149,4 +153,163 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 
 	log.Infof("New expert address is: %s (%s)", retval.IDAddress, retval.RobustAddress)
 	return retval.IDAddress, nil
+}
+
+//expertInfoCmd
+var expertInfoCmd = &cli.Command{
+	Name:  "info",
+	Usage: "expert info <expert>",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		if cctx.Args().Len() != 1 {
+			return fmt.Errorf("usage: info <expert>")
+		}
+
+		expertAddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		info, err := api.StateExpertInfo(ctx, expertAddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Expert: %s\n", expertAddr)
+		fmt.Printf("Expert owner: %s\n", info.Owner)
+		fmt.Printf("Expert proposer: %s\n", info.Proposer)
+		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
+		expertType := "foundation"
+		if info.Type == expert.ExpertNormal {
+			expertType = "normal"
+		}
+		fmt.Printf("Expert type: %s\n", expertType)
+		return nil
+	},
+}
+
+var expertFileCmd = &cli.Command{
+	Name:  "file",
+	Usage: "register file",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "expert",
+			Aliases: []string{"e"},
+			Usage:   "expert address",
+		},
+		&cli.StringFlag{
+			Name:    "root",
+			Aliases: []string{"r"},
+			Usage:   "expert address",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+
+		expert, err := address.NewFromString(cctx.String("expert"))
+		if err != nil {
+			return err
+		}
+
+		ctx := ReqContext(cctx)
+
+		// log.Info("Trying to connect to full node RPC")
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		var root cid.Cid
+		if cctx.String("root") != "" {
+			parsed, err := cid.Parse(cctx.String("root"))
+			if err != nil {
+				return err
+			}
+			root = parsed
+		}
+
+		ds, err := api.ClientDealPieceCID(ctx, root)
+		if err != nil {
+			return xerrors.Errorf("failed to get data cid/size for root %s: %w", root, err)
+		}
+
+		msg, err := api.ClientExpertRegisterFile(ctx, &lapi.ExpertRegisterFileParams{
+			Expert:    expert,
+			PieceID:   ds.PieceCID,
+			PieceSize: ds.PieceSize,
+		})
+		fmt.Println("register CID: ", msg)
+		return nil
+	},
+}
+
+var expertListCmd = &cli.Command{
+	Name:  "list",
+	Usage: "expert list",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		// log.Info("Trying to connect to full node RPC")
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		list, err := api.StateListExperts(ctx, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		for index, addr := range list {
+			fmt.Printf("expert %d: %s\n", index, addr)
+		}
+		return nil
+	},
+}
+
+//expertNominateCmd
+var expertNominateCmd = &cli.Command{
+	Name:  "nominate",
+	Usage: "expert nominate <expert> <target>",
+	Flags: []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		ctx := ReqContext(cctx)
+
+		if cctx.Args().Len() != 2 {
+			return fmt.Errorf("usage: nominate <expert> <target>")
+		}
+
+		expert, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		target, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		msg, err := api.ClientExpertNominate(ctx, expert, target)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("expert nominate: %s\n", msg)
+		return nil
+	},
 }

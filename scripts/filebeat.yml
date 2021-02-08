@@ -4,7 +4,7 @@ filebeat.inputs:
 
 - type: log
   paths:
-    - /root/.epikstorage/logs
+    - /root/.epikminer/logs
   fields:
     logzio_codec: json
     token: <API TOKEN>

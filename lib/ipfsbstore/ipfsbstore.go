@@ -12,11 +12,12 @@ import (
 
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	httpapi "github.com/ipfs/go-ipfs-http-client"
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/options"
 	"github.com/ipfs/interface-go-ipfs-core/path"
+
+	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 type IpfsBstore struct {
@@ -24,12 +25,12 @@ type IpfsBstore struct {
 	api iface.CoreAPI
 }
 
-func NewIpfsBstore(ctx context.Context) (*IpfsBstore, error) {
+func NewIpfsBstore(ctx context.Context, onlineMode bool) (*IpfsBstore, error) {
 	localApi, err := httpapi.NewLocalApi()
 	if err != nil {
 		return nil, xerrors.Errorf("getting local ipfs api: %w", err)
 	}
-	api, err := localApi.WithOptions(options.Api.Offline(true))
+	api, err := localApi.WithOptions(options.Api.Offline(!onlineMode))
 	if err != nil {
 		return nil, xerrors.Errorf("setting offline mode: %s", err)
 	}
@@ -40,12 +41,12 @@ func NewIpfsBstore(ctx context.Context) (*IpfsBstore, error) {
 	}, nil
 }
 
-func NewRemoteIpfsBstore(ctx context.Context, maddr multiaddr.Multiaddr) (*IpfsBstore, error) {
+func NewRemoteIpfsBstore(ctx context.Context, maddr multiaddr.Multiaddr, onlineMode bool) (*IpfsBstore, error) {
 	httpApi, err := httpapi.NewApi(maddr)
 	if err != nil {
 		return nil, xerrors.Errorf("setting remote ipfs api: %w", err)
 	}
-	api, err := httpApi.WithOptions(options.Api.Offline(true))
+	api, err := httpApi.WithOptions(options.Api.Offline(!onlineMode))
 	if err != nil {
 		return nil, xerrors.Errorf("applying offline mode: %s", err)
 	}

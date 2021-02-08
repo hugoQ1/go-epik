@@ -6,26 +6,47 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"path/filepath"
+	"os"
+	"time"
 
 	"github.com/gbrlsnchs/jwt/v3"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	record "github.com/libp2p/go-libp2p-record"
+	"go.uber.org/fx"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
+	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/journal"
 	"github.com/EpiK-Protocol/go-epik/lib/addrutil"
+	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
+	"github.com/EpiK-Protocol/go-epik/system"
+	"github.com/raulk/go-watchdog"
 )
 
-var log = logging.Logger("modules")
+const (
+	// EnvWatchdogDisabled is an escape hatch to disable the watchdog explicitly
+	// in case an OS/kernel appears to report incorrect information. The
+	// watchdog will be disabled if the value of this env variable is 1.
+	EnvWatchdogDisabled = "LOTUS_DISABLE_WATCHDOG"
+)
+
+const (
+	JWTSecretName   = "auth-jwt-private" //nolint:gosec
+	KTJwtHmacSecret = "jwt-hmac-secret"  //nolint:gosec
+)
+
+var (
+	log         = logging.Logger("modules")
+	logWatchdog = logging.Logger("watchdog")
+)
 
 type Genesis func() (*types.BlockHeader, error)
 
@@ -36,9 +57,60 @@ func RecordValidator(ps peerstore.Peerstore) record.Validator {
 	}
 }
 
-const JWTSecretName = "auth-jwt-private" //nolint:gosec
+// MemoryConstraints returns the memory constraints configured for this system.
+func MemoryConstraints() system.MemoryConstraints {
+	constraints := system.GetMemoryConstraints()
+	log.Infow("memory limits initialized",
+		"max_mem_heap", constraints.MaxHeapMem,
+		"total_system_mem", constraints.TotalSystemMem,
+		"effective_mem_limit", constraints.EffectiveMemLimit)
+	return constraints
+}
 
-type jwtPayload struct {
+// MemoryWatchdog starts the memory watchdog, applying the computed resource
+// constraints.
+func MemoryWatchdog(lc fx.Lifecycle, constraints system.MemoryConstraints) {
+	if os.Getenv(EnvWatchdogDisabled) == "1" {
+		log.Infof("memory watchdog is disabled via %s", EnvWatchdogDisabled)
+		return
+	}
+
+	cfg := watchdog.MemConfig{
+		Resolution: 5 * time.Second,
+		Policy: &watchdog.WatermarkPolicy{
+			Watermarks:         []float64{0.50, 0.60, 0.70, 0.85, 0.90, 0.925, 0.95},
+			EmergencyWatermark: 0.95,
+		},
+		Logger: logWatchdog,
+	}
+
+	// if user has set max heap limit, apply it. Otherwise, fall back to total
+	// system memory constraint.
+	if maxHeap := constraints.MaxHeapMem; maxHeap != 0 {
+		log.Infof("memory watchdog will apply max heap constraint: %d bytes", maxHeap)
+		cfg.Limit = maxHeap
+		cfg.Scope = watchdog.ScopeHeap
+	} else {
+		log.Infof("max heap size not provided; memory watchdog will apply total system memory constraint: %d bytes", constraints.TotalSystemMem)
+		cfg.Limit = constraints.TotalSystemMem
+		cfg.Scope = watchdog.ScopeSystem
+	}
+
+	err, stop := watchdog.Memory(cfg)
+	if err != nil {
+		log.Warnf("failed to instantiate memory watchdog: %s", err)
+		return
+	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			stop()
+			return nil
+		},
+	})
+}
+
+type JwtPayload struct {
 	Allow []auth.Permission
 }
 
@@ -54,7 +126,7 @@ func APISecret(keystore types.KeyStore, lr repo.LockedRepo) (*dtypes.APIAlg, err
 		}
 
 		key = types.KeyInfo{
-			Type:       "jwt-hmac-secret",
+			Type:       KTJwtHmacSecret,
 			PrivateKey: sk,
 		}
 
@@ -63,7 +135,7 @@ func APISecret(keystore types.KeyStore, lr repo.LockedRepo) (*dtypes.APIAlg, err
 		}
 
 		// TODO: make this configurable
-		p := jwtPayload{
+		p := JwtPayload{
 			Allow: apistruct.AllPermissions,
 		}
 
@@ -92,10 +164,41 @@ func BuiltinBootstrap() (dtypes.BootstrapPeers, error) {
 	return build.BuiltinBootstrap()
 }
 
-func DrandBootstrap() (dtypes.DrandBootstrap, error) {
-	return build.DrandBootstrap()
+func DrandBootstrap(ds dtypes.DrandSchedule) (dtypes.DrandBootstrap, error) {
+	// TODO: retry resolving, don't fail if at least one resolve succeeds
+	res := []peer.AddrInfo{}
+	for _, d := range ds {
+		addrs, err := addrutil.ParseAddresses(context.TODO(), d.Config.Relays)
+		if err != nil {
+			log.Errorf("reoslving drand relays addresses: %+v", err)
+			continue
+		}
+		res = append(res, addrs...)
+	}
+	return res, nil
 }
 
-func SetupJournal(lr repo.LockedRepo) error {
-	return journal.InitializeSystemJournal(filepath.Join(lr.Path(), "journal"))
+func NewDefaultMaxFeeFunc(r repo.LockedRepo) dtypes.DefaultMaxFeeFunc {
+	return func() (out abi.TokenAmount, err error) {
+		err = readNodeCfg(r, func(cfg *config.FullNode) {
+			out = abi.TokenAmount(cfg.Fees.DefaultMaxFee)
+		})
+		return
+	}
+}
+
+func readNodeCfg(r repo.LockedRepo, accessor func(node *config.FullNode)) error {
+	raw, err := r.Config()
+	if err != nil {
+		return err
+	}
+
+	cfg, ok := raw.(*config.FullNode)
+	if !ok {
+		return xerrors.New("expected config.FullNode")
+	}
+
+	accessor(cfg)
+
+	return nil
 }

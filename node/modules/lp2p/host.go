@@ -14,11 +14,9 @@ import (
 	record "github.com/libp2p/go-libp2p-record"
 	routedhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
-	"go.opencensus.io/stats"
 	"go.uber.org/fx"
 
 	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 )
@@ -72,11 +70,6 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 					case <-q:
 						return
 					case <-ticker.C:
-						totals := BwReporter.GetBandwidthTotals()
-						stats.Record(ctx, metrics.BandwidthTotalIn.M(totals.TotalIn))
-						stats.Record(ctx, metrics.BandwidthTotalOut.M(totals.TotalOut))
-						stats.Record(ctx, metrics.BandwidthRateIn.M(totals.RateIn))
-						stats.Record(ctx, metrics.BandwidthRateOut.M(totals.RateOut))
 					}
 				}
 			}()

@@ -3,18 +3,20 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
-	"time"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
-	"go.opencensus.io/stats/view"
+	manet "github.com/multiformats/go-multiaddr/net"
+	promclient "github.com/prometheus/client_golang/prometheus"
+	"go.opencensus.io/tag"
 	"golang.org/x/xerrors"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -24,16 +26,20 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
-	"github.com/EpiK-Protocol/go-epik/metrics/influxexporter"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 )
 
 var log = logging.Logger("main")
 
-func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shutdownCh <-chan struct{}) error {
-	rpcServer := jsonrpc.NewServer()
-	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(a))
+func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shutdownCh <-chan struct{}, maxRequestSize int64) error {
+	serverOptions := make([]jsonrpc.ServerOption, 0)
+	if maxRequestSize != 0 { // config set
+		serverOptions = append(serverOptions, jsonrpc.WithMaxRequestSize(maxRequestSize))
+	}
+	rpcServer := jsonrpc.NewServer(serverOptions...)
+	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(metrics.MetricedFullAPI(a)))
 
 	ah := &auth.Handler{
 		Verify: a.AuthVerify,
@@ -49,7 +55,16 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 
 	http.Handle("/rest/v0/import", importAH)
 
+	// Prometheus globals are exposed as interfaces, but the prometheus
+	// OpenCensus exporter expects a concrete *Registry. The concrete type of
+	// the globals are actually *Registry, so we downcast them, staying
+	// defensive in case things change under the hood.
+	registry, ok := promclient.DefaultRegisterer.(*promclient.Registry)
+	if !ok {
+		log.Warnf("failed to export default prometheus registry; some metrics will be unavailable; unexpected type: %T", promclient.DefaultRegisterer)
+	}
 	exporter, err := prometheus.NewExporter(prometheus.Options{
+		Registry:  registry,
 		Namespace: "EpiK",
 	})
 	if err != nil {
@@ -57,6 +72,10 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 	}
 
 	http.Handle("/debug/metrics", exporter)
+	http.Handle("/debug/pprof-set/block", handleFractionOpt("BlockProfileRate", runtime.SetBlockProfileRate))
+	http.Handle("/debug/pprof-set/mutex", handleFractionOpt("MutexProfileFraction",
+		func(x int) { runtime.SetMutexProfileFraction(x) },
+	))
 
 	lst, err := manet.Listen(addr)
 	if err != nil {
@@ -64,27 +83,21 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 	}
 
 	srv := &http.Server{
-		Handler:     http.DefaultServeMux,
-		IdleTimeout: 10 * time.Minute,
-	}
-
-	ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
-	if err != nil {
-		log.Warnf("unable to register influx exporter: %v", err)
-	} else {
-		view.RegisterExporter(ifExporter)
+		Handler: http.DefaultServeMux,
+		BaseContext: func(listener net.Listener) context.Context {
+			ctx, _ := tag.New(context.Background(), tag.Upsert(metrics.APIInterface, "epik-daemon"))
+			return ctx
+		},
 	}
 
 	sigCh := make(chan os.Signal, 2)
 	shutdownDone := make(chan struct{})
 	go func() {
 		select {
-		case <-sigCh:
+		case sig := <-sigCh:
+			log.Warnw("received shutdown", "signal", sig)
 		case <-shutdownCh:
-		}
-
-		if ifCloser != nil {
-			ifCloser()
+			log.Warn("received shutdown")
 		}
 
 		log.Warn("Shutting down...")
