@@ -5,11 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
@@ -28,6 +32,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 
 	"github.com/filecoin-project/go-address"
+	datatransfer "github.com/filecoin-project/go-data-transfer"
 	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
 	dtnet "github.com/filecoin-project/go-data-transfer/network"
 	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
@@ -54,6 +59,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
+	"github.com/EpiK-Protocol/go-epik/metrics"
+	metrics2 "github.com/libp2p/go-libp2p-core/metrics"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -271,6 +278,68 @@ func HandleDeals(mctx helpers.MetricsCtx, lc fx.Lifecycle, host host.Host, h sto
 	})
 }
 
+func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	stop := make(chan struct{})
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			go metrics.RunSysInspector(ctx, reporter, 5*time.Second, stop)
+
+			go func() {
+				b2f := func(amt abi.TokenAmount) float64 {
+					f := 0.0
+					r := new(big.Rat).SetFrac(amt.Int, big.NewInt(int64(build.EpkPrecision)))
+					if r.Sign() != 0 {
+						f, _ = r.Float64()
+					}
+					return f
+				}
+
+				tagsT := []tag.Mutator{
+					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
+					tag.Insert(metrics.Type, "total"),
+				}
+				tagsA := []tag.Mutator{
+					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
+					tag.Insert(metrics.Type, "available"),
+				}
+
+				ticker := time.NewTicker(time.Duration(build.BlockDelaySecs) * time.Second)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-stop:
+						return
+					case <-ticker.C:
+						head, err := node.ChainHead(ctx)
+						if err != nil {
+							log.Warnf("failed to get head: %w", err)
+							continue
+						}
+						ava, err := node.StateMinerAvailableBalance(ctx, address.Address(minerAddress), head.Key())
+						if err != nil {
+							log.Warnf("failed to get available balance: %w", err)
+							continue
+						}
+						act, err := node.StateGetActor(ctx, address.Address(minerAddress), head.Key())
+						if err != nil {
+							log.Warnf("failed to get total balance: %w", err)
+							continue
+						}
+						stats.RecordWithTags(ctx, tagsT, metrics.MinerBalance.M(b2f(act.Balance)))
+						stats.RecordWithTags(ctx, tagsA, metrics.MinerBalance.M(b2f(ava)))
+					}
+				}
+			}()
+			return nil
+		},
+		OnStop: func(context.Context) error {
+			close(stop)
+			return nil
+		},
+	})
+}
+
 func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.FullNode, minerAddress dtypes.MinerAddress) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -342,6 +411,21 @@ func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.S
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			dt.SubscribeToEvents(marketevents.DataTransferLogger)
+			// subscribe retrievals
+			dt.SubscribeToEvents(func(event datatransfer.Event, channelState datatransfer.ChannelState) {
+				if !channelState.IsPull() || channelState.SelfPeer() != channelState.Sender() {
+					return
+				}
+				switch channelState.Status() {
+				case datatransfer.Cancelled, datatransfer.Failed, datatransfer.Completed:
+					ctx, _ := tag.New(ctx, tag.Upsert(metrics.Type, strings.ToLower(datatransfer.Statuses[channelState.Status()])))
+					stats.Record(ctx, metrics.ServeTransferResult.M(1))
+					stats.Record(ctx, metrics.ServeTransferBytes.M(int64(channelState.Sent())))
+				case datatransfer.Ongoing:
+					stats.Record(ctx, metrics.ServeTransferAccept.M(1))
+				default:
+				}
+			})
 			return dt.Start(ctx)
 		},
 		OnStop: func(ctx context.Context) error {

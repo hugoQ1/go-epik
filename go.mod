@@ -55,6 +55,7 @@ require (
 	github.com/hannahhoward/go-pubsub v0.0.0-20200423002714-8d62886cc36e
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4
+	github.com/influxdata/influxdb v1.8.4
 	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d
 	github.com/ipfs/bbloom v0.0.4
 	github.com/ipfs/go-bitswap v0.3.2
@@ -123,6 +124,7 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/raulk/clock v1.1.0
 	github.com/raulk/go-watchdog v0.0.1
+	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/stretchr/testify v1.6.1
 	github.com/supranational/blst v0.1.1
 	github.com/syndtr/goleveldb v1.0.0
@@ -174,4 +176,4 @@ replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/
 
 replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210208053641-e775f451d33e
 
-replace github.com/filecoin-project/go-data-transfer v1.2.5 => github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210206094606-72c176a84533
+replace github.com/filecoin-project/go-data-transfer v1.2.5 => github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210208082033-030ee804f78b

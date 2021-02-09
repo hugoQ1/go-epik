@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
@@ -13,6 +16,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 
 	"github.com/ipfs/go-cid"
 	inet "github.com/libp2p/go-libp2p-core/network"
@@ -44,6 +48,7 @@ func (s *server) HandleStream(stream inet.Stream) {
 	var req Request
 	if err := cborutil.ReadCborRPC(bufio.NewReader(stream), &req); err != nil {
 		log.Warnf("failed to read block sync request: %s", err)
+		recordSyncFailure(ctx, "read")
 		return
 	}
 	log.Debugw("block sync request",
@@ -52,21 +57,26 @@ func (s *server) HandleStream(stream inet.Stream) {
 	resp, err := s.processRequest(ctx, &req)
 	if err != nil {
 		log.Warn("failed to process request: ", err)
+		recordSyncFailure(ctx, "process")
 		return
 	}
 
 	_ = stream.SetDeadline(time.Now().Add(WriteResDeadline))
 	buffered := bufio.NewWriter(stream)
-	if err = cborutil.WriteCborRPC(buffered, resp); err == nil {
+	cw := metrics.NewCountWriter(buffered)
+	if err = cborutil.WriteCborRPC(cw, resp); err == nil {
 		err = buffered.Flush()
 	}
 	if err != nil {
 		_ = stream.SetDeadline(time.Time{})
 		log.Warnw("failed to write back response for handle stream",
 			"err", err, "peer", stream.Conn().RemotePeer())
+		recordSyncFailure(ctx, "write")
 		return
 	}
 	_ = stream.SetDeadline(time.Time{})
+
+	recordSyncSuccess(ctx, req.Options, cw.Count())
 }
 
 // Validate and service the request. We return either a protocol
@@ -248,4 +258,25 @@ func gatherMessages(cs *store.ChainStore, ts *types.TipSet) ([]*types.Message, [
 	}
 
 	return blsmsgs, blsincl, secpkmsgs, secpkincl, nil
+}
+
+func recordSyncFailure(ctx context.Context, failureType string) {
+	tags := []tag.Mutator{tag.Insert(metrics.FailureType, failureType)}
+	stats.RecordWithTags(ctx, tags, metrics.ServeSyncFailure.M(1))
+}
+
+func recordSyncSuccess(ctx context.Context, options uint64, size int64) {
+	typ := strconv.Itoa(int(options))
+	switch options {
+	case Headers:
+		typ = "block"
+	case Messages:
+		typ = "msg"
+	case Headers | Messages:
+		typ = "tipset"
+	default:
+	}
+	tags := []tag.Mutator{tag.Insert(metrics.Type, typ)}
+	stats.RecordWithTags(ctx, tags, metrics.ServeSyncSuccess.M(1))
+	stats.RecordWithTags(ctx, tags, metrics.ServeSyncBytes.M(size))
 }

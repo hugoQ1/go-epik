@@ -9,6 +9,7 @@ import (
 	"go.opencensus.io/tag"
 
 	rpcmetrics "github.com/filecoin-project/go-jsonrpc/metrics"
+	_ "github.com/influxdata/influxdb1-client"
 )
 
 // Distribution
@@ -28,6 +29,8 @@ var (
 	ReceivedFrom, _ = tag.NewKey("received_from")
 	Endpoint, _     = tag.NewKey("endpoint")
 	APIInterface, _ = tag.NewKey("api") // to distinguish between gateway api and full node api endpoint calls
+
+	Type, _ = tag.NewKey("type")
 )
 
 // Measures
@@ -57,6 +60,26 @@ var (
 	APIRequestDuration                  = stats.Float64("api/request_duration_ms", "Duration of API requests", stats.UnitMilliseconds)
 	VMFlushCopyDuration                 = stats.Float64("vm/flush_copy_ms", "Time spent in VM Flush Copy", stats.UnitMilliseconds)
 	VMFlushCopyCount                    = stats.Int64("vm/flush_copy_count", "Number of copied objects", stats.UnitDimensionless)
+
+	// traffic
+	MessageReceivedBytes = stats.Int64("message/received_bytes", "Counter for total bytes of received messages", stats.UnitBytes)
+	BlockReceivedBytes   = stats.Int64("block/received_bytes", "Counter for total bytes of received blocks", stats.UnitBytes)
+	BandwidthTotal       = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
+	BandwidthRate        = stats.Float64("bandwidth/rate", "Counter for bytes per second", stats.UnitBytes)
+	// transfer
+	ServeTransferBytes  = stats.Int64("serve/transfer_bytes", "Counter for total sent bytes", stats.UnitBytes)
+	ServeTransferAccept = stats.Int64("serve/transfer_accept", "Counter for total accepted requests", stats.UnitDimensionless)
+	ServeTransferResult = stats.Int64("serve/transfer_result", "Counter for process results", stats.UnitDimensionless)
+	// sync
+	ServeSyncSuccess = stats.Int64("serve/sync_success", "Counter for successes", stats.UnitDimensionless)
+	ServeSyncFailure = stats.Int64("serve/sync_failure", "Counter for failures", stats.UnitDimensionless)
+	ServeSyncBytes   = stats.Int64("serve/sync_bytes", "Counter for total sent bytes", stats.UnitBytes)
+	// EPK
+	MinerBalance = stats.Float64("miner/balance", "Counter for miner balance in EPK", stats.UnitDimensionless)
+	// Sys
+	SysCpuUsed  = stats.Int64("sys/cpu_used", "Counter for used percentage of cpu used", stats.UnitDimensionless)
+	SysMemUsed  = stats.Int64("sys/mem_used", "Counter for used percentage of ram used", stats.UnitDimensionless)
+	SysDiskUsed = stats.Int64("sys/disk_used", "Counter for used percentage of disk", stats.UnitDimensionless)
 )
 
 var (
@@ -176,6 +199,63 @@ var (
 		Measure:     VMFlushCopyCount,
 		Aggregation: view.Sum(),
 	}
+
+	MessageReceivedBytesView = &view.View{
+		Measure:     MessageReceivedBytes,
+		Aggregation: view.Sum(),
+	}
+	BlockReceivedBytesView = &view.View{
+		Measure:     BlockReceivedBytes,
+		Aggregation: view.Sum(),
+	}
+	BandwidthTotalView = &view.View{
+		Measure:     BandwidthTotal,
+		Aggregation: view.LastValue(),
+	}
+	BandwidthRateView = &view.View{
+		Measure:     BandwidthRate,
+		Aggregation: view.LastValue(),
+	}
+	ServeTransferBytesView = &view.View{
+		Measure:     ServeTransferBytes,
+		Aggregation: view.Sum(),
+	}
+	ServeTransferAcceptView = &view.View{
+		Measure:     ServeTransferAccept,
+		Aggregation: view.Count(),
+	}
+	ServeTransferResultView = &view.View{
+		Measure:     ServeTransferResult,
+		Aggregation: view.Count(),
+	}
+	ServeSyncSuccessView = &view.View{
+		Measure:     ServeSyncSuccess,
+		Aggregation: view.Count(),
+	}
+	ServeSyncFailureView = &view.View{
+		Measure:     ServeSyncFailure,
+		Aggregation: view.Count(),
+	}
+	ServeSyncBytesView = &view.View{
+		Measure:     ServeSyncBytes,
+		Aggregation: view.Sum(),
+	}
+	MinerBalanceView = &view.View{
+		Measure:     MinerBalance,
+		Aggregation: view.LastValue(),
+	}
+	SysCpuUsedView = &view.View{
+		Measure:     SysCpuUsed,
+		Aggregation: view.LastValue(),
+	}
+	SysMemUsedView = &view.View{
+		Measure:     SysMemUsed,
+		Aggregation: view.LastValue(),
+	}
+	SysDiskUsedView = &view.View{
+		Measure:     SysDiskUsed,
+		Aggregation: view.LastValue(),
+	}
 )
 
 // DefaultViews is an array of OpenCensus views for metric gathering purposes
@@ -206,6 +286,26 @@ var DefaultViews = append([]*view.View{
 	VMFlushCopyDurationView,
 },
 	rpcmetrics.DefaultViews...)
+
+var EpikViews = []*view.View{
+	MessageReceivedBytesView,
+	BlockReceivedBytesView,
+	ServeSyncSuccessView,
+	ServeSyncFailureView,
+	ServeSyncBytesView,
+}
+
+var MinerViews = []*view.View{
+	BandwidthTotalView,
+	BandwidthRateView,
+	ServeTransferBytesView,
+	ServeTransferAcceptView,
+	ServeTransferResultView,
+	MinerBalanceView,
+	SysCpuUsedView,
+	SysMemUsedView,
+	SysDiskUsedView,
+}
 
 // SinceInMilliseconds returns the duration of time since the provide time as a float64.
 func SinceInMilliseconds(startTime time.Time) float64 {

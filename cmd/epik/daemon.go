@@ -316,7 +316,7 @@ var DaemonCmd = &cli.Command{
 
 		// Register all metric views
 		if err = view.Register(
-			metrics.DefaultViews...,
+			append(metrics.DefaultViews, metrics.EpikViews...)...,
 		); err != nil {
 			log.Fatalf("Cannot register the view: %v", err)
 		}

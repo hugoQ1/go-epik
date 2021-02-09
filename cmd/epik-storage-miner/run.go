@@ -9,9 +9,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"contrib.go.opencensus.io/exporter/prometheus"
 	mux "github.com/gorilla/mux"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
+	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
@@ -26,6 +28,7 @@ import (
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/EpiK-Protocol/go-epik/lib/ulimit"
 	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/metrics/influxexporter"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -72,7 +75,7 @@ var runCmd = &cli.Command{
 
 		// Register all metric views
 		if err := view.Register(
-			metrics.DefaultViews...,
+			append(metrics.DefaultViews, metrics.MinerViews...)...,
 		); err != nil {
 			log.Fatalf("Cannot register the view: %v", err)
 		}
@@ -164,6 +167,23 @@ var runCmd = &cli.Command{
 		mux.PathPrefix("/remote").HandlerFunc(minerapi.(*impl.StorageMinerAPI).ServeRemote)
 		mux.PathPrefix("/").Handler(http.DefaultServeMux) // pprof
 
+		// Prometheus globals are exposed as interfaces, but the prometheus
+		// OpenCensus exporter expects a concrete *Registry. The concrete type of
+		// the globals are actually *Registry, so we downcast them, staying
+		// defensive in case things change under the hood.
+		registry, ok := promclient.DefaultRegisterer.(*promclient.Registry)
+		if !ok {
+			log.Warnf("failed to export default prometheus registry; some metrics will be unavailable; unexpected type: %T", promclient.DefaultRegisterer)
+		}
+		exporter, err := prometheus.NewExporter(prometheus.Options{
+			Registry:  registry,
+			Namespace: "EpiK",
+		})
+		if err != nil {
+			log.Fatalf("could not create the prometheus stats exporter: %v", err)
+		}
+		http.Handle("/debug/metrics", exporter)
+
 		ah := &auth.Handler{
 			Verify: minerapi.AuthVerify,
 			Next:   mux.ServeHTTP,
@@ -177,6 +197,13 @@ var runCmd = &cli.Command{
 			},
 		}
 
+		ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
+		if err != nil {
+			log.Warnf("unable to register influx exporter: %v", err)
+		} else {
+			view.RegisterExporter(ifExporter)
+		}
+
 		sigChan := make(chan os.Signal, 2)
 		go func() {
 			select {
@@ -184,6 +211,10 @@ var runCmd = &cli.Command{
 				log.Warnw("received shutdown", "signal", sig)
 			case <-shutdownChan:
 				log.Warn("received shutdown")
+			}
+
+			if ifCloser != nil {
+				ifCloser()
 			}
 
 			log.Warn("Shutting down...")
