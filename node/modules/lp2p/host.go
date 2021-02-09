@@ -3,7 +3,6 @@ package lp2p
 import (
 	"context"
 	"fmt"
-	"time"
 
 	nilrouting "github.com/ipfs/go-ipfs-routing/none"
 	"github.com/libp2p/go-libp2p"
@@ -58,24 +57,8 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 		return nil, err
 	}
 
-	q := make(chan struct{})
 	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			go func() {
-				ticker := time.NewTicker(5 * time.Second)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-q:
-						return
-					case <-ticker.C:
-					}
-				}
-			}()
-			return nil
-		},
 		OnStop: func(ctx context.Context) error {
-			close(q)
 			return h.Close()
 		},
 	})
