@@ -366,9 +366,6 @@ var genesisCarCmd = &cli.Command{
 		bstor := blockstore.NewTemporarySync()
 		sbldr := vm.Syscalls(ffiwrapper.ProofVerifier)
 		_, err := testing.MakeGenesis(ofile, c.Args().First())(bstor, sbldr, jrnl)()
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	},
 }
