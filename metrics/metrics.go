@@ -221,6 +221,7 @@ var (
 	ServeTransferBytesView = &view.View{
 		Measure:     ServeTransferBytes,
 		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{Type},
 	}
 	ServeTransferAcceptView = &view.View{
 		Measure:     ServeTransferAccept,
@@ -229,6 +230,7 @@ var (
 	ServeTransferResultView = &view.View{
 		Measure:     ServeTransferResult,
 		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{Type},
 	}
 	ServeSyncSuccessView = &view.View{
 		Measure:     ServeSyncSuccess,
