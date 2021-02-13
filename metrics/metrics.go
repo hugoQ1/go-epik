@@ -211,10 +211,12 @@ var (
 	BandwidthTotalView = &view.View{
 		Measure:     BandwidthTotal,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type},
 	}
 	BandwidthRateView = &view.View{
 		Measure:     BandwidthRate,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type},
 	}
 	ServeTransferBytesView = &view.View{
 		Measure:     ServeTransferBytes,
@@ -231,18 +233,22 @@ var (
 	ServeSyncSuccessView = &view.View{
 		Measure:     ServeSyncSuccess,
 		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{Type},
 	}
 	ServeSyncFailureView = &view.View{
 		Measure:     ServeSyncFailure,
 		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{FailureType},
 	}
 	ServeSyncBytesView = &view.View{
 		Measure:     ServeSyncBytes,
 		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{Type},
 	}
 	MinerBalanceView = &view.View{
 		Measure:     MinerBalance,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type, MinerID},
 	}
 	SysCpuUsedView = &view.View{
 		Measure:     SysCpuUsed,
