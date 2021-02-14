@@ -62,7 +62,6 @@ func Host(mctx helpers.MetricsCtx, lc fx.Lifecycle, params P2PHostIn) (RawHost, 
 			return h.Close()
 		},
 	})
-
 	return h, nil
 }
 
