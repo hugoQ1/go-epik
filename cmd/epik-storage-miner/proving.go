@@ -23,6 +23,12 @@ import (
 var provingCmd = &cli.Command{
 	Name:  "proving",
 	Usage: "View proving information",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "tipset",
+			Usage: "specify tipset to call method on (pass comma separated array of cids, or '@head' or '@{height}')",
+		},
+	},
 	Subcommands: []*cli.Command{
 		provingInfoCmd,
 		provingDeadlinesCmd,
@@ -207,7 +213,7 @@ var provingInfoCmd = &cli.Command{
 
 var provingDeadlinesCmd = &cli.Command{
 	Name:  "deadlines",
-	Usage: "View the current proving period deadlines information",
+	Usage: "View the proving period deadlines information",
 	Action: func(cctx *cli.Context) error {
 		color.NoColor = !cctx.Bool("color")
 
@@ -230,12 +236,17 @@ var provingDeadlinesCmd = &cli.Command{
 			return err
 		}
 
-		deadlines, err := api.StateMinerDeadlines(ctx, maddr, types.EmptyTSK)
+		ts, err := lcli.LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		deadlines, err := api.StateMinerDeadlines(ctx, maddr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting deadlines: %w", err)
 		}
 
-		di, err := api.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+		di, err := api.StateMinerProvingDeadline(ctx, maddr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting deadlines: %w", err)
 		}
@@ -246,7 +257,7 @@ var provingDeadlinesCmd = &cli.Command{
 		_, _ = fmt.Fprintln(tw, "deadline\tpartitions\tsectors (faults)\tproven partitions")
 
 		for dlIdx, deadline := range deadlines {
-			partitions, err := api.StateMinerPartitions(ctx, maddr, uint64(dlIdx), types.EmptyTSK)
+			partitions, err := api.StateMinerPartitions(ctx, maddr, uint64(dlIdx), ts.Key())
 			if err != nil {
 				return xerrors.Errorf("getting partitions for deadline %d: %w", dlIdx, err)
 			}
@@ -288,7 +299,7 @@ var provingDeadlinesCmd = &cli.Command{
 
 var provingDeadlineInfoCmd = &cli.Command{
 	Name:      "deadline",
-	Usage:     "View the current proving period deadline information by its index ",
+	Usage:     "View the proving period deadline information by its index ",
 	ArgsUsage: "<deadlineIdx>",
 	Action: func(cctx *cli.Context) error {
 
@@ -315,22 +326,27 @@ var provingDeadlineInfoCmd = &cli.Command{
 
 		ctx := lcli.ReqContext(cctx)
 
+		ts, err := lcli.LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
 		maddr, err := getActorAddress(ctx, nodeApi, cctx.String("actor"))
 		if err != nil {
 			return err
 		}
 
-		deadlines, err := api.StateMinerDeadlines(ctx, maddr, types.EmptyTSK)
+		deadlines, err := api.StateMinerDeadlines(ctx, maddr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting deadlines: %w", err)
 		}
 
-		di, err := api.StateMinerProvingDeadline(ctx, maddr, types.EmptyTSK)
+		di, err := api.StateMinerProvingDeadline(ctx, maddr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting deadlines: %w", err)
 		}
 
-		partitions, err := api.StateMinerPartitions(ctx, maddr, dlIdx, types.EmptyTSK)
+		partitions, err := api.StateMinerPartitions(ctx, maddr, dlIdx, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting partitions for deadline %d: %w", dlIdx, err)
 		}

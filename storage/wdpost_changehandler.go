@@ -7,7 +7,6 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/filecoin-project/go-address"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -15,6 +14,7 @@ import (
 )
 
 const SubmitConfidence = 4
+const MaxPostsRetain = abi.ChainEpoch(900) // Must greater than WPoStChallengeWindow
 
 type CompleteGeneratePoSTCb func(posts []miner.SubmitWindowedPoStParams, err error)
 type CompleteSubmitPoSTCb func(err error)
@@ -108,6 +108,14 @@ func (c *postsCache) add(di *dline.Info, posts []miner.SubmitWindowedPoStParams)
 
 	// TODO: clear cache entries older than chain finality
 	c.cache[di.Open] = posts
+	if di.Open > MaxPostsRetain {
+		oldest := di.Open - MaxPostsRetain
+		for epoch := range c.cache {
+			if epoch < oldest {
+				delete(c.cache, epoch)
+			}
+		}
+	}
 
 	c.added <- &postInfo{
 		di:    di,
@@ -405,7 +413,7 @@ func (s *submitHandler) processHeadChange(ctx context.Context, revert *types.Tip
 	// Apply the change to all post windows
 	for epoch, pw := range s.postWindows {
 		s.processHeadChangeForPW(ctx, revert, advance, pw)
-		if h > policy.ChainFinality && epoch < h-policy.ChainFinality {
+		if h > MaxPostsRetain && epoch < h-MaxPostsRetain {
 			delete(s.postWindows, epoch)
 		}
 	}

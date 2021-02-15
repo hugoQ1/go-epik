@@ -12,7 +12,6 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -170,62 +169,6 @@ var stateMinerInfo = &cli.Command{
 
 		return nil
 	},
-}
-
-func ParseTipSetString(ts string) ([]cid.Cid, error) {
-	strs := strings.Split(ts, ",")
-
-	var cids []cid.Cid
-	for _, s := range strs {
-		c, err := cid.Parse(strings.TrimSpace(s))
-		if err != nil {
-			return nil, err
-		}
-		cids = append(cids, c)
-	}
-
-	return cids, nil
-}
-
-func LoadTipSet(ctx context.Context, cctx *cli.Context, api api.FullNode) (*types.TipSet, error) {
-	tss := cctx.String("tipset")
-	if tss == "" {
-		return nil, nil
-	}
-
-	return ParseTipSetRef(ctx, api, tss)
-}
-
-func ParseTipSetRef(ctx context.Context, api api.FullNode, tss string) (*types.TipSet, error) {
-	if tss[0] == '@' {
-		if tss == "@head" {
-			return api.ChainHead(ctx)
-		}
-
-		var h uint64
-		if _, err := fmt.Sscanf(tss, "@%d", &h); err != nil {
-			return nil, xerrors.Errorf("parsing height tipset ref: %w", err)
-		}
-
-		return api.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(h), types.EmptyTSK)
-	}
-
-	cids, err := ParseTipSetString(tss)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(cids) == 0 {
-		return nil, nil
-	}
-
-	k := types.NewTipSetKey(cids...)
-	ts, err := api.ChainGetTipSet(ctx, k)
-	if err != nil {
-		return nil, err
-	}
-
-	return ts, nil
 }
 
 var statePowerCmd = &cli.Command{

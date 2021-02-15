@@ -28,7 +28,9 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/cron"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
 	_init "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -36,6 +38,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -1458,14 +1461,15 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			break
 		case a == _init.Address ||
 			a == reward.Address ||
-			// a == verifreg.Address ||
 			// The power actor itself should never receive funds
 			a == power.Address ||
+			a == expertfund.Address ||
+			a == retrieval.Address ||
+			a == vote.Address ||
+			a == knowledge.Address ||
 			a == builtin.SystemActorAddr ||
 			a == builtin.CronActorAddr ||
 			a == builtin.BurntFundsActorAddr:
-			// a == builtin.SaftAddress ||
-			// a == builtin.ReserveAddress:
 
 			unCirc = big.Add(unCirc, actor.Balance)
 
@@ -1482,7 +1486,6 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 
 			circ = big.Add(circ, big.Sub(actor.Balance, lb))
 			unCirc = big.Add(unCirc, lb)
-		// TODO: vote/knowledge/expert/retrieval
 
 		case builtin.IsAccountActor(actor.Code) || builtin.IsPaymentChannelActor(actor.Code):
 			circ = big.Add(circ, actor.Balance)
