@@ -45,7 +45,6 @@ import (
 	"github.com/filecoin-project/go-state-types/rt"
 	"github.com/filecoin-project/specs-actors/v2/actors/migration/nv10"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
@@ -123,6 +122,12 @@ type Upgrade struct {
 type UpgradeSchedule []Upgrade
 
 type migrationLogger struct{}
+
+var fakeRct = &types.MessageReceipt{
+	ExitCode: 0,
+	Return:   nil,
+	GasUsed:  0,
+}
 
 func (ml migrationLogger) Log(level rt.LogLevel, msg string, args ...interface{}) {
 	switch level {
@@ -407,6 +412,7 @@ func (sm *StateManager) preMigrationWorker(ctx context.Context) {
 	}
 }
 
+/*
 func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmount, cb func(trace types.ExecutionTrace)) error {
 	fromAct, err := tree.GetActor(from)
 	if err != nil {
@@ -436,19 +442,8 @@ func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmo
 	if cb != nil {
 		// record the transfer in execution traces
 
-		fakeMsg := &types.Message{
-			From:  from,
-			To:    to,
-			Value: amt,
-		}
-		fakeRct := &types.MessageReceipt{
-			ExitCode: 0,
-			Return:   nil,
-			GasUsed:  0,
-		}
-
 		cb(types.ExecutionTrace{
-			Msg:        fakeMsg,
+			Msg:        makeFakeMsg(from, to, amt, 0),
 			MsgRct:     fakeRct,
 			Error:      "",
 			Duration:   0,
@@ -460,7 +455,6 @@ func doTransfer(tree types.StateTree, from, to address.Address, amt abi.TokenAmo
 	return nil
 }
 
-/*
 func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, _ MigrationCache, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
 	// Some initial parameters
 	FundsForMiners := types.FromEpk(1_000_000)
@@ -714,17 +708,7 @@ func UpgradeFaucetBurnRecovery(ctx context.Context, sm *StateManager, _ Migratio
 	if cb != nil {
 		// record the transfer in execution traces
 
-		fakeMsg := &types.Message{
-			From:  builtin.SystemActorAddr,
-			To:    builtin.SystemActorAddr,
-			Value: big.Zero(),
-			Nonce: uint64(epoch),
-		}
-		fakeRct := &types.MessageReceipt{
-			ExitCode: 0,
-			Return:   nil,
-			GasUsed:  0,
-		}
+		fakeMsg := makeFakeMsg(builtin.SystemActorAddr, builtin.SystemActorAddr, big.Zero(), uint64(epoch))
 
 		if err := cb(fakeMsg.Cid(), fakeMsg, &vm.ApplyRet{
 			MessageReceipt: *fakeRct,
@@ -930,6 +914,38 @@ func UpgradeCalico(ctx context.Context, sm *StateManager, _ MigrationCache, cb E
 	return newRoot, nil
 }
 
+func terminateActor(tree *state.StateTree, addr address.Address, cb ExecCallback, epoch abi.ChainEpoch) error {
+	a, err := tree.GetActor(addr)
+	if xerrors.Is(err, types.ErrActorNotFound) {
+		return types.ErrActorNotFound
+	}
+
+	var trace types.ExecutionTrace
+	if err := doTransfer(tree, addr, builtin.BurntFundsActorAddr, a.Balance, func(t types.ExecutionTrace) {
+		trace = t
+	}); err != nil {
+		return xerrors.Errorf("transferring terminated actor's balance: %w", err)
+	}
+
+	if cb != nil {
+		// record the transfer in execution traces
+
+		fakeMsg := makeFakeMsg(builtin.SystemActorAddr, addr, big.Zero(), uint64(epoch))
+
+		if err := cb(fakeMsg.Cid(), fakeMsg, &vm.ApplyRet{
+			MessageReceipt: *fakeRct,
+			ActorErr:       nil,
+			ExecutionTrace: trace,
+			Duration:       0,
+			GasCosts:       nil,
+		}); err != nil {
+			return xerrors.Errorf("recording transfers: %w", err)
+		}
+	}
+
+	return tree.DeleteActor(addr)
+}
+
 func UpgradeActorsV3(ctx context.Context, sm *StateManager, cache MigrationCache, cb ExecCallback, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
 	// Use all the CPUs except 3.
 	workerCount := runtime.NumCPU() - 3
@@ -958,6 +974,21 @@ func UpgradeActorsV3(ctx context.Context, sm *StateManager, cache MigrationCache
 		return cid.Undef, xerrors.Errorf("state-root mismatch: %s != %s", newRoot, newRoot2)
 	} else if _, err := newSm.GetActor(init_.Address); err != nil {
 		return cid.Undef, xerrors.Errorf("failed to load init actor after upgrade: %w", err)
+	}
+
+	tree, err := sm.StateTree(newRoot)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("getting state tree: %w", err)
+	}
+
+	err = terminateActor(tree, build.ZeroAddress, cb, epoch)
+	if err != nil && !xerrors.Is(err, types.ErrActorNotFound) {
+		return cid.Undef, xerrors.Errorf("deleting zero bls actor: %w", err)
+	}
+
+	newRoot, err = tree.Flush(ctx)
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("flushing state tree: %w", err)
 	}
 
 	return newRoot, nil
@@ -1154,17 +1185,7 @@ func splitGenesisMultisig0(ctx context.Context, cb ExecCallback, addr address.Ad
 	if cb != nil {
 		// record the transfer in execution traces
 
-		fakeMsg := &types.Message{
-			From:  builtin.SystemActorAddr,
-			To:    addr,
-			Value: big.Zero(),
-			Nonce: uint64(epoch),
-		}
-		fakeRct := &types.MessageReceipt{
-			ExitCode: 0,
-			Return:   nil,
-			GasUsed:  0,
-		}
+		fakeMsg := makeFakeMsg(builtin.SystemActorAddr, addr, big.Zero(), uint64(epoch))
 
 		if err := cb(fakeMsg.Cid(), fakeMsg, &vm.ApplyRet{
 			MessageReceipt: *fakeRct,
@@ -1289,4 +1310,13 @@ func resetMultisigVesting0(ctx context.Context, store adt0.Store, tree *state.St
 	}
 
 	return nil
+}
+
+func makeFakeMsg(from address.Address, to address.Address, amt abi.TokenAmount, nonce uint64) *types.Message {
+	return &types.Message{
+		From:  from,
+		To:    to,
+		Value: amt,
+		Nonce: nonce,
+	}
 } */
