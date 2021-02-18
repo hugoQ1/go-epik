@@ -3,7 +3,8 @@ package vm
 import (
 	"context"
 
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/build"
+
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/exitcode"
 
@@ -12,6 +13,7 @@ import (
 
 	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/account"
@@ -35,6 +37,10 @@ var EmptyObjectCid cid.Cid
 func TryCreateAccountActor(rt *Runtime, addr address.Address) (*types.Actor, address.Address, aerrors.ActorError) {
 	if err := rt.chargeGasSafe(PricelistByEpoch(rt.height).OnCreateActor()); err != nil {
 		return nil, address.Undef, err
+	}
+
+	if addr == build.ZeroAddress /* && rt.NetworkVersion() >= network.Version10 */ {
+		return nil, address.Undef, aerrors.New(exitcode.ErrIllegalArgument, "cannot create the zero bls actor")
 	}
 
 	addrID, err := rt.state.RegisterNewAddress(addr)
