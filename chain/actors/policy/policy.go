@@ -96,11 +96,8 @@ func SetWPoStChallengeWindow(period abi.ChainEpoch) {
 }
 
 func GetWinningPoStSectorSetLookback(nwVer network.Version) abi.ChainEpoch {
-	/* if nwVer <= network.Version3 {
-		return 10
-	} */
-
-	return ChainFinality
+	// return ChainFinality
+	return 10
 }
 
 /* func GetMaxSectorExpirationExtension() abi.ChainEpoch {
