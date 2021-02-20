@@ -4,9 +4,9 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/lotus/chain/actors/adt"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
-	account3 "github.com/filecoin-project/specs-actors/v3/actors/builtin/account"
+	account3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
 )
 
 var _ State = (*state3)(nil)
