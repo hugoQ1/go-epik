@@ -12,14 +12,15 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
-	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
-	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	market3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
+	adt3 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
 
-var _ State = (*state2)(nil)
+var _ State = (*state3)(nil)
 
-func load2(store adt.Store, root cid.Cid) (State, error) {
-	out := state2{store: store}
+func load3(store adt.Store, root cid.Cid) (State, error) {
+	out := state3{store: store}
 	err := store.Get(store.Context(), root, &out)
 	if err != nil {
 		return nil, err
@@ -27,20 +28,20 @@ func load2(store adt.Store, root cid.Cid) (State, error) {
 	return &out, nil
 }
 
-type state2 struct {
-	market2.State
+type state3 struct {
+	market3.State
 	store adt.Store
 }
 
-func (s *state2) TotalLocked() (abi.TokenAmount, error) {
+func (s *state3) TotalLocked() (abi.TokenAmount, error) {
 	// fml := types.BigAdd(s.TotalClientLockedCollateral, s.TotalProviderLockedCollateral)
 	// fml = types.BigAdd(fml, s.TotalClientStorageFee)
 	// return fml, nil
 	return big.Zero(), nil
 }
 
-func (s *state2) BalancesChanged(otherState State) (bool, error) {
-	otherState2, ok := otherState.(*state2)
+func (s *state3) BalancesChanged(otherState State) (bool, error) {
+	otherState2, ok := otherState.(*state3)
 	if !ok {
 		// there's no way to compare different versions of the state, so let's
 		// just say that means the state of balances has changed
@@ -49,8 +50,8 @@ func (s *state2) BalancesChanged(otherState State) (bool, error) {
 	return !s.State.EscrowTable.Equals(otherState2.State.EscrowTable) || !s.State.LockedTable.Equals(otherState2.State.LockedTable), nil
 }
 
-func (s *state2) StatesChanged(otherState State) (bool, error) {
-	otherState2, ok := otherState.(*state2)
+func (s *state3) StatesChanged(otherState State) (bool, error) {
+	otherState2, ok := otherState.(*state3)
 	if !ok {
 		// there's no way to compare different versions of the state, so let's
 		// just say that means the state of balances has changed
@@ -59,16 +60,16 @@ func (s *state2) StatesChanged(otherState State) (bool, error) {
 	return !s.State.States.Equals(otherState2.State.States), nil
 }
 
-func (s *state2) States() (DealStates, error) {
-	stateArray, err := adt2.AsArray(s.store, s.State.States)
+func (s *state3) States() (DealStates, error) {
+	stateArray, err := adt3.AsArray(s.store, s.State.States, market3.StatesAmtBitwidth)
 	if err != nil {
 		return nil, err
 	}
-	return &dealStates2{stateArray}, nil
+	return &dealStates3{stateArray}, nil
 }
 
-func (s *state2) ProposalsChanged(otherState State) (bool, error) {
-	otherState2, ok := otherState.(*state2)
+func (s *state3) ProposalsChanged(otherState State) (bool, error) {
+	otherState2, ok := otherState.(*state3)
 	if !ok {
 		// there's no way to compare different versions of the state, so let's
 		// just say that means the state of balances has changed
@@ -77,32 +78,32 @@ func (s *state2) ProposalsChanged(otherState State) (bool, error) {
 	return !s.State.Proposals.Equals(otherState2.State.Proposals), nil
 }
 
-func (s *state2) Proposals() (DealProposals, error) {
-	proposalArray, err := adt2.AsArray(s.store, s.State.Proposals)
+func (s *state3) Proposals() (DealProposals, error) {
+	proposalArray, err := adt3.AsArray(s.store, s.State.Proposals, market3.StatesAmtBitwidth)
 	if err != nil {
 		return nil, err
 	}
-	return &dealProposals2{proposalArray}, nil
+	return &dealProposals3{proposalArray}, nil
 }
 
-func (s *state2) EscrowTable() (BalanceTable, error) {
-	bt, err := adt2.AsBalanceTable(s.store, s.State.EscrowTable)
-	if err != nil {
-		return nil, err
-	}
-	return &balanceTable2{bt}, nil
-}
-
-func (s *state2) LockedTable() (BalanceTable, error) {
-	bt, err := adt2.AsBalanceTable(s.store, s.State.LockedTable)
+func (s *state3) EscrowTable() (BalanceTable, error) {
+	bt, err := adt3.AsBalanceTable(s.store, s.State.EscrowTable)
 	if err != nil {
 		return nil, err
 	}
 	return &balanceTable2{bt}, nil
 }
 
-func (s *state2) Quotas() (Quotas, error) {
-	quotas, err := adt2.AsMap(s.store, s.State.Quotas)
+func (s *state3) LockedTable() (BalanceTable, error) {
+	bt, err := adt3.AsBalanceTable(s.store, s.State.LockedTable)
+	if err != nil {
+		return nil, err
+	}
+	return &balanceTable2{bt}, nil
+}
+
+func (s *state3) Quotas() (Quotas, error) {
+	quotas, err := adt3.AsMap(s.store, s.State.Quotas, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +113,8 @@ func (s *state2) Quotas() (Quotas, error) {
 	}, nil
 }
 
-func (s *state2) DataIndexes() (DataIndexes, error) {
-	indexes, err := market2.AsIndexMultimap(s.store, s.State.DataIndexesByEpoch)
+func (s *state3) DataIndexes() (DataIndexes, error) {
+	indexes, err := market3.AsIndexMultimap(s.store, s.State.DataIndexesByEpoch, builtin.DefaultHamtBitwidth, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +122,11 @@ func (s *state2) DataIndexes() (DataIndexes, error) {
 }
 
 type balanceTable2 struct {
-	*adt2.BalanceTable
+	*adt3.BalanceTable
 }
 
 func (bt *balanceTable2) ForEach(cb func(address.Address, abi.TokenAmount) error) error {
-	asMap := (*adt2.Map)(bt.BalanceTable)
+	asMap := (*adt3.Map)(bt.BalanceTable)
 	var ta abi.TokenAmount
 	return asMap.ForEach(&ta, func(key string) error {
 		a, err := address.NewFromBytes([]byte(key))
@@ -136,12 +137,12 @@ func (bt *balanceTable2) ForEach(cb func(address.Address, abi.TokenAmount) error
 	})
 }
 
-type dealStates2 struct {
+type dealStates3 struct {
 	adt.Array
 }
 
-func (s *dealStates2) Get(dealID abi.DealID) (*DealState, bool, error) {
-	var out market2.DealState
+func (s *dealStates3) Get(dealID abi.DealID) (*DealState, bool, error) {
+	var out market3.DealState
 	found, err := s.Array.Get(uint64(dealID), &out)
 	if err != nil {
 		return nil, false, err
@@ -153,15 +154,15 @@ func (s *dealStates2) Get(dealID abi.DealID) (*DealState, bool, error) {
 	return &ds, true, nil
 }
 
-func (s *dealStates2) ForEach(cb func(dealID abi.DealID, ds DealState) error) error {
-	var ds market2.DealState
+func (s *dealStates3) ForEach(cb func(dealID abi.DealID, ds DealState) error) error {
+	var ds market3.DealState
 	return s.Array.ForEach(&ds, func(idx int64) error {
 		return cb(abi.DealID(idx), (DealState)(ds))
 	})
 }
 
-func (s *dealStates2) decode(val *cbg.Deferred) (*DealState, error) {
-	var ds market2.DealState
+func (s *dealStates3) decode(val *cbg.Deferred) (*DealState, error) {
+	var ds market3.DealState
 	if err := ds.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
 		return nil, err
 	}
@@ -169,16 +170,16 @@ func (s *dealStates2) decode(val *cbg.Deferred) (*DealState, error) {
 	return &out, nil
 }
 
-func (s *dealStates2) array() adt.Array {
+func (s *dealStates3) array() adt.Array {
 	return s.Array
 }
 
-type dealProposals2 struct {
+type dealProposals3 struct {
 	adt.Array
 }
 
-func (s *dealProposals2) Get(dealID abi.DealID) (*DealProposal, bool, error) {
-	var out market2.DealProposal
+func (s *dealProposals3) Get(dealID abi.DealID) (*DealProposal, bool, error) {
+	var out market3.DealProposal
 	found, err := s.Array.Get(uint64(dealID), &out)
 	if err != nil {
 		return nil, false, err
@@ -190,15 +191,15 @@ func (s *dealProposals2) Get(dealID abi.DealID) (*DealProposal, bool, error) {
 	return &proposal, true, nil
 }
 
-func (s *dealProposals2) ForEach(cb func(dealID abi.DealID, dp DealProposal) error) error {
-	var out market2.DealProposal
+func (s *dealProposals3) ForEach(cb func(dealID abi.DealID, dp DealProposal) error) error {
+	var out market3.DealProposal
 	return s.Array.ForEach(&out, func(idx int64) error {
 		return cb(abi.DealID(idx), (DealProposal)(out))
 	})
 }
 
-func (s *dealProposals2) decode(val *cbg.Deferred) (*DealProposal, error) {
-	var out market2.DealProposal
+func (s *dealProposals3) decode(val *cbg.Deferred) (*DealProposal, error) {
+	var out market3.DealProposal
 	if err := out.UnmarshalCBOR(bytes.NewReader(val.Raw)); err != nil {
 		return nil, err
 	}
@@ -206,7 +207,7 @@ func (s *dealProposals2) decode(val *cbg.Deferred) (*DealProposal, error) {
 	return &dp, nil
 }
 
-func (s *dealProposals2) array() adt.Array {
+func (s *dealProposals3) array() adt.Array {
 	return s.Array
 }
 

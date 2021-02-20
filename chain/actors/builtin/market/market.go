@@ -9,8 +9,8 @@ import (
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	market3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -18,20 +18,20 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.StorageMarketActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	builtin.RegisterActorState(builtin3.StorageMarketActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
 var (
-	Address = builtin2.StorageMarketActorAddr
-	Methods = builtin2.MethodsMarket
+	Address = builtin3.StorageMarketActorAddr
+	Methods = builtin3.MethodsMarket
 )
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.StorageMarketActorCodeID:
-		return load2(store, act.Head)
+	case builtin3.StorageMarketActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
@@ -80,14 +80,14 @@ type Quotas interface {
 	RemainingQuota(pieceCID cid.Cid) (int64, error)
 }
 
-type PublishStorageDataRef = market2.PublishStorageDataRef
-type PublishStorageDealsParams = market2.PublishStorageDealsParams
-type PublishStorageDealsReturn = market2.PublishStorageDealsReturn
-type VerifyDealsForActivationParams = market2.VerifyDealsForActivationParams
-type WithdrawBalanceParams = market2.WithdrawBalanceParams
+type PublishStorageDataRef = market3.PublishStorageDataRef
+type PublishStorageDealsParams = market3.PublishStorageDealsParams
+type PublishStorageDealsReturn = market3.PublishStorageDealsReturn
+type VerifyDealsForActivationParams = market3.VerifyDealsForActivationParams
+type WithdrawBalanceParams = market3.WithdrawBalanceParams
 
-type ClientDealProposal = market2.ClientDealProposal
-type DataIndex = market2.DataIndex
+type ClientDealProposal = market3.ClientDealProposal
+type DataIndex = market3.DataIndex
 
 type DealState struct {
 	SectorStartEpoch abi.ChainEpoch // -1 if not yet included in proven sector
