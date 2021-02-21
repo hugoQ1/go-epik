@@ -57,6 +57,8 @@ type DealmakingConfig struct {
 
 	Filter          string
 	RetrievalFilter string
+
+	MaxOngoingServedRetrievals int
 }
 
 type SealingConfig struct {
@@ -218,6 +220,8 @@ func DefaultStorageMiner() *StorageMiner {
 			ExpectedSealDuration:  Duration(time.Hour * 24),
 			PublishMsgPeriod:      Duration(time.Hour),
 			MaxDealsPerPublishMsg: 8,
+
+			MaxOngoingServedRetrievals: 12,
 		},
 
 		Fees: MinerFeeConfig{
