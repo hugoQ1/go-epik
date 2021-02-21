@@ -2,14 +2,12 @@ package reward
 
 import (
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/lotus/chain/actors/adt"
-	"github.com/filecoin-project/lotus/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
-	miner3 "github.com/filecoin-project/specs-actors/v3/actors/builtin/miner"
-	reward3 "github.com/filecoin-project/specs-actors/v3/actors/builtin/reward"
-	smoothing3 "github.com/filecoin-project/specs-actors/v3/actors/util/smoothing"
+	reward3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
 )
 
 var _ State = (*state3)(nil)
@@ -32,7 +30,27 @@ func (s *state3) ThisEpochReward() (abi.TokenAmount, error) {
 	return s.State.ThisEpochReward, nil
 }
 
-func (s *state3) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
+func (s *state3) TotalMined() (abi.TokenAmount, error) {
+	return big.Sum(
+		s.State.TotalExpertReward,
+		s.State.TotalKnowledgeReward,
+		s.State.TotalRetrievalReward,
+		s.State.TotalStoragePowerReward,
+		s.State.TotalVoteReward,
+	), nil
+}
+
+func (s *state3) TotalMinedDetail() (*TotalMinedDetail, error) {
+	return &TotalMinedDetail{
+		TotalExpertReward:       s.State.TotalExpertReward,
+		TotalKnowledgeReward:    s.State.TotalKnowledgeReward,
+		TotalRetrievalReward:    s.State.TotalRetrievalReward,
+		TotalStoragePowerReward: s.State.TotalStoragePowerReward,
+		TotalVoteReward:         s.State.TotalVoteReward,
+	}, nil
+}
+
+/* func (s *state3) ThisEpochRewardSmoothed() (builtin.FilterEstimate, error) {
 	return builtin.FilterEstimate{
 		PositionEstimate: s.State.ThisEpochRewardSmoothed.PositionEstimate,
 		VelocityEstimate: s.State.ThisEpochRewardSmoothed.VelocityEstimate,
@@ -83,4 +101,4 @@ func (s *state3) PreCommitDepositForPower(networkQAPower builtin.FilterEstimate,
 			VelocityEstimate: networkQAPower.VelocityEstimate,
 		},
 		sectorWeight), nil
-}
+} */
