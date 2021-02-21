@@ -3,21 +3,20 @@ package vm
 import (
 	"context"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/exitcode"
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	builtin3 "github.com/filecoin-project/specs-actors/v3/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/aerrors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/account"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
 )
 
 func init() {
@@ -89,8 +88,8 @@ func newAccountActor(ver actors.Version) *types.Actor {
 	switch ver {
 	// case actors.Version0:
 	// 	code = builtin0.AccountActorCodeID
-	case actors.Version2:
-		code = builtin2.AccountActorCodeID
+	// case actors.Version2:
+	// 	code = builtin2.AccountActorCodeID
 	case actors.Version3:
 		code = builtin3.AccountActorCodeID
 	default:
