@@ -640,8 +640,14 @@ func stateWaitMsgLimited(ctx context.Context, smgr *stmgr.StateManager, cstore *
 	}, nil
 }
 
-func (a *StateAPI) StateSearchMsg(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error) {
-	ts, recpt, found, err := a.StateManager.SearchForMessage(ctx, msg)
+func (m *StateModule) StateSearchMsg(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error) {
+	return stateSearchMsgLimited(ctx, m.StateManager, msg, stmgr.LookbackNoLimit)
+}
+func (a *StateAPI) StateSearchMsgLimited(ctx context.Context, msg cid.Cid, lookbackLimit abi.ChainEpoch) (*api.MsgLookup, error) {
+	return stateSearchMsgLimited(ctx, a.StateManager, msg, lookbackLimit)
+}
+func stateSearchMsgLimited(ctx context.Context, smgr *stmgr.StateManager, msg cid.Cid, lookbackLimit abi.ChainEpoch) (*api.MsgLookup, error) {
+	ts, recpt, found, err := smgr.SearchForMessage(ctx, msg, lookbackLimit)
 	if err != nil {
 		return nil, err
 	}

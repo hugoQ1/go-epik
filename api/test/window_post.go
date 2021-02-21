@@ -798,7 +798,7 @@ func TestWindowPostDispute(t *testing.T, b APIBuilder, blocktime time.Duration) 
 			To:     evilMinerAddr,
 			Method: minerActor.Methods.DeclareFaultsRecovered,
 			Params: enc,
-			Value:  types.FromFil(30), // repay debt.
+			Value:  types.FromEpk(30), // repay debt.
 			From:   minerInfo.Owner,
 		}
 		sm, err := client.MpoolPushMessage(ctx, msg, nil)
