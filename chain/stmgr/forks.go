@@ -42,11 +42,6 @@ import (
 	"sync"
 	"time"
 
-	builtin3 "github.com/filecoin-project/specs-actors/v3/actors/builtin"
-	adt3 "github.com/filecoin-project/specs-actors/v3/actors/util/adt"
-
-	init3 "github.com/filecoin-project/specs-actors/v3/actors/builtin/init"
-
 	"github.com/filecoin-project/go-state-types/rt"
 	"github.com/filecoin-project/specs-actors/v2/actors/migration/nv10"
 
