@@ -73,7 +73,7 @@ var rpcCmd = &cli.Command{
 				Params  json.RawMessage `json:"params"`
 			}{
 				Jsonrpc: "2.0",
-				Method:  "Filecoin." + method,
+				Method:  "EpiK." + method,
 				Params:  json.RawMessage(params),
 				ID:      0,
 			})

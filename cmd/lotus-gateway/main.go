@@ -105,7 +105,7 @@ var runCmd = &cli.Command{
 		registry := promclient.DefaultRegisterer.(*promclient.Registry)
 		exporter, err := prometheus.NewExporter(prometheus.Options{
 			Registry:  registry,
-			Namespace: "lotus_gw",
+			Namespace: "epik_gw",
 		})
 		if err != nil {
 			return err

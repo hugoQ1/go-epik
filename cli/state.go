@@ -1670,7 +1670,7 @@ func parseParamsForMethod(act cid.Cid, method uint64, args []string) ([]byte, er
 
 var stateCircSupplyCmd = &cli.Command{
 	Name:  "circulating-supply",
-	Usage: "Get the exact current circulating supply of Filecoin",
+	Usage: "Get the exact current circulating supply of EpiK",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "vm-supply",

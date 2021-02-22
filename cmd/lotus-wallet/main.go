@@ -47,9 +47,9 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:    "repo",
-				EnvVars: []string{"LOTUS_PATH"},
+				EnvVars: []string{"EPIK_PATH"},
 				Hidden:  true,
-				Value:   "~/.lotus",
+				Value:   "~/.epik",
 			},
 		},
 
