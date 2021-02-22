@@ -873,7 +873,7 @@ func (ht *apiIpldStore) Put(ctx context.Context, v interface{}) (cid.Cid, error)
 
 func handleAmt(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsArray(s, r)
+	mp, err := adt.AsArray(s, r, builtin.DefaultAmtBitwidth)
 	if err != nil {
 		return err
 	}
@@ -886,7 +886,7 @@ func handleAmt(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 
 func handleHamtEpoch(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsMap(s, r)
+	mp, err := adt.AsMap(s, r, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return err
 	}
@@ -904,7 +904,7 @@ func handleHamtEpoch(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 
 func handleHamtAddress(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsMap(s, r)
+	mp, err := adt.AsMap(s, r, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return err
 	}

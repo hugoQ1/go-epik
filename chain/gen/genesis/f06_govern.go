@@ -16,13 +16,10 @@ import (
 
 func SetupGovernActor(bs bstore.Blockstore, super address.Address) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-
-	h, err := adt.MakeEmptyMap(store).Root()
+	sms, err := govern.ConstructState(store, super)
 	if err != nil {
 		return nil, err
 	}
-
-	sms := govern.ConstructState(h, super)
 
 	stcid, err := store.Put(store.Context(), sms)
 	if err != nil {

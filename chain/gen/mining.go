@@ -10,6 +10,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	ffi "github.com/filecoin-project/filecoin-ffi"
@@ -167,7 +168,10 @@ func aggregateSignatures(sigs []crypto.Signature) (*crypto.Signature, error) {
 }
 
 func toArray(store blockadt.Store, cids []cid.Cid) (cid.Cid, error) {
-	arr := blockadt.MakeEmptyArray(store)
+	arr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
 	for i, c := range cids {
 		oc := cbg.CborCid(c)
 		if err := arr.Set(uint64(i), &oc); err != nil {

@@ -29,13 +29,13 @@ func TestSectorInfoSerialization(t *testing.T) {
 			/* EndEpoch:   100, */
 		},
 		DealProposal: &market2.DealProposal{
-			PieceCID:             dummyCid,
-			PieceSize:            5,
-			Client:               tutils.NewActorAddr(t, "client"),
-			Provider:             tutils.NewActorAddr(t, "provider"),
-			StoragePricePerEpoch: abi.NewTokenAmount(10),
-			ProviderCollateral:   abi.NewTokenAmount(20),
-			ClientCollateral:     abi.NewTokenAmount(15),
+			PieceCID:  dummyCid,
+			PieceSize: 5,
+			Client:    tutils.NewActorAddr(t, "client"),
+			Provider:  tutils.NewActorAddr(t, "provider"),
+			// StoragePricePerEpoch: abi.NewTokenAmount(10),
+			// ProviderCollateral:   abi.NewTokenAmount(20),
+			// ClientCollateral:     abi.NewTokenAmount(15),
 		},
 	}
 

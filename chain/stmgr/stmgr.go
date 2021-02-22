@@ -117,7 +117,7 @@ func NewStateManagerWithUpgradeSchedule(cs *store.ChainStore, us UpgradeSchedule
 	stateMigrations := make(map[abi.ChainEpoch]*migration, len(us))
 	expensiveUpgrades := make(map[abi.ChainEpoch]struct{}, len(us))
 	var networkVersions []versionSpec
-	lastVersion := network.Version6
+	lastVersion := network.Version10
 	if len(us) > 0 {
 		// If we have any upgrades, process them and create a version
 		// schedule.
@@ -447,7 +447,10 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		return cid.Cid{}, cid.Cid{}, err
 	}
 
-	rectarr := blockadt.MakeEmptyArray(sm.cs.Store(ctx))
+	rectarr, err := blockadt.MakeEmptyArray(sm.cs.Store(ctx), adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, cid.Undef, err
+	}
 	for i, receipt := range receipts {
 		if err := rectarr.Set(uint64(i), receipt); err != nil {
 			return cid.Undef, cid.Undef, xerrors.Errorf("failed to build receipts amt: %w", err)

@@ -14,12 +14,12 @@ import (
 
 func SetupVoteActor(bs bstore.Blockstore, fallback address.Address) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-	c, err := adt.MakeEmptyMap(store).Root()
+
+	vas, err := vote.ConstructState(store, fallback)
 	if err != nil {
 		return nil, err
 	}
 
-	vas := vote.ConstructState(c, fallback)
 	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err

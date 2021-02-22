@@ -26,6 +26,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
@@ -396,8 +397,14 @@ func (bv *BlockValidator) validateMsgMeta(ctx context.Context, msg *types.BlockM
 	// TODO there has to be a simpler way to do this without the blockstore dance
 	// block headers use adt0
 	store := blockadt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewTemporary()))
-	bmArr := blockadt.MakeEmptyArray(store)
-	smArr := blockadt.MakeEmptyArray(store)
+	bmArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return err
+	}
+	smArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return err
+	}
 
 	for i, m := range msg.BlsMessages {
 		c := cbg.CborCid(m)

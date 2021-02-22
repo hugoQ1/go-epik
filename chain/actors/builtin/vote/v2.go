@@ -30,7 +30,7 @@ type state struct {
 }
 
 func (s *state) Tally() (*Tally, error) {
-	candidates, err := adt2.AsMap(s.store, s.Candidates)
+	candidates, err := adt2.AsMap(s.store, s.Candidates, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInf
 		return nil, err
 	}
 
-	tally, err := adt2.AsMap(s.store, voter.Tally)
+	tally, err := adt2.AsMap(s.store, voter.Tally, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func getVoter(s *state, addr address.Address) (*vote.Voter, error) {
 		return nil, xerrors.Errorf("not a ID address: %s", addr)
 	}
 
-	voters, err := adt2.AsMap(s.store, s.Voters)
+	voters, err := adt2.AsMap(s.store, s.Voters, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}

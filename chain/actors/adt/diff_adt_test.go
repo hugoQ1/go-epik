@@ -23,8 +23,10 @@ func TestDiffAdtArray(t *testing.T) {
 	ctxstoreA := newContextStore()
 	ctxstoreB := newContextStore()
 
-	arrA := adt2.MakeEmptyArray(ctxstoreA)
-	arrB := adt2.MakeEmptyArray(ctxstoreB)
+	arrA, err := adt2.MakeEmptyArray(ctxstoreA, 5)
+	require.NoError(t, err)
+	arrB, err := adt2.MakeEmptyArray(ctxstoreB, 5)
+	require.NoError(t, err)
 
 	require.NoError(t, arrA.Set(0, builtin2.CBORBytes([]byte{0}))) // delete
 
@@ -77,8 +79,10 @@ func TestDiffAdtMap(t *testing.T) {
 	ctxstoreA := newContextStore()
 	ctxstoreB := newContextStore()
 
-	mapA := adt2.MakeEmptyMap(ctxstoreA)
-	mapB := adt2.MakeEmptyMap(ctxstoreB)
+	mapA, err := adt2.MakeEmptyMap(ctxstoreA, builtin2.DefaultHamtBitwidth)
+	require.NoError(t, err)
+	mapB, err := adt2.MakeEmptyMap(ctxstoreB, builtin2.DefaultHamtBitwidth)
+	require.NoError(t, err)
 
 	require.NoError(t, mapA.Put(abi.UIntKey(0), builtin2.CBORBytes([]byte{0}))) // delete
 

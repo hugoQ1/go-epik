@@ -14,22 +14,11 @@ import (
 func SetupRetrievalFundActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 
-	emptyMap, err := adt.MakeEmptyMap(store).Root()
+	vas, err := retrieval.ConstructState(store)
 	if err != nil {
 		return nil, err
 	}
 
-	multiMap, err := adt.AsMultimap(store, emptyMap)
-	if err != nil {
-		return nil, err
-	}
-
-	emptyMultiMap, err := multiMap.Root()
-	if err != nil {
-		return nil, err
-	}
-
-	vas := retrieval.ConstructState(emptyMap, emptyMultiMap)
 	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err

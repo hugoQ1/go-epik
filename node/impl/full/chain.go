@@ -29,6 +29,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
 
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -369,7 +370,7 @@ func resolveOnce(bs blockstore.Blockstore) func(ctx context.Context, ds ipld.Nod
 		}
 
 		if strings.HasPrefix(names[0], "@H:") {
-			h, err := adt.AsMap(store, nd.Cid())
+			h, err := adt.AsMap(store, nd.Cid(), builtin.DefaultHamtBitwidth)
 			if err != nil {
 				return nil, nil, xerrors.Errorf("resolving hamt link: %w", err)
 			}
@@ -411,7 +412,7 @@ func resolveOnce(bs blockstore.Blockstore) func(ctx context.Context, ds ipld.Nod
 		}
 
 		if strings.HasPrefix(names[0], "@A:") {
-			a, err := adt.AsArray(store, nd.Cid())
+			a, err := adt.AsArray(store, nd.Cid(), builtin.DefaultAmtBitwidth)
 			if err != nil {
 				return nil, nil, xerrors.Errorf("load amt: %w", err)
 			}

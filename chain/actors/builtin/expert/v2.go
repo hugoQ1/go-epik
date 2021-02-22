@@ -6,6 +6,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -32,7 +33,7 @@ func (s *state2) Info() (*ExpertInfo, error) {
 
 func (s *state2) Datas() ([]*DataOnChainInfo, error) {
 	var datas []*DataOnChainInfo
-	ds, err := adt2.AsMap(s.store, s.State.Datas)
+	ds, err := adt2.AsMap(s.store, s.State.Datas, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func (s *state2) Datas() ([]*DataOnChainInfo, error) {
 }
 
 func (s *state2) Data(pieceCID cid.Cid) (*DataOnChainInfo, error) {
-	datas, err := adt2.AsMap(s.store, s.State.Datas)
+	datas, err := adt2.AsMap(s.store, s.State.Datas, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}

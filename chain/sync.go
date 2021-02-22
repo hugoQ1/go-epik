@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -455,8 +456,14 @@ func zipTipSetAndMessages(bs cbor.IpldStore, ts *types.TipSet, allbmsgs []*types
 func computeMsgMeta(bs cbor.IpldStore, bmsgCids, smsgCids []cid.Cid) (cid.Cid, error) {
 	// block headers use adt0
 	store := blockadt.WrapStore(context.TODO(), bs)
-	bmArr := blockadt.MakeEmptyArray(store)
-	smArr := blockadt.MakeEmptyArray(store)
+	bmArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
+	smArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
 
 	for i, m := range bmsgCids {
 		c := cbg.CborCid(m)
@@ -1105,7 +1112,10 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 	tmpbs := bstore.NewTemporary()
 	tmpstore := blockadt.WrapStore(ctx, cbor.NewCborStore(tmpbs))
 
-	bmArr := blockadt.MakeEmptyArray(tmpstore)
+	bmArr, err := blockadt.MakeEmptyArray(tmpstore, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return xerrors.Errorf("failed to make empty array: %w", err)
+	}
 	for i, m := range b.BlsMessages {
 		if err := checkMsg(m); err != nil {
 			return xerrors.Errorf("block had invalid bls message at index %d: %w", i, err)
@@ -1122,7 +1132,10 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 		}
 	}
 
-	smArr := blockadt.MakeEmptyArray(tmpstore)
+	smArr, err := blockadt.MakeEmptyArray(tmpstore, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return xerrors.Errorf("failed to make empty array: %w", err)
+	}
 	for i, m := range b.SecpkMessages {
 		if err := checkMsg(m); err != nil {
 			return xerrors.Errorf("block had invalid secpk message at index %d: %w", i, err)

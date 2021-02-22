@@ -35,24 +35,24 @@ func TestGetCurrentDealInfo(t *testing.T) {
 	earlierDealID := abi.DealID(9)
 	successDealID := abi.DealID(10)
 	proposal := market.DealProposal{
-		PieceCID:             dummyCid,
-		PieceSize:            abi.PaddedPieceSize(100),
-		Client:               tutils.NewActorAddr(t, "client"),
-		Provider:             tutils.NewActorAddr(t, "provider"),
-		StoragePricePerEpoch: abi.NewTokenAmount(1),
-		ProviderCollateral:   abi.NewTokenAmount(1),
-		ClientCollateral:     abi.NewTokenAmount(1),
-		Label:                "success",
+		PieceCID:  dummyCid,
+		PieceSize: abi.PaddedPieceSize(100),
+		Client:    tutils.NewActorAddr(t, "client"),
+		Provider:  tutils.NewActorAddr(t, "provider"),
+		// StoragePricePerEpoch: abi.NewTokenAmount(1),
+		// ProviderCollateral:   abi.NewTokenAmount(1),
+		// ClientCollateral:     abi.NewTokenAmount(1),
+		Label: "success",
 	}
 	otherProposal := market.DealProposal{
-		PieceCID:             dummyCid2,
-		PieceSize:            abi.PaddedPieceSize(100),
-		Client:               tutils.NewActorAddr(t, "client"),
-		Provider:             tutils.NewActorAddr(t, "provider"),
-		StoragePricePerEpoch: abi.NewTokenAmount(1),
-		ProviderCollateral:   abi.NewTokenAmount(1),
-		ClientCollateral:     abi.NewTokenAmount(1),
-		Label:                "other",
+		PieceCID:  dummyCid2,
+		PieceSize: abi.PaddedPieceSize(100),
+		Client:    tutils.NewActorAddr(t, "client"),
+		Provider:  tutils.NewActorAddr(t, "provider"),
+		// StoragePricePerEpoch: abi.NewTokenAmount(1),
+		// ProviderCollateral:   abi.NewTokenAmount(1),
+		// ClientCollateral:     abi.NewTokenAmount(1),
+		Label: "other",
 	}
 	successDeal := &api.MarketDeal{
 		Proposal: proposal,

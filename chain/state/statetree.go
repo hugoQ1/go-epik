@@ -11,6 +11,7 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
@@ -19,7 +20,6 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
-	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	states3 "github.com/filecoin-project/specs-actors/v2/actors/states"
 )
@@ -140,10 +140,10 @@ func (ss *stateSnaps) deleteActor(addr address.Address) {
 // VersionForNetwork returns the state tree version for the given network
 // version.
 func VersionForNetwork(ver network.Version) types.StateTreeVersion {
-	// if actors.VersionForNetwork(ver) == actors.Version0 {
-	// 	return types.StateTreeVersion0
-	// }
-	return types.StateTreeVersion1
+	if actors.VersionForNetwork(ver) == actors.Version0 {
+		return types.StateTreeVersion0
+	}
+	return types.StateTreeVersion2
 }
 
 func NewStateTree(cst cbor.IpldStore, ver types.StateTreeVersion) (*StateTree, error) {
@@ -151,7 +151,7 @@ func NewStateTree(cst cbor.IpldStore, ver types.StateTreeVersion) (*StateTree, e
 	switch ver {
 	// case types.StateTreeVersion0:
 	// 	// info is undefined
-	case types.StateTreeVersion1, types.StateTreeVersion2:
+	case /* types.StateTreeVersion1, */ types.StateTreeVersion2:
 		var err error
 		info, err = cst.Put(context.TODO(), new(types.StateInfo0))
 		if err != nil {

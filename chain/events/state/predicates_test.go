@@ -8,8 +8,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 
-	"github.com/filecoin-project/go-bitfield"
-
 	"github.com/ipfs/go-cid"
 	cbornode "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/require"
@@ -20,6 +18,7 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
+	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	tutils "github.com/filecoin-project/specs-actors/v2/support/testing"
 
@@ -435,7 +434,8 @@ func createMarketState(ctx context.Context, t *testing.T, store adt2.Store, deal
 }
 
 func createProposalAMT(ctx context.Context, t *testing.T, store adt2.Store, props map[abi.DealID]*market2.DealProposal) cid.Cid {
-	root := adt2.MakeEmptyArray(store)
+	root, err := adt2.MakeEmptyArray(store, market2.ProposalsAmtBitwidth)
+	require.NoError(t, err)
 	for dealID, prop := range props {
 		err := root.Set(uint64(dealID), prop)
 		require.NoError(t, err)
@@ -446,12 +446,14 @@ func createProposalAMT(ctx context.Context, t *testing.T, store adt2.Store, prop
 }
 
 func createBalanceTable(ctx context.Context, t *testing.T, store adt2.Store, balances map[address.Address]balance) [2]cid.Cid {
-	escrowMapRoot := adt2.MakeEmptyMap(store)
+	escrowMapRoot, err := adt2.MakeEmptyMap(store, adt.BalanceTableBitwidth)
+	require.NoError(t, err)
 	escrowMapRootCid, err := escrowMapRoot.Root()
 	require.NoError(t, err)
 	escrowRoot, err := adt2.AsBalanceTable(store, escrowMapRootCid)
 	require.NoError(t, err)
-	lockedMapRoot := adt2.MakeEmptyMap(store)
+	lockedMapRoot, err := adt2.MakeEmptyMap(store, adt.BalanceTableBitwidth)
+	require.NoError(t, err)
 	lockedMapRootCid, err := lockedMapRoot.Root()
 	require.NoError(t, err)
 	lockedRoot, err := adt2.AsBalanceTable(store, lockedMapRootCid)
@@ -483,7 +485,7 @@ func createMinerState(ctx context.Context, t *testing.T, store adt2.Store, owner
 }
 
 func createEmptyMinerState(ctx context.Context, t *testing.T, store adt2.Store, owner, worker address.Address) *miner2.State {
-	emptyArrayCid, err := adt2.MakeEmptyArray(store).Root()
+	/* emptyArrayCid, err := adt2.MakeEmptyArray(store).Root()
 	require.NoError(t, err)
 	emptyMap, err := adt2.MakeEmptyMap(store).Root()
 	require.NoError(t, err)
@@ -503,16 +505,19 @@ func createEmptyMinerState(ctx context.Context, t *testing.T, store adt2.Store, 
 
 	emptyBitfield := bitfield.NewFromSet(nil)
 	emptyBitfieldCid, err := store.Put(store.Context(), emptyBitfield)
-	require.NoError(t, err)
+	require.NoError(t, err) */
 
-	state, err := miner2.ConstructState(minerInfo, 123, 4, emptyBitfieldCid, emptyArrayCid, emptyMap, emptyDeadlinesCid, emptyVestingFundsCid)
+	minerInfo, err := adt2.StoreEmptyMap(store, builtin2.DefaultHamtBitwidth)
+	require.NoError(t, err)
+	state, err := miner2.ConstructState(store, minerInfo, 123, 4 /* , emptyBitfieldCid, emptyArrayCid, emptyMap, emptyDeadlinesCid, emptyVestingFundsCid */)
 	require.NoError(t, err)
 	return state
 
 }
 
 func createSectorsAMT(ctx context.Context, t *testing.T, store adt2.Store, sectors []miner.SectorOnChainInfo) cid.Cid {
-	root := adt2.MakeEmptyArray(store)
+	root, err := adt2.MakeEmptyArray(store, miner2.SectorsAmtBitwidth)
+	require.NoError(t, err)
 	for _, sector := range sectors {
 		sector := miner2.SectorOnChainInfo{
 			SectorNumber: sector.SectorNumber,

@@ -14,17 +14,10 @@ import (
 
 func SetupStorageMarketActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-
-	a, err := adt.MakeEmptyArray(store).Root()
+	sms, err := market.ConstructState(store)
 	if err != nil {
 		return nil, err
 	}
-	h, err := adt.MakeEmptyMap(store).Root()
-	if err != nil {
-		return nil, err
-	}
-
-	sms := market.ConstructState(a, h, h)
 
 	stcid, err := store.Put(store.Context(), sms)
 	if err != nil {

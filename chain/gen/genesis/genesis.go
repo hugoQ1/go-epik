@@ -122,7 +122,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("putting empty object: %w", err)
 	}
 
-	state, err := state.NewStateTree(cst, types.StateTreeVersion1)
+	state, err := state.NewStateTree(cst, types.StateTreeVersion2)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("making new state tree: %w", err)
 	}
@@ -392,7 +392,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 	if err := json.Unmarshal(info.Meta, &ainfo); err != nil {
 		return xerrors.Errorf("unmarshaling account meta: %w", err)
 	}
-	pending, err := adt2.MakeEmptyMap(adt2.WrapStore(ctx, cst)).Root()
+	pending, err := adt2.StoreEmptyMap(adt2.WrapStore(ctx, cst), builtin2.DefaultHamtBitwidth)
 	if err != nil {
 		return xerrors.Errorf("failed to create empty map: %v", err)
 	}
@@ -574,7 +574,7 @@ func MakeGenesisBlock(ctx context.Context, j journal.Journal, bs bstore.Blocksto
 	}
 
 	store := adt2.WrapStore(ctx, cbor.NewCborStore(bs))
-	emptyroot, err := adt2.MakeEmptyArray(store).Root()
+	emptyroot, err := adt2.StoreEmptyArray(store, builtin2.DefaultAmtBitwidth)
 	if err != nil {
 		return nil, xerrors.Errorf("amt build failed: %w", err)
 	}

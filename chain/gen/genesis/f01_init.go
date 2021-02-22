@@ -38,7 +38,10 @@ func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.A
 	ias.NetworkName = tpl.NetworkName
 
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-	amap := adt.MakeEmptyMap(store)
+	amap, err := adt.MakeEmptyMap(store, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return 0, nil, nil, err
+	}
 
 	keyToId := map[address.Address]address.Address{}
 	counter := int64(AccountStart)
