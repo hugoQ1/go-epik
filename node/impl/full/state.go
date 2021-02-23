@@ -1766,7 +1766,7 @@ func (a *StateAPI) StateMinerNoPieces(ctx context.Context, maddr address.Address
 		return xerrors.Errorf("failed to load market actor state: %w", err)
 	}
 
-	has, err := mstate.HasPendingPiece(pieceIDs)
+	has, err := mstate.HasPendingPiece(maddr, pieceIDs)
 	if err != nil {
 		return xerrors.Errorf("failed to check pending deals: %w", err)
 	}

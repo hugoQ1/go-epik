@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
+	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
@@ -120,7 +121,11 @@ func (s *state2) DataIndexes() (DataIndexes, error) {
 	return indexes, nil
 }
 
-func (s *state2) HasPendingPiece(pieceCids []cid.Cid) (bool, error) {
+func (s *state2) HasPendingPiece(maddr address.Address, pieceCids []cid.Cid) (bool, error) {
+	if maddr.Protocol() != address.ID {
+		return false, xerrors.Errorf("miner not a ID address: %s", maddr)
+	}
+
 	pendings, err := adt2.AsMap(s.store, s.State.PendingProposals)
 	if err != nil {
 		return false, err
@@ -129,7 +134,9 @@ func (s *state2) HasPendingPiece(pieceCids []cid.Cid) (bool, error) {
 	all := make(map[cid.Cid]struct{})
 	var dataIndex market2.ProposalDataIndex
 	err = pendings.ForEach(&dataIndex, func(k string) error {
-		all[dataIndex.Index.PieceCID] = struct{}{}
+		if dataIndex.Provider == maddr {
+			all[dataIndex.Index.PieceCID] = struct{}{}
+		}
 		return nil
 	})
 	if err != nil {
