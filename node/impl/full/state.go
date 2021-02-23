@@ -16,6 +16,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/go-state-types/network"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
@@ -1767,6 +1768,27 @@ func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk
 }
 
 func (a *StateAPI) StateMinerStoredAnyPiece(ctx context.Context, maddr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) (bool, error) {
+
+	// check pending
+	mact, err := a.StateManager.LoadActorTsk(ctx, builtin.StorageMarketActorAddr, tsk)
+	if err != nil {
+		return false, xerrors.Errorf("failed to load market actor: %w", err)
+	}
+
+	mstate, err := market.Load(a.Chain.Store(ctx), mact)
+	if err != nil {
+		return false, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+
+	has, err := mstate.HasPendingPiece(pieceIDs)
+	if err != nil {
+		return false, xerrors.Errorf("failed to check pending deals: %w", err)
+	}
+	if has {
+		return true, nil
+	}
+
+	// check miner
 	act, err := a.StateManager.LoadActorTsk(ctx, maddr, tsk)
 	if err != nil {
 		return false, xerrors.Errorf("failed to load miner actor: %w", err)

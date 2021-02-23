@@ -51,6 +51,7 @@ type State interface {
 	Proposals() (DealProposals, error)
 	Quotas() (Quotas, error)
 	DataIndexes() (DataIndexes, error)
+	HasPendingPiece([]cid.Cid) (bool, error)
 }
 
 type BalanceTable interface {

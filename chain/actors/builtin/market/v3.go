@@ -121,6 +121,30 @@ func (s *state3) DataIndexes() (DataIndexes, error) {
 	return indexes, nil
 }
 
+func (s *state3) HasPendingPiece(pieceCids []cid.Cid) (bool, error) {
+	pendings, err := adt3.AsMap(s.store, s.State.PendingProposals, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return false, err
+	}
+
+	all := make(map[cid.Cid]struct{})
+	var dataIndex market3.ProposalDataIndex
+	err = pendings.ForEach(&dataIndex, func(k string) error {
+		all[dataIndex.Index.PieceCID] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, pieceCid := range pieceCids {
+		if _, ok := all[pieceCid]; ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 type balanceTable3 struct {
 	*adt3.BalanceTable
 }
