@@ -21,7 +21,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
@@ -157,7 +156,7 @@ func infoCmdAct(cctx *cli.Context) error {
 			faultyPercentage)
 	}
 
-	// mining start countdown
+	/* // mining start countdown
 	{
 		var lbr abi.ChainEpoch
 		if head.Height() > policy.ChainFinality {
@@ -209,7 +208,7 @@ func infoCmdAct(cctx *cli.Context) error {
 				}
 			}
 		}
-	}
+	} */
 
 	if !pow.HasMinPower {
 		fmt.Print("Below minimum power threshold, no blocks will be won\n")
