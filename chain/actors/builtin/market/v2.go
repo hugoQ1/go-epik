@@ -120,6 +120,30 @@ func (s *state2) DataIndexes() (DataIndexes, error) {
 	return indexes, nil
 }
 
+func (s *state2) HasPendingPiece(pieceCids []cid.Cid) (bool, error) {
+	pendings, err := adt2.AsMap(s.store, s.State.PendingProposals)
+	if err != nil {
+		return false, err
+	}
+
+	all := make(map[cid.Cid]struct{})
+	var dataIndex market2.ProposalDataIndex
+	err = pendings.ForEach(&dataIndex, func(k string) error {
+		all[dataIndex.Index.PieceCID] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, pieceCid := range pieceCids {
+		if _, ok := all[pieceCid]; ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 type balanceTable2 struct {
 	*adt2.BalanceTable
 }
