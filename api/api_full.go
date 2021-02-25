@@ -37,6 +37,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination=mocks/mock_full.go -package=mocks . FullNode
+
 // FullNode API is a low-level interface to the Filecoin network full node
 type FullNode interface {
 	Common
