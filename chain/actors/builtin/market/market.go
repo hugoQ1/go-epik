@@ -84,7 +84,7 @@ type Quotas interface {
 	RemainingQuota(pieceCID cid.Cid) (int64, error)
 }
 
-type PublishStorageDataRef = market3.PublishStorageDataRef
+type StorageDataRef = market3.StorageDataRef
 type PublishStorageDealsParams = market3.PublishStorageDealsParams
 type PublishStorageDealsReturn = market3.PublishStorageDealsReturn
 type VerifyDealsForActivationParams = market3.VerifyDealsForActivationParams
