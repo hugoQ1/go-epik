@@ -101,7 +101,7 @@ func (a *StateAPI) StateMinerSectors(ctx context.Context, addr address.Address, 
 		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -115,7 +115,7 @@ func (a *StateAPI) StateMinerActiveSectors(ctx context.Context, maddr address.Ad
 		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -139,7 +139,7 @@ func (m *StateModule) StateMinerInfo(ctx context.Context, actor address.Address,
 		return miner.MinerInfo{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(m.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(m.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return miner.MinerInfo{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -157,7 +157,7 @@ func (a *StateAPI) StateMinerDeadlines(ctx context.Context, m address.Address, t
 		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -196,7 +196,7 @@ func (a *StateAPI) StateMinerPartitions(ctx context.Context, m address.Address, 
 		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -257,7 +257,7 @@ func (m *StateModule) StateMinerProvingDeadline(ctx context.Context, addr addres
 		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(m.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(m.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -276,7 +276,7 @@ func (a *StateAPI) StateMinerFaults(ctx context.Context, addr address.Address, t
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -293,7 +293,7 @@ func (a *StateAPI) StateMinerActives(ctx context.Context, addr address.Address, 
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -325,7 +325,7 @@ func (a *StateAPI) StateAllMinerFaults(ctx context.Context, lookback abi.ChainEp
 			return nil, xerrors.Errorf("failed to load miner actor state %s: %w", m, err)
 		}
 
-		err = mas.ForEachFaultEpoch(a.Chain.Store(ctx), func(faultStart abi.ChainEpoch, faults abi.BitField) error {
+		err = mas.ForEachFaultEpoch(a.Chain.ActorStore(ctx), func(faultStart abi.ChainEpoch, faults abi.BitField) error {
 			if faultStart >= cutoff {
 				allFaults = append(allFaults, &api.Fault{
 					Miner: m,
@@ -350,7 +350,7 @@ func (a *StateAPI) StateMinerRecoveries(ctx context.Context, addr address.Addres
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return bitfield.BitField{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -518,7 +518,7 @@ func (a *StateAPI) StateReadState(ctx context.Context, actor address.Address, ts
 		return nil, xerrors.Errorf("getting actor: %w", err)
 	}
 
-	blk, err := a.Chain.Blockstore().Get(act.Head)
+	blk, err := a.Chain.StateBlockstore().Get(act.Head)
 	if err != nil {
 		return nil, xerrors.Errorf("getting actor head: %w", err)
 	}
@@ -769,7 +769,7 @@ func (m *StateAPI) StateMarketInitialQuota(ctx context.Context, tsk types.TipSet
 		return 0, xerrors.Errorf("failed to load market actor: %w", err)
 	}
 
-	mState, err := market.Load(m.Chain.Store(ctx), act)
+	mState, err := market.Load(m.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
@@ -787,7 +787,7 @@ func (m *StateAPI) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.C
 		return 0, xerrors.Errorf("failed to load market actor: %w", err)
 	}
 
-	mState, err := market.Load(m.Chain.Store(ctx), act)
+	mState, err := market.Load(m.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
@@ -800,7 +800,7 @@ func (m *StateAPI) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.C
 }
 
 func (a *StateAPI) StateChangedActors(ctx context.Context, old cid.Cid, new cid.Cid) (map[string]types.Actor, error) {
-	store := a.Chain.Store(ctx)
+	store := a.Chain.ActorStore(ctx)
 
 	oldTree, err := state.LoadStateTree(store, old)
 	if err != nil {
@@ -820,7 +820,7 @@ func (a *StateAPI) StateMinerSectorCount(ctx context.Context, addr address.Addre
 	if err != nil {
 		return api.MinerSectors{}, err
 	}
-	mas, err := miner.Load(a.Chain.Store(ctx), act)
+	mas, err := miner.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return api.MinerSectors{}, err
 	}
@@ -884,7 +884,7 @@ func (a *StateAPI) StateSectorExpiration(ctx context.Context, maddr address.Addr
 	if err != nil {
 		return nil, err
 	}
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, err
 	}
@@ -896,7 +896,7 @@ func (a *StateAPI) StateSectorPartition(ctx context.Context, maddr address.Addre
 	if err != nil {
 		return nil, err
 	}
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, err
 	}
@@ -982,7 +982,7 @@ func (m *StateModule) MsigGetAvailableBalance(ctx context.Context, addr address.
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to load multisig actor: %w", err)
 	}
-	msas, err := multisig.Load(m.Chain.Store(ctx), act)
+	msas, err := multisig.Load(m.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to load multisig actor state: %w", err)
 	}
@@ -1004,7 +1004,7 @@ func (a *StateAPI) MsigGetVestingSchedule(ctx context.Context, addr address.Addr
 		return api.EmptyVesting, xerrors.Errorf("failed to load multisig actor: %w", err)
 	}
 
-	msas, err := multisig.Load(a.Chain.Store(ctx), act)
+	msas, err := multisig.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return api.EmptyVesting, xerrors.Errorf("failed to load multisig actor state: %w", err)
 	}
@@ -1053,7 +1053,7 @@ func (m *StateModule) MsigGetVested(ctx context.Context, addr address.Address, s
 		return types.EmptyInt, xerrors.Errorf("failed to load multisig actor at end epoch: %w", err)
 	}
 
-	msas, err := multisig.Load(m.Chain.Store(ctx), act)
+	msas, err := multisig.Load(m.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to load multisig actor state: %w", err)
 	}
@@ -1081,7 +1081,7 @@ func (m *StateModule) MsigGetPending(ctx context.Context, addr address.Address, 
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load multisig actor: %w", err)
 	}
-	msas, err := multisig.Load(m.Chain.Store(ctx), act)
+	msas, err := multisig.Load(m.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load multisig actor state: %w", err)
 	}
@@ -1124,7 +1124,7 @@ func (a *StateAPI) StateMinerPreCommitDepositForPower(ctx context.Context, maddr
 		return types.EmptyInt, xerrors.Errorf("failed to get resolve size: %w", err)
 	}
 
-	store := a.Chain.Store(ctx)
+	store := a.Chain.ActorStore(ctx)
 
 	var sectorWeight abi.StoragePower
 	if act, err := state.GetActor(market.Address); err != nil {
@@ -1185,7 +1185,7 @@ func (a *StateAPI) StateMinerInitialPledgeCollateral(ctx context.Context, maddr 
 		return types.EmptyInt, xerrors.Errorf("failed to get resolve size: %w", err)
 	}
 
-	store := a.Chain.Store(ctx)
+	store := a.Chain.ActorStore(ctx)
 
 	var sectorWeight abi.StoragePower
 	if act, err := state.GetActor(market.Address); err != nil {
@@ -1256,7 +1256,7 @@ func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address
 		return types.EmptyInt, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -1285,7 +1285,7 @@ func (a *StateAPI) StateMiningPledge(ctx context.Context, maddr address.Address,
 		return types.EmptyInt, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.Chain.Store(ctx), act)
+	mas, err := miner.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -1303,7 +1303,7 @@ func (a *StateAPI) StateMinerSectorAllocated(ctx context.Context, maddr address.
 		return false, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().Store(ctx), act)
+	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return false, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
@@ -1326,7 +1326,7 @@ func (a *StateAPI) StateVerifierStatus(ctx context.Context, addr address.Address
 		return nil, err
 	}
 
-	vrs, err := verifreg.Load(a.StateManager.ChainStore().Store(ctx), act)
+	vrs, err := verifreg.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load verified registry state: %w", err)
 	}
@@ -1357,7 +1357,7 @@ func (m *StateModule) StateVerifiedClientStatus(ctx context.Context, addr addres
 		return nil, err
 	}
 
-	vrs, err := verifreg.Load(m.StateManager.ChainStore().Store(ctx), act)
+	vrs, err := verifreg.Load(m.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load verified registry state: %w", err)
 	}
@@ -1379,7 +1379,7 @@ func (a *StateAPI) StateVerifiedRegistryRootKey(ctx context.Context, tsk types.T
 		return address.Undef, err
 	}
 
-	vst, err := verifreg.Load(a.StateManager.ChainStore().Store(ctx), vact)
+	vst, err := verifreg.Load(a.StateManager.ChainStore().ActorStore(ctx), vact)
 	if err != nil {
 		return address.Undef, err
 	}
@@ -1408,12 +1408,12 @@ func (m *StateModule) StateDealProviderCollateralBounds(ctx context.Context, siz
 		return api.DealCollateralBounds{}, xerrors.Errorf("failed to load reward actor: %w", err)
 	}
 
-	pst, err := power.Load(m.StateManager.ChainStore().Store(ctx), pact)
+	pst, err := power.Load(m.StateManager.ChainStore().ActorStore(ctx), pact)
 	if err != nil {
 		return api.DealCollateralBounds{}, xerrors.Errorf("failed to load power actor state: %w", err)
 	}
 
-	rst, err := reward.Load(m.StateManager.ChainStore().Store(ctx), ract)
+	rst, err := reward.Load(m.StateManager.ChainStore().ActorStore(ctx), ract)
 	if err != nil {
 		return api.DealCollateralBounds{}, xerrors.Errorf("failed to load reward actor state: %w", err)
 	}
@@ -1452,7 +1452,7 @@ func (a *StateAPI) StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKe
 		return nil, xerrors.Errorf("failed to load reward actor state: %w", err)
 	}
 
-	rst, err := reward.Load(a.Chain.Store(ctx), act)
+	rst, err := reward.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, err
 	}
@@ -1523,7 +1523,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.Chain.Store(ctx), act)
+	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
@@ -1571,7 +1571,7 @@ func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, f
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.Chain.Store(ctx), act)
+	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
@@ -1585,7 +1585,7 @@ func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, ts
 		return nil, xerrors.Errorf("failed to load expertfund actor: %w", err)
 	}
 
-	st, err := expertfund.Load(a.StateManager.ChainStore().Store(ctx), act)
+	st, err := expertfund.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
@@ -1600,7 +1600,7 @@ func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, ts
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	expertSt, err := expert.Load(a.StateManager.ChainStore().Store(ctx), expertAct)
+	expertSt, err := expert.Load(a.StateManager.ChainStore().ActorStore(ctx), expertAct)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
@@ -1623,7 +1623,7 @@ func (a *StateAPI) StateVoteTally(ctx context.Context, tsk types.TipSetKey) (*vo
 		return nil, xerrors.Errorf("failed to get vote actor: %w", err)
 	}
 
-	vst, err := vote.Load(a.Chain.Store(ctx), act)
+	vst, err := vote.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
@@ -1646,7 +1646,7 @@ func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk
 		return nil, xerrors.Errorf("failed to load vote actor: %w", err)
 	}
 
-	vst, err := vote.Load(a.Chain.Store(ctx), act)
+	vst, err := vote.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load vote actor state: %w", err)
 	}
@@ -1664,7 +1664,7 @@ func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) 
 		return nil, xerrors.Errorf("failed to load power actor: %w", err)
 	}
 
-	knoState, err := knowledge.Load(a.Chain.Store(ctx), act)
+	knoState, err := knowledge.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load knowledge actor state: %w", err)
 	}
@@ -1677,7 +1677,7 @@ func (a *StateAPI) StateGovernSupervisor(ctx context.Context, tsk types.TipSetKe
 		return address.Undef, xerrors.Errorf("failed to load govern actor: %w", err)
 	}
 
-	govState, err := govern.Load(a.Chain.Store(ctx), act)
+	govState, err := govern.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return address.Undef, xerrors.Errorf("failed to load govern actor state: %w", err)
 	}
@@ -1690,7 +1690,7 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 		return nil, xerrors.Errorf("failed to load govern actor: %w", err)
 	}
 
-	govState, err := govern.Load(a.Chain.Store(ctx), act)
+	govState, err := govern.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load govern actor state: %w", err)
 	}
@@ -1703,7 +1703,7 @@ func (a *StateAPI) StateRetrievalInfo(ctx context.Context, tsk types.TipSetKey) 
 		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
 	}
 
-	state, err := retrieval.Load(a.Chain.Store(ctx), act)
+	state, err := retrieval.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
 	}
@@ -1738,7 +1738,7 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 		return nil, xerrors.Errorf("failed to lookup id: %w", err)
 	}
 
-	state, err := retrieval.Load(a.Chain.Store(ctx), act)
+	state, err := retrieval.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
 	}
@@ -1772,7 +1772,7 @@ func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk
 		return nil, xerrors.Errorf("failed to load market actor: %w", err)
 	}
 
-	state, err := market.Load(a.Chain.Store(ctx), act)
+	state, err := market.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
@@ -1809,7 +1809,7 @@ func (a *StateAPI) StateMinerStoredAnyPiece(ctx context.Context, maddr address.A
 		return false, xerrors.Errorf("failed to load market actor: %w", err)
 	}
 
-	mstate, err := market.Load(a.Chain.Store(ctx), mact)
+	mstate, err := market.Load(a.Chain.ActorStore(ctx), mact)
 	if err != nil {
 		return false, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
@@ -1828,7 +1828,7 @@ func (a *StateAPI) StateMinerStoredAnyPiece(ctx context.Context, maddr address.A
 		return false, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	state, err := miner.Load(a.Chain.Store(ctx), act)
+	state, err := miner.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
 		return false, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}

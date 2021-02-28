@@ -297,7 +297,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			StateBase:      base,
 			Epoch:          epoch,
 			Rand:           r,
-			Bstore:         sm.cs.Blockstore(),
+			Bstore:         sm.cs.StateBlockstore(),
 			Syscalls:       sm.cs.VMSys(),
 			CircSupplyCalc: sm.GetVMCirculatingSupply,
 			NtwkVersion:    sm.GetNtwkVersion,
@@ -447,7 +447,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		return cid.Cid{}, cid.Cid{}, err
 	}
 
-	rectarr, err := blockadt.MakeEmptyArray(sm.cs.Store(ctx), adt.DefaultMsgAmtBitwidth)
+	rectarr, err := blockadt.MakeEmptyArray(sm.cs.ActorStore(ctx), adt.DefaultMsgAmtBitwidth)
 	if err != nil {
 		return cid.Undef, cid.Undef, err
 	}
@@ -535,7 +535,7 @@ func (sm *StateManager) ResolveToKeyAddress(ctx context.Context, addr address.Ad
 		ts = sm.cs.GetHeaviestTipSet()
 	}
 
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
 
 	// First try to resolve the actor in the parent state, so we don't have to compute anything.
 	tree, err := state.LoadStateTree(cst, ts.ParentState())
@@ -576,7 +576,7 @@ func (sm *StateManager) GetBlsPublicKey(ctx context.Context, addr address.Addres
 }
 
 func (sm *StateManager) LookupID(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error) {
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
 	state, err := state.LoadStateTree(cst, sm.parentState(ts))
 	if err != nil {
 		return address.Undef, xerrors.Errorf("load state tree: %w", err)
@@ -902,7 +902,7 @@ func (sm *StateManager) MarketBalance(ctx context.Context, addr address.Address,
 		return api.MarketBalance{}, err
 	}
 
-	mstate, err := market.Load(sm.cs.Store(ctx), act)
+	mstate, err := market.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return api.MarketBalance{}, err
 	}
@@ -1009,7 +1009,7 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		return xerrors.Errorf("getting genesis tipset state: %w", err)
 	}
 
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
 	sTree, err := state.LoadStateTree(cst, st)
 	if err != nil {
 		return xerrors.Errorf("loading state tree: %w", err)
@@ -1030,7 +1030,7 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		if builtin.IsMultisigActor(act.Code) {
 			// TODO: should exclude govern/fundation/... actor
 
-			s, err := multisig.Load(sm.cs.Store(ctx), act)
+			s, err := multisig.Load(sm.cs.ActorStore(ctx), act)
 			if err != nil {
 				return err
 			}
@@ -1532,7 +1532,7 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			unCirc = big.Add(unCirc, actor.Balance)
 
 		case a == market.Address:
-			mst, err := market.Load(sm.cs.Store(ctx), actor)
+			mst, err := market.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1549,7 +1549,7 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			circ = big.Add(circ, actor.Balance)
 
 		case builtin.IsStorageMinerActor(actor.Code):
-			mst, err := miner.Load(sm.cs.Store(ctx), actor)
+			mst, err := miner.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1566,7 +1566,7 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			}
 
 		case builtin.IsMultisigActor(actor.Code):
-			mst, err := multisig.Load(sm.cs.Store(ctx), actor)
+			mst, err := multisig.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1620,7 +1620,7 @@ func (sm *StateManager) GetPaychState(ctx context.Context, addr address.Address,
 		return nil, nil, err
 	}
 
-	actState, err := paych.Load(sm.cs.Store(ctx), act)
+	actState, err := paych.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1638,7 +1638,7 @@ func (sm *StateManager) GetMarketState(ctx context.Context, ts *types.TipSet) (m
 		return nil, err
 	}
 
-	actState, err := market.Load(sm.cs.Store(ctx), act)
+	actState, err := market.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return nil, err
 	}

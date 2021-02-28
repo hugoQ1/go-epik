@@ -71,7 +71,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		StateBase:      sroot,
 		Epoch:          0,
 		Rand:           &fakeRand{},
-		Bstore:         cs.Blockstore(),
+		Bstore:         cs.StateBlockstore(),
 		Syscalls:       mkFakedSigSyscalls(cs.VMSys()),
 		CircSupplyCalc: csc,
 		NtwkVersion:    genesisNetworkVersion,
@@ -317,12 +317,12 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.Errorf("flushing vm: %w", err)
 	}
 
-	err = checkPowerActor(vm, cs.Store(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
+	err = checkPowerActor(vm, cs.ActorStore(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis power state: %w", err)
 	}
 
-	err = checkMarketActor(vm, cs.Store(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
+	err = checkMarketActor(vm, cs.ActorStore(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis market state: %w", err)
 	}

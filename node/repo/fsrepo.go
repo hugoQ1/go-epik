@@ -263,9 +263,16 @@ type fsLockedRepo struct {
 	bs     blockstore.Blockstore
 	bsErr  error
 	bsOnce sync.Once
+	ssPath string
+	ssErr  error
+	ssOnce sync.Once
 
 	storageLk sync.Mutex
 	configLk  sync.Mutex
+}
+
+func (fsr *fsLockedRepo) Readonly() bool {
+	return fsr.readonly
 }
 
 func (fsr *fsLockedRepo) Path() string {
@@ -300,7 +307,7 @@ func (fsr *fsLockedRepo) Close() error {
 
 // Blockstore returns a blockstore for the provided data domain.
 func (fsr *fsLockedRepo) Blockstore(ctx context.Context, domain BlockstoreDomain) (blockstore.Blockstore, error) {
-	if domain != BlockstoreChain {
+	if domain != UniversalBlockstore {
 		return nil, ErrInvalidBlockstoreDomain
 	}
 
@@ -328,6 +335,21 @@ func (fsr *fsLockedRepo) Blockstore(ctx context.Context, domain BlockstoreDomain
 	})
 
 	return fsr.bs, fsr.bsErr
+}
+
+func (fsr *fsLockedRepo) SplitstorePath() (string, error) {
+	fsr.ssOnce.Do(func() {
+		path := fsr.join(filepath.Join(fsDatastore, "splitstore"))
+
+		if err := os.MkdirAll(path, 0755); err != nil {
+			fsr.ssErr = err
+			return
+		}
+
+		fsr.ssPath = path
+	})
+
+	return fsr.ssPath, fsr.ssErr
 }
 
 // join joins path elements with fsr.path
