@@ -30,7 +30,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
-	"github.com/EpiK-Protocol/go-epik/chain/store/splitstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
@@ -190,18 +189,7 @@ var chainBalanceStateCmd = &cli.Command{
 			return err
 		}
 
-		ssPath, err := lkrepo.SplitstorePath()
-		if err != nil {
-			return err
-		}
-
-		ss, err := splitstore.NewSplitStore(ssPath, mds, bs)
-		if err != nil {
-			return err
-		}
-		defer ss.Close() //nolint:errcheck
-
-		cs := store.NewChainStore(ss, ss, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
+		cs := store.NewChainStore(bs, bs, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
 		defer cs.Close() //nolint:errcheck
 
 		cst := cbor.NewCborStore(bs)
@@ -423,18 +411,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 			return err
 		}
 
-		ssPath, err := lkrepo.SplitstorePath()
-		if err != nil {
-			return err
-		}
-
-		ss, err := splitstore.NewSplitStore(ssPath, mds, bs)
-		if err != nil {
-			return err
-		}
-		defer ss.Close() //nolint:errcheck
-
-		cs := store.NewChainStore(ss, ss, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
+		cs := store.NewChainStore(bs, bs, mds, vm.Syscalls(ffiwrapper.ProofVerifier), nil)
 		defer cs.Close() //nolint:errcheck
 
 		cst := cbor.NewCborStore(bs)
