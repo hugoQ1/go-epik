@@ -312,6 +312,9 @@ jobs:
           name: "prepare testground home dir and link test plans"
           command: mkdir -p $HOME/testground/plans && ln -s $(pwd)/testplans/lotus-soup $HOME/testground/plans/lotus-soup && ln -s $(pwd)/testplans/graphsync $HOME/testground/plans/graphsync
       - run:
+          name: "prepare testground home dir and link test plans"
+          command: mkdir -p $HOME/testground/plans && ln -s $(pwd)/testplans/lotus-soup $HOME/testground/plans/lotus-soup && ln -s $(pwd)/testplans/graphsync $HOME/testground/plans/graphsync
+      - run:
           name: "go get lotus@master"
           command: cd testplans/lotus-soup && go get github.com/filecoin-project/lotus@master
       - run:

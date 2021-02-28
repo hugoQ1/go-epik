@@ -38,7 +38,11 @@ func setLogLevel(level string) {
 }
 
 func TestAPIDealFlow(t *testing.T) {
-	setLogLevel("ERROR")
+	logging.SetLogLevel("miner", "ERROR")
+	logging.SetLogLevel("chainstore", "ERROR")
+	logging.SetLogLevel("chain", "ERROR")
+	logging.SetLogLevel("sub", "ERROR")
+	logging.SetLogLevel("storageminer", "ERROR")
 
 	blockTime := 10 * time.Millisecond
 
@@ -59,8 +63,8 @@ func TestAPIDealFlow(t *testing.T) {
 	t.Run("TestFastRetrievalDealFlow", func(t *testing.T) {
 		test.TestFastRetrievalDealFlow(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
 	})
-	t.Run("TestZeroPricePerByteRetrievalDealFlow", func(t *testing.T) {
-		test.TestZeroPricePerByteRetrievalDealFlow(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
+	t.Run("TestPublishDealsBatching", func(t *testing.T) {
+		test.TestPublishDealsBatching(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
 	})
 }
 
