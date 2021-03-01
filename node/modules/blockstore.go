@@ -12,7 +12,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/blockstore"
 	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
-	"github.com/EpiK-Protocol/go-epik/chain/store/splitstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore/splitstore"
 	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"

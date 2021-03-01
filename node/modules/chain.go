@@ -14,6 +14,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore/splitstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -22,7 +23,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
-	"github.com/EpiK-Protocol/go-epik/chain/store/splitstore"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/journal"
