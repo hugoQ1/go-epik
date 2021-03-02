@@ -956,6 +956,8 @@ const (
 
 func (v SyncStateStage) String() string {
 	switch v {
+	case StageIdle:
+		return "idle"
 	case StageHeaders:
 		return "header sync"
 	case StagePersistHeaders:
