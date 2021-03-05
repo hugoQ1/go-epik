@@ -17,6 +17,7 @@ import (
 
 	"github.com/filecoin-project/go-state-types/abi"
 
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/test"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
@@ -70,7 +71,7 @@ func TestWorkerKeyChange(t *testing.T) {
 			"testnode-storage": sn[0],
 		}
 		app.Writer = output
-		build.RunningNodeType = build.NodeMiner
+		api.RunningNodeType = api.NodeMiner
 
 		fs := flag.NewFlagSet("", flag.ContinueOnError)
 		for _, f := range cmd.Flags {

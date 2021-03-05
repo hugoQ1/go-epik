@@ -33,7 +33,6 @@ import (
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
@@ -69,8 +68,8 @@ type CommonStruct struct {
 		NetBlockRemove              func(ctx context.Context, acl api.NetBlockList) error            `perm:"admin"`
 		NetBlockList                func(ctx context.Context) (api.NetBlockList, error)              `perm:"read"`
 
-		ID      func(context.Context) (peer.ID, error)     `perm:"read"`
-		Version func(context.Context) (api.Version, error) `perm:"read"`
+		ID      func(context.Context) (peer.ID, error)        `perm:"read"`
+		Version func(context.Context) (api.APIVersion, error) `perm:"read"`
 
 		LogList     func(context.Context) ([]string, error)     `perm:"write"`
 		LogSetLevel func(context.Context, string, string) error `perm:"write"`
@@ -418,7 +417,7 @@ type WorkerStruct struct {
 	Internal struct {
 		// TODO: lower perms
 
-		Version func(context.Context) (build.Version, error) `perm:"admin"`
+		Version func(context.Context) (api.Version, error) `perm:"admin"`
 
 		TaskTypes func(context.Context) (map[sealtasks.TaskType]struct{}, error) `perm:"admin"`
 		Paths     func(context.Context) ([]stores.StoragePath, error)            `perm:"admin"`
@@ -575,7 +574,7 @@ func (c *CommonStruct) ID(ctx context.Context) (peer.ID, error) {
 }
 
 // Version implements API.Version
-func (c *CommonStruct) Version(ctx context.Context) (api.Version, error) {
+func (c *CommonStruct) Version(ctx context.Context) (api.APIVersion, error) {
 	return c.Internal.Version(ctx)
 }
 
@@ -1735,7 +1734,7 @@ func (c *StorageMinerStruct) CheckProvable(ctx context.Context, pp abi.Registere
 
 // WorkerStruct
 
-func (w *WorkerStruct) Version(ctx context.Context) (build.Version, error) {
+func (w *WorkerStruct) Version(ctx context.Context) (api.Version, error) {
 	return w.Internal.Version(ctx)
 }
 
