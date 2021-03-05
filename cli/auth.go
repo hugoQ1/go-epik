@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/go-jsonrpc/auth"
 
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
+	cliutil "github.com/EpiK-Protocol/go-epik/cli/util"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
@@ -127,7 +128,7 @@ var authApiInfoToken = &cli.Command{
 
 		// TODO: Log in audit log when it is implemented
 
-		fmt.Printf("%s=%s:%s\n", envForRepo(t), string(token), ainfo.Addr)
+		fmt.Printf("%s=%s:%s\n", cliutil.EnvForRepo(t), string(token), ainfo.Addr)
 		return nil
 	},
 }

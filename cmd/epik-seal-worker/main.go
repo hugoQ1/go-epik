@@ -31,6 +31,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
 	"github.com/EpiK-Protocol/go-epik/build"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	cliutil "github.com/EpiK-Protocol/go-epik/cli/util"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
@@ -183,7 +184,7 @@ var runCmd = &cli.Command{
 		var closer func()
 		var err error
 		for {
-			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx, lcli.StorageMinerUseHttp)
+			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx, cliutil.StorageMinerUseHttp)
 			if err == nil {
 				_, err = nodeApi.Version(ctx)
 				if err == nil {
