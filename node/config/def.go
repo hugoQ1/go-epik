@@ -119,8 +119,8 @@ type Libp2p struct {
 type Pubsub struct {
 	Bootstrapper          bool
 	DirectPeers           []string
-	RemoteTracer          string
 	IPColocationWhitelist []string
+	RemoteTracer          string
 }
 
 type Chainstore struct {
