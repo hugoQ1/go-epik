@@ -72,7 +72,7 @@ var stateCmd = &cli.Command{
 		stateMinerInfo,
 		stateMarketCmd,
 		stateExecTraceCmd,
-		stateVoteFundCmd,
+		stateVotesFundCmd,
 		stateKnowFundInfoCmd,
 		stateNtwkVersionCmd,
 	},
@@ -1911,18 +1911,18 @@ var stateMarketRemainingQuotaCmd = &cli.Command{
 	},
 }
 
-var stateVoteFundCmd = &cli.Command{
-	Name:  "vote",
+var stateVotesFundCmd = &cli.Command{
+	Name:  "votes",
 	Usage: "Inspect vote fund info",
 	Subcommands: []*cli.Command{
-		stateVoteTallyCmd,
-		stateVoteVoterCmd,
+		stateVotesTallyCmd,
+		stateVotesVoterCmd,
 	},
 }
 
-var stateVoteTallyCmd = &cli.Command{
+var stateVotesTallyCmd = &cli.Command{
 	Name:  "tally",
-	Usage: "Query tally for each candidate",
+	Usage: "Get vote tally",
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -1947,22 +1947,22 @@ var stateVoteTallyCmd = &cli.Command{
 		fmt.Printf("Fallback Receiver: %s\n", tally.FallbackReceiver)
 		fmt.Printf("Candidates:\n")
 		for cand, amt := range tally.Candidates {
-			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+			if tally.Blocked[cand] {
+				fmt.Printf("\t%s: %s (blocked)\n", cand, types.EPK(amt))
+			} else {
+				fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+			}
 		}
 
 		return nil
 	},
 }
 
-var stateVoteVoterCmd = &cli.Command{
+var stateVotesVoterCmd = &cli.Command{
 	Name:      "voter",
 	Usage:     "Get voter info",
-	ArgsUsage: "[address]",
+	ArgsUsage: "[voterAddress (optional)]",
 	Action: func(cctx *cli.Context) error {
-		if !cctx.Args().Present() {
-			return ShowHelp(cctx, fmt.Errorf("must specify address to query for"))
-		}
-
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
 			return err
@@ -1976,12 +1976,23 @@ var stateVoteVoterCmd = &cli.Command{
 			return err
 		}
 
-		addr, err := address.NewFromString(cctx.Args().First())
-		if err != nil {
-			return err
+		var voter address.Address
+		if !cctx.Args().Present() {
+			voter, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+			if voter == address.Undef {
+				return xerrors.New("no default wallet address")
+			}
+		} else {
+			voter, err = address.NewFromString(cctx.Args().First())
+			if err != nil {
+				return err
+			}
 		}
 
-		idAddr, err := api.StateLookupID(ctx, addr, ts.Key())
+		idAddr, err := api.StateLookupID(ctx, voter, ts.Key())
 		if err != nil {
 			return err
 		}

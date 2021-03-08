@@ -35,15 +35,16 @@ func (s *state) Tally() (*Tally, error) {
 		return nil, err
 	}
 
-	ret := make(map[string]abi.TokenAmount)
-
+	votes := make(map[string]abi.TokenAmount)
+	blocked := make(map[string]bool)
 	var out vote.Candidate
 	err = candidates.ForEach(&out, func(k string) error {
 		a, err := address.NewFromBytes([]byte(k))
 		if err != nil {
 			return err
 		}
-		ret[a.String()] = out.Votes
+		votes[a.String()] = out.Votes
+		blocked[a.String()] = out.IsBlocked()
 		return nil
 	})
 	if err != nil {
@@ -53,7 +54,8 @@ func (s *state) Tally() (*Tally, error) {
 		TotalVotes:       s.State.TotalVotes,
 		UnownedFunds:     s.State.UnownedFunds,
 		FallbackReceiver: s.State.FallbackReceiver,
-		Candidates:       ret,
+		Candidates:       votes,
+		Blocked:          blocked,
 	}, nil
 }
 
