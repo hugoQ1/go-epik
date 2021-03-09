@@ -2,10 +2,10 @@ package modules
 
 import (
 	"context"
-	"golang.org/x/xerrors"
 	"path/filepath"
 
 	"go.uber.org/fx"
+	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/backupds"
