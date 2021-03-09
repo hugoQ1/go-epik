@@ -127,25 +127,17 @@ func (s *state3) HasPendingPiece(maddr address.Address, pieceCids []cid.Cid) (bo
 		return false, xerrors.Errorf("miner not a ID address: %s", maddr)
 	}
 
-	pendings, err := adt3.AsMap(s.store, s.State.PendingProposals, builtin.DefaultHamtBitwidth)
+	pendings, err := market3.AsProviderPieceSetMultimap(s.store, s.State.ProviderPendings, builtin.DefaultHamtBitwidth, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return false, err
 	}
 
-	all := make(map[cid.Cid]struct{})
-	var dataIndex market3.ProposalDataIndex
-	err = pendings.ForEach(&dataIndex, func(k string) error {
-		if dataIndex.Provider == maddr {
-			all[dataIndex.Index.PieceCID] = struct{}{}
+	for _, piece := range pieceCids {
+		has, err := pendings.Has(maddr, piece)
+		if err != nil {
+			return false, err
 		}
-		return nil
-	})
-	if err != nil {
-		return false, err
-	}
-
-	for _, pieceCid := range pieceCids {
-		if _, ok := all[pieceCid]; ok {
+		if has {
 			return true, nil
 		}
 	}
