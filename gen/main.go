@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/EpiK-Protocol/go-epik/chain/market"
-
 	gen "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/exchange"
+	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
+	"github.com/EpiK-Protocol/go-epik/lib/backupds"
 	"github.com/EpiK-Protocol/go-epik/node/hello"
 	"github.com/EpiK-Protocol/go-epik/paychmgr"
 )
@@ -100,6 +100,14 @@ func main() {
 		sectorstorage.Call{},
 		sectorstorage.WorkState{},
 		sectorstorage.WorkID{},
+	)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	err = gen.WriteTupleEncodersToFile("./lib/backupds/cbor_gen.go", "backupds",
+		backupds.Entry{},
 	)
 	if err != nil {
 		fmt.Println(err)
