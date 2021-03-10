@@ -27,6 +27,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
 	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -326,16 +327,16 @@ func ListMinerActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([
 }
 
 func ListExpertActors(ctx context.Context, sm *StateManager, ts *types.TipSet) ([]address.Address, error) {
-	act, err := sm.LoadActor(ctx, power.Address, ts)
+	act, err := sm.LoadActor(ctx, expertfund.Address, ts)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load power actor: %w", err)
+		return nil, xerrors.Errorf("failed to load expert fund actor: %w", err)
 	}
 
-	powState, err := power.Load(sm.cs.Store(ctx), act)
+	efState, err := expertfund.Load(sm.cs.Store(ctx), act)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load power actor state: %w", err)
+		return nil, xerrors.Errorf("failed to load expert fund actor state: %w", err)
 	}
-	return powState.ListAllExperts()
+	return efState.ListAllExperts()
 }
 
 func ComputeState(ctx context.Context, sm *StateManager, height abi.ChainEpoch, msgs []*types.Message, ts *types.TipSet) (cid.Cid, []*api.InvocResult, error) {

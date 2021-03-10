@@ -103,28 +103,6 @@ func (s *state3) ListAllMiners() ([]address.Address, error) {
 	return miners, nil
 }
 
-func (s *state3) ListAllExperts() ([]address.Address, error) {
-	expertMap, err := s.experts()
-	if err != nil {
-		return nil, err
-	}
-
-	var experts []address.Address
-	err = expertMap.ForEach(nil, func(k string) error {
-		a, err := address.NewFromBytes([]byte(k))
-		if err != nil {
-			return err
-		}
-		experts = append(experts, a)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return experts, nil
-}
-
 func (s *state3) ForEachClaim(cb func(miner address.Address, claim Claim) error) error {
 	claims, err := s.claims()
 	if err != nil {
@@ -176,8 +154,4 @@ func fromV3Claim(v3 power3.Claim) Claim {
 		RawBytePower:    v3.RawBytePower,
 		QualityAdjPower: v3.QualityAdjPower,
 	}
-}
-
-func (s *state3) experts() (adt.Map, error) {
-	return adt3.AsMap(s.store, s.Experts, builtin3.DefaultHamtBitwidth)
 }

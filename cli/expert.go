@@ -10,11 +10,9 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -91,17 +89,17 @@ func expertInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode, gasPr
 		return xerrors.Errorf("peer ID from private key: %w", err)
 	}
 
-	addr, err := createExpert(ctx, api, peerid, gasPrice, cctx)
+	addr, err := applyForExpert(ctx, api, peerid, gasPrice, cctx)
 	if err != nil {
-		return xerrors.Errorf("creating expert failed: %w", err)
+		return xerrors.Errorf("applying for expert failed: %w", err)
 	}
 	log.Infof("Created new expert: %s", addr)
 
 	return nil
 }
 
-func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPrice types.BigInt, cctx *cli.Context) (address.Address, error) {
-	log.Info("Creating expert message")
+func applyForExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPrice types.BigInt, cctx *cli.Context) (address.Address, error) {
+	log.Info("Applying for expert message")
 
 	var err error
 	var owner address.Address
@@ -114,20 +112,19 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, err
 	}
 
-	params, err := actors.SerializeParams(&power.CreateExpertParams{
-		Owner:  owner,
-		PeerId: abi.PeerID(peerid),
+	params, err := actors.SerializeParams(&expertfund.ApplyForExpertParams{
+		Owner: owner,
 	})
 	if err != nil {
 		return address.Undef, err
 	}
 
 	createMessage := &types.Message{
-		To:    builtin.StoragePowerActorAddr,
+		To:    builtin.ExpertFundActorAddr,
 		From:  owner,
 		Value: big.Zero(),
 
-		Method: builtin.MethodsPower.CreateExpert,
+		Method: builtin.MethodsExpertFunds.ApplyForExpert,
 		Params: params,
 	}
 
@@ -136,7 +133,7 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, err
 	}
 
-	log.Infof("Pushed power.CreateExpert, %s to Mpool", signed.Cid())
+	log.Infof("Pushed ApplyForExpert %s to Mpool", signed.Cid())
 	log.Infof("Waiting for confirmation")
 
 	mw, err := api.StateWaitMsg(ctx, signed.Cid(), build.MessageConfidence)
@@ -148,7 +145,7 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, xerrors.Errorf("create expert failed: exit code %d", mw.Receipt.ExitCode)
 	}
 
-	var retval power.CreateExpertReturn
+	var retval expertfund.ApplyForExpertReturn
 	if err := retval.UnmarshalCBOR(bytes.NewReader(mw.Receipt.Return)); err != nil {
 		return address.Undef, err
 	}
@@ -189,7 +186,7 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("Expert proposer: %s\n", info.Proposer)
 		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
 		expertType := "foundation"
-		if info.Type == expert.ExpertNormal {
+		if info.Type == builtin.ExpertNormal {
 			expertType = "normal"
 		}
 		fmt.Printf("Expert type: %s\n", expertType)

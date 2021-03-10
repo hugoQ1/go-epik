@@ -23,9 +23,9 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
-	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -484,19 +484,19 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 			return cid.Undef, xerrors.Errorf("unmarshaling expert meta: %w", err)
 		}
 
-		expertCreateParams := &power2.CreateExpertParams{Owner: ainfo.Owner}
+		expertCreateParams := &expertfund.ApplyForExpertParams{Owner: ainfo.Owner}
 		params := mustEnc(expertCreateParams)
 		idas, err := ParseIDAddresses(template.FoundationAccountActor, keyIDs)
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to parse id addresses: %w", err)
 		}
-		rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, idas[0], big.Zero(), builtin2.MethodsPower.CreateExpert, params)
+		rval, err := doExecValue(ctx, vm, builtin2.ExpertFundActorAddr, idas[0], big.Zero(), builtin2.MethodsExpertFunds.ApplyForExpert, params)
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to create genesis expert %s: %w", ainfo.Owner, err)
 		}
-		var ret power2.CreateExpertReturn
+		var ret expertfund.ApplyForExpertReturn
 		if err := ret.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {
-			return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
+			return cid.Undef, xerrors.Errorf("unmarshaling ApplyForExpertReturn: %w", err)
 		}
 		inis.ExpertOwner = ainfo.Owner
 		inis.Expert = ret.IDAddress

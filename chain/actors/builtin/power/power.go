@@ -55,7 +55,6 @@ type State interface {
 	MinerPower(address.Address) (Claim, bool, error)
 	MinerNominalPowerMeetsConsensusMinimum(address.Address) (bool, error)
 	ListAllMiners() ([]address.Address, error)
-	ListAllExperts() ([]address.Address, error)
 	ForEachClaim(func(miner address.Address, claim Claim) error) error
 	ClaimsChanged(State) (bool, error)
 
