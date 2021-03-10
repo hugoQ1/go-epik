@@ -13,8 +13,12 @@ import (
 	"github.com/filecoin-project/go-state-types/dline"
 )
 
-const SubmitConfidence = 4
 const MaxPostsRetain = abi.ChainEpoch(900) // Must greater than WPoStChallengeWindow
+
+const (
+	SubmitConfidence    = 4
+	ChallengeConfidence = 10
+)
 
 type CompleteGeneratePoSTCb func(posts []miner.SubmitWindowedPoStParams, err error)
 type CompleteSubmitPoSTCb func(err error)
@@ -239,7 +243,7 @@ func (p *proveHandler) processHeadChange(ctx context.Context, newTS *types.TipSe
 	}
 
 	// Check if the chain is above the Challenge height for the post window
-	if newTS.Height() < di.Challenge {
+	if newTS.Height() < di.Challenge+ChallengeConfidence {
 		return
 	}
 
