@@ -8,7 +8,6 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	"github.com/ipfs/go-cid"
-	"golang.org/x/xerrors"
 
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -60,12 +59,7 @@ func (s *state) Tally() (*Tally, error) {
 }
 
 func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInfo, error) {
-	voter, err := getVoter(s, vaddr)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.EstimateSettle(s.store, voter, curr)
+	voter, err := s.EstimateSettle(s.store, vaddr, curr)
 	if err != nil {
 		return nil, err
 	}
@@ -105,35 +99,4 @@ func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInf
 		WithdrawableRewards: voter.Withdrawable,
 		Candidates:          cands,
 	}, nil
-}
-
-func getVoter(s *state, addr address.Address) (*vote.Voter, error) {
-	if addr.Protocol() != address.ID {
-		return nil, xerrors.Errorf("not a ID address: %s", addr)
-	}
-
-	voters, err := adt2.AsMap(s.store, s.Voters, builtin.DefaultHamtBitwidth)
-	if err != nil {
-		return nil, err
-	}
-
-	var voterAddrs []string
-	voters.ForEach(&builtin.Discard{}, func(k string) error {
-		a, err := address.NewFromBytes([]byte(k))
-		if err != nil {
-			return err
-		}
-		voterAddrs = append(voterAddrs, a.String())
-		return nil
-	})
-
-	var voter vote.Voter
-	found, err := voters.Get(abi.AddrKey(addr), &voter)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, xerrors.Errorf("voter not found: %s", addr)
-	}
-	return &voter, nil
 }
