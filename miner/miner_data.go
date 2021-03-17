@@ -348,7 +348,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 
 		for _, d := range deals {
-			if d.PieceCID.Equals(data.pieceID) {
+			if d.Provider == m.address && d.PieceCID.Equals(data.pieceID) {
 				isFinish, isDealed := checkDealStatus(&d)
 				if isDealed {
 					data.isDealed = true
