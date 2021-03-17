@@ -12,6 +12,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	cid "github.com/ipfs/go-cid"
@@ -122,7 +123,7 @@ func applyForExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasP
 	createMessage := &types.Message{
 		To:    builtin.ExpertFundActorAddr,
 		From:  owner,
-		Value: big.Zero(),
+		Value: expert.ExpertApplyCost,
 
 		Method: builtin.MethodsExpertFunds.ApplyForExpert,
 		Params: params,
