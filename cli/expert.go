@@ -30,7 +30,8 @@ var expertCmd = &cli.Command{
 		expertFileCmd,
 		expertListCmd,
 		expertNominateCmd,
-		expertVotes,
+		expertClaimCmd,
+		expertVote,
 	},
 }
 
@@ -314,24 +315,88 @@ var expertNominateCmd = &cli.Command{
 	},
 }
 
-var expertVotes = &cli.Command{
-	Name:  "votes",
-	Usage: "Manage votes for experts",
-	Subcommands: []*cli.Command{
-		expertVotesAdd,
-		expertVotesRescind,
-		expertVotesWithdraw,
+var expertClaimCmd = &cli.Command{
+	Name:      "claim",
+	Usage:     "Claim expert rewards",
+	ArgsUsage: "<expertAddress> <amount (EPK)>",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the owner account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'claim' expects two arguments, expert address and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		expertAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse expert address: %w", err))
+		}
+
+		amount, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&expertfund.ClaimFundParams{
+			Expert: expertAddr,
+			Amount: big.Int(amount),
+		})
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.ExpertFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsExpertFunds.Claim,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("failed to send claim message: %w", err)
+		}
+
+		fmt.Printf("Send claim message: %s\n", smsg.Cid())
+
+		return nil
 	},
 }
 
-var expertVotesAdd = &cli.Command{
-	Name:      "add",
-	Usage:     "Add votes for an expert",
+var expertVote = &cli.Command{
+	Name:  "votes",
+	Usage: "Manage votes for experts",
+	Subcommands: []*cli.Command{
+		expertVoteSend,
+		expertVoteRescind,
+		expertVoteWithdraw,
+	},
+}
+
+var expertVoteSend = &cli.Command{
+	Name:      "send-votes",
+	Usage:     "Send votes for an expert",
 	ArgsUsage: "[expertAddress] [amount (EPK, one EPK one Vote)]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
-			Usage:   "specify the voter account",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
 			Aliases: []string{"f"},
 		},
 	},
@@ -358,21 +423,9 @@ var expertVotesAdd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
 
-		var fromAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
 		}
 
 		sp, err := actors.SerializeParams(&expertAddr)
@@ -397,14 +450,14 @@ var expertVotesAdd = &cli.Command{
 	},
 }
 
-var expertVotesRescind = &cli.Command{
-	Name:      "rescind",
+var expertVoteRescind = &cli.Command{
+	Name:      "rescind-votes",
 	Usage:     "Rescind votes for an expert",
 	ArgsUsage: "[expertAddress] [amount (EPK)]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
-			Usage:   "specify the voter account",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
 			Aliases: []string{"f"},
 		},
 	},
@@ -431,21 +484,9 @@ var expertVotesRescind = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
 
-		var fromAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
 		}
 
 		p := vote.RescindParams{
@@ -474,18 +515,14 @@ var expertVotesRescind = &cli.Command{
 	},
 }
 
-var expertVotesWithdraw = &cli.Command{
+var expertVoteWithdraw = &cli.Command{
 	Name:  "withdraw",
 	Usage: "Withdraw all unlocked votes and rewards",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
-			Usage:   "specify the voter account",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
 			Aliases: []string{"f"},
-		},
-		&cli.StringFlag{
-			Name:  "to",
-			Usage: "specify the recipient address, same with 'from' by default",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -498,36 +535,9 @@ var expertVotesWithdraw = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		var fromAddr, toAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
-		}
-
-		if to := cctx.String("to"); to == "" {
-			toAddr = fromAddr
-		} else {
-			addr, err := address.NewFromString(to)
-			if err != nil {
-				return err
-			}
-			toAddr = addr
-		}
-
-		sp, err := actors.SerializeParams(&toAddr)
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
 		if err != nil {
-			return xerrors.Errorf("serializing params: %w", err)
+			return err
 		}
 
 		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
@@ -535,7 +545,7 @@ var expertVotesWithdraw = &cli.Command{
 			From:   fromAddr,
 			Value:  big.Zero(),
 			Method: builtin.MethodsVote.Withdraw,
-			Params: sp,
+			Params: nil,
 		}, nil)
 		if err != nil {
 			return xerrors.Errorf("Submitting withdraw message: %w", err)

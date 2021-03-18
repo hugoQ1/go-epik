@@ -4,6 +4,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -40,7 +41,17 @@ type State interface {
 	Data(cid.Cid) (*DataOnChainInfo, error)
 }
 
-type ExpertInfo = expert2.ExpertInfo
 type ExpertDataParams = expert2.ExpertDataParams
 type DataOnChainInfo = expert2.DataOnChainInfo
 type NominateExpertParams = expert2.NominateExpertParams
+
+type ExpertInfo struct {
+	expert2.ExpertInfo
+	LostEpoch       abi.ChainEpoch
+	Status          expert2.ExpertState
+	StatusDesc      string // fill in state.go
+	ImplicatedTimes uint64
+	DataCount       uint64
+	CurrentVotes    abi.TokenAmount // fill in state.go
+	RequiredVotes   abi.TokenAmount
+}

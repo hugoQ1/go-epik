@@ -38,6 +38,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 )
 
 type StateModuleAPI interface {
@@ -1514,12 +1515,15 @@ func (a *StateAPI) StateListExperts(ctx context.Context, tsk types.TipSetKey) ([
 }
 
 func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*expert.ExpertInfo, error) {
-	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
+	if addr.Protocol() != address.ID {
+		return nil, xerrors.Errorf("not a ID address: %s", addr)
+	}
+	act, err := a.StateGetActor(ctx, addr, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
+	eas, err := expert.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
@@ -1528,16 +1532,46 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	if err != nil {
 		return nil, err
 	}
+
+	// query votes
+	tally, err := a.StateVoteTally(ctx, tsk)
+	if err != nil {
+		return nil, err
+	}
+	votes, ok := tally.Candidates[addr.String()]
+	if !ok {
+		return nil, xerrors.Errorf("expert not found in tally: %s", addr)
+	}
+	info.CurrentVotes = votes
+
+	switch info.Status {
+	case expert2.ExpertStateRegistered:
+		info.StatusDesc = "registered"
+	case expert2.ExpertStateDisqualified:
+		info.StatusDesc = "disqualified"
+	case expert2.ExpertStateNominated:
+		info.StatusDesc = "nominated(voting)"
+	case expert2.ExpertStateNormal:
+		info.StatusDesc = "normal"
+		if info.CurrentVotes.LessThan(info.RequiredVotes) {
+			info.StatusDesc = "normal(votes not enough)"
+		}
+	case expert2.ExpertStateBlocked:
+		info.StatusDesc = "blocked"
+	default:
+		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
+	}
+
 	return info, nil
 }
 
 func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
-	act, err := a.StateManager.LoadActorTsk(ctx, addr, tsk)
+	act, err := a.StateGetActor(ctx, addr, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.StateManager.ChainStore().Store(ctx), act)
+	eas, err := expert.Load(a.Chain.Store(ctx), act)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
 	}
