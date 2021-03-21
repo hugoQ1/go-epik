@@ -33,6 +33,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/cron"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	_init "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -57,6 +58,7 @@ var log = logging.Logger("statemgr")
 type StateManagerAPI interface {
 	Call(ctx context.Context, msg *types.Message, ts *types.TipSet) (*api.InvocResult, error)
 	GetPaychState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, paych.State, error)
+	GetFlowchState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, flowch.State, error)
 	LoadActorTsk(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*types.Actor, error)
 	LookupID(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error)
 	ResolveToKeyAddress(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error)
@@ -1621,6 +1623,24 @@ func (sm *StateManager) GetPaychState(ctx context.Context, addr address.Address,
 	}
 
 	actState, err := paych.Load(sm.cs.Store(ctx), act)
+	if err != nil {
+		return nil, nil, err
+	}
+	return act, actState, nil
+}
+
+func (sm *StateManager) GetFlowchState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, flowch.State, error) {
+	st, err := sm.ParentState(ts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	act, err := st.GetActor(addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	actState, err := flowch.Load(sm.cs.Store(ctx), act)
 	if err != nil {
 		return nil, nil, err
 	}

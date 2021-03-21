@@ -796,7 +796,7 @@ func (a *API) clientRetrieve(ctx context.Context, order api.RetrievalOrder, ref 
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		finish(xerrors.Errorf("Error in retrieval params: %s", err))
 		return
@@ -1254,7 +1254,7 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}

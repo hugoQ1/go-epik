@@ -35,6 +35,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -303,6 +304,24 @@ type FullNodeStruct struct {
 		PaychVoucherCreate          func(context.Context, address.Address, big.Int, uint64) (*api.VoucherCreateResult, error)                 `perm:"sign"`
 		PaychVoucherList            func(context.Context, address.Address) ([]*paych.SignedVoucher, error)                                    `perm:"write"`
 		PaychVoucherSubmit          func(context.Context, address.Address, *paych.SignedVoucher, []byte, []byte) (cid.Cid, error)             `perm:"sign"`
+
+		FlowchGet                    func(ctx context.Context, from, to address.Address, amt types.BigInt) (*api.ChannelInfo, error)            `perm:"sign"`
+		FlowchGetWaitReady           func(context.Context, cid.Cid) (address.Address, error)                                                    `perm:"sign"`
+		FlowchAvailableFunds         func(context.Context, address.Address) (*api.ChannelAvailableFunds, error)                                 `perm:"sign"`
+		FlowchAvailableFundsByFromTo func(context.Context, address.Address, address.Address) (*api.ChannelAvailableFunds, error)                `perm:"sign"`
+		FlowchList                   func(context.Context) ([]address.Address, error)                                                           `perm:"read"`
+		FlowchStatus                 func(context.Context, address.Address) (*api.FlowchStatus, error)                                          `perm:"read"`
+		FlowchSettle                 func(context.Context, address.Address) (cid.Cid, error)                                                    `perm:"sign"`
+		FlowchCollect                func(context.Context, address.Address) (cid.Cid, error)                                                    `perm:"sign"`
+		FlowchAllocateLane           func(context.Context, address.Address) (uint64, error)                                                     `perm:"sign"`
+		FlowchNewPayment             func(ctx context.Context, from, to address.Address, vouchers []api.FlowVoucherSpec) (*api.FlowInfo, error) `perm:"sign"`
+		FlowchVoucherCheck           func(context.Context, *flowch.SignedVoucher) error                                                         `perm:"read"`
+		FlowchVoucherCheckValid      func(context.Context, address.Address, *flowch.SignedVoucher) error                                        `perm:"read"`
+		FlowchVoucherCheckSpendable  func(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (bool, error)                `perm:"read"`
+		FlowchVoucherAdd             func(context.Context, address.Address, *flowch.SignedVoucher, []byte, types.BigInt) (types.BigInt, error)  `perm:"write"`
+		FlowchVoucherCreate          func(context.Context, address.Address, big.Int, uint64) (*api.FlowVoucherCreateResult, error)              `perm:"sign"`
+		FlowchVoucherList            func(context.Context, address.Address) ([]*flowch.SignedVoucher, error)                                    `perm:"write"`
+		FlowchVoucherSubmit          func(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (cid.Cid, error)             `perm:"sign"`
 
 		CreateBackup func(ctx context.Context, fpath string) error `perm:"admin"`
 	}
@@ -1395,6 +1414,70 @@ func (c *FullNodeStruct) PaychNewPayment(ctx context.Context, from, to address.A
 
 func (c *FullNodeStruct) PaychVoucherSubmit(ctx context.Context, ch address.Address, sv *paych.SignedVoucher, secret []byte, proof []byte) (cid.Cid, error) {
 	return c.Internal.PaychVoucherSubmit(ctx, ch, sv, secret, proof)
+}
+
+func (c *FullNodeStruct) FlowchGet(ctx context.Context, from, to address.Address, amt types.BigInt) (*api.ChannelInfo, error) {
+	return c.Internal.FlowchGet(ctx, from, to, amt)
+}
+
+func (c *FullNodeStruct) FlowchGetWaitReady(ctx context.Context, sentinel cid.Cid) (address.Address, error) {
+	return c.Internal.FlowchGetWaitReady(ctx, sentinel)
+}
+
+func (c *FullNodeStruct) FlowchAvailableFunds(ctx context.Context, ch address.Address) (*api.ChannelAvailableFunds, error) {
+	return c.Internal.FlowchAvailableFunds(ctx, ch)
+}
+
+func (c *FullNodeStruct) FlowchAvailableFundsByFromTo(ctx context.Context, from, to address.Address) (*api.ChannelAvailableFunds, error) {
+	return c.Internal.FlowchAvailableFundsByFromTo(ctx, from, to)
+}
+
+func (c *FullNodeStruct) FlowchList(ctx context.Context) ([]address.Address, error) {
+	return c.Internal.FlowchList(ctx)
+}
+
+func (c *FullNodeStruct) FlowchStatus(ctx context.Context, pch address.Address) (*api.FlowchStatus, error) {
+	return c.Internal.FlowchStatus(ctx, pch)
+}
+
+func (c *FullNodeStruct) FlowchVoucherCheckValid(ctx context.Context, addr address.Address, sv *flowch.SignedVoucher) error {
+	return c.Internal.FlowchVoucherCheckValid(ctx, addr, sv)
+}
+
+func (c *FullNodeStruct) FlowchVoucherCheckSpendable(ctx context.Context, addr address.Address, sv *flowch.SignedVoucher, secret []byte, proof []byte) (bool, error) {
+	return c.Internal.FlowchVoucherCheckSpendable(ctx, addr, sv, secret, proof)
+}
+
+func (c *FullNodeStruct) FlowchVoucherAdd(ctx context.Context, addr address.Address, sv *flowch.SignedVoucher, proof []byte, minDelta types.BigInt) (types.BigInt, error) {
+	return c.Internal.FlowchVoucherAdd(ctx, addr, sv, proof, minDelta)
+}
+
+func (c *FullNodeStruct) FlowchVoucherCreate(ctx context.Context, pch address.Address, amt types.BigInt, lane uint64) (*api.FlowVoucherCreateResult, error) {
+	return c.Internal.FlowchVoucherCreate(ctx, pch, amt, lane)
+}
+
+func (c *FullNodeStruct) FlowchVoucherList(ctx context.Context, pch address.Address) ([]*flowch.SignedVoucher, error) {
+	return c.Internal.FlowchVoucherList(ctx, pch)
+}
+
+func (c *FullNodeStruct) FlowchSettle(ctx context.Context, a address.Address) (cid.Cid, error) {
+	return c.Internal.FlowchSettle(ctx, a)
+}
+
+func (c *FullNodeStruct) FlowchCollect(ctx context.Context, a address.Address) (cid.Cid, error) {
+	return c.Internal.FlowchCollect(ctx, a)
+}
+
+func (c *FullNodeStruct) FlowchAllocateLane(ctx context.Context, ch address.Address) (uint64, error) {
+	return c.Internal.FlowchAllocateLane(ctx, ch)
+}
+
+func (c *FullNodeStruct) FlowchNewPayment(ctx context.Context, from, to address.Address, vouchers []api.FlowVoucherSpec) (*api.FlowInfo, error) {
+	return c.Internal.FlowchNewPayment(ctx, from, to, vouchers)
+}
+
+func (c *FullNodeStruct) FlowchVoucherSubmit(ctx context.Context, ch address.Address, sv *flowch.SignedVoucher, secret []byte, proof []byte) (cid.Cid, error) {
+	return c.Internal.FlowchVoucherSubmit(ctx, ch, sv, secret, proof)
 }
 
 func (c *FullNodeStruct) CreateBackup(ctx context.Context, fpath string) error {

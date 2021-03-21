@@ -6,39 +6,45 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 
-	"github.com/EpiK-Protocol/go-epik/paychmgr"
+	"github.com/EpiK-Protocol/go-epik/flowchmgr"
 
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-address"
 	"github.com/urfave/cli/v2"
 
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
-var paychCmd = &cli.Command{
-	Name:  "paych",
+var flowchCmd = &cli.Command{
+	Name:  "flowch",
 	Usage: "Manage payment channels",
 	Subcommands: []*cli.Command{
-		paychAddFundsCmd,
-		paychListCmd,
-		paychVoucherCmd,
-		paychSettleCmd,
-		paychStatusCmd,
-		paychStatusByFromToCmd,
-		paychCloseCmd,
+		flowchAddFundsCmd,
+		flowchListCmd,
+		flowchVoucherCmd,
+		flowchSettleCmd,
+		flowchStatusCmd,
+		flowchStatusByFromToCmd,
+		flowchCloseCmd,
 	},
 }
 
-var paychAddFundsCmd = &cli.Command{
+var flowchAddFundsCmd = &cli.Command{
 	Name:      "add-funds",
 	Usage:     "Add funds to the payment channel between fromAddress and toAddress. Creates the payment channel if it doesn't already exist.",
 	ArgsUsage: "[fromAddress toAddress amount]",
-	Flags:     []cli.Flag{},
+	Flags: []cli.Flag{
+
+		&cli.BoolFlag{
+			Name:  "restart-retrievals",
+			Usage: "restart stalled retrieval deals on this payment channel",
+			Value: true,
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 3 {
 			return ShowHelp(cctx, fmt.Errorf("must pass three arguments: <from> <to> <available funds>"))
@@ -69,23 +75,27 @@ var paychAddFundsCmd = &cli.Command{
 
 		// Send a message to chain to create channel / add funds to existing
 		// channel
-		info, err := api.PaychGet(ctx, from, to, types.BigInt(amt))
+		info, err := api.FlowchGet(ctx, from, to, types.BigInt(amt))
 		if err != nil {
 			return err
 		}
 
 		// Wait for the message to be confirmed
-		chAddr, err := api.PaychGetWaitReady(ctx, info.WaitSentinel)
+		chAddr, err := api.FlowchGetWaitReady(ctx, info.WaitSentinel)
 		if err != nil {
 			return err
 		}
 
 		fmt.Fprintln(cctx.App.Writer, chAddr)
+		restartRetrievals := cctx.Bool("restart-retrievals")
+		if restartRetrievals {
+			return api.ClientRetrieveTryRestartInsufficientFunds(ctx, chAddr)
+		}
 		return nil
 	},
 }
 
-var paychStatusByFromToCmd = &cli.Command{
+var flowchStatusByFromToCmd = &cli.Command{
 	Name:      "status-by-from-to",
 	Usage:     "Show the status of an active outbound payment channel by from/to addresses",
 	ArgsUsage: "[fromAddress toAddress]",
@@ -111,17 +121,17 @@ var paychStatusByFromToCmd = &cli.Command{
 		}
 		defer closer()
 
-		avail, err := api.PaychAvailableFundsByFromTo(ctx, from, to)
+		avail, err := api.FlowchAvailableFundsByFromTo(ctx, from, to)
 		if err != nil {
 			return err
 		}
 
-		paychStatus(cctx.App.Writer, avail)
+		flowchStatus(cctx.App.Writer, avail)
 		return nil
 	},
 }
 
-var paychStatusCmd = &cli.Command{
+var flowchStatusCmd = &cli.Command{
 	Name:      "status",
 	Usage:     "Show the status of an outbound payment channel",
 	ArgsUsage: "[channelAddress]",
@@ -142,17 +152,17 @@ var paychStatusCmd = &cli.Command{
 		}
 		defer closer()
 
-		avail, err := api.PaychAvailableFunds(ctx, ch)
+		avail, err := api.FlowchAvailableFunds(ctx, ch)
 		if err != nil {
 			return err
 		}
 
-		paychStatus(cctx.App.Writer, avail)
+		flowchStatus(cctx.App.Writer, avail)
 		return nil
 	},
 }
 
-func paychStatus(writer io.Writer, avail *api.ChannelAvailableFunds) {
+func flowchStatus(writer io.Writer, avail *api.ChannelAvailableFunds) {
 	if avail.Channel == nil {
 		if avail.PendingWaitSentinel != nil {
 			fmt.Fprint(writer, "Creating channel\n")
@@ -192,22 +202,7 @@ func paychStatus(writer io.Writer, avail *api.ChannelAvailableFunds) {
 	fmt.Fprint(writer, formatNameValues(nameValues))
 }
 
-func formatNameValues(nameValues [][]string) string {
-	maxLen := 0
-	for _, nv := range nameValues {
-		if len(nv[0]) > maxLen {
-			maxLen = len(nv[0])
-		}
-	}
-	out := make([]string, len(nameValues))
-	for i, nv := range nameValues {
-		namePad := strings.Repeat(" ", maxLen-len(nv[0]))
-		out[i] = "  " + nv[0] + ": " + namePad + nv[1]
-	}
-	return strings.Join(out, "\n") + "\n"
-}
-
-var paychListCmd = &cli.Command{
+var flowchListCmd = &cli.Command{
 	Name:  "list",
 	Usage: "List all locally registered payment channels",
 	Action: func(cctx *cli.Context) error {
@@ -219,7 +214,7 @@ var paychListCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		chs, err := api.PaychList(ctx)
+		chs, err := api.FlowchList(ctx)
 		if err != nil {
 			return err
 		}
@@ -231,7 +226,7 @@ var paychListCmd = &cli.Command{
 	},
 }
 
-var paychSettleCmd = &cli.Command{
+var flowchSettleCmd = &cli.Command{
 	Name:      "settle",
 	Usage:     "Settle a payment channel",
 	ArgsUsage: "[channelAddress]",
@@ -253,7 +248,7 @@ var paychSettleCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		mcid, err := api.PaychSettle(ctx, ch)
+		mcid, err := api.FlowchSettle(ctx, ch)
 		if err != nil {
 			return err
 		}
@@ -271,7 +266,7 @@ var paychSettleCmd = &cli.Command{
 	},
 }
 
-var paychCloseCmd = &cli.Command{
+var flowchCloseCmd = &cli.Command{
 	Name:      "collect",
 	Usage:     "Collect funds for a payment channel",
 	ArgsUsage: "[channelAddress]",
@@ -293,7 +288,7 @@ var paychCloseCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		mcid, err := api.PaychCollect(ctx, ch)
+		mcid, err := api.FlowchCollect(ctx, ch)
 		if err != nil {
 			return err
 		}
@@ -311,20 +306,20 @@ var paychCloseCmd = &cli.Command{
 	},
 }
 
-var paychVoucherCmd = &cli.Command{
+var flowchVoucherCmd = &cli.Command{
 	Name:  "voucher",
 	Usage: "Interact with payment channel vouchers",
 	Subcommands: []*cli.Command{
-		paychVoucherCreateCmd,
-		paychVoucherCheckCmd,
-		paychVoucherAddCmd,
-		paychVoucherListCmd,
-		paychVoucherBestSpendableCmd,
-		paychVoucherSubmitCmd,
+		flowchVoucherCreateCmd,
+		flowchVoucherCheckCmd,
+		flowchVoucherAddCmd,
+		flowchVoucherListCmd,
+		flowchVoucherBestSpendableCmd,
+		flowchVoucherSubmitCmd,
 	},
 }
 
-var paychVoucherCreateCmd = &cli.Command{
+var flowchVoucherCreateCmd = &cli.Command{
 	Name:      "create",
 	Usage:     "Create a signed payment channel voucher",
 	ArgsUsage: "[channelAddress amount]",
@@ -360,7 +355,7 @@ var paychVoucherCreateCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		v, err := api.PaychVoucherCreate(ctx, ch, types.BigInt(amt), uint64(lane))
+		v, err := api.FlowchVoucherCreate(ctx, ch, types.BigInt(amt), uint64(lane))
 		if err != nil {
 			return err
 		}
@@ -369,7 +364,7 @@ var paychVoucherCreateCmd = &cli.Command{
 			return fmt.Errorf("Could not create voucher: insufficient funds in channel, shortfall: %d", v.Shortfall)
 		}
 
-		enc, err := EncodedString(v.Voucher)
+		enc, err := FlowEncodedString(v.Voucher)
 		if err != nil {
 			return err
 		}
@@ -379,7 +374,7 @@ var paychVoucherCreateCmd = &cli.Command{
 	},
 }
 
-var paychVoucherCheckCmd = &cli.Command{
+var flowchVoucherCheckCmd = &cli.Command{
 	Name:      "check",
 	Usage:     "Check validity of payment channel voucher",
 	ArgsUsage: "[channelAddress voucher]",
@@ -393,7 +388,7 @@ var paychVoucherCheckCmd = &cli.Command{
 			return err
 		}
 
-		sv, err := paych.DecodeSignedVoucher(cctx.Args().Get(1))
+		sv, err := flowch.DecodeSignedVoucher(cctx.Args().Get(1))
 		if err != nil {
 			return err
 		}
@@ -406,7 +401,7 @@ var paychVoucherCheckCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		if err := api.PaychVoucherCheckValid(ctx, ch, sv); err != nil {
+		if err := api.FlowchVoucherCheckValid(ctx, ch, sv); err != nil {
 			return err
 		}
 
@@ -415,7 +410,7 @@ var paychVoucherCheckCmd = &cli.Command{
 	},
 }
 
-var paychVoucherAddCmd = &cli.Command{
+var flowchVoucherAddCmd = &cli.Command{
 	Name:      "add",
 	Usage:     "Add payment channel voucher to local datastore",
 	ArgsUsage: "[channelAddress voucher]",
@@ -429,7 +424,7 @@ var paychVoucherAddCmd = &cli.Command{
 			return err
 		}
 
-		sv, err := paych.DecodeSignedVoucher(cctx.Args().Get(1))
+		sv, err := flowch.DecodeSignedVoucher(cctx.Args().Get(1))
 		if err != nil {
 			return err
 		}
@@ -443,7 +438,7 @@ var paychVoucherAddCmd = &cli.Command{
 		ctx := ReqContext(cctx)
 
 		// TODO: allow passing proof bytes
-		if _, err := api.PaychVoucherAdd(ctx, ch, sv, nil, types.NewInt(0)); err != nil {
+		if _, err := api.FlowchVoucherAdd(ctx, ch, sv, nil, types.NewInt(0)); err != nil {
 			return err
 		}
 
@@ -451,7 +446,7 @@ var paychVoucherAddCmd = &cli.Command{
 	},
 }
 
-var paychVoucherListCmd = &cli.Command{
+var flowchVoucherListCmd = &cli.Command{
 	Name:      "list",
 	Usage:     "List stored vouchers for a given payment channel",
 	ArgsUsage: "[channelAddress]",
@@ -479,14 +474,14 @@ var paychVoucherListCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		vouchers, err := api.PaychVoucherList(ctx, ch)
+		vouchers, err := api.FlowchVoucherList(ctx, ch)
 		if err != nil {
 			return err
 		}
 
-		for _, v := range sortVouchers(vouchers) {
+		for _, v := range flowsortVouchers(vouchers) {
 			export := cctx.Bool("export")
-			err := outputVoucher(cctx.App.Writer, v, export)
+			err := flowoutputVoucher(cctx.App.Writer, v, export)
 			if err != nil {
 				return err
 			}
@@ -496,7 +491,7 @@ var paychVoucherListCmd = &cli.Command{
 	},
 }
 
-var paychVoucherBestSpendableCmd = &cli.Command{
+var flowchVoucherBestSpendableCmd = &cli.Command{
 	Name:      "best-spendable",
 	Usage:     "Print vouchers with highest value that is currently spendable for each lane",
 	ArgsUsage: "[channelAddress]",
@@ -524,18 +519,18 @@ var paychVoucherBestSpendableCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		vouchersByLane, err := paychmgr.BestSpendableByLane(ctx, api, ch)
+		vouchersByLane, err := flowchmgr.BestSpendableByLane(ctx, api, ch)
 		if err != nil {
 			return err
 		}
 
-		var vouchers []*paych.SignedVoucher
+		var vouchers []*flowch.SignedVoucher
 		for _, vchr := range vouchersByLane {
 			vouchers = append(vouchers, vchr)
 		}
-		for _, best := range sortVouchers(vouchers) {
+		for _, best := range flowsortVouchers(vouchers) {
 			export := cctx.Bool("export")
-			err := outputVoucher(cctx.App.Writer, best, export)
+			err := flowoutputVoucher(cctx.App.Writer, best, export)
 			if err != nil {
 				return err
 			}
@@ -545,7 +540,7 @@ var paychVoucherBestSpendableCmd = &cli.Command{
 	},
 }
 
-func sortVouchers(vouchers []*paych.SignedVoucher) []*paych.SignedVoucher {
+func flowsortVouchers(vouchers []*flowch.SignedVoucher) []*flowch.SignedVoucher {
 	sort.Slice(vouchers, func(i, j int) bool {
 		if vouchers[i].Lane == vouchers[j].Lane {
 			return vouchers[i].Nonce < vouchers[j].Nonce
@@ -555,11 +550,11 @@ func sortVouchers(vouchers []*paych.SignedVoucher) []*paych.SignedVoucher {
 	return vouchers
 }
 
-func outputVoucher(w io.Writer, v *paych.SignedVoucher, export bool) error {
+func flowoutputVoucher(w io.Writer, v *flowch.SignedVoucher, export bool) error {
 	var enc string
 	if export {
 		var err error
-		enc, err = EncodedString(v)
+		enc, err = FlowEncodedString(v)
 		if err != nil {
 			return err
 		}
@@ -573,7 +568,7 @@ func outputVoucher(w io.Writer, v *paych.SignedVoucher, export bool) error {
 	return nil
 }
 
-var paychVoucherSubmitCmd = &cli.Command{
+var flowchVoucherSubmitCmd = &cli.Command{
 	Name:      "submit",
 	Usage:     "Submit voucher to chain to update payment channel state",
 	ArgsUsage: "[channelAddress voucher]",
@@ -587,7 +582,7 @@ var paychVoucherSubmitCmd = &cli.Command{
 			return err
 		}
 
-		sv, err := paych.DecodeSignedVoucher(cctx.Args().Get(1))
+		sv, err := flowch.DecodeSignedVoucher(cctx.Args().Get(1))
 		if err != nil {
 			return err
 		}
@@ -600,7 +595,7 @@ var paychVoucherSubmitCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		mcid, err := api.PaychVoucherSubmit(ctx, ch, sv, nil, nil)
+		mcid, err := api.FlowchVoucherSubmit(ctx, ch, sv, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -620,7 +615,7 @@ var paychVoucherSubmitCmd = &cli.Command{
 	},
 }
 
-func EncodedString(sv *paych.SignedVoucher) (string, error) {
+func FlowEncodedString(sv *flowch.SignedVoucher) (string, error) {
 	buf := new(bytes.Buffer)
 	if err := sv.MarshalCBOR(buf); err != nil {
 		return "", err

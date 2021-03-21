@@ -109,6 +109,10 @@ func IsPaymentChannelActor(c cid.Cid) bool {
 	return c == builtin.PaymentChannelActorCodeID
 }
 
+func IsFlowChannelActor(c cid.Cid) bool {
+	return c == builtin.FlowChannelActorCodeID
+}
+
 func makeAddress(addr string) address.Address {
 	ret, err := address.NewFromString(addr)
 	if err != nil {

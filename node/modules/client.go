@@ -36,8 +36,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
+	flowapi "github.com/EpiK-Protocol/go-epik/node/impl/flowch"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
-	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -189,8 +189,8 @@ func StorageClient(lc fx.Lifecycle, h host.Host, ibs dtypes.ClientBlockstore, md
 }
 
 // RetrievalClient creates a new retrieval client attached to the client blockstore
-func RetrievalClient(lc fx.Lifecycle, h host.Host, mds dtypes.ClientMultiDstore, dt dtypes.ClientDataTransfer, payAPI payapi.PaychAPI, resolver discovery.PeerResolver, ds dtypes.MetadataDS, chainAPI full.ChainAPI, stateAPI full.StateAPI, mpoolAPI full.MpoolAPI, j journal.Journal) (retrievalmarket.RetrievalClient, error) {
-	adapter := retrievaladapter.NewRetrievalClientNode(payAPI, chainAPI, stateAPI, mpoolAPI)
+func RetrievalClient(lc fx.Lifecycle, h host.Host, mds dtypes.ClientMultiDstore, dt dtypes.ClientDataTransfer, flowAPI flowapi.FlowchAPI, resolver discovery.PeerResolver, ds dtypes.MetadataDS, chainAPI full.ChainAPI, stateAPI full.StateAPI, mpoolAPI full.MpoolAPI, j journal.Journal) (retrievalmarket.RetrievalClient, error) {
+	adapter := retrievaladapter.NewRetrievalClientNode(flowAPI, chainAPI, stateAPI, mpoolAPI)
 	network := rmnet.NewFromLibp2pHost(h)
 	sc := storedcounter.New(ds, datastore.NewKey("/retr"))
 	client, err := retrievalimpl.NewClient(network, mds, dt, adapter, resolver, namespace.Wrap(ds, datastore.NewKey("/retrievals/client")), sc)
