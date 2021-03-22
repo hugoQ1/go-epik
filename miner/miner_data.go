@@ -210,7 +210,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 		}
-		if nDeal.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(nDeal.Status) {
+		if nDeal.Status == retrievalmarket.DealStatusErrored ||
+			nDeal.Status == retrievalmarket.DealStatusCancelled ||
+			retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
 		}
 	}
@@ -249,7 +251,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 					data.isRetrieved = true
 					m.totalRetrieveCount++
 				}
-				if !(d.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(d.Status)) {
+				if !(d.Status == retrievalmarket.DealStatusErrored ||
+					d.Status == retrievalmarket.DealStatusCancelled ||
+					retrievalmarket.IsTerminalStatus(d.Status)) {
 					m.retrievals.Add(rk, d)
 				}
 				break
