@@ -31,6 +31,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api/apistruct"
 	"github.com/EpiK-Protocol/go-epik/build"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
+	cliutil "github.com/EpiK-Protocol/go-epik/cli/util"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
@@ -49,7 +50,7 @@ const FlagWorkerRepo = "worker-repo"
 const FlagWorkerRepoDeprecation = "workerrepo"
 
 func main() {
-	build.RunningNodeType = build.NodeWorker
+	api.RunningNodeType = api.NodeWorker
 
 	epiklog.SetupLogLevels()
 
@@ -183,7 +184,7 @@ var runCmd = &cli.Command{
 		var closer func()
 		var err error
 		for {
-			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx, lcli.StorageMinerUseHttp)
+			nodeApi, closer, err = lcli.GetStorageMinerAPI(cctx, cliutil.StorageMinerUseHttp)
 			if err == nil {
 				_, err = nodeApi.Version(ctx)
 				if err == nil {
@@ -210,8 +211,8 @@ var runCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		if v.APIVersion != build.MinerAPIVersion {
-			return xerrors.Errorf("epik-miner API version doesn't match: expected: %s", api.Version{APIVersion: build.MinerAPIVersion})
+		if v.APIVersion != api.MinerAPIVersion {
+			return xerrors.Errorf("epik-miner API version doesn't match: expected: %s", api.APIVersion{APIVersion: api.MinerAPIVersion})
 		}
 		log.Infof("Remote version %s", v)
 
@@ -308,7 +309,7 @@ var runCmd = &cli.Command{
 
 			{
 				// init datastore for r.Exists
-				_, err := lr.Datastore("/metadata")
+				_, err := lr.Datastore(context.Background(), "/metadata")
 				if err != nil {
 					return err
 				}
@@ -327,7 +328,7 @@ var runCmd = &cli.Command{
 				log.Error("closing repo", err)
 			}
 		}()
-		ds, err := lr.Datastore("/metadata")
+		ds, err := lr.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}

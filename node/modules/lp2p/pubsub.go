@@ -3,6 +3,7 @@ package lp2p
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"time"
 
 	host "github.com/libp2p/go-libp2p-core/host"
@@ -198,9 +199,14 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 		drandTopics = append(drandTopics, topic)
 	}
 
-	ipWhitelist := make(map[string]struct{})
-	for _, ip := range in.Cfg.IPColocationWhitelist {
-		ipWhitelist[ip] = struct{}{}
+	// IP colocation whitelist
+	var ipcoloWhitelist []*net.IPNet
+	for _, cidr := range in.Cfg.IPColocationWhitelist {
+		_, ipnet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return nil, xerrors.Errorf("error parsing IPColocation subnet %s: %w", cidr, err)
+		}
+		ipcoloWhitelist = append(ipcoloWhitelist, ipnet)
 	}
 
 	options := []pubsub.Option{
@@ -233,8 +239,7 @@ func GossipSub(in GossipIn) (service *pubsub.PubSub, err error) {
 				// // This sets the IP colocation threshold to 5 peers before we apply penalties
 				// IPColocationFactorThreshold: 5,
 				// IPColocationFactorWeight:    -100,
-				// TODO we want to whitelist IPv6 /64s that belong to datacenters etc
-				IPColocationFactorWhitelist: ipWhitelist,
+				IPColocationFactorWhitelist: ipcoloWhitelist,
 
 				// P7: behavioural penalties, decay after 1hr
 				BehaviourPenaltyThreshold: 6,

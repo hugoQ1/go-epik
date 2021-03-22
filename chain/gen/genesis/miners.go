@@ -71,7 +71,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		StateBase:      sroot,
 		Epoch:          0,
 		Rand:           &fakeRand{},
-		Bstore:         cs.Blockstore(),
+		Bstore:         cs.StateBlockstore(),
 		Syscalls:       mkFakedSigSyscalls(cs.VMSys()),
 		CircSupplyCalc: csc,
 		NtwkVersion:    genesisNetworkVersion,
@@ -96,18 +96,13 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		i := i
 		m := m
 
-		spt, err := miner.SealProofTypeFromSectorSize(m.SectorSize, GenesisNetworkVersion)
-		if err != nil {
-			return cid.Undef, err
-		}
-
 		{
 			constructorParams := &power2.CreateMinerParams{
-				Owner:         m.Worker,
-				Worker:        m.Worker,
-				Coinbase:      m.Coinbase,
-				Peer:          []byte(m.PeerId),
-				SealProofType: spt,
+				Owner:               m.Worker,
+				Worker:              m.Worker,
+				Coinbase:            m.Coinbase,
+				Peer:                []byte(m.PeerId),
+				WindowPoStProofType: abi.RegisteredPoStProof_StackedDrgWindow8MiBV1,
 			}
 
 			params := mustEnc(constructorParams)
@@ -159,16 +154,15 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				return nil
 			}
 
-			params := &market.PublishStorageDealsParams{
-				DataRef: market2.PublishStorageDataRef{
-					RootCID: inis.PresealPieceCID, // NOTE Piece CID
-					Expert:  inis.Expert.String(),
-				},
-			}
+			params := &market.PublishStorageDealsParams{}
 			for _, preseal := range m.Sectors {
 				params.Deals = append(params.Deals, market.ClientDealProposal{
 					Proposal:        preseal.Deal,
 					ClientSignature: crypto.Signature{Type: crypto.SigTypeBLS}, // TODO: do we want to sign these? Or do we want to fake signatures for genesis setup?
+					DataRef: market2.StorageDataRef{
+						RootCID: inis.PresealPieceCID, // NOTE Piece CID
+						Expert:  inis.Expert.String(),
+					},
 				})
 
 				if len(params.Deals) == cbg.MaxLength {
@@ -251,10 +245,10 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 				if err != nil {
 					return cid.Undef, xerrors.Errorf("getting deal weight: %w", err)
 				}
-				for _, d := range dealsInfo.ValidDeals {
-					qa := miner2.QAPowerForWeight(true, uint64(d.PieceSize))
+				for _, size := range dealsInfo.Sectors[0].PieceSizes {
+					qa := miner2.QAPowerForWeight(true, uint64(size))
 					qaPow = big.Add(qaPow, qa)
-					raw := miner2.QAPowerForWeight(false, uint64(d.PieceSize))
+					raw := miner2.QAPowerForWeight(false, uint64(size))
 					rawPow = big.Add(rawPow, raw)
 				}
 
@@ -323,12 +317,12 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.Errorf("flushing vm: %w", err)
 	}
 
-	err = checkPowerActor(vm, cs.Store(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
+	err = checkPowerActor(vm, cs.ActorStore(ctx), rawPow, qaPow, big.Mul(power2.ConsensusMinerMinPledge, big.NewInt(int64(len(minerInfos)))))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis power state: %w", err)
 	}
 
-	err = checkMarketActor(vm, cs.Store(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
+	err = checkMarketActor(vm, cs.ActorStore(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis market state: %w", err)
 	}
@@ -421,9 +415,9 @@ func checkMarketActor(vm *vm.VM, stor adt.Store, pieceCID cid.Cid, expectQuotaAc
 
 func dealWeight(ctx context.Context, vm *vm.VM, maddr address.Address, dealIDs []abi.DealID, sectorStart /* , sectorExpiry  */ abi.ChainEpoch) (market2.VerifyDealsForActivationReturn, error) {
 	params := &market2.VerifyDealsForActivationParams{
-		DealIDs:     dealIDs,
-		SectorStart: sectorStart,
-		/* SectorExpiry: sectorExpiry, */
+		Sectors: []market2.SectorDeals{{
+			DealIDs: dealIDs,
+		}},
 	}
 
 	var dealWeights market2.VerifyDealsForActivationReturn

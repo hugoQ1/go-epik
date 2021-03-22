@@ -8,23 +8,16 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 func SetupStorageMarketActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-
-	a, err := adt.MakeEmptyArray(store).Root()
+	sms, err := market.ConstructState(store)
 	if err != nil {
 		return nil, err
 	}
-	h, err := adt.MakeEmptyMap(store).Root()
-	if err != nil {
-		return nil, err
-	}
-
-	sms := market.ConstructState(a, h, h)
 
 	stcid, err := store.Put(store.Context(), sms)
 	if err != nil {

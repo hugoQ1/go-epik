@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -36,6 +37,18 @@ func parseTipSet(ctx context.Context, api api.FullNode, vals []string) (*types.T
 	}
 
 	return types.NewTipSet(headers)
+}
+
+func parseFrom(cctx *cli.Context, ctx context.Context, api api.FullNode, useDef bool) (address.Address, error) {
+	from := cctx.String("from")
+	if from == "" {
+		if !useDef {
+			return address.Undef, fmt.Errorf("from not set")
+		}
+		return api.WalletDefaultAddress(ctx)
+	}
+
+	return address.NewFromString(from)
 }
 
 func EpochTime(curr, e abi.ChainEpoch) string {

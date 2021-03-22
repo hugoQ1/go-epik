@@ -161,12 +161,12 @@ func startFullNodeAPIServer(t *TestEnvironment, repo repo.Repo, api api.FullNode
 	mux := mux.NewRouter()
 
 	rpcServer := jsonrpc.NewServer()
-	rpcServer.Register("Filecoin", api)
+	rpcServer.Register("EpiK", api)
 
 	mux.Handle("/rpc/v0", rpcServer)
 
 	exporter, err := prometheus.NewExporter(prometheus.Options{
-		Namespace: "lotus",
+		Namespace: "epik",
 	})
 	if err != nil {
 		return nil, err

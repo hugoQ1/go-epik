@@ -18,7 +18,7 @@ import (
 
 func BenchmarkStateTreeSet(b *testing.B) {
 	cst := cbor.NewMemCborStore()
-	st, err := NewStateTree(cst, types.StateTreeVersion1)
+	st, err := NewStateTree(cst, types.StateTreeVersion2)
 	if err != nil {
 		b.Fatal(err)
 	}

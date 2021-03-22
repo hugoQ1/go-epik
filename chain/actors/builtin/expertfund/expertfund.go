@@ -11,24 +11,24 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.ExpertFundActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	builtin.RegisterActorState(builtin3.ExpertFundActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
 var (
-	Address = builtin2.ExpertFundActorAddr
-	Methods = builtin2.MethodsExpertFunds
+	Address = builtin3.ExpertFundActorAddr
+	Methods = builtin3.MethodsExpertFunds
 )
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.ExpertFundActorCodeID:
-		return load2(store, act.Head)
+	case builtin3.ExpertFundActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
@@ -37,4 +37,5 @@ type State interface {
 	cbor.Marshaler
 
 	DataExpert(cid.Cid) (address.Address, error)
+	ListAllExperts() ([]address.Address, error)
 }

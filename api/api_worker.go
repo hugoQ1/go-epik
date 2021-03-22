@@ -5,16 +5,14 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/sealtasks"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
-
-	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/filecoin-project/go-state-types/abi"
 )
 
 type WorkerAPI interface {
-	Version(context.Context) (build.Version, error)
+	Version(context.Context) (Version, error)
 	// TODO: Info() (name, ...) ?
 
 	TaskTypes(context.Context) (map[sealtasks.TaskType]struct{}, error) // TaskType -> Weight

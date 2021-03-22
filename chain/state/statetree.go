@@ -20,6 +20,8 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
+
+	states3 "github.com/filecoin-project/specs-actors/v2/actors/states"
 )
 
 var log = logging.Logger("statetree")
@@ -138,25 +140,18 @@ func (ss *stateSnaps) deleteActor(addr address.Address) {
 // VersionForNetwork returns the state tree version for the given network
 // version.
 func VersionForNetwork(ver network.Version) types.StateTreeVersion {
-	// if actors.VersionForNetwork(ver) == actors.Version0 {
-	// 	return types.StateTreeVersion0
-	// }
-	return types.StateTreeVersion1
-}
-
-func adtForSTVersion(ver types.StateTreeVersion) actors.Version {
-	switch ver {
-	case types.StateTreeVersion1:
-		return actors.Version2
-	default:
-		panic("unhandled state tree version")
+	if actors.VersionForNetwork(ver) == actors.Version0 {
+		return types.StateTreeVersion0
 	}
+	return types.StateTreeVersion2
 }
 
 func NewStateTree(cst cbor.IpldStore, ver types.StateTreeVersion) (*StateTree, error) {
 	var info cid.Cid
 	switch ver {
-	case types.StateTreeVersion1:
+	// case types.StateTreeVersion0:
+	// 	// info is undefined
+	case /* types.StateTreeVersion1, */ types.StateTreeVersion2:
 		var err error
 		info, err = cst.Put(context.TODO(), new(types.StateInfo0))
 		if err != nil {
@@ -165,13 +160,34 @@ func NewStateTree(cst cbor.IpldStore, ver types.StateTreeVersion) (*StateTree, e
 	default:
 		return nil, xerrors.Errorf("unsupported state tree version: %d", ver)
 	}
-	root, err := adt.NewMap(adt.WrapStore(context.TODO(), cst), adtForSTVersion(ver))
-	if err != nil {
-		return nil, err
+
+	store := adt.WrapStore(context.TODO(), cst)
+	var hamt adt.Map
+	switch ver {
+	// case types.StateTreeVersion0:
+	// 	tree, err := states0.NewTree(store)
+	// 	if err != nil {
+	// 		return nil, xerrors.Errorf("failed to create state tree: %w", err)
+	// 	}
+	// 	hamt = tree.Map
+	// case types.StateTreeVersion1:
+	// 	tree, err := states2.NewTree(store)
+	// 	if err != nil {
+	// 		return nil, xerrors.Errorf("failed to create state tree: %w", err)
+	// 	}
+	// 	hamt = tree.Map
+	case types.StateTreeVersion2:
+		tree, err := states3.NewTree(store)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to create state tree: %w", err)
+		}
+		hamt = tree.Map
+	default:
+		return nil, xerrors.Errorf("unsupported state tree version: %d", ver)
 	}
 
 	s := &StateTree{
-		root:    root,
+		root:    hamt,
 		info:    info,
 		version: ver,
 		Store:   cst,
@@ -188,30 +204,49 @@ func LoadStateTree(cst cbor.IpldStore, c cid.Cid) (*StateTree, error) {
 		return nil, xerrors.Errorf("unexpected failure to load state root for %s: %s", c, err)
 	}
 
-	switch root.Version {
-	case types.StateTreeVersion1:
-		// Load the actual state-tree HAMT.
-		nd, err := adt.AsMap(
-			adt.WrapStore(context.TODO(), cst), root.Actors,
-			adtForSTVersion(root.Version),
-		)
-		if err != nil {
-			log.Errorf("loading hamt node %s failed: %s", c, err)
-			return nil, err
-		}
+	store := adt.WrapStore(context.TODO(), cst)
 
-		s := &StateTree{
-			root:    nd,
-			info:    root.Info,
-			version: root.Version,
-			Store:   cst,
-			snaps:   newStateSnaps(),
+	var (
+		hamt adt.Map
+		err  error
+	)
+	switch root.Version {
+	// case types.StateTreeVersion0:
+	// 	var tree *states0.Tree
+	// 	tree, err = states0.LoadTree(store, root.Actors)
+	// 	if tree != nil {
+	// 		hamt = tree.Map
+	// 	}
+	// case types.StateTreeVersion1:
+	// 	var tree *states2.Tree
+	// 	tree, err = states2.LoadTree(store, root.Actors)
+	// 	if tree != nil {
+	// 		hamt = tree.Map
+	// 	}
+	case types.StateTreeVersion2:
+		var tree *states3.Tree
+		tree, err = states3.LoadTree(store, root.Actors)
+		if tree != nil {
+			hamt = tree.Map
 		}
-		s.lookupIDFun = s.lookupIDinternal
-		return s, nil
 	default:
 		return nil, xerrors.Errorf("unsupported state tree version: %d", root.Version)
 	}
+	if err != nil {
+		log.Errorf("failed to load state tree: %s", err)
+		return nil, xerrors.Errorf("failed to load state tree: %w", err)
+	}
+
+	s := &StateTree{
+		root:    hamt,
+		info:    root.Info,
+		version: root.Version,
+		Store:   cst,
+		snaps:   newStateSnaps(),
+	}
+	s.lookupIDFun = s.lookupIDinternal
+
+	return s, nil
 }
 
 func (st *StateTree) SetActor(addr address.Address, act *types.Actor) error {

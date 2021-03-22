@@ -5,13 +5,13 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-address"
 	cbor "github.com/ipfs/go-ipld-cbor"
 )
 
@@ -21,7 +21,7 @@ type RPCStateManager struct {
 }
 
 func NewRPCStateManager(api api.GatewayAPI) *RPCStateManager {
-	cstore := cbor.NewCborStore(apibstore.NewAPIBlockstore(api))
+	cstore := cbor.NewCborStore(blockstore.NewAPIBlockstore(api))
 	return &RPCStateManager{gapi: api, cstore: cstore}
 }
 

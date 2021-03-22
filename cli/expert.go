@@ -10,11 +10,11 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/urfave/cli/v2"
@@ -30,6 +30,8 @@ var expertCmd = &cli.Command{
 		expertFileCmd,
 		expertListCmd,
 		expertNominateCmd,
+		expertClaimCmd,
+		expertVote,
 	},
 }
 
@@ -89,17 +91,17 @@ func expertInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode, gasPr
 		return xerrors.Errorf("peer ID from private key: %w", err)
 	}
 
-	addr, err := createExpert(ctx, api, peerid, gasPrice, cctx)
+	addr, err := applyForExpert(ctx, api, peerid, gasPrice, cctx)
 	if err != nil {
-		return xerrors.Errorf("creating expert failed: %w", err)
+		return xerrors.Errorf("applying for expert failed: %w", err)
 	}
 	log.Infof("Created new expert: %s", addr)
 
 	return nil
 }
 
-func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPrice types.BigInt, cctx *cli.Context) (address.Address, error) {
-	log.Info("Creating expert message")
+func applyForExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPrice types.BigInt, cctx *cli.Context) (address.Address, error) {
+	log.Info("Applying for expert message")
 
 	var err error
 	var owner address.Address
@@ -112,20 +114,19 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, err
 	}
 
-	params, err := actors.SerializeParams(&power.CreateExpertParams{
-		Owner:  owner,
-		PeerId: abi.PeerID(peerid),
+	params, err := actors.SerializeParams(&expertfund.ApplyForExpertParams{
+		Owner: owner,
 	})
 	if err != nil {
 		return address.Undef, err
 	}
 
 	createMessage := &types.Message{
-		To:    builtin.StoragePowerActorAddr,
+		To:    builtin.ExpertFundActorAddr,
 		From:  owner,
-		Value: big.Zero(),
+		Value: expert.ExpertApplyCost,
 
-		Method: builtin.MethodsPower.CreateExpert,
+		Method: builtin.MethodsExpertFunds.ApplyForExpert,
 		Params: params,
 	}
 
@@ -134,7 +135,7 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, err
 	}
 
-	log.Infof("Pushed power.CreateExpert, %s to Mpool", signed.Cid())
+	log.Infof("Pushed ApplyForExpert %s to Mpool", signed.Cid())
 	log.Infof("Waiting for confirmation")
 
 	mw, err := api.StateWaitMsg(ctx, signed.Cid(), build.MessageConfidence)
@@ -146,7 +147,7 @@ func createExpert(ctx context.Context, api lapi.FullNode, peerid peer.ID, gasPri
 		return address.Undef, xerrors.Errorf("create expert failed: exit code %d", mw.Receipt.ExitCode)
 	}
 
-	var retval power.CreateExpertReturn
+	var retval expertfund.ApplyForExpertReturn
 	if err := retval.UnmarshalCBOR(bytes.NewReader(mw.Receipt.Return)); err != nil {
 		return address.Undef, err
 	}
@@ -187,7 +188,7 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("Expert proposer: %s\n", info.Proposer)
 		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
 		expertType := "foundation"
-		if info.Type == expert.ExpertNormal {
+		if info.Type == builtin.ExpertNormal {
 			expertType = "normal"
 		}
 		fmt.Printf("Expert type: %s\n", expertType)
@@ -310,6 +311,248 @@ var expertNominateCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("expert nominate: %s\n", msg)
+		return nil
+	},
+}
+
+var expertClaimCmd = &cli.Command{
+	Name:      "claim",
+	Usage:     "Claim expert rewards",
+	ArgsUsage: "<expertAddress> <amount (EPK)>",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the owner account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'claim' expects two arguments, expert address and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		expertAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse expert address: %w", err))
+		}
+
+		amount, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&expertfund.ClaimFundParams{
+			Expert: expertAddr,
+			Amount: big.Int(amount),
+		})
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.ExpertFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsExpertFunds.Claim,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("failed to send claim message: %w", err)
+		}
+
+		fmt.Printf("Send claim message: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var expertVote = &cli.Command{
+	Name:  "votes",
+	Usage: "Manage votes for experts",
+	Subcommands: []*cli.Command{
+		expertVoteSend,
+		expertVoteRescind,
+		expertVoteWithdraw,
+	},
+}
+
+var expertVoteSend = &cli.Command{
+	Name:      "send-votes",
+	Usage:     "Send votes for an expert",
+	ArgsUsage: "[expertAddress] [amount (EPK, one EPK one Vote)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'vote' expects two arguments, expert and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		expertAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse expert address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&expertAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  types.BigInt(val),
+			Method: builtin.MethodsVote.Vote,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting vote message: %w", err)
+		}
+
+		fmt.Printf("Vote message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var expertVoteRescind = &cli.Command{
+	Name:      "rescind-votes",
+	Usage:     "Rescind votes for an expert",
+	ArgsUsage: "[expertAddress] [amount (EPK)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'rescind' expects two arguments, expert and amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		expertAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse expert address: %w", err))
+		}
+
+		val, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		p := vote.RescindParams{
+			Candidate: expertAddr,
+			Votes:     types.BigInt(val),
+		}
+		sp, err := actors.SerializeParams(&p)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Rescind,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting rescind message: %w", err)
+		}
+
+		fmt.Printf("Rescind message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var expertVoteWithdraw = &cli.Command{
+	Name:  "withdraw",
+	Usage: "Withdraw all unlocked votes and rewards",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsVote.Withdraw,
+			Params: nil,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting withdraw message: %w", err)
+		}
+
+		fmt.Printf("Withdraw message cid: %s\n", smsg.Cid())
+
 		return nil
 	},
 }

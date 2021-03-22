@@ -3,8 +3,8 @@ package genesis
 import (
 	"context"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
@@ -14,12 +14,12 @@ import (
 
 func SetupVoteActor(bs bstore.Blockstore, fallback address.Address) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-	c, err := adt.MakeEmptyMap(store).Root()
+
+	vas, err := vote.ConstructState(store, fallback)
 	if err != nil {
 		return nil, err
 	}
 
-	vas := vote.ConstructState(c, fallback)
 	stcid, err := store.Put(store.Context(), vas)
 	if err != nil {
 		return nil, err

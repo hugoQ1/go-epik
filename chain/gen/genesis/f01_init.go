@@ -15,9 +15,9 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/genesis"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.Actor, map[address.Address]address.Address, error) {
@@ -38,7 +38,10 @@ func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.A
 	ias.NetworkName = tpl.NetworkName
 
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
-	amap := adt.MakeEmptyMap(store)
+	amap, err := adt.MakeEmptyMap(store, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return 0, nil, nil, err
+	}
 
 	keyToId := map[address.Address]address.Address{}
 	counter := int64(AccountStart)

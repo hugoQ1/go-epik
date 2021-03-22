@@ -12,12 +12,12 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
@@ -699,7 +699,7 @@ func info(t *testkit.TestEnvironment, m *testkit.LotusMiner, maddr address.Addre
 		i.FaultyBytes = types.BigMul(types.NewInt(nfaults), types.NewInt(uint64(mi.SectorSize)))
 	}
 
-	stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(api))
+	stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(api))
 	mas, err := miner.Load(stor, mact)
 	if err != nil {
 		return nil, err

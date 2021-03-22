@@ -20,18 +20,17 @@ import (
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
 	"github.com/ipfs/go-cid"
-	metricsi "github.com/ipfs/go-metrics-interface"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -204,7 +203,7 @@ var importBenchCmd = &cli.Command{
 		case cctx.Bool("use-native-badger"):
 			log.Info("using native badger")
 			var opts badgerbs.Options
-			if opts, err = repo.BadgerBlockstoreOptions(repo.BlockstoreChain, tdir, false); err != nil {
+			if opts, err = repo.BadgerBlockstoreOptions(repo.UniversalBlockstore, tdir, false); err != nil {
 				return err
 			}
 			opts.SyncWrites = false
@@ -229,19 +228,11 @@ var importBenchCmd = &cli.Command{
 		if ds != nil {
 			ds = measure.New("dsbench", ds)
 			defer ds.Close() //nolint:errcheck
-			bs = blockstore.NewBlockstore(ds)
+			bs = blockstore.FromDatastore(ds)
 		}
 
 		if c, ok := bs.(io.Closer); ok {
 			defer c.Close() //nolint:errcheck
-		}
-
-		ctx := metricsi.CtxScope(context.Background(), "epik")
-		cacheOpts := blockstore.DefaultCacheOpts()
-		cacheOpts.HasBloomFilterSize = 0
-		bs, err = blockstore.CachedBlockstore(ctx, bs, cacheOpts)
-		if err != nil {
-			return err
 		}
 
 		var verifier ffiwrapper.Verifier = ffiwrapper.ProofVerifier
@@ -266,6 +257,15 @@ var importBenchCmd = &cli.Command{
 		defer cs.Close() //nolint:errcheck
 
 		stm := stmgr.NewStateManager(cs)
+
+		var carFile *os.File
+		// open the CAR file if one is provided.
+		if path := cctx.String("car"); path != "" {
+			var err error
+			if carFile, err = os.Open(path); err != nil {
+				return xerrors.Errorf("failed to open provided CAR file: %w", err)
+			}
+		}
 
 		startTime := time.Now()
 
@@ -308,18 +308,7 @@ var importBenchCmd = &cli.Command{
 			writeProfile("allocs")
 		}()
 
-		var carFile *os.File
-
-		// open the CAR file if one is provided.
-		if path := cctx.String("car"); path != "" {
-			var err error
-			if carFile, err = os.Open(path); err != nil {
-				return xerrors.Errorf("failed to open provided CAR file: %w", err)
-			}
-		}
-
 		var head *types.TipSet
-
 		// --- IMPORT ---
 		if !cctx.Bool("no-import") {
 			if cctx.Bool("global-profile") {

@@ -14,24 +14,30 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.StoragePowerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	// builtin.RegisterActorState(builtin2.StoragePowerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+	// 	return load2(store, root)
+	// })
+	builtin.RegisterActorState(builtin3.StoragePowerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
 var (
-	Address = builtin2.StoragePowerActorAddr
-	Methods = builtin2.MethodsPower
+	Address = builtin3.StoragePowerActorAddr
+	Methods = builtin3.MethodsPower
 )
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.StoragePowerActorCodeID:
-		return load2(store, act.Head)
+	// case builtin2.StoragePowerActorCodeID:
+	// 	return load2(store, act.Head)
+	// }
+	case builtin3.StoragePowerActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
@@ -42,7 +48,6 @@ type State interface {
 	TotalLocked() (abi.TokenAmount, error)
 	TotalPower() (Claim, error)
 	TotalCommitted() (Claim, error)
-	/* TotalPowerSmoothed() (builtin.FilterEstimate, error) */
 
 	// MinerCounts returns the number of miners. Participating is the number
 	// with power above the minimum miner threshold.
@@ -50,7 +55,6 @@ type State interface {
 	MinerPower(address.Address) (Claim, bool, error)
 	MinerNominalPowerMeetsConsensusMinimum(address.Address) (bool, error)
 	ListAllMiners() ([]address.Address, error)
-	ListAllExperts() ([]address.Address, error)
 	ForEachClaim(func(miner address.Address, claim Claim) error) error
 	ClaimsChanged(State) (bool, error)
 

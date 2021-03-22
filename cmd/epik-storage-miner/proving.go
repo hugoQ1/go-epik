@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -58,7 +58,7 @@ var provingFaultsCmd = &cli.Command{
 
 		ctx := lcli.ReqContext(cctx)
 
-		stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(api))
+		stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(api))
 
 		maddr, err := getActorAddress(ctx, nodeApi, cctx.String("actor"))
 		if err != nil {
@@ -133,7 +133,7 @@ var provingInfoCmd = &cli.Command{
 			return err
 		}
 
-		stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(api))
+		stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(api))
 
 		mas, err := miner.Load(stor, mact)
 		if err != nil {
@@ -446,11 +446,6 @@ var provingCheckProvableCmd = &cli.Command{
 			return err
 		}
 
-		pf, err := info.SealProofType.RegisteredWindowPoStProof()
-		if err != nil {
-			return err
-		}
-
 		partitions, err := api.StateMinerPartitions(ctx, addr, dlIdx, types.EmptyTSK)
 		if err != nil {
 			return err
@@ -479,7 +474,7 @@ var provingCheckProvableCmd = &cli.Command{
 				})
 			}
 
-			bad, err := sapi.CheckProvable(ctx, pf, tocheck, cctx.Bool("slow"))
+			bad, err := sapi.CheckProvable(ctx, info.WindowPoStProofType, tocheck, cctx.Bool("slow"))
 			if err != nil {
 				return err
 			}

@@ -43,6 +43,7 @@ type Tally struct {
 	UnownedFunds     abi.TokenAmount
 	FallbackReceiver address.Address
 	Candidates       map[string]abi.TokenAmount // key is candidate address
+	Blocked          map[string]bool
 }
 
 type VoterInfo struct {

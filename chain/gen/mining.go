@@ -10,9 +10,10 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
+	ffi "github.com/filecoin-project/filecoin-ffi"
 )
 
 func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w api.WalletAPI, bt *api.BlockTemplate) (*types.FullBlock, error) {
@@ -79,7 +80,7 @@ func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w api.WalletA
 		}
 	}
 
-	store := sm.ChainStore().Store(ctx)
+	store := sm.ChainStore().ActorStore(ctx)
 	blsmsgroot, err := toArray(store, blsMsgCids)
 	if err != nil {
 		return nil, xerrors.Errorf("building bls amt: %w", err)
@@ -140,40 +141,37 @@ func MinerCreateBlock(ctx context.Context, sm *stmgr.StateManager, w api.WalletA
 }
 
 func aggregateSignatures(sigs []crypto.Signature) (*crypto.Signature, error) {
-	sigsS := make([][]byte, len(sigs))
+	sigsS := make([]ffi.Signature, len(sigs))
 	for i := 0; i < len(sigs); i++ {
-		sigsS[i] = sigs[i].Data
+		copy(sigsS[i][:], sigs[i].Data[:ffi.SignatureBytes])
 	}
 
-	aggregator := new(bls.AggregateSignature).AggregateCompressed(sigsS)
-	if aggregator == nil {
+	aggSig := ffi.Aggregate(sigsS)
+	if aggSig == nil {
 		if len(sigs) > 0 {
 			return nil, xerrors.Errorf("bls.Aggregate returned nil with %d signatures", len(sigs))
 		}
+
+		zeroSig := ffi.CreateZeroSignature()
 
 		// Note: for blst this condition should not happen - nil should not
 		// be returned
 		return &crypto.Signature{
 			Type: crypto.SigTypeBLS,
-			Data: new(bls.Signature).Compress(),
+			Data: zeroSig[:],
 		}, nil
 	}
-	aggSigAff := aggregator.ToAffine()
-	if aggSigAff == nil {
-		return &crypto.Signature{
-			Type: crypto.SigTypeBLS,
-			Data: new(bls.Signature).Compress(),
-		}, nil
-	}
-	aggSig := aggSigAff.Compress()
 	return &crypto.Signature{
 		Type: crypto.SigTypeBLS,
-		Data: aggSig,
+		Data: aggSig[:],
 	}, nil
 }
 
 func toArray(store blockadt.Store, cids []cid.Cid) (cid.Cid, error) {
-	arr := blockadt.MakeEmptyArray(store)
+	arr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
 	for i, c := range cids {
 		oc := cbg.CborCid(c)
 		if err := arr.Set(uint64(i), &oc); err != nil {

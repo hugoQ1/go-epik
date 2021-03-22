@@ -20,8 +20,8 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
 	"github.com/EpiK-Protocol/go-epik/api/test"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -400,7 +400,7 @@ func getPaychState(ctx context.Context, t *testing.T, node test.TestNode, chAddr
 	act, err := node.StateGetActor(ctx, chAddr, types.EmptyTSK)
 	require.NoError(t, err)
 
-	store := cbor.NewCborStore(apibstore.NewAPIBlockstore(node))
+	store := cbor.NewCborStore(blockstore.NewAPIBlockstore(node))
 	chState, err := paych.Load(adt.WrapStore(ctx, store), act)
 	require.NoError(t, err)
 

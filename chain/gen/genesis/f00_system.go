@@ -7,8 +7,8 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/system"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 func SetupSystemActor(bs bstore.Blockstore) (*types.Actor, error) {

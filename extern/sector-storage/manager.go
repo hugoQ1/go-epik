@@ -285,9 +285,19 @@ func (m *Manager) ReadPiece(ctx context.Context, sink io.Writer, sector storage.
 	if unsealed == cid.Undef {
 		return xerrors.Errorf("cannot unseal piece (sector: %d, offset: %d size: %d) - unsealed cid is undefined", sector, offset, size)
 	}
+
+	ssize, err := sector.ProofType.SectorSize()
+	if err != nil {
+		return xerrors.Errorf("getting sector size: %w", err)
+	}
+
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTUnseal, selector, unsealFetch, func(ctx context.Context, w Worker) error {
 		// TODO: make restartable
-		_, err := m.waitSimpleCall(ctx)(w.UnsealPiece(ctx, sector, offset, size, ticket, unsealed))
+
+		// NOTE: we're unsealing the whole sector here as with SDR we can't really
+		//  unseal the sector partially. Requesting the whole sector here can
+		//  save us some work in case another piece is requested from here
+		_, err := m.waitSimpleCall(ctx)(w.UnsealPiece(ctx, sector, 0, abi.PaddedPieceSize(ssize).Unpadded(), ticket, unsealed))
 		return err
 	})
 	if err != nil {
@@ -622,47 +632,47 @@ func (m *Manager) Remove(ctx context.Context, sector storage.SectorRef) error {
 }
 
 func (m *Manager) ReturnAddPiece(ctx context.Context, callID storiface.CallID, pi abi.PieceInfo, err *storiface.CallError) error {
-	return m.returnResult(callID, pi, err)
+	return m.returnResult(ctx, callID, pi, err)
 }
 
 func (m *Manager) ReturnSealPreCommit1(ctx context.Context, callID storiface.CallID, p1o storage.PreCommit1Out, err *storiface.CallError) error {
-	return m.returnResult(callID, p1o, err)
+	return m.returnResult(ctx, callID, p1o, err)
 }
 
 func (m *Manager) ReturnSealPreCommit2(ctx context.Context, callID storiface.CallID, sealed storage.SectorCids, err *storiface.CallError) error {
-	return m.returnResult(callID, sealed, err)
+	return m.returnResult(ctx, callID, sealed, err)
 }
 
 func (m *Manager) ReturnSealCommit1(ctx context.Context, callID storiface.CallID, out storage.Commit1Out, err *storiface.CallError) error {
-	return m.returnResult(callID, out, err)
+	return m.returnResult(ctx, callID, out, err)
 }
 
 func (m *Manager) ReturnSealCommit2(ctx context.Context, callID storiface.CallID, proof storage.Proof, err *storiface.CallError) error {
-	return m.returnResult(callID, proof, err)
+	return m.returnResult(ctx, callID, proof, err)
 }
 
 func (m *Manager) ReturnFinalizeSector(ctx context.Context, callID storiface.CallID, err *storiface.CallError) error {
-	return m.returnResult(callID, nil, err)
+	return m.returnResult(ctx, callID, nil, err)
 }
 
 func (m *Manager) ReturnReleaseUnsealed(ctx context.Context, callID storiface.CallID, err *storiface.CallError) error {
-	return m.returnResult(callID, nil, err)
+	return m.returnResult(ctx, callID, nil, err)
 }
 
 func (m *Manager) ReturnMoveStorage(ctx context.Context, callID storiface.CallID, err *storiface.CallError) error {
-	return m.returnResult(callID, nil, err)
+	return m.returnResult(ctx, callID, nil, err)
 }
 
 func (m *Manager) ReturnUnsealPiece(ctx context.Context, callID storiface.CallID, err *storiface.CallError) error {
-	return m.returnResult(callID, nil, err)
+	return m.returnResult(ctx, callID, nil, err)
 }
 
 func (m *Manager) ReturnReadPiece(ctx context.Context, callID storiface.CallID, ok bool, err *storiface.CallError) error {
-	return m.returnResult(callID, ok, err)
+	return m.returnResult(ctx, callID, ok, err)
 }
 
 func (m *Manager) ReturnFetch(ctx context.Context, callID storiface.CallID, err *storiface.CallError) error {
-	return m.returnResult(callID, nil, err)
+	return m.returnResult(ctx, callID, nil, err)
 }
 
 func (m *Manager) StorageLocal(ctx context.Context) (map[stores.ID]string, error) {

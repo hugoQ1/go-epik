@@ -48,6 +48,8 @@
   * [MarketListDeals](#MarketListDeals)
   * [MarketListIncompleteDeals](#MarketListIncompleteDeals)
   * [MarketListRetrievalDeals](#MarketListRetrievalDeals)
+  * [MarketPendingDeals](#MarketPendingDeals)
+  * [MarketPublishPendingDeals](#MarketPublishPendingDeals)
   * [MarketRestartDataTransfer](#MarketRestartDataTransfer)
   * [MarketSetAsk](#MarketSetAsk)
   * [MarketSetRetrievalAsk](#MarketSetRetrievalAsk)
@@ -67,6 +69,7 @@
   * [NetConnectedness](#NetConnectedness)
   * [NetDisconnect](#NetDisconnect)
   * [NetFindPeer](#NetFindPeer)
+  * [NetPeerInfo](#NetPeerInfo)
   * [NetPeers](#NetPeers)
   * [NetPubsubScores](#NetPubsubScores)
 * [Pieces](#Pieces)
@@ -167,7 +170,7 @@ Response:
 ```json
 {
   "Version": "string value",
-  "APIVersion": 65536,
+  "APIVersion": 65792,
   "BlockDelay": 42
 }
 ```
@@ -196,7 +199,9 @@ Response:
 {
   "PreCommitControl": null,
   "CommitControl": null,
-  "TerminateControl": null
+  "TerminateControl": null,
+  "DisableOwnerFallback": true,
+  "DisableWorkerFallback": true
 }
 ```
 
@@ -523,10 +528,10 @@ Response: `{}`
 
 
 ### MarketCancelDataTransfer
-ClientCancelDataTransfer cancels a data transfer with the given transfer ID and other peer
+MarketCancelDataTransfer cancels a data transfer with the given transfer ID and other peer
 
 
-Perms: read
+Perms: write
 
 Inputs:
 ```json
@@ -640,7 +645,8 @@ Response:
       "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
     },
     "PieceCid": null,
-    "PieceSize": 1024
+    "PieceSize": 1024,
+    "RawBlockSize": 42
   },
   "AvailableForRetrieval": true,
   "DealID": 5432,
@@ -724,11 +730,36 @@ Inputs: `null`
 
 Response: `null`
 
+### MarketPendingDeals
+There are not yet any comments for this method.
+
+Perms: write
+
+Inputs: `null`
+
+Response:
+```json
+{
+  "Deals": null,
+  "PublishPeriodStart": "0001-01-01T00:00:00Z",
+  "PublishPeriod": 60000000000
+}
+```
+
+### MarketPublishPendingDeals
+There are not yet any comments for this method.
+
+Perms: admin
+
+Inputs: `null`
+
+Response: `{}`
+
 ### MarketRestartDataTransfer
-MinerRestartDataTransfer attempts to restart a data transfer with the given transfer ID and other peer
+MarketRestartDataTransfer attempts to restart a data transfer with the given transfer ID and other peer
 
 
-Perms: read
+Perms: write
 
 Inputs:
 ```json
@@ -1016,6 +1047,38 @@ Response:
 }
 ```
 
+### NetPeerInfo
+
+
+Perms: read
+
+Inputs:
+```json
+[
+  "12D3KooWGzxzKZYveHXtpG6AsrUJBcWxHBFS2HsEoGTxrMLvKXtf"
+]
+```
+
+Response:
+```json
+{
+  "ID": "12D3KooWGzxzKZYveHXtpG6AsrUJBcWxHBFS2HsEoGTxrMLvKXtf",
+  "Agent": "string value",
+  "Addrs": null,
+  "Protocols": null,
+  "ConnMgrMeta": {
+    "FirstSeen": "0001-01-01T00:00:00Z",
+    "Value": 123,
+    "Tags": {
+      "name": 42
+    },
+    "Conns": {
+      "name": "2021-03-08T22:52:18Z"
+    }
+  }
+}
+```
+
 ### NetPeers
 
 
@@ -1114,7 +1177,13 @@ Perms: write
 
 Inputs: `null`
 
-Response: `{}`
+Response:
+```json
+{
+  "Miner": 1000,
+  "Number": 9
+}
+```
 
 ## Return
 
@@ -1729,13 +1798,17 @@ Inputs:
     "ID": "76f1988b-ef30-4d7e-b3ec-9a627f4ba5a8",
     "URLs": null,
     "Weight": 42,
+    "MaxStorage": 42,
     "CanSeal": true,
     "CanStore": true
   },
   {
     "Capacity": 9,
     "Available": 9,
-    "Reserved": 9
+    "FSAvailable": 9,
+    "Reserved": 9,
+    "Max": 9,
+    "Used": 9
   }
 ]
 ```
@@ -1835,6 +1908,7 @@ Response:
   "ID": "76f1988b-ef30-4d7e-b3ec-9a627f4ba5a8",
   "URLs": null,
   "Weight": 42,
+  "MaxStorage": 42,
   "CanSeal": true,
   "CanStore": true
 }
@@ -1906,7 +1980,10 @@ Inputs:
     "Stat": {
       "Capacity": 9,
       "Available": 9,
-      "Reserved": 9
+      "FSAvailable": 9,
+      "Reserved": 9,
+      "Max": 9,
+      "Used": 9
     },
     "Err": "string value"
   }
@@ -1932,7 +2009,10 @@ Response:
 {
   "Capacity": 9,
   "Available": 9,
-  "Reserved": 9
+  "FSAvailable": 9,
+  "Reserved": 9,
+  "Max": 9,
+  "Used": 9
 }
 ```
 

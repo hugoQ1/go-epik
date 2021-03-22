@@ -33,7 +33,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	lapi "github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
@@ -46,7 +46,7 @@ var stateCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "tipset",
-			Usage: "specify tipset to call method on (pass comma separated array of cids, or '@head' or '@{height}')",
+			Usage: "specify tipset to call method on (pass comma separated array of cids)",
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -72,7 +72,7 @@ var stateCmd = &cli.Command{
 		stateMinerInfo,
 		stateMarketCmd,
 		stateExecTraceCmd,
-		stateVoteFundCmd,
+		stateVotesFundCmd,
 		stateKnowFundInfoCmd,
 		stateNtwkVersionCmd,
 	},
@@ -925,6 +925,10 @@ var stateComputeStateCmd = &cli.Command{
 			Name:  "compute-state-output",
 			Usage: "a json file containing pre-existing compute-state output, to generate html reports without rerunning state changes",
 		},
+		&cli.BoolFlag{
+			Name:  "no-timing",
+			Usage: "don't show timing information in html traces",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -996,7 +1000,7 @@ var stateComputeStateCmd = &cli.Command{
 		}
 
 		if cctx.Bool("html") {
-			st, err := state.LoadStateTree(cbor.NewCborStore(apibstore.NewAPIBlockstore(api)), stout.Root)
+			st, err := state.LoadStateTree(cbor.NewCborStore(blockstore.NewAPIBlockstore(api)), stout.Root)
 			if err != nil {
 				return xerrors.Errorf("loading state tree: %w", err)
 			}
@@ -1016,7 +1020,9 @@ var stateComputeStateCmd = &cli.Command{
 				return c.Code, nil
 			}
 
-			return ComputeStateHTMLTempl(os.Stdout, ts, stout, getCode)
+			_, _ = fmt.Fprintln(os.Stderr, "computed state cid: ", stout.Root)
+
+			return ComputeStateHTMLTempl(os.Stdout, ts, stout, !cctx.Bool("no-timing"), getCode)
 		}
 
 		fmt.Println("computed state cid: ", stout.Root)
@@ -1137,8 +1143,11 @@ var compStateMsg = `
  {{if gt (len .Msg.Params) 0}}
   <div><pre class="params">{{JsonParams ($code) (.Msg.Method) (.Msg.Params) | html}}</pre></div>
  {{end}}
- <div><span class="slow-{{IsSlow .Duration}}-{{IsVerySlow .Duration}}">Took {{.Duration}}</span>, <span class="exit{{IntExit .MsgRct.ExitCode}}">Exit: <b>{{.MsgRct.ExitCode}}</b></span>{{if gt (len .MsgRct.Return) 0}}, Return{{end}}</div>
-
+ {{if PrintTiming}}
+  <div><span class="slow-{{IsSlow .Duration}}-{{IsVerySlow .Duration}}">Took {{.Duration}}</span>, <span class="exit{{IntExit .MsgRct.ExitCode}}">Exit: <b>{{.MsgRct.ExitCode}}</b></span>{{if gt (len .MsgRct.Return) 0}}, Return{{end}}</div>
+ {{else}}
+  <div><span class="exit{{IntExit .MsgRct.ExitCode}}">Exit: <b>{{.MsgRct.ExitCode}}</b></span>{{if gt (len .MsgRct.Return) 0}}, Return{{end}}</div>
+ {{end}}
  {{if gt (len .MsgRct.Return) 0}}
   <div><pre class="ret">{{JsonReturn ($code) (.Msg.Method) (.MsgRct.Return) | html}}</pre></div>
  {{end}}
@@ -1164,7 +1173,7 @@ var compStateMsg = `
  {{range .GasCharges}}
  <tr><td>{{.Name}}{{if .Extra}}:{{.Extra}}{{end}}</td>
  {{template "gasC" .}}
- <td>{{.TimeTaken}}</td>
+ <td>{{if PrintTiming}}{{.TimeTaken}}{{end}}</td>
   <td>
    {{ $fImp := FirstImportant .Location }}
    {{ if $fImp }}
@@ -1203,7 +1212,7 @@ var compStateMsg = `
   {{with SumGas .GasCharges}}
   <tr class="sum"><td><b>Sum</b></td>
   {{template "gasC" .}}
-  <td>{{.TimeTaken}}</td>
+  <td>{{if PrintTiming}}{{.TimeTaken}}{{end}}</td>
   <td></td></tr>
   {{end}}
 </table>
@@ -1224,19 +1233,20 @@ type compStateHTMLIn struct {
 	Comp   *api.ComputeStateOutput
 }
 
-func ComputeStateHTMLTempl(w io.Writer, ts *types.TipSet, o *api.ComputeStateOutput, getCode func(addr address.Address) (cid.Cid, error)) error {
+func ComputeStateHTMLTempl(w io.Writer, ts *types.TipSet, o *api.ComputeStateOutput, printTiming bool, getCode func(addr address.Address) (cid.Cid, error)) error {
 	t, err := template.New("compute_state").Funcs(map[string]interface{}{
-		"GetCode":    getCode,
-		"GetMethod":  getMethod,
-		"ToFil":      toFil,
-		"JsonParams": JsonParams,
-		"JsonReturn": jsonReturn,
-		"IsSlow":     isSlow,
-		"IsVerySlow": isVerySlow,
-		"IntExit":    func(i exitcode.ExitCode) int64 { return int64(i) },
-		"SumGas":     sumGas,
-		"CodeStr":    codeStr,
-		"Call":       call,
+		"GetCode":     getCode,
+		"GetMethod":   getMethod,
+		"ToFil":       toFil,
+		"JsonParams":  JsonParams,
+		"JsonReturn":  jsonReturn,
+		"IsSlow":      isSlow,
+		"IsVerySlow":  isVerySlow,
+		"IntExit":     func(i exitcode.ExitCode) int64 { return int64(i) },
+		"SumGas":      sumGas,
+		"CodeStr":     codeStr,
+		"Call":        call,
+		"PrintTiming": func() bool { return printTiming },
 		"FirstImportant": func(locs []types.Loc) *types.Loc {
 			if len(locs) != 0 {
 				for _, l := range locs {
@@ -1383,32 +1393,8 @@ var stateWaitMsgCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("message was executed in tipset: %s\n", mw.TipSet.Cids())
-		fmt.Printf("Exit Code: %d\n", mw.Receipt.ExitCode)
-		fmt.Printf("Gas Used: %d\n", mw.Receipt.GasUsed)
-		fmt.Printf("Return: %x\n", mw.Receipt.Return)
-		if err := printReceiptReturn(ctx, api, m, mw.Receipt); err != nil {
-			return err
-		}
-
-		return nil
+		return printMsg(ctx, api, msg, mw, m)
 	},
-}
-
-func printReceiptReturn(ctx context.Context, api api.FullNode, m *types.Message, r types.MessageReceipt) error {
-	act, err := api.StateGetActor(ctx, m.To, types.EmptyTSK)
-	if err != nil {
-		return err
-	}
-
-	jret, err := jsonReturn(act.Code, m.Method, r.Return)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(jret)
-
-	return nil
 }
 
 var stateSearchMsgCmd = &cli.Command{
@@ -1438,16 +1424,54 @@ var stateSearchMsgCmd = &cli.Command{
 			return err
 		}
 
-		if mw != nil {
-			fmt.Printf("message was executed in tipset: %s", mw.TipSet.Cids())
-			fmt.Printf("\nExit Code: %d", mw.Receipt.ExitCode)
-			fmt.Printf("\nGas Used: %d", mw.Receipt.GasUsed)
-			fmt.Printf("\nReturn: %x", mw.Receipt.Return)
-		} else {
-			fmt.Print("message was not found on chain")
+		m, err := api.ChainGetMessage(ctx, msg)
+		if err != nil {
+			return err
 		}
-		return nil
+
+		return printMsg(ctx, api, msg, mw, m)
 	},
+}
+
+func printReceiptReturn(ctx context.Context, api api.FullNode, m *types.Message, r types.MessageReceipt) error {
+	if len(r.Return) == 0 {
+		return nil
+	}
+
+	act, err := api.StateGetActor(ctx, m.To, types.EmptyTSK)
+	if err != nil {
+		return err
+	}
+
+	jret, err := jsonReturn(act.Code, m.Method, r.Return)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Decoded return value: ", jret)
+
+	return nil
+}
+
+func printMsg(ctx context.Context, api api.FullNode, msg cid.Cid, mw *lapi.MsgLookup, m *types.Message) error {
+	if mw != nil {
+		if mw.Message != msg {
+			fmt.Printf("Message was replaced: %s\n", mw.Message)
+		}
+
+		fmt.Printf("Executed in tipset: %s\n", mw.TipSet.Cids())
+		fmt.Printf("Exit Code: %d\n", mw.Receipt.ExitCode)
+		fmt.Printf("Gas Used: %d\n", mw.Receipt.GasUsed)
+		fmt.Printf("Return: %x\n", mw.Receipt.Return)
+	} else {
+		fmt.Println("message was not found on chain")
+	}
+
+	if err := printReceiptReturn(ctx, api, m, mw.Receipt); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var stateCallCmd = &cli.Command{
@@ -1660,7 +1684,7 @@ func parseParamsForMethod(act cid.Cid, method uint64, args []string) ([]byte, er
 
 var stateCircSupplyCmd = &cli.Command{
 	Name:  "circulating-supply",
-	Usage: "Get the exact current circulating supply of Filecoin",
+	Usage: "Get the exact current circulating supply of EpiK",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "vm-supply",
@@ -1901,18 +1925,18 @@ var stateMarketRemainingQuotaCmd = &cli.Command{
 	},
 }
 
-var stateVoteFundCmd = &cli.Command{
-	Name:  "vote",
+var stateVotesFundCmd = &cli.Command{
+	Name:  "votes",
 	Usage: "Inspect vote fund info",
 	Subcommands: []*cli.Command{
-		stateVoteTallyCmd,
-		stateVoteVoterCmd,
+		stateVotesTallyCmd,
+		stateVotesVoterCmd,
 	},
 }
 
-var stateVoteTallyCmd = &cli.Command{
+var stateVotesTallyCmd = &cli.Command{
 	Name:  "tally",
-	Usage: "Query tally for each candidate",
+	Usage: "Get vote tally",
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -1937,22 +1961,22 @@ var stateVoteTallyCmd = &cli.Command{
 		fmt.Printf("Fallback Receiver: %s\n", tally.FallbackReceiver)
 		fmt.Printf("Candidates:\n")
 		for cand, amt := range tally.Candidates {
-			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+			if tally.Blocked[cand] {
+				fmt.Printf("\t%s: %s (blocked)\n", cand, types.EPK(amt))
+			} else {
+				fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
+			}
 		}
 
 		return nil
 	},
 }
 
-var stateVoteVoterCmd = &cli.Command{
+var stateVotesVoterCmd = &cli.Command{
 	Name:      "voter",
 	Usage:     "Get voter info",
-	ArgsUsage: "[address]",
+	ArgsUsage: "[voterAddress (optional)]",
 	Action: func(cctx *cli.Context) error {
-		if !cctx.Args().Present() {
-			return ShowHelp(cctx, fmt.Errorf("must specify address to query for"))
-		}
-
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
 			return err
@@ -1966,12 +1990,23 @@ var stateVoteVoterCmd = &cli.Command{
 			return err
 		}
 
-		addr, err := address.NewFromString(cctx.Args().First())
-		if err != nil {
-			return err
+		var voter address.Address
+		if !cctx.Args().Present() {
+			voter, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+			if voter == address.Undef {
+				return xerrors.New("no default wallet address")
+			}
+		} else {
+			voter, err = address.NewFromString(cctx.Args().First())
+			if err != nil {
+				return err
+			}
 		}
 
-		idAddr, err := api.StateLookupID(ctx, addr, ts.Key())
+		idAddr, err := api.StateLookupID(ctx, voter, ts.Key())
 		if err != nil {
 			return err
 		}

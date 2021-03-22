@@ -2,15 +2,9 @@ package adt
 
 import (
 	"github.com/ipfs/go-cid"
-	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
-	"github.com/filecoin-project/go-state-types/network"
-
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
-
-	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
 
 type Map interface {
@@ -23,22 +17,6 @@ type Map interface {
 	ForEach(v cbor.Unmarshaler, fn func(key string) error) error
 }
 
-func AsMap(store Store, root cid.Cid, version actors.Version) (Map, error) {
-	switch version {
-	case actors.Version2:
-		return adt2.AsMap(store, root)
-	}
-	return nil, xerrors.Errorf("unknown network version: %d", version)
-}
-
-func NewMap(store Store, version actors.Version) (Map, error) {
-	switch version {
-	case actors.Version2:
-		return adt2.MakeEmptyMap(store), nil
-	}
-	return nil, xerrors.Errorf("unknown network version: %d", version)
-}
-
 type Array interface {
 	Root() (cid.Cid, error)
 
@@ -48,20 +26,4 @@ type Array interface {
 	Length() uint64
 
 	ForEach(v cbor.Unmarshaler, fn func(idx int64) error) error
-}
-
-func AsArray(store Store, root cid.Cid, version network.Version) (Array, error) {
-	switch actors.VersionForNetwork(version) {
-	case actors.Version2:
-		return adt2.AsArray(store, root)
-	}
-	return nil, xerrors.Errorf("unknown network version: %d", version)
-}
-
-func NewArray(store Store, version actors.Version) (Array, error) {
-	switch version {
-	case actors.Version2:
-		return adt2.MakeEmptyArray(store), nil
-	}
-	return nil, xerrors.Errorf("unknown network version: %d", version)
 }

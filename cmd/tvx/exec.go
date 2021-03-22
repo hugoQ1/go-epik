@@ -17,10 +17,10 @@ import (
 
 	"github.com/filecoin-project/test-vectors/schema"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/conformance"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 var execFlags struct {

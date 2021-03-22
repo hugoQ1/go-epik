@@ -13,15 +13,14 @@ import (
 )
 
 func CreateEmptyMarketState(t *testing.T, store adt.Store) *market.State {
-	emptyArrayCid, err := adt.MakeEmptyArray(store).Root()
+	st, err := market.ConstructState(store)
 	require.NoError(t, err)
-	emptyMap, err := adt.MakeEmptyMap(store).Root()
-	require.NoError(t, err)
-	return market.ConstructState(emptyArrayCid, emptyMap, emptyMap)
+	return st
 }
 
 func CreateDealAMT(ctx context.Context, t *testing.T, store adt.Store, deals map[abi.DealID]*market.DealState) cid.Cid {
-	root := adt.MakeEmptyArray(store)
+	root, err := adt.MakeEmptyArray(store, market.StatesAmtBitwidth)
+	require.NoError(t, err)
 	for dealID, dealState := range deals {
 		err := root.Set(uint64(dealID), dealState)
 		require.NoError(t, err)

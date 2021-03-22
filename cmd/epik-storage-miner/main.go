@@ -26,7 +26,7 @@ const FlagMinerRepo = "miner-repo"
 const FlagMinerRepoDeprecation = "storagerepo"
 
 func main() {
-	build.RunningNodeType = build.NodeMiner
+	api.RunningNodeType = api.NodeMiner
 
 	epiklog.SetupLogLevels()
 
@@ -70,7 +70,7 @@ func main() {
 
 	app := &cli.App{
 		Name:                 "epik-miner",
-		Usage:                "Filecoin decentralized storage network miner",
+		Usage:                "EpiK decentralized storage network miner",
 		Version:              build.UserVersion(),
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{

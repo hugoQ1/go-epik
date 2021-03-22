@@ -1,6 +1,6 @@
 package paych
 
-import (
+/* import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
@@ -71,4 +71,4 @@ func (m message2) Collect(paych address.Address) (*types.Message, error) {
 		Value:  abi.NewTokenAmount(0),
 		Method: builtin2.MethodsPaych.Collect,
 	}, nil
-}
+} */

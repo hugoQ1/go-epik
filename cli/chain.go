@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -58,6 +59,8 @@ var chainCmd = &cli.Command{
 		chainGasPriceCmd,
 		chainInspectUsage,
 		chainDecodeCmd,
+		chainEncodeCmd,
+		chainDisputeSetCmd,
 	},
 }
 
@@ -677,7 +680,10 @@ var chainListCmd = &cli.Command{
 						gasUsed += r.GasUsed
 					}
 
-					fmt.Printf("\ttipset: \t%d msgs, %d / %d (%0.2f%%)\n", len(msgs), gasUsed, limitSum, 100*float64(gasUsed)/float64(limitSum))
+					gasEfficiency := 100 * float64(gasUsed) / float64(limitSum)
+					gasCapacity := 100 * float64(limitSum) / float64(build.BlockGasLimit)
+
+					fmt.Printf("\ttipset: \t%d msgs, %d (%0.2f%%) / %d (%0.2f%%)\n", len(msgs), gasUsed, gasEfficiency, limitSum, gasCapacity)
 				}
 				fmt.Println()
 			}
@@ -870,7 +876,7 @@ func (ht *apiIpldStore) Put(ctx context.Context, v interface{}) (cid.Cid, error)
 
 func handleAmt(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsArray(s, r)
+	mp, err := adt.AsArray(s, r, builtin.DefaultAmtBitwidth)
 	if err != nil {
 		return err
 	}
@@ -883,7 +889,7 @@ func handleAmt(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 
 func handleHamtEpoch(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsMap(s, r)
+	mp, err := adt.AsMap(s, r, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return err
 	}
@@ -901,7 +907,7 @@ func handleHamtEpoch(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 
 func handleHamtAddress(ctx context.Context, api lapi.FullNode, r cid.Cid) error {
 	s := &apiIpldStore{ctx, api}
-	mp, err := adt.AsMap(s, r)
+	mp, err := adt.AsMap(s, r, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return err
 	}
@@ -1363,6 +1369,89 @@ var chainDecodeParamsCmd = &cli.Command{
 		}
 
 		fmt.Println(pstr)
+
+		return nil
+	},
+}
+
+var chainEncodeCmd = &cli.Command{
+	Name:  "encode",
+	Usage: "encode various types",
+	Subcommands: []*cli.Command{
+		chainEncodeParamsCmd,
+	},
+}
+
+var chainEncodeParamsCmd = &cli.Command{
+	Name:      "params",
+	Usage:     "Encodes the given JSON params",
+	ArgsUsage: "[toAddr method params]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "tipset",
+		},
+		&cli.StringFlag{
+			Name:  "encoding",
+			Value: "base64",
+			Usage: "specify input encoding to parse",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		if cctx.Args().Len() != 3 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		to, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return xerrors.Errorf("parsing toAddr: %w", err)
+		}
+
+		method, err := strconv.ParseInt(cctx.Args().Get(1), 10, 64)
+		if err != nil {
+			return xerrors.Errorf("parsing method id: %w", err)
+		}
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		act, err := api.StateGetActor(ctx, to, ts.Key())
+		if err != nil {
+			return xerrors.Errorf("getting actor: %w", err)
+		}
+
+		methodMeta, found := stmgr.MethodsMap[act.Code][abi.MethodNum(method)]
+		if !found {
+			return fmt.Errorf("method %d not found on actor %s", method, act.Code)
+		}
+
+		p := reflect.New(methodMeta.Params.Elem()).Interface().(cbg.CBORMarshaler)
+
+		if err := json.Unmarshal([]byte(cctx.Args().Get(2)), p); err != nil {
+			return fmt.Errorf("unmarshaling input into params type: %w", err)
+		}
+
+		buf := new(bytes.Buffer)
+		if err := p.MarshalCBOR(buf); err != nil {
+			return err
+		}
+
+		switch cctx.String("encoding") {
+		case "base64":
+			fmt.Println(base64.StdEncoding.EncodeToString(buf.Bytes()))
+		case "hex":
+			fmt.Println(hex.EncodeToString(buf.Bytes()))
+		default:
+			return xerrors.Errorf("unrecognized encoding: %s", cctx.String("encoding"))
+		}
 
 		return nil
 	},

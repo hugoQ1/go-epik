@@ -186,8 +186,8 @@ var initCmd = &cli.Command{
 			return err
 		}
 
-		if !v.APIVersion.EqMajorMinor(build.FullAPIVersion) {
-			return xerrors.Errorf("Remote API version didn't match (expected %s, remote %s)", build.FullAPIVersion, v.APIVersion)
+		if !v.APIVersion.EqMajorMinor(lapi.FullAPIVersion) {
+			return xerrors.Errorf("Remote API version didn't match (expected %s, remote %s)", lapi.FullAPIVersion, v.APIVersion)
 		}
 
 		log.Info("Initializing repo")
@@ -311,7 +311,8 @@ func migratePreSealMeta(ctx context.Context, api lapi.FullNode, metadata string,
 						PieceCID: commD,
 					},
 					DealInfo: &sealing.DealInfo{
-						DealID: dealID,
+						DealID:       dealID,
+						DealProposal: &sector.Deal,
 						DealSchedule: sealing.DealSchedule{
 							StartEpoch: sector.Deal.StartEpoch,
 							/* EndEpoch:   sector.Deal.EndEpoch, */
@@ -416,7 +417,7 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		return xerrors.Errorf("peer ID from private key: %w", err)
 	}
 
-	mds, err := lr.Datastore("/metadata")
+	mds, err := lr.Datastore(context.TODO(), "/metadata")
 	if err != nil {
 		return err
 	}
@@ -611,10 +612,10 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 		return address.Undef, err
 	}
 
-	ssize, err := units.RAMInBytes(cctx.String("sector-size"))
-	if err != nil {
-		return address.Undef, fmt.Errorf("failed to parse sector size: %w", err)
-	}
+	// ssize, err := units.RAMInBytes(cctx.String("sector-size"))
+	// if err != nil {
+	// 	return address.Undef, fmt.Errorf("failed to parse sector size: %w", err)
+	// }
 
 	worker := owner
 	if cctx.String("worker") != "" {
@@ -650,22 +651,22 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 		}
 	}
 
-	nv, err := api.StateNetworkVersion(ctx, types.EmptyTSK)
-	if err != nil {
-		return address.Undef, xerrors.Errorf("getting network version: %w", err)
-	}
+	// nv, err := api.StateNetworkVersion(ctx, types.EmptyTSK)
+	// if err != nil {
+	// 	return address.Undef, xerrors.Errorf("getting network version: %w", err)
+	// }
 
-	spt, err := miner.SealProofTypeFromSectorSize(abi.SectorSize(ssize), nv)
-	if err != nil {
-		return address.Undef, xerrors.Errorf("getting seal proof type: %w", err)
-	}
+	// spt, err := miner.SealProofTypeFromSectorSize(abi.SectorSize(ssize), nv)
+	// if err != nil {
+	// 	return address.Undef, xerrors.Errorf("getting seal proof type: %w", err)
+	// }
 
 	params, err := actors.SerializeParams(&power2.CreateMinerParams{
-		Owner:         owner,
-		Worker:        worker,
-		Coinbase:      owner,
-		SealProofType: spt,
-		Peer:          abi.PeerID(peerid),
+		Owner:               owner,
+		Worker:              worker,
+		Coinbase:            owner,
+		WindowPoStProofType: abi.RegisteredPoStProof_StackedDrgWindow8MiBV1,
+		Peer:                abi.PeerID(peerid),
 	})
 	if err != nil {
 		return address.Undef, err

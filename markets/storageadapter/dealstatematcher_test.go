@@ -12,10 +12,10 @@ import (
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	"github.com/ipfs/go-cid"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
+	test "github.com/EpiK-Protocol/go-epik/chain/events/state/mock"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	test "github.com/EpiK-Protocol/go-epik/chain/events/state/mock"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
@@ -28,7 +28,7 @@ import (
 
 func TestDealStateMatcher(t *testing.T) {
 	ctx := context.Background()
-	bs := bstore.NewTemporarySync()
+	bs := bstore.NewMemorySync()
 	store := adt2.WrapStore(ctx, cbornode.NewCborStore(bs))
 
 	deal1 := &market2.DealState{

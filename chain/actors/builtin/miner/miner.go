@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -16,35 +17,33 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	miner3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.StorageMinerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	builtin.RegisterActorState(builtin3.StorageMinerActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
-var Methods = builtin2.MethodsMiner
+var Methods = builtin3.MethodsMiner
 
-// Unchanged between v0 and v2 actors
-var WPoStProvingPeriod = miner2.WPoStProvingPeriod
-var WPoStPeriodDeadlines = miner2.WPoStPeriodDeadlines
-var WPoStChallengeWindow = miner2.WPoStChallengeWindow
-var WPoStChallengeLookback = miner2.WPoStChallengeLookback
-var FaultDeclarationCutoff = miner2.FaultDeclarationCutoff
-
-/* const MinSectorExpiration = miner2.MinSectorExpiration */
+// Unchanged between v0, v2 and v3 actors
+var WPoStProvingPeriod = miner3.WPoStProvingPeriod
+var WPoStPeriodDeadlines = miner3.WPoStPeriodDeadlines
+var WPoStChallengeWindow = miner3.WPoStChallengeWindow
+var WPoStChallengeLookback = miner3.WPoStChallengeLookback
+var FaultDeclarationCutoff = miner3.FaultDeclarationCutoff
 
 // Not used / checked in v0
-var DeclarationsMax = miner2.DeclarationsMax
-var AddressedSectorsMax = miner2.AddressedSectorsMax
+var DeclarationsMax = miner3.DeclarationsMax
+var AddressedSectorsMax = miner3.AddressedSectorsMax
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.StorageMinerActorCodeID:
-		return load2(store, act.Head)
+	case builtin3.StorageMinerActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
@@ -79,7 +78,7 @@ type State interface {
 
 	DeadlineInfo(epoch abi.ChainEpoch) (*dline.Info, error)
 
-	EnsureNoPieces([]cid.Cid) error
+	ContainsAnyPiece([]cid.Cid) (bool, error)
 
 	// Diff helpers. Used by Diff* functions internally.
 	sectors() (adt.Array, error)
@@ -91,9 +90,10 @@ type State interface {
 type Deadline interface {
 	LoadPartition(idx uint64) (Partition, error)
 	ForEachPartition(cb func(idx uint64, part Partition) error) error
-	PostSubmissions() (bitfield.BitField, error)
+	PartitionsPoSted() (bitfield.BitField, error)
 
 	PartitionsChanged(Deadline) (bool, error)
+	DisputableProofCount() (uint64, error)
 }
 
 type Partition interface {
@@ -111,35 +111,61 @@ type SectorOnChainInfo struct {
 	DealIDs      []abi.DealID
 	Activation   abi.ChainEpoch
 	PieceSizes   []abi.PaddedPieceSize
-	DealWins     []builtin2.BoolValue
-	/* Expiration            abi.ChainEpoch
-	DealWeight            abi.DealWeight
-	VerifiedDealWeight    abi.DealWeight
-	InitialPledge         abi.TokenAmount
-	ExpectedDayReward     abi.TokenAmount
-	ExpectedStoragePledge abi.TokenAmount */
+	DealWins     []builtin3.BoolValue
 }
 
-type SectorPreCommitInfo = miner2.SectorPreCommitInfo
+type SectorPreCommitInfo = miner3.SectorPreCommitInfo
 
 type SectorPreCommitOnChainInfo struct {
 	Info           SectorPreCommitInfo
 	PreCommitEpoch abi.ChainEpoch
 	PieceSizes     []abi.PaddedPieceSize
-	/* PreCommitDeposit   abi.TokenAmount
-	DealWeight         abi.DealWeight
-	VerifiedDealWeight abi.DealWeight */
 }
 
-type PoStPartition = miner2.PoStPartition
-type RecoveryDeclaration = miner2.RecoveryDeclaration
-type FaultDeclaration = miner2.FaultDeclaration
+type PoStPartition = miner3.PoStPartition
+type RecoveryDeclaration = miner3.RecoveryDeclaration
+type FaultDeclaration = miner3.FaultDeclaration
 
 // Params
-type DeclareFaultsParams = miner2.DeclareFaultsParams
-type DeclareFaultsRecoveredParams = miner2.DeclareFaultsRecoveredParams
-type SubmitWindowedPoStParams = miner2.SubmitWindowedPoStParams
-type ProveCommitSectorParams = miner2.ProveCommitSectorParams
+type DeclareFaultsParams = miner3.DeclareFaultsParams
+type DeclareFaultsRecoveredParams = miner3.DeclareFaultsRecoveredParams
+type SubmitWindowedPoStParams = miner3.SubmitWindowedPoStParams
+type ProveCommitSectorParams = miner3.ProveCommitSectorParams
+type DisputeWindowedPoStParams = miner3.DisputeWindowedPoStParams
+
+func PreferredSealProofTypeFromWindowPoStType(nver network.Version, proof abi.RegisteredPoStProof) (abi.RegisteredSealProof, error) {
+	switch proof {
+	case abi.RegisteredPoStProof_StackedDrgWindow2KiBV1:
+		return abi.RegisteredSealProof_StackedDrg2KiBV1_1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow8MiBV1:
+		return abi.RegisteredSealProof_StackedDrg8MiBV1_1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow512MiBV1:
+		return abi.RegisteredSealProof_StackedDrg512MiBV1_1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow32GiBV1:
+		return abi.RegisteredSealProof_StackedDrg32GiBV1_1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow64GiBV1:
+		return abi.RegisteredSealProof_StackedDrg64GiBV1_1, nil
+	default:
+		return -1, xerrors.Errorf("unrecognized window post type: %d", proof)
+	}
+}
+
+func WinningPoStProofTypeFromWindowPoStProofType(nver network.Version, proof abi.RegisteredPoStProof) (abi.RegisteredPoStProof, error) {
+	switch proof {
+	case abi.RegisteredPoStProof_StackedDrgWindow2KiBV1:
+		return abi.RegisteredPoStProof_StackedDrgWinning2KiBV1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow8MiBV1:
+		return abi.RegisteredPoStProof_StackedDrgWinning8MiBV1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow512MiBV1:
+		return abi.RegisteredPoStProof_StackedDrgWinning512MiBV1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow32GiBV1:
+		return abi.RegisteredPoStProof_StackedDrgWinning32GiBV1, nil
+	case abi.RegisteredPoStProof_StackedDrgWindow64GiBV1:
+		return abi.RegisteredPoStProof_StackedDrgWinning64GiBV1, nil
+	default:
+		return -1, xerrors.Errorf("unknown proof type %d", proof)
+	}
+}
 
 type MinerInfo struct {
 	Owner                      address.Address   // Must be an ID-address.
@@ -150,7 +176,7 @@ type MinerInfo struct {
 	WorkerChangeEpoch          abi.ChainEpoch
 	PeerId                     *peer.ID
 	Multiaddrs                 []abi.Multiaddrs
-	SealProofType              abi.RegisteredSealProof
+	WindowPoStProofType        abi.RegisteredPoStProof
 	SectorSize                 abi.SectorSize
 	WindowPoStPartitionSectors uint64
 	ConsensusFaultElapsed      abi.ChainEpoch

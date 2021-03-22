@@ -8,15 +8,17 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
-var Methods = builtin2.MethodsPaych
+var Methods = builtin3.MethodsPaych
 
 func Message(version actors.Version, from address.Address) MessageBuilder {
 	switch version {
-	case actors.Version2:
-		return message2{from}
+	// case actors.Version2:
+	// 	return message2{from}
+	case actors.Version3:
+		return message3{from}
 	default:
 		panic(fmt.Sprintf("unsupported actors version: %d", version))
 	}

@@ -34,7 +34,7 @@ var (
 // gatewayDepsAPI defines the API methods that the GatewayAPI depends on
 // (to make it easy to mock for tests)
 type gatewayDepsAPI interface {
-	Version(context.Context) (api.Version, error)
+	Version(context.Context) (api.APIVersion, error)
 	ChainGetBlockMessages(context.Context, cid.Cid) (*api.BlockMessages, error)
 	ChainGetMessage(ctx context.Context, mc cid.Cid) (*types.Message, error)
 	ChainGetNode(ctx context.Context, p string) (*api.IpldObject, error)
@@ -48,6 +48,7 @@ type gatewayDepsAPI interface {
 	MpoolPushUntrusted(ctx context.Context, sm *types.SignedMessage) (cid.Cid, error)
 	MsigGetAvailableBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (types.BigInt, error)
 	MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
+	MsigGetPending(ctx context.Context, addr address.Address, ts types.TipSetKey) ([]*api.MsigTransaction, error)
 	StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
 	/* StateDealProviderCollateralBounds(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error) */
 	StateGetActor(ctx context.Context, actor address.Address, ts types.TipSetKey) (*types.Actor, error)
@@ -57,6 +58,7 @@ type gatewayDepsAPI interface {
 	StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
 	StateMarketStorageDeal(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
 	StateNetworkVersion(context.Context, types.TipSetKey) (network.Version, error)
+	StateSearchMsgLimited(ctx context.Context, msg cid.Cid, lookbackLimit abi.ChainEpoch) (*api.MsgLookup, error)
 	StateWaitMsgLimited(ctx context.Context, msg cid.Cid, confidence uint64, h abi.ChainEpoch) (*api.MsgLookup, error)
 	StateReadState(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*api.ActorState, error)
 	StateMinerPower(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
@@ -130,7 +132,7 @@ func (a *GatewayAPI) checkTimestamp(at time.Time) error {
 	return nil
 }
 
-func (a *GatewayAPI) Version(ctx context.Context) (api.Version, error) {
+func (a *GatewayAPI) Version(ctx context.Context) (api.APIVersion, error) {
 	return a.api.Version(ctx)
 }
 
@@ -229,6 +231,14 @@ func (a *GatewayAPI) MsigGetVested(ctx context.Context, addr address.Address, st
 	return a.api.MsigGetVested(ctx, addr, start, end)
 }
 
+func (a *GatewayAPI) MsigGetPending(ctx context.Context, addr address.Address, tsk types.TipSetKey) ([]*api.MsigTransaction, error) {
+	if err := a.checkTipsetKey(ctx, tsk); err != nil {
+		return nil, err
+	}
+
+	return a.api.MsigGetPending(ctx, addr, tsk)
+}
+
 func (a *GatewayAPI) StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
 		return address.Undef, err
@@ -299,6 +309,10 @@ func (a *GatewayAPI) StateNetworkVersion(ctx context.Context, tsk types.TipSetKe
 	}
 
 	return a.api.StateNetworkVersion(ctx, tsk)
+}
+
+func (a *GatewayAPI) StateSearchMsg(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error) {
+	return a.api.StateSearchMsgLimited(ctx, msg, a.stateWaitLookbackLimit)
 }
 
 func (a *GatewayAPI) StateWaitMsg(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error) {

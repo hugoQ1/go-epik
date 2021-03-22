@@ -17,6 +17,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/account"
@@ -26,7 +27,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 type addrInfo struct {
@@ -50,7 +50,7 @@ var genesisVerifyCmd = &cli.Command{
 		if !cctx.Args().Present() {
 			return fmt.Errorf("must pass genesis car file")
 		}
-		bs := blockstore.NewBlockstore(datastore.NewMapDatastore())
+		bs := blockstore.FromDatastore(datastore.NewMapDatastore())
 
 		cs := store.NewChainStore(bs, bs, datastore.NewMapDatastore(), nil, nil)
 		defer cs.Close() //nolint:errcheck

@@ -13,6 +13,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 )
 
 // Piece is a tuple of piece and deal info
@@ -31,6 +32,7 @@ type Piece struct {
 type DealInfo struct {
 	PublishCid   *cid.Cid
 	DealID       abi.DealID
+	DealProposal *market.DealProposal
 	DealSchedule DealSchedule
 	KeepUnsealed bool
 }
@@ -69,7 +71,8 @@ type SectorInfo struct {
 	SectorType abi.RegisteredSealProof
 
 	// Packing
-	Pieces []Piece
+	CreationTime int64 // unix seconds
+	Pieces       []Piece
 
 	// PreCommit1
 	TicketValue   abi.SealRandomness
@@ -162,7 +165,7 @@ func (t *SectorInfo) sealingCtx(ctx context.Context) context.Context {
 
 // Returns list of offset/length tuples of sector data ranges which clients
 // requested to keep unsealed
-func (t *SectorInfo) keepUnsealedRanges(invert bool) []storage.Range {
+func (t *SectorInfo) keepUnsealedRanges(invert, alwaysKeep bool) []storage.Range {
 	var out []storage.Range
 
 	var at abi.UnpaddedPieceSize
@@ -173,7 +176,10 @@ func (t *SectorInfo) keepUnsealedRanges(invert bool) []storage.Range {
 		if piece.DealInfo == nil {
 			continue
 		}
-		if piece.DealInfo.KeepUnsealed == invert {
+
+		keep := piece.DealInfo.KeepUnsealed || alwaysKeep
+
+		if keep == invert {
 			continue
 		}
 
