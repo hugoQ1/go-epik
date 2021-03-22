@@ -1540,9 +1540,10 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	}
 	votes, ok := tally.Candidates[addr.String()]
 	if !ok {
-		return nil, xerrors.Errorf("expert not found in tally: %s", addr)
+		info.CurrentVotes = abi.NewTokenAmount(0)
+	} else {
+		info.CurrentVotes = votes
 	}
-	info.CurrentVotes = votes
 
 	switch info.Status {
 	case expert2.ExpertStateRegistered:
