@@ -37,6 +37,7 @@ import (
 	network0 "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
+	reflect "reflect"
 )
 
 // MockFullNode is a mock of FullNode interface
