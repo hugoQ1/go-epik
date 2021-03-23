@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 
 	"github.com/filecoin-project/go-address"
@@ -10,7 +11,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	init_ "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -23,7 +24,7 @@ type UserData interface{}
 
 // ChainAPI abstracts out calls made by this class to external APIs
 type ChainAPI interface {
-	apibstore.ChainIO
+	api.ChainIO
 	StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error)
 }
 
@@ -36,7 +37,7 @@ type StatePredicates struct {
 func NewStatePredicates(api ChainAPI) *StatePredicates {
 	return &StatePredicates{
 		api: api,
-		cst: cbor.NewCborStore(apibstore.NewAPIBlockstore(api)),
+		cst: cbor.NewCborStore(blockstore.NewAPIBlockstore(api)),
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
@@ -211,7 +210,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 		}
-		if nDeal.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(nDeal.Status) {
+		if nDeal.Status == retrievalmarket.DealStatusErrored ||
+			nDeal.Status == retrievalmarket.DealStatusCancelled ||
+			retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
 		}
 	}
@@ -234,13 +235,14 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			if strings.Contains(err.Error(), "piece in active") {
-				log.Infof("data has been storaged:%s", data.pieceID)
-				data.isRetrieved = true
-				m.totalRetrieveCount++
-				continue
-			}
+		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+			log.Errorf("failed to check miner stored piece: %w", err)
+			continue
+		} else if stored {
+			log.Infof("data has been storaged:%s", data.pieceID)
+			data.isRetrieved = true
+			m.totalRetrieveCount++
+			continue
 		}
 
 		for _, d := range deals {
@@ -249,7 +251,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 					data.isRetrieved = true
 					m.totalRetrieveCount++
 				}
-				if !(d.Status == retrievalmarket.DealStatusErrored || retrievalmarket.IsTerminalStatus(d.Status)) {
+				if !(d.Status == retrievalmarket.DealStatusErrored ||
+					d.Status == retrievalmarket.DealStatusCancelled ||
+					retrievalmarket.IsTerminalStatus(d.Status)) {
 					m.retrievals.Add(rk, d)
 				}
 				break
@@ -348,7 +352,7 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		}
 
 		for _, d := range deals {
-			if d.PieceCID.Equals(data.pieceID) {
+			if d.Provider == m.address && d.PieceCID.Equals(data.pieceID) {
 				isFinish, isDealed := checkDealStatus(&d)
 				if isDealed {
 					data.isDealed = true
@@ -375,13 +379,14 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			break
 		}
 
-		if err := m.api.StateMinerNoPieces(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			if strings.Contains(err.Error(), "piece in active") {
-				log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
-				data.isDealed = true
-				m.totalDealCount++
-				continue
-			}
+		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+			log.Errorf("failed to check miner stored piece: %w", err)
+			continue
+		} else if stored {
+			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
+			data.isDealed = true
+			m.totalDealCount++
+			continue
 		}
 
 		// mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)

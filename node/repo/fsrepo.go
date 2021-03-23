@@ -2,6 +2,7 @@ package repo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,10 +21,10 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/config"
@@ -262,9 +263,16 @@ type fsLockedRepo struct {
 	bs     blockstore.Blockstore
 	bsErr  error
 	bsOnce sync.Once
+	ssPath string
+	ssErr  error
+	ssOnce sync.Once
 
 	storageLk sync.Mutex
 	configLk  sync.Mutex
+}
+
+func (fsr *fsLockedRepo) Readonly() bool {
+	return fsr.readonly
 }
 
 func (fsr *fsLockedRepo) Path() string {
@@ -298,8 +306,8 @@ func (fsr *fsLockedRepo) Close() error {
 }
 
 // Blockstore returns a blockstore for the provided data domain.
-func (fsr *fsLockedRepo) Blockstore(domain BlockstoreDomain) (blockstore.Blockstore, error) {
-	if domain != BlockstoreChain {
+func (fsr *fsLockedRepo) Blockstore(ctx context.Context, domain BlockstoreDomain) (blockstore.Blockstore, error) {
+	if domain != UniversalBlockstore {
 		return nil, ErrInvalidBlockstoreDomain
 	}
 
@@ -327,6 +335,21 @@ func (fsr *fsLockedRepo) Blockstore(domain BlockstoreDomain) (blockstore.Blockst
 	})
 
 	return fsr.bs, fsr.bsErr
+}
+
+func (fsr *fsLockedRepo) SplitstorePath() (string, error) {
+	fsr.ssOnce.Do(func() {
+		path := fsr.join(filepath.Join(fsDatastore, "splitstore"))
+
+		if err := os.MkdirAll(path, 0755); err != nil {
+			fsr.ssErr = err
+			return
+		}
+
+		fsr.ssPath = path
+	})
+
+	return fsr.ssPath, fsr.ssErr
 }
 
 // join joins path elements with fsr.path

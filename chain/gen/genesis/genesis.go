@@ -23,18 +23,18 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	account2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/account"
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
-	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/genesis"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 const AccountStart = 100
@@ -122,7 +122,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("putting empty object: %w", err)
 	}
 
-	state, err := state.NewStateTree(cst, types.StateTreeVersion1)
+	state, err := state.NewStateTree(cst, types.StateTreeVersion2)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("making new state tree: %w", err)
 	}
@@ -392,7 +392,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 	if err := json.Unmarshal(info.Meta, &ainfo); err != nil {
 		return xerrors.Errorf("unmarshaling account meta: %w", err)
 	}
-	pending, err := adt2.MakeEmptyMap(adt2.WrapStore(ctx, cst)).Root()
+	pending, err := adt2.StoreEmptyMap(adt2.WrapStore(ctx, cst), builtin2.DefaultHamtBitwidth)
 	if err != nil {
 		return xerrors.Errorf("failed to create empty map: %v", err)
 	}
@@ -455,7 +455,7 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		StateBase:      stateroot,
 		Epoch:          0,
 		Rand:           &fakeRand{},
-		Bstore:         cs.Blockstore(),
+		Bstore:         cs.StateBlockstore(),
 		Syscalls:       mkFakedSigSyscalls(cs.VMSys()),
 		CircSupplyCalc: nil,
 		NtwkVersion:    genesisNetworkVersion,
@@ -484,19 +484,19 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 			return cid.Undef, xerrors.Errorf("unmarshaling expert meta: %w", err)
 		}
 
-		expertCreateParams := &power2.CreateExpertParams{Owner: ainfo.Owner}
+		expertCreateParams := &expertfund.ApplyForExpertParams{Owner: ainfo.Owner}
 		params := mustEnc(expertCreateParams)
 		idas, err := ParseIDAddresses(template.FoundationAccountActor, keyIDs)
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to parse id addresses: %w", err)
 		}
-		rval, err := doExecValue(ctx, vm, builtin2.StoragePowerActorAddr, idas[0], big.Zero(), builtin2.MethodsPower.CreateExpert, params)
+		rval, err := doExecValue(ctx, vm, builtin2.ExpertFundActorAddr, idas[0], big.Zero(), builtin2.MethodsExpertFunds.ApplyForExpert, params)
 		if err != nil {
 			return cid.Undef, xerrors.Errorf("failed to create genesis expert %s: %w", ainfo.Owner, err)
 		}
-		var ret power2.CreateExpertReturn
+		var ret expertfund.ApplyForExpertReturn
 		if err := ret.UnmarshalCBOR(bytes.NewReader(rval)); err != nil {
-			return cid.Undef, xerrors.Errorf("unmarshaling CreateExpertReturn: %w", err)
+			return cid.Undef, xerrors.Errorf("unmarshaling ApplyForExpertReturn: %w", err)
 		}
 		inis.ExpertOwner = ainfo.Owner
 		inis.Expert = ret.IDAddress
@@ -574,7 +574,7 @@ func MakeGenesisBlock(ctx context.Context, j journal.Journal, bs bstore.Blocksto
 	}
 
 	store := adt2.WrapStore(ctx, cbor.NewCborStore(bs))
-	emptyroot, err := adt2.MakeEmptyArray(store).Root()
+	emptyroot, err := adt2.StoreEmptyArray(store, builtin2.DefaultAmtBitwidth)
 	if err != nil {
 		return nil, xerrors.Errorf("amt build failed: %w", err)
 	}

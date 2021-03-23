@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.opencensus.io/trace"
 
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
@@ -16,7 +17,7 @@ import (
 var AdvanceBlockCmd *cli.Command
 
 func main() {
-	build.RunningNodeType = build.NodeFull
+	api.RunningNodeType = api.NodeFull
 
 	epiklog.SetupLogLevels()
 

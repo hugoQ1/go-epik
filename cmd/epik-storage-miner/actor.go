@@ -19,7 +19,7 @@ import (
 
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
@@ -41,8 +41,6 @@ var actorCmd = &cli.Command{
 		actorControl,
 		actorProposeChangeWorker,
 		actorConfirmChangeWorker,
-		actorAddPledgeCmd,
-		actorWithdrawPledgeCmd,
 		actorSetCoinbaseCmd,
 	},
 }
@@ -310,7 +308,7 @@ var actorRepayDebtCmd = &cli.Command{
 				return err
 			}
 
-			store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(api)))
+			store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
 
 			mst, err := miner.Load(store, mact)
 			if err != nil {
@@ -355,170 +353,6 @@ var actorRepayDebtCmd = &cli.Command{
 		}
 
 		fmt.Printf("Sent repay debt message %s\n", smsg.Cid())
-
-		return nil
-	},
-}
-
-var actorAddPledgeCmd = &cli.Command{
-	Name:      "add-pledge",
-	Usage:     "Add mining pledge funds",
-	ArgsUsage: "[amount (EPK)]",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "from",
-			Usage: "optionally specify the account to send funds from",
-		},
-	},
-	Action: func(cctx *cli.Context) error {
-		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-
-		api, acloser, err := lcli.GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer acloser()
-
-		ctx := lcli.ReqContext(cctx)
-
-		maddr, err := nodeApi.ActorAddress(ctx)
-		if err != nil {
-			return err
-		}
-
-		// amount
-		if !cctx.Args().Present() {
-			return xerrors.New("'add-pledge' expects one argument, amount")
-		}
-		f, err := types.ParseEPK(cctx.Args().First())
-		if err != nil {
-			return xerrors.Errorf("parsing 'amount' argument: %w", err)
-		}
-		amount := abi.TokenAmount(f)
-
-		// from
-		var fromAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
-		}
-
-		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
-			From:   fromAddr,
-			To:     maddr,
-			Value:  amount,
-			Method: miner.Methods.AddPledge,
-			Params: nil,
-		}, nil)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Sent add-pledge message %s\n", smsg.Cid())
-
-		return nil
-	},
-}
-
-var actorWithdrawPledgeCmd = &cli.Command{
-	Name:      "withdraw-pledge",
-	Usage:     "Withdraw mining pledge funds",
-	ArgsUsage: "[amount (EPK)]",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "from",
-			Usage: "optionally specify the account to send funds from",
-		},
-	},
-	Action: func(cctx *cli.Context) error {
-		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-
-		api, acloser, err := lcli.GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer acloser()
-
-		ctx := lcli.ReqContext(cctx)
-
-		maddr, err := nodeApi.ActorAddress(ctx)
-		if err != nil {
-			return err
-		}
-
-		// from
-		var fromAddr address.Address
-		if from := cctx.String("from"); from == "" {
-			defaddr, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = defaddr
-		} else {
-			addr, err := address.NewFromString(from)
-			if err != nil {
-				return err
-			}
-
-			fromAddr = addr
-		}
-
-		if !cctx.Args().Present() {
-			return xerrors.New("'withdraw-pledge' expects one argument, amount")
-		}
-		f, err := types.ParseEPK(cctx.Args().First())
-		if err != nil {
-			return xerrors.Errorf("parsing 'amount' argument: %w", err)
-		}
-		amount := abi.TokenAmount(f)
-
-		mpledge, err := api.StateMiningPledge(ctx, maddr, types.EmptyTSK)
-		if err != nil {
-			return err
-		}
-		if amount.GreaterThan(mpledge) {
-			return xerrors.Errorf("can't withdraw more funds than available; requested: %s; available: %s", types.EPK(amount), types.EPK(mpledge))
-		}
-
-		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{
-			AmountRequested: amount, // Default to attempting to withdraw all the extra funds in the miner actor
-		})
-		if err != nil {
-			return err
-		}
-
-		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
-			To:     maddr,
-			From:   fromAddr,
-			Value:  types.NewInt(0),
-			Method: miner.Methods.WithdrawPledge,
-			Params: params,
-		}, nil)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Requested pledge withdrawal in message %s\n", smsg.Cid())
 
 		return nil
 	},
@@ -587,6 +421,7 @@ var actorControlList = &cli.Command{
 
 		commit := map[address.Address]struct{}{}
 		precommit := map[address.Address]struct{}{}
+		terminate := map[address.Address]struct{}{}
 		post := map[address.Address]struct{}{}
 
 		for _, ca := range mi.ControlAddresses {
@@ -611,6 +446,16 @@ var actorControlList = &cli.Command{
 
 			delete(post, ca)
 			commit[ca] = struct{}{}
+		}
+
+		for _, ca := range ac.TerminateControl {
+			ca, err := api.StateLookupID(ctx, ca, types.EmptyTSK)
+			if err != nil {
+				return err
+			}
+
+			delete(post, ca)
+			terminate[ca] = struct{}{}
 		}
 
 		printKey := func(name string, a address.Address) {
@@ -653,6 +498,9 @@ var actorControlList = &cli.Command{
 			}
 			if _, ok := commit[a]; ok {
 				uses = append(uses, color.BlueString("commit"))
+			}
+			if _, ok := terminate[a]; ok {
+				uses = append(uses, color.YellowString("terminate"))
 			}
 
 			tw.Write(map[string]interface{}{
@@ -789,8 +637,8 @@ var actorControlSet = &cli.Command{
 
 var actorSetOwnerCmd = &cli.Command{
 	Name:      "set-owner",
-	Usage:     "Set owner address",
-	ArgsUsage: "[address]",
+	Usage:     "Set owner address (this command should be invoked twice, first with the old owner as the senderAddress, and then with the new owner)",
+	ArgsUsage: "[newOwnerAddress senderAddress]",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "really-do-it",
@@ -804,8 +652,8 @@ var actorSetOwnerCmd = &cli.Command{
 			return nil
 		}
 
-		if !cctx.Args().Present() {
-			return fmt.Errorf("must pass address of new owner address")
+		if cctx.NArg() != 2 {
+			return fmt.Errorf("must pass new owner address and sender address")
 		}
 
 		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
@@ -827,7 +675,17 @@ var actorSetOwnerCmd = &cli.Command{
 			return err
 		}
 
-		newAddr, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		newAddrId, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		fa, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		fromAddrId, err := api.StateLookupID(ctx, fa, types.EmptyTSK)
 		if err != nil {
 			return err
 		}
@@ -842,13 +700,17 @@ var actorSetOwnerCmd = &cli.Command{
 			return err
 		}
 
-		sp, err := actors.SerializeParams(&newAddr)
+		if fromAddrId != mi.Owner && fromAddrId != newAddrId {
+			return xerrors.New("from address must either be the old owner or the new owner")
+		}
+
+		sp, err := actors.SerializeParams(&newAddrId)
 		if err != nil {
 			return xerrors.Errorf("serializing params: %w", err)
 		}
 
 		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
-			From:   mi.Owner,
+			From:   fromAddrId,
 			To:     maddr,
 			Method: miner.Methods.ChangeOwnerAddress,
 			Value:  big.Zero(),
@@ -858,7 +720,7 @@ var actorSetOwnerCmd = &cli.Command{
 			return xerrors.Errorf("mpool push: %w", err)
 		}
 
-		fmt.Println("Propose Message CID:", smsg.Cid())
+		fmt.Println("Message CID:", smsg.Cid())
 
 		// wait for it to get mined into a block
 		wait, err := api.StateWaitMsg(ctx, smsg.Cid(), build.MessageConfidence)
@@ -868,34 +730,11 @@ var actorSetOwnerCmd = &cli.Command{
 
 		// check it executed successfully
 		if wait.Receipt.ExitCode != 0 {
-			fmt.Println("Propose owner change failed!")
+			fmt.Println("owner change failed!")
 			return err
 		}
 
-		smsg, err = api.MpoolPushMessage(ctx, &types.Message{
-			From:   newAddr,
-			To:     maddr,
-			Method: miner.Methods.ChangeOwnerAddress,
-			Value:  big.Zero(),
-			Params: sp,
-		}, nil)
-		if err != nil {
-			return xerrors.Errorf("mpool push: %w", err)
-		}
-
-		fmt.Println("Approve Message CID:", smsg.Cid())
-
-		// wait for it to get mined into a block
-		wait, err = api.StateWaitMsg(ctx, smsg.Cid(), build.MessageConfidence)
-		if err != nil {
-			return err
-		}
-
-		// check it executed successfully
-		if wait.Receipt.ExitCode != 0 {
-			fmt.Println("Approve owner change failed!")
-			return err
-		}
+		fmt.Println("message succeeded!")
 
 		return nil
 	},

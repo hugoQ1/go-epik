@@ -30,15 +30,16 @@ import (
 	"github.com/ipfs/go-datastore/namespace"
 	"github.com/libp2p/go-libp2p-core/host"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	payapi "github.com/EpiK-Protocol/go-epik/node/impl/paych"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
+	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
 	"github.com/EpiK-Protocol/go-epik/node/repo/retrievalstoremgr"
@@ -57,18 +58,18 @@ func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full
 				if xerrors.Is(err, datastore.ErrNotFound) {
 					return nil
 				}
-				log.Errorf("client funds migration - getting datastore value: %w", err)
+				log.Errorf("client funds migration - getting datastore value: %v", err)
 				return nil
 			}
 
 			var value abi.TokenAmount
 			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
-				log.Errorf("client funds migration - unmarshalling datastore value: %w", err)
+				log.Errorf("client funds migration - unmarshalling datastore value: %v", err)
 				return nil
 			}
 			_, err = fundMgr.Reserve(ctx, addr, addr, value)
 			if err != nil {
-				log.Errorf("client funds migration - reserving funds (wallet %s, addr %s, funds %d): %w",
+				log.Errorf("client funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
 					addr, addr, value, err)
 				return nil
 			}
@@ -78,10 +79,11 @@ func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full
 	})
 }
 
-func ClientMultiDatastore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.ClientMultiDstore, error) {
-	ds, err := r.Datastore("/client")
+func ClientMultiDatastore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.ClientMultiDstore, error) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	ds, err := r.Datastore(ctx, "/client")
 	if err != nil {
-		return nil, xerrors.Errorf("getting datastore out of reop: %w", err)
+		return nil, xerrors.Errorf("getting datastore out of repo: %w", err)
 	}
 
 	mds, err := multistore.NewMultiDstore(ds)
@@ -120,7 +122,11 @@ func RegisterClientValidator(crv dtypes.ClientRequestValidator, dtm dtypes.Clien
 // uses the clients's Client DAG service for transfers
 func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Graphsync, ds dtypes.MetadataDS, r repo.LockedRepo) (dtypes.ClientDataTransfer, error) {
 	sc := storedcounter.New(ds, datastore.NewKey("/datatransfer/client/counter"))
-	net := dtnet.NewFromLibp2pHost(h)
+
+	// go-data-transfer protocol retries:
+	// 1s, 5s, 25s, 2m5s, 5m x 11 ~= 1 hour
+	dtRetryParams := dtnet.RetryParameters(time.Second, 5*time.Minute, 15, 5)
+	net := dtnet.NewFromLibp2pHost(h, dtRetryParams)
 
 	dtDs := namespace.Wrap(ds, datastore.NewKey("/datatransfer/client/transfers"))
 	transport := dtgstransport.NewTransport(h.ID(), gs)
@@ -130,8 +136,9 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 	}
 
 	timeoutOpt := dtimpl.ChannelRemoveTimeout(30 * time.Minute)
-
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, timeoutOpt)
+	// data-transfer push channel restart configuration
+	dtRestartConfig := dtimpl.PushChannelRestartConfig(time.Minute, 10, 1024, 10*time.Minute, 3)
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, dtRestartConfig, timeoutOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +162,11 @@ func NewClientDatastore(ds dtypes.MetadataDS) dtypes.ClientDatastore {
 }
 
 func StorageClient(lc fx.Lifecycle, h host.Host, ibs dtypes.ClientBlockstore, mds dtypes.ClientMultiDstore, r repo.LockedRepo, dataTransfer dtypes.ClientDataTransfer, discovery *discoveryimpl.Local, deals dtypes.ClientDatastore, scn storagemarket.StorageClientNode, j journal.Journal) (storagemarket.StorageClient, error) {
-	net := smnet.NewFromLibp2pHost(h)
+	// go-fil-markets protocol retries:
+	// 1s, 5s, 25s, 2m5s, 5m x 11 ~= 1 hour
+	marketsRetryParams := smnet.RetryParameters(time.Second, 5*time.Minute, 15, 5)
+	net := smnet.NewFromLibp2pHost(h, marketsRetryParams)
+
 	c, err := storageimpl.NewClient(net, ibs, mds, dataTransfer, discovery, deals, scn, storageimpl.DealPollingInterval(time.Second))
 	if err != nil {
 		return nil, err

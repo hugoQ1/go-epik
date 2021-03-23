@@ -5,6 +5,7 @@ import (
 	gobig "math/big"
 	"os"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
@@ -12,7 +13,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/conformance/chaos"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"  // enable bls signatures
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/secp" // enable secp signatures

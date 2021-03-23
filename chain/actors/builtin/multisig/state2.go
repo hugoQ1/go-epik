@@ -1,6 +1,6 @@
 package multisig
 
-import (
+/*import (
 	"bytes"
 	"encoding/binary"
 
@@ -71,6 +71,15 @@ func (s *state2) ForEachPendingTxn(cb func(id int64, txn Transaction) error) err
 	})
 }
 
+func (s *state2) PendingTxnChanged(other State) (bool, error) {
+	other2, ok := other.(*state2)
+	if !ok {
+		// treat an upgrade as a change, always
+		return true, nil
+	}
+	return !s.State.PendingTxns.Equals(other2.PendingTxns), nil
+}
+
 func (s *state2) PendingTxn(id int64) (Transaction, error) {
 	arr, err := adt2.AsMap(s.store, s.State.PendingTxns)
 	if err != nil {
@@ -87,15 +96,6 @@ func (s *state2) PendingTxn(id int64) (Transaction, error) {
 	return out, nil
 }
 
-func (s *state2) PendingTxnChanged(other State) (bool, error) {
-	other2, ok := other.(*state2)
-	if !ok {
-		// treat an upgrade as a change, always
-		return true, nil
-	}
-	return !s.State.PendingTxns.Equals(other2.PendingTxns), nil
-}
-
 func (s *state2) transactions() (adt.Map, error) {
 	return adt2.AsMap(s.store, s.PendingTxns)
 }
@@ -106,4 +106,4 @@ func (s *state2) decodeTransaction(val *cbg.Deferred) (Transaction, error) {
 		return Transaction{}, err
 	}
 	return tx, nil
-}
+} */

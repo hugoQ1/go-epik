@@ -9,6 +9,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
+	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
+	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/EpiK-Protocol/go-epik/node/modules/testing"
 	"github.com/google/uuid"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
@@ -33,6 +38,7 @@ var genesisCmd = &cli.Command{
 		genesisNewCmd,
 		genesisAddMinerCmd,
 		genesisAddMsigsCmd,
+		genesisCarCmd,
 	},
 }
 
@@ -337,4 +343,29 @@ func parseMultisigCsv(csvf string) ([]GenAccountEntry, error) {
 	}
 
 	return entries, nil
+}
+
+var genesisCarCmd = &cli.Command{
+	Name:        "car",
+	Description: "write genesis car file",
+	ArgsUsage:   "genesis template `FILE`",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "out",
+			Aliases: []string{"o"},
+			Value:   "genesis.car",
+			Usage:   "write output to `FILE`",
+		},
+	},
+	Action: func(c *cli.Context) error {
+		if c.Args().Len() != 1 {
+			return xerrors.Errorf("Please specify a genesis template. (i.e, the one created with `genesis new`)")
+		}
+		ofile := c.String("out")
+		jrnl := journal.NilJournal()
+		bstor := blockstore.NewMemorySync()
+		sbldr := vm.Syscalls(ffiwrapper.ProofVerifier)
+		_, err := testing.MakeGenesis(ofile, c.Args().First())(bstor, sbldr, jrnl)()
+		return err
+	},
 }

@@ -1,6 +1,6 @@
 package reward
 
-import (
+/* import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
@@ -48,4 +48,4 @@ func (s *state2) TotalMinedDetail() (*TotalMinedDetail, error) {
 		TotalStoragePowerReward: s.State.TotalStoragePowerReward,
 		TotalVoteReward:         s.State.TotalVoteReward,
 	}, nil
-}
+} */

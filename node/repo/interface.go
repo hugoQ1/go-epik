@@ -1,12 +1,13 @@
 package repo
 
 import (
+	"context"
 	"errors"
 
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multiaddr"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/fsutil"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 
@@ -17,11 +18,12 @@ import (
 type BlockstoreDomain string
 
 const (
-	// BlockstoreChain represents the blockstore domain for chain data.
+	// UniversalBlockstore represents the blockstore domain for all data.
 	// Right now, this includes chain objects (tipsets, blocks, messages), as
 	// well as state. In the future, they may get segregated into different
 	// domains.
-	BlockstoreChain = BlockstoreDomain("chain")
+	UniversalBlockstore = BlockstoreDomain("universal")
+	HotBlockstore       = BlockstoreDomain("hot")
 )
 
 var (
@@ -51,10 +53,19 @@ type LockedRepo interface {
 	Close() error
 
 	// Returns datastore defined in this repo.
-	Datastore(namespace string) (datastore.Batching, error)
+	// The supplied context must only be used to initialize the datastore.
+	// The implementation should not retain the context for usage throughout
+	// the lifecycle.
+	Datastore(ctx context.Context, namespace string) (datastore.Batching, error)
 
 	// Blockstore returns an IPLD blockstore for the requested domain.
-	Blockstore(domain BlockstoreDomain) (blockstore.Blockstore, error)
+	// The supplied context must only be used to initialize the blockstore.
+	// The implementation should not retain the context for usage throughout
+	// the lifecycle.
+	Blockstore(ctx context.Context, domain BlockstoreDomain) (blockstore.Blockstore, error)
+
+	// SplitstorePath returns the path for the SplitStore
+	SplitstorePath() (string, error)
 
 	// Returns config in this repo
 	Config() (interface{}, error)
@@ -77,4 +88,7 @@ type LockedRepo interface {
 
 	// Path returns absolute path of the repo
 	Path() string
+
+	// Readonly returns true if the repo is readonly
+	Readonly() bool
 }

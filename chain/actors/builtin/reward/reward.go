@@ -2,12 +2,12 @@ package reward
 
 import (
 	"github.com/filecoin-project/go-state-types/abi"
-	reward2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
+	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-state-types/cbor"
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	reward3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/reward"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -15,23 +15,29 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.RewardActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	// builtin.RegisterActorState(builtin2.RewardActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+	// 	return load2(store, root)
+	// })
+	builtin.RegisterActorState(builtin3.RewardActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
 var (
-	Address = builtin2.RewardActorAddr
-	Methods = builtin2.MethodsReward
+	Address = builtin3.RewardActorAddr
+	Methods = builtin3.MethodsReward
 )
 
-type AwardBlockRewardReturn = reward2.AwardBlockRewardReturn
-type AwardBlockRewardParams = reward2.AwardBlockRewardParams
+type AwardBlockRewardReturn = reward3.AwardBlockRewardReturn
+type AwardBlockRewardParams = reward3.AwardBlockRewardParams
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
-	case builtin2.RewardActorCodeID:
-		return load2(store, act.Head)
+	// case builtin2.RewardActorCodeID:
+	// 	return load2(store, act.Head)
+	// }
+	case builtin3.RewardActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }

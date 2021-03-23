@@ -15,8 +15,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 )
 
 var topic = "/epk/headnotifs/"
@@ -28,7 +28,7 @@ func init() {
 		return
 	}
 
-	bs := blockstore.NewTemporary()
+	bs := blockstore.NewMemory()
 
 	c, err := car.LoadCar(bs, bytes.NewReader(genBytes))
 	if err != nil {

@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/EpiK-Protocol/go-epik/chain/market"
-
 	gen "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/exchange"
+	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"

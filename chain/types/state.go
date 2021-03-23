@@ -7,10 +7,12 @@ import "github.com/ipfs/go-cid"
 type StateTreeVersion uint64
 
 const (
-	// // StateTreeVersion0 corresponds to actors < v2.
-	// StateTreeVersion0 StateTreeVersion = iota
-	// StateTreeVersion1 corresponds to actors >= v2.
-	StateTreeVersion1 StateTreeVersion = 1 + iota
+	// StateTreeVersion0 corresponds to actors < v2.
+	StateTreeVersion0 StateTreeVersion = iota
+	// StateTreeVersion1 corresponds to actors v2
+	StateTreeVersion1
+	// StateTreeVersion2 corresponds to actors >= v3.
+	StateTreeVersion2
 )
 
 type StateRoot struct {

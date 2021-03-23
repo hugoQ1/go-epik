@@ -29,7 +29,7 @@ import (
 	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
 	msig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -202,7 +202,7 @@ var msigInspectCmd = &cli.Command{
 		defer closer()
 		ctx := ReqContext(cctx)
 
-		store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(api)))
+		store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
 
 		maddr, err := address.NewFromString(cctx.Args().First())
 		if err != nil {
@@ -473,12 +473,12 @@ var msigApproveCmd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("must pass at least multisig address and message ID"))
 		}
 
-		if cctx.Args().Len() > 5 && cctx.Args().Len() != 7 {
-			return ShowHelp(cctx, fmt.Errorf("usage: msig approve <msig addr> <message ID> <proposer address> <desination> <value> [ <method> <params> ]"))
+		if cctx.Args().Len() > 2 && cctx.Args().Len() < 5 {
+			return ShowHelp(cctx, fmt.Errorf("usage: msig approve <msig addr> <message ID> <proposer address> <desination> <value>"))
 		}
 
-		if cctx.Args().Len() > 2 && cctx.Args().Len() != 5 {
-			return ShowHelp(cctx, fmt.Errorf("usage: msig approve <msig addr> <message ID> <proposer address> <desination> <value>"))
+		if cctx.Args().Len() > 5 && cctx.Args().Len() != 7 {
+			return ShowHelp(cctx, fmt.Errorf("usage: msig approve <msig addr> <message ID> <proposer address> <desination> <value> [ <method> <params> ]"))
 		}
 
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -1275,7 +1275,7 @@ var msigLockApproveCmd = &cli.Command{
 		params, actErr := actors.SerializeParams(&msig2.LockBalanceParams{
 			StartEpoch:     abi.ChainEpoch(start),
 			UnlockDuration: abi.ChainEpoch(duration),
-			Amount:         abi.NewTokenAmount(amount.Int64()),
+			Amount:         big.Int(amount),
 		})
 
 		if actErr != nil {
@@ -1367,7 +1367,7 @@ var msigLockCancelCmd = &cli.Command{
 		params, actErr := actors.SerializeParams(&msig2.LockBalanceParams{
 			StartEpoch:     abi.ChainEpoch(start),
 			UnlockDuration: abi.ChainEpoch(duration),
-			Amount:         abi.NewTokenAmount(amount.Int64()),
+			Amount:         big.Int(amount),
 		})
 
 		if actErr != nil {

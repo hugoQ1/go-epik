@@ -5,14 +5,12 @@ import (
 	"testing"
 	"time"
 
-	builder "github.com/EpiK-Protocol/go-epik/node/test"
-
-	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
-	"github.com/filecoin-project/go-state-types/abi"
-	logging "github.com/ipfs/go-log/v2"
-
 	"github.com/EpiK-Protocol/go-epik/api/test"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
+	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
+	builder "github.com/EpiK-Protocol/go-epik/node/test"
+	"github.com/filecoin-project/go-state-types/abi"
+	logging "github.com/ipfs/go-log/v2"
 )
 
 func init() {
@@ -40,7 +38,11 @@ func setLogLevel(level string) {
 }
 
 func TestAPIDealFlow(t *testing.T) {
-	setLogLevel("ERROR")
+	logging.SetLogLevel("miner", "ERROR")
+	logging.SetLogLevel("chainstore", "ERROR")
+	logging.SetLogLevel("chain", "ERROR")
+	logging.SetLogLevel("sub", "ERROR")
+	logging.SetLogLevel("storageminer", "ERROR")
 
 	blockTime := 10 * time.Millisecond
 
@@ -60,6 +62,9 @@ func TestAPIDealFlow(t *testing.T) {
 	})
 	t.Run("TestFastRetrievalDealFlow", func(t *testing.T) {
 		test.TestFastRetrievalDealFlow(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
+	})
+	t.Run("TestPublishDealsBatching", func(t *testing.T) {
+		test.TestPublishDealsBatching(t, builder.MockSbBuilder, blockTime, dealStartEpoch)
 	})
 }
 
@@ -91,6 +96,10 @@ func TestAPIDealFlowReal(t *testing.T) {
 }
 
 func TestDealMining(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+
 	logging.SetLogLevel("miner", "ERROR")
 	logging.SetLogLevel("chainstore", "ERROR")
 	logging.SetLogLevel("chain", "ERROR")
@@ -194,8 +203,28 @@ func TestPaymentChannels(t *testing.T) {
 	logging.SetLogLevel("chain", "ERROR")
 }
 
-/* func TestSectorsDist(t *testing.T) {
-	setLogLevel("ERROR")
-	test.TestSectorsDist(t, mockSbBuilder, 5*time.Millisecond, 10)
+func TestWindowPostDispute(t *testing.T) {
+	if os.Getenv("LOTUS_TEST_WINDOW_POST") != "1" {
+		t.Skip("this takes a few minutes, set LOTUS_TEST_WINDOW_POST=1 to run")
+	}
+	logging.SetLogLevel("miner", "ERROR")
+	logging.SetLogLevel("chainstore", "ERROR")
+	logging.SetLogLevel("chain", "ERROR")
+	logging.SetLogLevel("sub", "ERROR")
+	logging.SetLogLevel("storageminer", "ERROR")
+
+	test.TestWindowPostDispute(t, builder.MockSbBuilder, 2*time.Millisecond)
 }
-*/
+
+func TestWindowPostDisputeFails(t *testing.T) {
+	if os.Getenv("LOTUS_TEST_WINDOW_POST") != "1" {
+		t.Skip("this takes a few minutes, set LOTUS_TEST_WINDOW_POST=1 to run")
+	}
+	logging.SetLogLevel("miner", "ERROR")
+	logging.SetLogLevel("chainstore", "ERROR")
+	logging.SetLogLevel("chain", "ERROR")
+	logging.SetLogLevel("sub", "ERROR")
+	logging.SetLogLevel("storageminer", "ERROR")
+
+	test.TestWindowPostDisputeFails(t, builder.MockSbBuilder, 2*time.Millisecond)
+}

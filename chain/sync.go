@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -33,7 +34,9 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	blst "github.com/supranational/blst/bindings/go"
+	"github.com/filecoin-project/go-state-types/network"
+
+	ffi "github.com/filecoin-project/filecoin-ffi"
 
 	// named msgarray here to make it clear that these are the types used by
 	// messages, regardless of specs-actors version.
@@ -42,6 +45,7 @@ import (
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	bstore "github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -52,9 +56,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
-	bstore "github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
-	"github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 )
 
@@ -320,7 +322,7 @@ func (syncer *Syncer) ValidateMsgMeta(fblk *types.FullBlock) error {
 
 	// We use a temporary bstore here to avoid writing intermediate pieces
 	// into the blockstore.
-	blockstore := bstore.NewTemporary()
+	blockstore := bstore.NewMemory()
 	cst := cbor.NewCborStore(blockstore)
 
 	var bcids, scids []cid.Cid
@@ -353,7 +355,7 @@ func (syncer *Syncer) ValidateMsgMeta(fblk *types.FullBlock) error {
 	}
 
 	// Finally, flush.
-	return vm.Copy(context.TODO(), blockstore, syncer.store.Blockstore(), smroot)
+	return vm.Copy(context.TODO(), blockstore, syncer.store.ChainBlockstore(), smroot)
 }
 
 func (syncer *Syncer) LocalPeer() peer.ID {
@@ -454,8 +456,14 @@ func zipTipSetAndMessages(bs cbor.IpldStore, ts *types.TipSet, allbmsgs []*types
 func computeMsgMeta(bs cbor.IpldStore, bmsgCids, smsgCids []cid.Cid) (cid.Cid, error) {
 	// block headers use adt0
 	store := blockadt.WrapStore(context.TODO(), bs)
-	bmArr := blockadt.MakeEmptyArray(store)
-	smArr := blockadt.MakeEmptyArray(store)
+	bmArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
+	smArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return cid.Undef, err
+	}
 
 	for i, m := range bmsgCids {
 		c := cbg.CborCid(m)
@@ -639,7 +647,7 @@ func (syncer *Syncer) minerIsValid(ctx context.Context, maddr address.Address, b
 		return xerrors.Errorf("failed to load power actor: %w", err)
 	}
 
-	powState, err := power.Load(syncer.store.Store(ctx), act)
+	powState, err := power.Load(syncer.store.ActorStore(ctx), act)
 	if err != nil {
 		return xerrors.Errorf("failed to load power actor state: %w", err)
 	}
@@ -673,6 +681,10 @@ func blockSanityChecks(h *types.BlockHeader) error {
 
 	if h.BLSAggregate == nil {
 		return xerrors.Errorf("block had nil bls aggregate signature")
+	}
+
+	if h.Miner.Protocol() != address.ID {
+		return xerrors.Errorf("block had non-ID miner address")
 	}
 
 	return nil
@@ -718,6 +730,8 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 	if err != nil {
 		return xerrors.Errorf("load parent tipset failed (%s): %w", h.Parents, err)
 	}
+
+	winPoStNv := syncer.sm.GetNtwkVersion(ctx, baseTs.Height())
 
 	lbts, lbst, err := stmgr.GetLookbackTipSetForRound(ctx, syncer.sm, baseTs, h.Height)
 	if err != nil {
@@ -890,7 +904,9 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 			return xerrors.Errorf("failed to marshal miner address to cbor: %w", err)
 		}
 
+		// if h.Height > build.UpgradeSmokeHeight {
 		buf.Write(baseTs.MinTicket().VRFProof)
+		// }
 
 		beaconBase := *prevBeacon
 		if len(h.BeaconEntries) != 0 {
@@ -910,7 +926,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 	})
 
 	wproofCheck := async.Err(func() error {
-		if err := syncer.VerifyWinningPoStProof(ctx, h, *prevBeacon, lbst, waddr); err != nil {
+		if err := syncer.VerifyWinningPoStProof(ctx, winPoStNv, h, *prevBeacon, lbst, waddr); err != nil {
 			return xerrors.Errorf("invalid election post: %w", err)
 		}
 		return nil
@@ -962,7 +978,7 @@ func (syncer *Syncer) ValidateBlock(ctx context.Context, b *types.FullBlock, use
 	return nil
 }
 
-func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, h *types.BlockHeader, prevBeacon types.BeaconEntry, lbst cid.Cid, waddr address.Address) error {
+func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, nv network.Version, h *types.BlockHeader, prevBeacon types.BeaconEntry, lbst cid.Cid, waddr address.Address) error {
 	if build.InsecurePoStValidation {
 		if len(h.WinPoStProof) == 0 {
 			return xerrors.Errorf("[INSECURE-POST-VALIDATION] No winning post proof given")
@@ -994,7 +1010,7 @@ func (syncer *Syncer) VerifyWinningPoStProof(ctx context.Context, h *types.Block
 		return xerrors.Errorf("failed to get ID from miner address %s: %w", h.Miner, err)
 	}
 
-	sectors, err := stmgr.GetSectorsForWinningPoSt(ctx, syncer.verifier, syncer.sm, lbst, h.Miner, rand)
+	sectors, err := stmgr.GetSectorsForWinningPoSt(ctx, nv, syncer.verifier, syncer.sm, lbst, h.Miner, rand)
 	if err != nil {
 		return xerrors.Errorf("getting winning post sector set: %w", err)
 	}
@@ -1046,7 +1062,7 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 		return err
 	}
 
-	st, err := state.LoadStateTree(syncer.store.Store(ctx), stateroot)
+	st, err := state.LoadStateTree(syncer.store.ActorStore(ctx), stateroot)
 	if err != nil {
 		return xerrors.Errorf("failed to load base state tree: %w", err)
 	}
@@ -1093,10 +1109,13 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 	}
 
 	// Validate message arrays in a temporary blockstore.
-	tmpbs := bstore.NewTemporary()
+	tmpbs := bstore.NewMemory()
 	tmpstore := blockadt.WrapStore(ctx, cbor.NewCborStore(tmpbs))
 
-	bmArr := blockadt.MakeEmptyArray(tmpstore)
+	bmArr, err := blockadt.MakeEmptyArray(tmpstore, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return xerrors.Errorf("failed to make empty array: %w", err)
+	}
 	for i, m := range b.BlsMessages {
 		if err := checkMsg(m); err != nil {
 			return xerrors.Errorf("block had invalid bls message at index %d: %w", i, err)
@@ -1113,7 +1132,10 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 		}
 	}
 
-	smArr := blockadt.MakeEmptyArray(tmpstore)
+	smArr, err := blockadt.MakeEmptyArray(tmpstore, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return xerrors.Errorf("failed to make empty array: %w", err)
+	}
 	for i, m := range b.SecpkMessages {
 		if err := checkMsg(m); err != nil {
 			return xerrors.Errorf("block had invalid secpk message at index %d: %w", i, err)
@@ -1163,7 +1185,7 @@ func (syncer *Syncer) checkBlockMessages(ctx context.Context, b *types.FullBlock
 	}
 
 	// Finally, flush.
-	return vm.Copy(ctx, tmpbs, syncer.store.Blockstore(), mrcid)
+	return vm.Copy(ctx, tmpbs, syncer.store.ChainBlockstore(), mrcid)
 }
 
 func (syncer *Syncer) verifyBlsAggregate(ctx context.Context, sig *crypto.Signature, msgs []cid.Cid, pubks [][]byte) error {
@@ -1173,17 +1195,21 @@ func (syncer *Syncer) verifyBlsAggregate(ctx context.Context, sig *crypto.Signat
 		trace.Int64Attribute("msgCount", int64(len(msgs))),
 	)
 
-	msgsS := make([]blst.Message, len(msgs))
+	msgsS := make([]ffi.Message, len(msgs))
+	pubksS := make([]ffi.PublicKey, len(msgs))
 	for i := 0; i < len(msgs); i++ {
 		msgsS[i] = msgs[i].Bytes()
+		copy(pubksS[i][:], pubks[i][:ffi.PublicKeyBytes])
 	}
+
+	sigS := new(ffi.Signature)
+	copy(sigS[:], sig.Data[:ffi.SignatureBytes])
 
 	if len(msgs) == 0 {
 		return nil
 	}
 
-	valid := new(bls.Signature).AggregateVerifyCompressed(sig.Data, pubks,
-		msgsS, []byte(bls.DST))
+	valid := ffi.HashVerify(sigS, msgsS, pubksS)
 	if !valid {
 		return xerrors.New("bls aggregate signature failed to verify")
 	}
@@ -1320,7 +1346,7 @@ loop:
 		// NB: GetBlocks validates that the blocks are in-fact the ones we
 		// requested, and that they are correctly linked to one another. It does
 		// not validate any state transitions.
-		window := int(build.ForkLengthThreshold)
+		window := 500
 		if gap := int(blockSet[len(blockSet)-1].Height() - untilHeight); gap < window {
 			window = gap
 		}
@@ -1540,7 +1566,7 @@ func (syncer *Syncer) iterFullTipsets(ctx context.Context, headers []*types.TipS
 
 		for bsi := 0; bsi < len(bstout); bsi++ {
 			// temp storage so we don't persist data we dont want to
-			bs := bstore.NewTemporary()
+			bs := bstore.NewMemory()
 			blks := cbor.NewCborStore(bs)
 
 			this := headers[i-bsi]
@@ -1561,7 +1587,7 @@ func (syncer *Syncer) iterFullTipsets(ctx context.Context, headers []*types.TipS
 				return err
 			}
 
-			if err := copyBlockstore(ctx, bs, syncer.store.Blockstore()); err != nil {
+			if err := copyBlockstore(ctx, bs, syncer.store.ChainBlockstore()); err != nil {
 				return xerrors.Errorf("message processing failed: %w", err)
 			}
 		}
@@ -1778,11 +1804,10 @@ func (syncer *Syncer) getLatestBeaconEntry(_ context.Context, ts *types.TipSet) 
 }
 
 func (syncer *Syncer) IsEpochBeyondCurrMax(epoch abi.ChainEpoch) bool {
-	g, err := syncer.store.GetGenesis()
-	if err != nil {
+	if syncer.Genesis == nil {
 		return false
 	}
 
 	now := uint64(build.Clock.Now().Unix())
-	return epoch > (abi.ChainEpoch((now-g.Timestamp)/build.BlockDelaySecs) + MaxHeightDrift)
+	return epoch > (abi.ChainEpoch((now-syncer.Genesis.MinTimestamp())/build.BlockDelaySecs) + MaxHeightDrift)
 }
