@@ -82,7 +82,7 @@ type TracingBlockstore interface {
 }
 
 // proxyingBlockstore is a Blockstore wrapper that fetches unknown CIDs from
-// a Filecoin node via JSON-RPC.
+// a EpiK node via JSON-RPC.
 type proxyingBlockstore struct {
 	ctx context.Context
 	api api.FullNode

@@ -120,7 +120,7 @@ const (
 	StartListeningKey
 	BootstrapKey
 
-	// filecoin
+	// epik
 	SetGenesisKey
 
 	RunHelloKey
@@ -245,7 +245,7 @@ func isFullOrLiteNode(s *Settings) bool { return s.nodeType == repo.FullNode }
 func isFullNode(s *Settings) bool       { return s.nodeType == repo.FullNode && !s.Lite }
 func isLiteNode(s *Settings) bool       { return s.nodeType == repo.FullNode && s.Lite }
 
-// Chain node provides access to the Filecoin blockchain, by setting up a full
+// Chain node provides access to the EpiK blockchain, by setting up a full
 // validator node, or by delegating some actions to other nodes (lite mode)
 var ChainNode = Options(
 	// Full node or lite node
@@ -672,7 +672,7 @@ func FullAPI(out *api.FullNode, fopts ...FullOption) Option {
 
 type StopFunc func(context.Context) error
 
-// New builds and starts new Filecoin node
+// New builds and starts new EpiK node
 func New(ctx context.Context, opts ...Option) (StopFunc, error) {
 	settings := Settings{
 		modules: map[interface{}]fx.Option{},

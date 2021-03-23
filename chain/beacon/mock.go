@@ -6,13 +6,13 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/minio/blake2b-simd"
 	"golang.org/x/xerrors"
 )
 
-// Mock beacon assumes that filecoin rounds are 1:1 mapped with the beacon rounds
+// Mock beacon assumes that epik rounds are 1:1 mapped with the beacon rounds
 type mockBeacon struct {
 	interval time.Duration
 }

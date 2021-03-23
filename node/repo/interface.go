@@ -83,7 +83,7 @@ type LockedRepo interface {
 	// SetAPIToken sets JWT API Token for CLI
 	SetAPIToken([]byte) error
 
-	// KeyStore returns store of private keys for Filecoin transactions
+	// KeyStore returns store of private keys for EpiK transactions
 	KeyStore() (types.KeyStore, error)
 
 	// Path returns absolute path of the repo

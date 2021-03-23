@@ -62,7 +62,7 @@ var MaxNonceGap = uint64(4)
 var (
 	ErrMessageTooBig = errors.New("message too big")
 
-	ErrMessageValueTooHigh = errors.New("cannot send more filecoin than will ever exist")
+	ErrMessageValueTooHigh = errors.New("cannot send more epk than will ever exist")
 
 	ErrNonceTooLow = errors.New("message nonce too low")
 

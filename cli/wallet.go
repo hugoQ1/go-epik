@@ -353,7 +353,7 @@ var walletImport = &cli.Command{
 				}
 			}
 			if err := json.Unmarshal(inpdata, &f); err != nil {
-				return xerrors.Errorf("failed to parse go-filecoin key: %s", err)
+				return xerrors.Errorf("failed to parse go-epik key: %s", err)
 			}
 
 			gk := f.KeyInfo[0]

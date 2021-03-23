@@ -154,60 +154,6 @@ func infoCmdAct(cctx *cli.Context) error {
 			faultyPercentage)
 	}
 
-	/* // mining start countdown
-	{
-		var lbr abi.ChainEpoch
-		if head.Height() > policy.ChainFinality {
-			lbr = head.Height() - policy.ChainFinality
-		}
-
-		lbts, err := api.ChainGetTipSetByHeight(ctx, lbr, types.EmptyTSK)
-		if err != nil {
-			return err
-		}
-		actives, err := api.StateMinerActives(ctx, maddr, lbts.Key())
-		if err != nil {
-			return err
-		}
-		count, err := actives.Count()
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			actives, err := api.StateMinerActives(ctx, maddr, types.EmptyTSK)
-			if err != nil {
-				return err
-			}
-			all, err := actives.All(10000)
-			if err != nil {
-				return err
-			}
-			var earliestSector *miner.SectorOnChainInfo
-			err = actives.ForEach(func(sno uint64) error {
-				si, err := api.StateSectorGetInfo(ctx, maddr, abi.SectorNumber(sno), types.EmptyTSK)
-				if err != nil {
-					return xerrors.Errorf("failed to get sector %d info: %w", sno, err)
-				}
-				if si.Activation > lbr && (earliestSector == nil || si.Activation < earliestSector.Activation) {
-					earliestSector = si
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-			if earliestSector != nil {
-				fmt.Printf("Estimated mining start time: in %d epochs\n", policy.ChainFinality-(head.Height()-earliestSector.Activation))
-				fmt.Printf("\t[DEBUG] head %d, all active sectors: %v\n", head.Height(), all)
-				fmt.Printf("\t[DEBUG] earliest sector %d activated at %d\n", earliestSector.SectorNumber, earliestSector.Activation)
-				if lbts.Height() < lbr {
-					fmt.Printf("\t[DEBUG] null round found at %d\n", lbr)
-				}
-			}
-		}
-	} */
-
 	if !pow.HasMinPower {
 		fmt.Print("Below minimum power threshold, no blocks will be won\n")
 	} else {

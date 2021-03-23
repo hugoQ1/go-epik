@@ -56,7 +56,7 @@ type accountInfo struct {
 
 var auditsCmd = &cli.Command{
 	Name:        "audits",
-	Description: "a collection of utilities for auditing the filecoin chain",
+	Description: "a collection of utilities for auditing the epik chain",
 	Subcommands: []*cli.Command{
 		chainBalanceCmd,
 		chainBalanceStateCmd,

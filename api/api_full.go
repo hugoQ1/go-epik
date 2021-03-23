@@ -45,7 +45,7 @@ type ChainIO interface {
 	ChainHasObj(context.Context, cid.Cid) (bool, error)
 }
 
-// FullNode API is a low-level interface to the Filecoin network full node
+// FullNode API is a low-level interface to the EpiK network full node
 type FullNode interface {
 	Common
 
@@ -141,7 +141,7 @@ type FullNode interface {
 	// MethodGroup: Beacon
 	// The Beacon method group contains methods for interacting with the random beacon (DRAND)
 
-	// BeaconGetEntry returns the beacon entry for the given filecoin epoch. If
+	// BeaconGetEntry returns the beacon entry for the given epoch. If
 	// the entry has not yet been produced, the call will block until the entry
 	// becomes available
 	BeaconGetEntry(ctx context.Context, epoch abi.ChainEpoch) (*types.BeaconEntry, error)
@@ -495,10 +495,10 @@ type FullNode interface {
 	StateDealProviderCollateralBounds(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (DealCollateralBounds, error) */
 
 	StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error)
-	// StateCirculatingSupply returns the exact circulating supply of Filecoin at the given tipset.
+	// StateCirculatingSupply returns the exact circulating supply of EPK at the given tipset.
 	// This is not used anywhere in the protocol itself, and is only for external consumption.
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
-	// StateVMCirculatingSupplyInternal returns an approximation of the circulating supply of Filecoin at the given tipset.
+	// StateVMCirculatingSupplyInternal returns an approximation of the circulating supply of EPK at the given tipset.
 	// This is the value reported by the runtime interface to actors code.
 	StateVMCirculatingSupplyInternal(context.Context, types.TipSetKey) (CirculatingSupply, error)
 	// StateNetworkVersion returns the network version at the given tipset
@@ -538,7 +538,7 @@ type FullNode interface {
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
-	// filecoin network
+	// epik network
 
 	// MsigGetAvailableBalance returns the portion of a multisig's balance that can be withdrawn or spent
 	MsigGetAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)

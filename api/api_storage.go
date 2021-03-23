@@ -25,7 +25,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
 )
 
-// StorageMiner is a low-level interface to the Filecoin network storage miner node
+// StorageMiner is a low-level interface to the EpiK network storage miner node
 type StorageMiner interface {
 	Common
 
