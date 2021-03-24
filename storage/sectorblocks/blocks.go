@@ -14,14 +14,17 @@ import (
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	"golang.org/x/xerrors"
 
+	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filecoin-project/go-state-types/abi"
-	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/storage"
+	logging "github.com/ipfs/go-log/v2"
 )
+
+var log = logging.Logger("storageblocks")
 
 type SealSerialization uint8
 

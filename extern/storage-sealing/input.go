@@ -50,7 +50,7 @@ func (m *Sealing) handleWaitDeals(ctx statemachine.Context, sector SectorInfo) e
 	go func() {
 		defer m.inputLk.Unlock()
 		if err := m.updateInput(ctx.Context(), sector.SectorType); err != nil {
-			log.Errorf("%+v", err)
+			log.Errorf("failed to updateInput in handleWaitDeals: sector %d, %+v", sector.SectorNumber, err)
 		}
 	}()
 
@@ -253,6 +253,16 @@ func (m *Sealing) AddPieceToAnySector(ctx context.Context, size abi.UnpaddedPiec
 		return 0, 0, xerrors.Errorf("piece for deal %s already pending", proposalCID(deal))
 	}
 
+	busy, err := m.checkSealingBusy(ctx, sp, size)
+	if err != nil {
+		m.inputLk.Unlock()
+		return 0, 0, xerrors.Errorf("failed to check sealing busy: %s, %v", proposalCID(deal), err)
+	}
+	if busy {
+		m.inputLk.Unlock()
+		return 0, 0, ErrTooManySectorsSealing
+	}
+
 	resCh := make(chan struct {
 		sn     abi.SectorNumber
 		offset abi.UnpaddedPieceSize
@@ -276,7 +286,15 @@ func (m *Sealing) AddPieceToAnySector(ctx context.Context, size abi.UnpaddedPiec
 	go func() {
 		defer m.inputLk.Unlock()
 		if err := m.updateInput(ctx, sp); err != nil {
-			log.Errorf("%+v", err)
+			log.Errorf("failed to updatInput in AddPieceToAnySector: deal %d, busy %t, %+v", deal.DealID, xerrors.Is(err, ErrTooManySectorsSealing), err)
+			if xerrors.Is(err, ErrTooManySectorsSealing) {
+				delete(m.pendingPieces, proposalCID(deal))
+				resCh <- struct {
+					sn     abi.SectorNumber
+					offset abi.UnpaddedPieceSize
+					err    error
+				}{sn: 0, offset: 0, err: err}
+			}
 		}
 	}()
 
@@ -368,10 +386,75 @@ func (m *Sealing) updateInput(ctx context.Context, sp abi.RegisteredSealProof) e
 	if len(toAssign) > 0 {
 		if err := m.tryCreateDealSector(ctx, sp); err != nil {
 			log.Errorw("Failed to create a new sector for deals", "error", err)
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (m *Sealing) checkSealingBusy(ctx context.Context, sp abi.RegisteredSealProof, need abi.UnpaddedPieceSize) (bool, error) {
+	cfg, err := m.getConfig()
+	if err != nil {
+		return false, xerrors.Errorf("getting storage config: %w", err)
+	}
+
+	if (cfg.MaxSealingSectorsForDeals > 0 && m.stats.curSealing() >= cfg.MaxSealingSectorsForDeals) ||
+		(cfg.MaxWaitDealsSectors > 0 && m.stats.curStaging() >= cfg.MaxWaitDealsSectors) {
+
+		ssize, err := sp.SectorSize()
+		if err != nil {
+			return false, err
+		}
+
+		adjust := func(sectorIds []abi.SectorID, avas map[abi.SectorID]abi.UnpaddedPieceSize) {
+			sort.Slice(sectorIds, func(i, j int) bool {
+				return avas[sectorIds[i]] < avas[sectorIds[j]]
+			})
+		}
+
+		var sortedIds []abi.SectorID
+		avails := make(map[abi.SectorID]abi.UnpaddedPieceSize)
+		for id, sector := range m.openSectors {
+			avails[id] = abi.PaddedPieceSize(ssize).Unpadded() - sector.used
+			sortedIds = append(sortedIds, id)
+		}
+		adjust(sortedIds, avails)
+		log.Infof("=======>checkSealingBusy: need %d, sectors %v, availables %v", need, sortedIds, avails)
+
+		miss := 0
+		for _, piece := range m.pendingPieces {
+			if piece.assigned {
+				continue // already assigned to a sector, skip
+			}
+
+			putable := false
+			for _, id := range sortedIds {
+				if piece.size <= avails[id] {
+					putable = true
+					avails[id] -= piece.size
+					break
+				}
+			}
+			if putable {
+				adjust(sortedIds, avails)
+			} else {
+				miss++
+				log.Infof("=======>checkSealingBusy miss: deal %d", piece.deal.DealID, piece.size)
+			}
+		}
+		log.Infof("=======>checkSealingBusy after sub pendings: miss %d, sectors %v, availables %v", miss, sortedIds, avails)
+		if miss > 0 {
+			return true, nil
+		}
+		for _, id := range sortedIds {
+			if need <= avails[id] {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 func (m *Sealing) tryCreateDealSector(ctx context.Context, sp abi.RegisteredSealProof) error {
@@ -381,11 +464,11 @@ func (m *Sealing) tryCreateDealSector(ctx context.Context, sp abi.RegisteredSeal
 	}
 
 	if cfg.MaxSealingSectorsForDeals > 0 && m.stats.curSealing() >= cfg.MaxSealingSectorsForDeals {
-		return nil
+		return ErrTooManySectorsSealing
 	}
 
 	if cfg.MaxWaitDealsSectors > 0 && m.stats.curStaging() >= cfg.MaxWaitDealsSectors {
-		return nil
+		return ErrTooManySectorsSealing
 	}
 
 	// Now actually create a new sector
