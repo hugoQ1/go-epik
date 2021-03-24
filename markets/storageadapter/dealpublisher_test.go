@@ -197,6 +197,9 @@ func publishDeal(t *testing.T, dp *DealPublisher, ctxCancelled bool, expired boo
 			Type: crypto.SigTypeSecp256k1,
 			Data: []byte("signature data"),
 		},
+		DataRef: market2.StorageDataRef{
+			RootCID: generateCids(1)[0],
+		},
 	}
 
 	go func() {

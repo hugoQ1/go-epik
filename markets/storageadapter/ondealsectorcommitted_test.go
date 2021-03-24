@@ -173,8 +173,9 @@ func TestOnDealSectorPreCommitted(t *testing.T) {
 					}),
 				},
 			},
-			expectedCBCallCount: 1,
-			expectedCBError:     errors.New("handling applied event: something went wrong"),
+			expectedCBCallCount: 0,
+			// expectedCBError:     errors.New("handling applied event: something went wrong"),
+			expectedError: xerrors.Errorf("failed to set up called handler: failed to get current deal info: something went wrong"),
 		},
 		"proposed deal epoch timeout": {
 			currentDealInfo: sealing.CurrentDealInfo{
@@ -491,7 +492,7 @@ func (fe *fakeEvents) Called(check events.CheckFunc, msgHnd events.MsgHandler, r
 		return nil
 	}
 	for _, matchMessage := range fe.MatchMessages {
-		matched, err := mf(matchMessage.msg)
+		matched, err := mf(matchMessage.msg, matchMessage.ts)
 		if err != nil {
 			return err
 		}

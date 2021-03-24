@@ -93,10 +93,10 @@ var storageStatsCmd = &cli.Command{
 			netTotals.seenPieceCid[dealInfo.Proposal.PieceCID] = true
 			netTotals.TotalDeals++
 
-			if dealInfo.Proposal.VerifiedDeal {
-				netTotals.FilplusTotalDeals++
-				netTotals.FilplusTotalBytes += int64(dealInfo.Proposal.PieceSize)
-			}
+			// if dealInfo.Proposal.VerifiedDeal {
+			// 	netTotals.FilplusTotalDeals++
+			// 	netTotals.FilplusTotalBytes += int64(dealInfo.Proposal.PieceSize)
+			// }
 		}
 
 		netTotals.UniqueCids = len(netTotals.seenPieceCid)

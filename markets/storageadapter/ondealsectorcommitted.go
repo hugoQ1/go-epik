@@ -108,9 +108,27 @@ func (mgr *SectorCommittedManager) OnDealSectorPreCommitted(ctx context.Context,
 	}
 
 	// Watch for a pre-commit message to the provider.
-	matchEvent := func(msg *types.Message) (bool, error) {
-		matched := msg.To == provider && msg.Method == miner.Methods.PreCommitSector
-		return matched, nil
+	matchEvent := func(msg *types.Message, ts *types.TipSet) (bool, error) {
+		if msg.To != provider || msg.Method != miner.Methods.PreCommitSector {
+			return false, nil
+		}
+
+		var params miner.SectorPreCommitInfo
+		err := params.UnmarshalCBOR(bytes.NewReader(msg.Params))
+		if err != nil {
+			return false, xerrors.Errorf("failed to unmarshal pre commit: %d, %w", ts.Height(), err)
+		}
+
+		res, err := mgr.dealInfo.GetCurrentDealInfo(ctx, ts.Key().Bytes(), &proposal, publishCid)
+		if err != nil {
+			return false, xerrors.Errorf("failed to get current deal info: %w", err)
+		}
+		for _, did := range params.DealIDs {
+			if did == res.DealID {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 
 	// The deal must be accepted by the deal proposal start epoch, so timeout
@@ -206,7 +224,7 @@ func (mgr *SectorCommittedManager) OnDealSectorCommitted(ctx context.Context, pr
 	}
 
 	// Match a prove-commit sent to the provider with the given sector number
-	matchEvent := func(msg *types.Message) (matched bool, err error) {
+	matchEvent := func(msg *types.Message, ts *types.TipSet) (matched bool, err error) {
 		if msg.To != provider || msg.Method != miner.Methods.ProveCommitSector {
 			return false, nil
 		}

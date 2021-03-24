@@ -110,7 +110,7 @@ func (pcs *paymentChannelSettler) revertHandler(ctx context.Context, ts *types.T
 	return nil
 }
 
-func (pcs *paymentChannelSettler) matcher(msg *types.Message) (matched bool, err error) {
+func (pcs *paymentChannelSettler) matcher(msg *types.Message, ts *types.TipSet) (matched bool, err error) {
 	// Check if this is a settle payment channel message
 	if msg.Method != paych.Methods.Settle {
 		return false, nil
