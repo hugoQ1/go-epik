@@ -250,7 +250,7 @@ type FullNodeStruct struct {
 		StateVMCirculatingSupplyInternal func(context.Context, types.TipSetKey) (api.CirculatingSupply, error)                                                `perm:"read"`
 		StateNetworkVersion              func(context.Context, types.TipSetKey) (stnetwork.Version, error)                                                    `perm:"read"`
 		StateListExperts                 func(context.Context, types.TipSetKey) ([]address.Address, error)                                                    `perm:"read"`
-		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)                                  `perm:"read"`
+		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*api.ExpertInfo, error)                                     `perm:"read"`
 		StateExpertDatas                 func(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error) `perm:"read"`
 		StateExpertFileInfo              func(context.Context, cid.Cid, types.TipSetKey) (*api.ExpertFileInfo, error)                                         `perm:"read"`
 		StateVoteTally                   func(context.Context, types.TipSetKey) (*vote.Tally, error)                                                          `perm:"read"`
@@ -1205,7 +1205,7 @@ func (c *FullNodeStruct) StateListExperts(ctx context.Context, tsk types.TipSetK
 	return c.Internal.StateListExperts(ctx, tsk)
 }
 
-func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*expert.ExpertInfo, error) {
+func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
 	return c.Internal.StateExpertInfo(ctx, addr, tsk)
 }
 

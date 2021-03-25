@@ -2250,10 +2250,10 @@ func (mr *MockFullNodeMockRecorder) StateExpertFileInfo(arg0, arg1, arg2 interfa
 }
 
 // StateExpertInfo mocks base method
-func (m *MockFullNode) StateExpertInfo(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (*expert.ExpertInfo, error) {
+func (m *MockFullNode) StateExpertInfo(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (*api.ExpertInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StateExpertInfo", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*expert.ExpertInfo)
+	ret0, _ := ret[0].(*api.ExpertInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

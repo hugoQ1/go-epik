@@ -1514,7 +1514,7 @@ func (a *StateAPI) StateListExperts(ctx context.Context, tsk types.TipSetKey) ([
 	return stmgr.ListExpertActors(ctx, a.StateManager, ts)
 }
 
-func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*expert.ExpertInfo, error) {
+func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
 	if addr.Protocol() != address.ID {
 		return nil, xerrors.Errorf("not a ID address: %s", addr)
 	}
@@ -1563,7 +1563,25 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
 	}
 
-	return info, nil
+	efAct, err := a.StateGetActor(ctx, builtin.ExpertFundActorAddr, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor: %w", err)
+	}
+
+	efs, err := expertfund.Load(a.Chain.ActorStore(ctx), efAct)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
+	}
+
+	efInfo, err := efs.ExpertFundInfo(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expertfund info: %w", err)
+	}
+
+	return &api.ExpertInfo{
+		ExpertInfo:  *info,
+		TotalReward: efInfo.RewardDebt,
+	}, nil
 }
 
 func (a *StateAPI) StateExpertDatas(ctx context.Context, addr address.Address, filter *bitfield.BitField, filterOut bool, tsk types.TipSetKey) ([]*expert.DataOnChainInfo, error) {

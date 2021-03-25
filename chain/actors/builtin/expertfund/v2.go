@@ -64,3 +64,7 @@ func (s *state3) ListAllExperts() ([]address.Address, error) {
 func (s *state3) experts() (adt.Map, error) {
 	return adt3.AsMap(s.store, s.Experts, builtin3.DefaultHamtBitwidth)
 }
+
+func (s *state3) ExpertFundInfo(a address.Address) (*ExpertFundInfo, error) {
+	return s.State.GetExpert(s.store, a)
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	expertfund2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 )
 
 func init() {
@@ -38,4 +39,7 @@ type State interface {
 
 	DataExpert(cid.Cid) (address.Address, error)
 	ListAllExperts() ([]address.Address, error)
+	ExpertFundInfo(a address.Address) (*ExpertFundInfo, error)
 }
+
+type ExpertFundInfo = expertfund2.ExpertInfo

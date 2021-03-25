@@ -506,7 +506,7 @@ type FullNode interface {
 	// StateListExperts returns the addresses of every expert.
 	StateListExperts(context.Context, types.TipSetKey) ([]address.Address, error)
 	// StateExpertInfo returns info about the indicated expert.
-	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)
+	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*ExpertInfo, error)
 	// StateExpertInfo lists expert's data
 	StateExpertDatas(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
 	// StateExpertFileInfo returns expert's file
@@ -1151,4 +1151,9 @@ type MsigTransaction struct {
 	Params []byte
 
 	Approved []address.Address
+}
+
+type ExpertInfo struct {
+	expert.ExpertInfo
+	TotalReward abi.TokenAmount
 }
