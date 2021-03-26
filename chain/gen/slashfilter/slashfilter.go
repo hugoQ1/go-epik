@@ -89,14 +89,18 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 		}
 	}
 
-	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
+	if mark {
+		if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
+			return xerrors.Errorf("putting byEpoch entry: %w", err)
+		}
+
+		return f.putEpoch(epochKey, bh.Cid().Bytes())
+	}
+	/* 	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
 		return xerrors.Errorf("putting byEpoch entry: %w", err)
 	}
 
-	if mark {
-		return f.putEpoch(epochKey, bh.Cid().Bytes())
-	}
-	/* if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
+	if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
 		return xerrors.Errorf("putting byEpoch entry: %w", err)
 	} */
 
