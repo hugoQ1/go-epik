@@ -176,6 +176,12 @@ epik-chainwatch:
 .PHONY: epik-chainwatch
 BINS+=epik-chainwatch
 
+epik-expressman:
+	rm -f epik-expressman
+	go build $(GOFLAGS) -o epik-expressman ./cmd/epik-expressman
+.PHONY: epik-expressman
+BINS+=epik-expressman
+
 epik-bench:
 	rm -f epik-bench
 	go build -o epik-bench ./cmd/epik-bench
