@@ -117,6 +117,10 @@ var clientImportCmd = &cli.Command{
 			Name:  "car",
 			Usage: "import from a car file instead of a regular file",
 		},
+		&cli.BoolFlag{
+			Name:  "local",
+			Usage: "import the file to local and not start storage deal",
+		},
 		&cli.StringFlag{
 			Name:  "expert",
 			Usage: "specify the data submit expert, '--from' will be ignored if set",
@@ -148,52 +152,63 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
-		// from
-		var from address.Address
-		if v := cctx.String("from"); v != "" {
-			from, err = address.NewFromString(v)
-			if err != nil {
-				return xerrors.Errorf("failed to parse 'from' address: %w", err)
-			}
-		} else {
-			from, err = api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-		}
-
-		// expert
-		var expert address.Address
-		if v := cctx.String("expert"); v != "" {
-			expert, err = address.NewFromString(v)
-			if err != nil {
-				return err
-			}
-		}
-
-		// miner
-		var miner address.Address
-		if minerStr := cctx.String("miner"); minerStr != "" {
-			miner, err = address.NewFromString(minerStr)
-			if err != nil {
-				return xerrors.Errorf("failed to parse 'miner' address: %w", err)
-			}
-		}
-
-		c, err := api.ClientImportAndDeal(ctx, &lapi.ImportAndDealParams{
-			Ref: lapi.FileRef{
+		var res *lapi.ImportRes
+		if cctx.Bool("local") {
+			res, err = api.ClientImport(ctx, lapi.FileRef{
 				Path:  absPath,
 				IsCAR: cctx.Bool("car"),
-			},
-			Miner:  miner,
-			From:   from,
-			Expert: expert,
-		})
-		if err != nil {
-			return err
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			// from
+			var from address.Address
+			if v := cctx.String("from"); v != "" {
+				from, err = address.NewFromString(v)
+				if err != nil {
+					return xerrors.Errorf("failed to parse 'from' address: %w", err)
+				}
+			} else {
+				from, err = api.WalletDefaultAddress(ctx)
+				if err != nil {
+					return err
+				}
+			}
+
+			// expert
+			var expert address.Address
+			if v := cctx.String("expert"); v != "" {
+				expert, err = address.NewFromString(v)
+				if err != nil {
+					return err
+				}
+			}
+
+			// miner
+			var miner address.Address
+			if minerStr := cctx.String("miner"); minerStr != "" {
+				miner, err = address.NewFromString(minerStr)
+				if err != nil {
+					return xerrors.Errorf("failed to parse 'miner' address: %w", err)
+				}
+			}
+
+			res, err = api.ClientImportAndDeal(ctx, &lapi.ImportAndDealParams{
+				Ref: lapi.FileRef{
+					Path:  absPath,
+					IsCAR: cctx.Bool("car"),
+				},
+				Miner:  miner,
+				From:   from,
+				Expert: expert,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
-		ds, err := api.ClientDealPieceCID(ctx, c.Root)
+		ds, err := api.ClientDealPieceCID(ctx, res.Root)
 		if err != nil {
 			return err
 		}
@@ -203,8 +218,8 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("Import ID: %d\n", c.ImportID)
-		fmt.Printf("Root: %s\n", encoder.Encode(c.Root))
+		fmt.Printf("Import ID: %d\n", res.ImportID)
+		fmt.Printf("Root: %s\n", encoder.Encode(res.Root))
 		fmt.Printf("Piece CID: %s\n", encoder.Encode(ds.PieceCID))
 		fmt.Printf("Piece Size: %d\n", ds.PieceSize)
 		fmt.Printf("Payload Size: %d\n", ds.PayloadSize)
