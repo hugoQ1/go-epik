@@ -28,15 +28,25 @@ var (
 	DealParallelNum = 32
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
+
+	// MinerDefaultScore default score
+	MinerDefaultScore = 8
+
+	// MinerMaxScore max score
+	MinerMaxScore = 10
+
+	// MinerPunishmentScore
+	MinerPunishmentScore = 2
 )
 
 type DataRef struct {
-	pieceID     cid.Cid
-	rootCID     cid.Cid
-	miners      []address.Address
-	tryCount    int
-	isRetrieved bool
-	isDealed    bool
+	pieceID      cid.Cid
+	rootCID      cid.Cid
+	miners       map[address.Address]int
+	tryCount     int
+	retrieveTime time.Time
+	isRetrieved  bool
+	isDealed     bool
 }
 
 type MinerData struct {
@@ -167,7 +177,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				dataRef = &DataRef{
 					pieceID:     data.PieceCID,
 					rootCID:     data.RootCID,
-					miners:      []address.Address{},
+					miners:      make(map[address.Address]int),
 					isRetrieved: false,
 					isDealed:    false,
 				}
@@ -175,7 +185,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			} else {
 				dataRef = ref.(*DataRef)
 			}
-			dataRef.miners = append(dataRef.miners, data.Miner)
+			dataRef.miners[data.Miner] = MinerDefaultScore
 			m.dataRefs.Add(data.PieceCID.String(), dataRef)
 		}
 
@@ -231,9 +241,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			return err
 		}
 
+		dataObj, _ := m.dataRefs.Get(rk)
+		data := dataObj.(*DataRef)
 		if retrievalmarket.IsTerminalSuccess(nDeal.Status) {
-			dataObj, _ := m.dataRefs.Get(rk)
-			data := dataObj.(*DataRef)
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 		}
@@ -241,6 +251,12 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			nDeal.Status == retrievalmarket.DealStatusCancelled ||
 			retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
+			data.tryCount++
+			data.retrieveTime = time.Now()
+			data.miners[nDeal.MinerWallet] = data.miners[nDeal.MinerWallet] - MinerPunishmentScore
+			if data.miners[nDeal.MinerWallet] < 1 {
+				data.miners[nDeal.MinerWallet] = 1
+			}
 		}
 	}
 	if m.retrievals.Len() >= RetrieveParallelNum {
@@ -283,10 +299,26 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			break
 		}
 
-		miner := data.miners[rand.Intn(len(data.miners))]
+		if data.tryCount > 3 {
+			if time.Now().Before(data.retrieveTime.Add(30 * time.Minute)) {
+				continue
+			}
+		}
+
+		var addrs []address.Address
+		for k, v := range data.miners {
+			for i := 0; i < v; i++ {
+				addrs = append(addrs, k)
+			}
+		}
+
+		miner := addrs[rand.Intn(len(addrs))]
 		deal, err := m.api.ClientRetrieveQuery(ctx, data.rootCID, &data.pieceID, miner)
 		if err != nil {
-			data.tryCount++
+			data.miners[miner] = data.miners[miner] - MinerPunishmentScore
+			if data.miners[miner] < 1 {
+				data.miners[miner] = 1
+			}
 			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", miner, data.rootCID, data.tryCount, err)
 			// if data.tryCount > RetrieveTryCountMax {
 			// 	for index, m := range data.miners {
