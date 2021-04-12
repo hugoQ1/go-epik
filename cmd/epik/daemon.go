@@ -76,6 +76,11 @@ var DaemonCmd = &cli.Command{
 	Name:  "daemon",
 	Usage: "Start a epik daemon process",
 	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "init",
+			Usage: "init daemon repo.",
+			Value: false,
+		},
 		&cli.StringFlag{
 			Name:  "api",
 			Value: "1234",
@@ -228,6 +233,10 @@ var DaemonCmd = &cli.Command{
 		err = r.Init(repo.FullNode)
 		if err != nil && err != repo.ErrRepoExists {
 			return xerrors.Errorf("repo init error: %w", err)
+		}
+		if cctx.Bool("init") {
+			log.Info("daemon repo init completed.")
+			return nil
 		}
 		freshRepo := err != repo.ErrRepoExists
 
