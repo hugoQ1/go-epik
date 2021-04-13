@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/ipfs/go-cid"
 	"go.opencensus.io/trace"
 )
 
@@ -46,6 +47,24 @@ func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *types.TipSet {
 		}
 	}
 
+	convertToMap := func(ids []cid.Cid) map[cid.Cid]struct{} {
+		out := make(map[cid.Cid]struct{})
+		for _, id := range ids {
+			out[id] = struct{}{}
+		}
+		return out
+	}
+
+	// return a.contains(b)
+	contains := func(a, b map[cid.Cid]struct{}) bool {
+		for id := range b {
+			if _, ok := a[id]; !ok {
+				return false
+			}
+		}
+		return true
+	}
+
 	cs.wg.Add(1)
 	go func() {
 		defer cs.wg.Done()
@@ -57,6 +76,7 @@ func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *types.TipSet {
 		var (
 			prevBest *types.TipSet
 			lastRecv time.Time
+			prevCids map[cid.Cid]struct{}
 		)
 		for {
 			select {
@@ -65,37 +85,30 @@ func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *types.TipSet {
 
 				if prevBest == nil {
 					prevBest = r
+					prevCids = convertToMap(r.Cids())
 					break
 				}
 
-				newCids := r.Cids()
-				prevCids := prevBest.Cids()
+				newCids := convertToMap(r.Cids())
 
-				containsPrev := prevBest.Height() == r.Height()
+				containsPrev := false
 				if prevBest.Height() == r.Height() {
-					if len(newCids) >= len(prevCids) {
-						for i, c := range prevCids {
-							if c != newCids[i] {
-								containsPrev = false
-								break
-							}
-						}
-					} else {
-						containsPrev = false
-					}
+					containsPrev = contains(newCids, prevCids)
 				}
-
 				if !containsPrev {
 					pushCompressedTs(prevBest)
 				} else {
 					log.Infof("Compress heaviest tipset! %s (height=%d)", r.Cids(), r.Height())
 				}
+
 				prevBest = r
+				prevCids = newCids
 
 			case <-ticker1.C:
 				if prevBest != nil && time.Since(lastRecv) >= time.Second {
 					pushCompressedTs(prevBest)
 					prevBest = nil
+					prevCids = nil
 				}
 
 			case <-ctx.Done():
