@@ -26,6 +26,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
@@ -761,24 +762,6 @@ func (m *StateModule) StateMarketStorageDeal(ctx context.Context, dealId abi.Dea
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
 	return stmgr.GetStorageDeal(ctx, m.StateManager, dealId, ts)
-}
-
-func (m *StateAPI) StateMarketInitialQuota(ctx context.Context, tsk types.TipSetKey) (int64, error) {
-	act, err := m.StateManager.LoadActorTsk(ctx, market.Address, tsk)
-	if err != nil {
-		return 0, xerrors.Errorf("failed to load market actor: %w", err)
-	}
-
-	mState, err := market.Load(m.Chain.ActorStore(ctx), act)
-	if err != nil {
-		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
-	}
-
-	qs, err := mState.Quotas()
-	if err != nil {
-		return 0, xerrors.Errorf("failed to get quotas: %w", err)
-	}
-	return qs.InitialQuota(), nil
 }
 
 func (m *StateAPI) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (int64, error) {
@@ -1714,6 +1697,57 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 		return nil, xerrors.Errorf("failed to load govern actor state: %w", err)
 	}
 	return govState.ListGovrnors()
+}
+
+func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (*govern.GovParams, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, govern.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load govern actor: %w", err)
+	}
+	store := a.Chain.ActorStore(ctx)
+
+	var out govern.GovParams
+
+	// ratio
+	powerState, err := power.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load power actor state: %w", err)
+	}
+	out.MinersPoStRatio, err = powerState.PoStRatio()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get ratio")
+	}
+
+	// quota
+	marketState, err := market.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+	quotas, err := marketState.Quotas()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get quotas: %w", err)
+	}
+	out.MarketInitialQuota = quotas.InitialQuota()
+
+	// knowledge
+	knowState, err := knowledge.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load knowledge actor state: %w", err)
+	}
+	info, err := knowState.Info()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get knowledge fund info: %w", err)
+	}
+	out.KnowledgePayee = info.Payee
+
+	// threshold
+	efState, err := expertfund.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
+	}
+	out.ExpertfundThreshold = efState.Threshold()
+
+	return &out, nil
 }
 
 func (a *StateAPI) StateRetrievalInfo(ctx context.Context, tsk types.TipSetKey) (*api.RetrievalInfo, error) {

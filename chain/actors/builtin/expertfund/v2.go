@@ -3,7 +3,6 @@ package expertfund
 import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/ipfs/go-cid"
-	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
 	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
@@ -28,15 +27,12 @@ type state3 struct {
 }
 
 func (s *state3) DataExpert(pieceCID cid.Cid) (address.Address, error) {
-	expert, found, err := s.State.GetData(s.store, pieceCID.String())
+	infos, err := s.State.GetDataInfos(s.store, pieceCID)
 	if err != nil {
 		return address.Undef, err
 	}
 
-	if !found {
-		return address.Undef, xerrors.Errorf("failed to find expert with data: %s", pieceCID)
-	}
-	return expert, nil
+	return infos[0].Expert, nil
 }
 
 func (s *state3) ListAllExperts() ([]address.Address, error) {
@@ -67,4 +63,8 @@ func (s *state3) experts() (adt.Map, error) {
 
 func (s *state3) ExpertFundInfo(a address.Address) (*ExpertFundInfo, error) {
 	return s.State.GetExpert(s.store, a)
+}
+
+func (s *state3) Threshold() uint64 {
+	return s.DataStoreThreshold
 }

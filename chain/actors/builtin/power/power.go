@@ -15,6 +15,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	power3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 )
 
 func init() {
@@ -48,6 +49,9 @@ type State interface {
 	TotalLocked() (abi.TokenAmount, error)
 	TotalPower() (Claim, error)
 	TotalCommitted() (Claim, error)
+
+	PoStRatio() (power3.WdPoStRatio, error)
+	AllowNoPoSt(abi.ChainEpoch, abi.Randomness) (bool, error)
 
 	// MinerCounts returns the number of miners. Participating is the number
 	// with power above the minimum miner threshold.

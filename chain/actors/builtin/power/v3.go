@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
+	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
@@ -49,6 +50,25 @@ func (s *state3) TotalCommitted() (Claim, error) {
 		RawBytePower:    s.TotalBytesCommitted,
 		QualityAdjPower: s.TotalQABytesCommitted,
 	}, nil
+}
+
+func (s *state3) PoStRatio() (out power3.WdPoStRatio, err error) {
+	arr, err := adt3.AsArray(s.store, s.WdPoStRatios, builtin3.DefaultAmtBitwidth)
+	if err != nil {
+		return out, err
+	}
+	found, err := arr.Get(arr.Length()-1, &out)
+	if err != nil {
+		return out, err
+	}
+	if !found {
+		return out, xerrors.Errorf("unexpected missing ratio at %d", arr.Length()-1)
+	}
+	return out, nil
+}
+
+func (s *state3) AllowNoPoSt(challenge abi.ChainEpoch, rand abi.Randomness) (bool, error) {
+	return s.State.AllowNoPoSt(s.store, challenge, rand)
 }
 
 func (s *state3) MinerPower(addr address.Address) (Claim, bool, error) {

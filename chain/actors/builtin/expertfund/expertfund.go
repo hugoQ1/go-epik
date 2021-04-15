@@ -40,6 +40,7 @@ type State interface {
 	DataExpert(cid.Cid) (address.Address, error)
 	ListAllExperts() ([]address.Address, error)
 	ExpertFundInfo(a address.Address) (*ExpertFundInfo, error)
+	Threshold() uint64
 }
 
 type ExpertFundInfo = expertfund2.ExpertInfo

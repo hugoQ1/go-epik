@@ -34,6 +34,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/blockstore"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -109,6 +110,19 @@ func (a *ChainAPI) ChainGetRandomnessFromBeacon(ctx context.Context, tsk types.T
 	}
 
 	return a.Chain.GetBeaconRandomness(ctx, pts.Cids(), personalization, randEpoch, entropy)
+}
+
+func (a *ChainAPI) ChainAllowNoWindowPoSt(ctx context.Context, tsk types.TipSetKey, challenge abi.ChainEpoch, rand abi.Randomness) (bool, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, power.Address, tsk)
+	if err != nil {
+		return false, xerrors.Errorf("failed to load power actor: %w", err)
+	}
+
+	pState, err := power.Load(a.Chain.ActorStore(ctx), act)
+	if err != nil {
+		return false, xerrors.Errorf("failed to load power actor state: %w", err)
+	}
+	return pState.AllowNoPoSt(challenge, rand)
 }
 
 func (a *ChainAPI) ChainGetBlock(ctx context.Context, msg cid.Cid) (*types.BlockHeader, error) {

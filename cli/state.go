@@ -1816,7 +1816,6 @@ var stateMarketCmd = &cli.Command{
 	Usage: "Inspect the storage market actor",
 	Subcommands: []*cli.Command{
 		stateMarketBalanceCmd,
-		stateMarketInitialQuotaCmd,
 		stateMarketRemainingQuotaCmd,
 	},
 }
@@ -1854,34 +1853,6 @@ var stateMarketBalanceCmd = &cli.Command{
 
 		fmt.Printf("Escrow: %s\n", types.EPK(balance.Escrow))
 		fmt.Printf("Locked: %s\n", types.EPK(balance.Locked))
-
-		return nil
-	},
-}
-
-var stateMarketInitialQuotaCmd = &cli.Command{
-	Name:  "initial-quota",
-	Usage: "Get current initial quota for new deal piece",
-	Action: func(cctx *cli.Context) error {
-		api, closer, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-
-		ctx := ReqContext(cctx)
-
-		ts, err := LoadTipSet(ctx, cctx, api)
-		if err != nil {
-			return err
-		}
-
-		n, err := api.StateMarketInitialQuota(ctx, ts.Key())
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Initial Quota: %d\n", n)
 
 		return nil
 	},
