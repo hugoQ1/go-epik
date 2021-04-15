@@ -185,14 +185,29 @@ var expertInfoCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("Expert: %s\n", expertAddr)
-		fmt.Printf("Expert owner: %s\n", info.Owner)
-		fmt.Printf("Expert proposer: %s\n", info.Proposer)
-		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
+		fmt.Printf("\tOwner: %s\n", info.Owner)
+		fmt.Printf("\tProposer: %s\n", info.Proposer)
 		expertType := "foundation"
 		if info.Type == builtin.ExpertNormal {
 			expertType = "normal"
 		}
-		fmt.Printf("Expert type: %s\n", expertType)
+		fmt.Printf("\tType: %s\n", expertType)
+		fmt.Printf("\tHash: %s\n", info.ApplicationHash)
+
+		fmt.Printf("\nStatus: %d (%s)\n", info.Status, info.StatusDesc)
+		fmt.Printf("\tVotes: %s (required %s)\n", types.EPK(info.CurrentVotes), types.EPK(info.RequiredVotes))
+		fmt.Printf("\tImplicated: %d times\n", info.ImplicatedTimes)
+		fmt.Printf("\tData: %d\n", info.DataCount)
+		if info.CurrentVotes.LessThan(info.RequiredVotes) {
+			head, err := api.ChainHead(ctx)
+			if err != nil {
+				return err
+			}
+			elapsed := head.Height() - info.LostEpoch
+			fmt.Printf("Will be disqualified in %d epochs (since %d)\n", expert.ExpertVoteCheckPeriod-elapsed, info.LostEpoch)
+		}
+
+		fmt.Printf("\nRewards: %d\n", types.EPK(info.TotalReward))
 		return nil
 	},
 }
