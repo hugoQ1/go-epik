@@ -27,12 +27,12 @@ type state3 struct {
 }
 
 func (s *state3) DataExpert(pieceCID cid.Cid) (address.Address, error) {
-	infos, err := s.State.GetDataInfos(s.store, pieceCID)
+	pieceToInfo, err := s.State.GetDataInfos(s.store, pieceCID)
 	if err != nil {
 		return address.Undef, err
 	}
 
-	return infos[0].Expert, nil
+	return pieceToInfo[pieceCID].Expert, nil
 }
 
 func (s *state3) ListAllExperts() ([]address.Address, error) {
