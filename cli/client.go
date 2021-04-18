@@ -105,6 +105,7 @@ var clientCmd = &cli.Command{
 		WithCategory("util", clientListTransfers),
 		WithCategory("util", clientRestartTransfer),
 		WithCategory("util", clientCancelTransfer),
+		WithCategory("util", clientCancelAllTransfer),
 	},
 }
 
@@ -2520,6 +2521,61 @@ var clientCancelTransfer = &cli.Command{
 		timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
 		defer cancel()
 		return api.ClientCancelDataTransfer(timeoutCtx, transferID, other, initiator)
+	},
+}
+
+var clientCancelAllTransfer = &cli.Command{
+	Name:  "cancel-all-transfer",
+	Usage: "Force cancel all data transfer",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "force",
+			Usage: "force cancel all data transfers",
+			Value: true,
+		},
+		&cli.DurationFlag{
+			Name:  "cancel-timeout",
+			Usage: "time to wait for cancel to be sent to storage provider",
+			Value: 5 * time.Second,
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Bool("force") {
+			return cli.ShowCommandHelp(cctx, cctx.Command.Name)
+		}
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		channels, err := api.ClientListDataTransfers(ctx)
+		if err != nil {
+			return err
+		}
+
+		var cancelChannels []lapi.DataTransferChannel
+		for _, channel := range channels {
+			if channel.Status == datatransfer.Completed {
+				continue
+			}
+			if channel.Status == datatransfer.Failed || channel.Status == datatransfer.Cancelled {
+				continue
+			}
+			cancelChannels = append(cancelChannels, channel)
+		}
+		fmt.Printf("cancel data-transfer need cancel channels:%d, receivingChannels:%d\n", len(cancelChannels))
+
+		for _, channel := range cancelChannels {
+			timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
+			defer cancel()
+			if err := api.ClientCancelDataTransfer(timeoutCtx, channel.TransferID, channel.OtherPeer, channel.IsInitiator); err != nil {
+				continue
+			}
+			fmt.Printf("cancel data-transfer:%v, %v, %s\n", channel.TransferID, channel.OtherPeer, datatransfer.Statuses[channel.Status])
+		}
+		return nil
 	},
 }
 
