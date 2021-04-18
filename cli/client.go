@@ -2531,7 +2531,7 @@ var clientCancelAllTransfer = &cli.Command{
 		&cli.BoolFlag{
 			Name:  "force",
 			Usage: "force cancel all data transfers",
-			Value: true,
+			Value: false,
 		},
 		&cli.DurationFlag{
 			Name:  "cancel-timeout",
@@ -2565,7 +2565,7 @@ var clientCancelAllTransfer = &cli.Command{
 			}
 			cancelChannels = append(cancelChannels, channel)
 		}
-		fmt.Printf("cancel data-transfer need cancel channels:%d, receivingChannels:%d\n", len(cancelChannels))
+		fmt.Printf("cancel data-transfer need cancel channels:%d\n", len(cancelChannels))
 
 		for _, channel := range cancelChannels {
 			timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
