@@ -252,6 +252,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
 			if !retrievalmarket.IsTerminalSuccess(nDeal.Status) {
+				data.tryCount++
 				data.miners[nDeal.MinerWallet] = data.miners[nDeal.MinerWallet] - MinerPunishmentScore
 				if data.miners[nDeal.MinerWallet] < 1 {
 					data.miners[nDeal.MinerWallet] = 1
