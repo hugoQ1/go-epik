@@ -64,7 +64,7 @@ var DefaultFundraisingAccountActor = genesis.Actor{
 			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
 		},
 		Threshold:       1,
-		VestingDuration: 90 * 7 * builtin.EpochsInDay,
+		VestingDuration: 90 * 6 * builtin.EpochsInDay,
 		VestingStart:    0,
 		InitialVestedTarget: &builtin.BigFrac{
 			Numerator:   big.NewInt(1),
