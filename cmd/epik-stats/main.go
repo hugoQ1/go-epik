@@ -22,7 +22,7 @@ func main() {
 
 	app := &cli.App{
 		Name:    "epik-stats",
-		Usage:   "Collect basic information about a filecoin network using epik",
+		Usage:   "Collect basic information about a epik network using epik",
 		Version: build.UserVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{

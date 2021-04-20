@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-padreader"
@@ -189,15 +191,28 @@ func (a *API) ClientStartDeal(ctx context.Context, params *api.StartDealParams) 
 		dealStart = ts.Height() + abi.ChainEpoch(dealStartBufferHours*blocksPerHour) // TODO: Get this from storage ask
 	}
 
+	networkVersion, err := a.StateNetworkVersion(ctx, types.EmptyTSK)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get network version: %w", err)
+	}
+
+	st, err := miner.PreferredSealProofTypeFromWindowPoStType(networkVersion, mi.WindowPoStProofType)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get seal proof type: %w", err)
+	}
+
 	result, err := a.SMDealClient.ProposeStorageDeal(ctx, storagemarket.ProposeStorageDealParams{
-		Addr:          params.Wallet,
-		Info:          &providerInfo,
-		Data:          params.Data,
-		StartEpoch:    dealStart,
-		Collateral:    abi.NewTokenAmount(0),
-		Rt:            mi.SealProofType,
-		FastRetrieval: true,
-		StoreID:       storeID,
+		Addr:       params.Wallet,
+		Info:       &providerInfo,
+		Data:       params.Data,
+		StartEpoch: dealStart,
+		// EndEpoch:      calcDealExpiration(params.MinBlocksDuration, md, dealStart),
+		// Price:         params.EpochPrice,
+		Collateral:    abi.NewTokenAmount(0), //params.ProviderCollateral,
+		Rt:            st,
+		FastRetrieval: true, // params.FastRetrieval,
+		// VerifiedDeal:  params.VerifiedDeal,
+		StoreID: storeID,
 	})
 
 	if err != nil {
@@ -907,6 +922,16 @@ func (a *API) ClientCalcCommP(ctx context.Context, inpath string) (*api.CommPRet
 	stat, err := rdr.Stat()
 	if err != nil {
 		return nil, err
+	}
+
+	// check that the data is a car file; if it's not, retrieval won't work
+	_, _, err = car.ReadHeader(bufio.NewReader(rdr))
+	if err != nil {
+		return nil, xerrors.Errorf("not a car file: %w", err)
+	}
+
+	if _, err := rdr.Seek(0, io.SeekStart); err != nil {
+		return nil, xerrors.Errorf("seek to start: %w", err)
 	}
 
 	pieceReader, pieceSize := padreader.New(rdr, uint64(stat.Size()))

@@ -56,7 +56,7 @@ type accountInfo struct {
 
 var auditsCmd = &cli.Command{
 	Name:        "audits",
-	Description: "a collection of utilities for auditing the filecoin chain",
+	Description: "a collection of utilities for auditing the epik chain",
 	Subcommands: []*cli.Command{
 		chainBalanceCmd,
 		chainBalanceStateCmd,
@@ -171,7 +171,7 @@ var chainBalanceStateCmd = &cli.Command{
 
 		defer lkrepo.Close() //nolint:errcheck
 
-		bs, err := lkrepo.Blockstore(repo.BlockstoreChain)
+		bs, err := lkrepo.Blockstore(ctx, repo.UniversalBlockstore)
 		if err != nil {
 			return fmt.Errorf("failed to open blockstore: %w", err)
 		}
@@ -184,7 +184,7 @@ var chainBalanceStateCmd = &cli.Command{
 			}
 		}()
 
-		mds, err := lkrepo.Datastore("/metadata")
+		mds, err := lkrepo.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}
@@ -393,7 +393,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 
 		defer lkrepo.Close() //nolint:errcheck
 
-		bs, err := lkrepo.Blockstore(repo.BlockstoreChain)
+		bs, err := lkrepo.Blockstore(ctx, repo.UniversalBlockstore)
 		if err != nil {
 			return xerrors.Errorf("failed to open blockstore: %w", err)
 		}
@@ -406,7 +406,7 @@ func printAccountInfos(infos []accountInfo, minerInfo bool) {
 			}
 		}()
 
-		mds, err := lkrepo.Datastore("/metadata")
+		mds, err := lkrepo.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}

@@ -76,6 +76,11 @@ var DaemonCmd = &cli.Command{
 	Name:  "daemon",
 	Usage: "Start a epik daemon process",
 	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "init",
+			Usage: "init daemon repo.",
+			Value: false,
+		},
 		&cli.StringFlag{
 			Name:  "api",
 			Value: "1234",
@@ -144,6 +149,14 @@ var DaemonCmd = &cli.Command{
 			Name:  "api-max-req-size",
 			Usage: "maximum API request size accepted by the JSON RPC server",
 		},
+		&cli.PathFlag{
+			Name:  "restore",
+			Usage: "restore from backup file",
+		},
+		&cli.PathFlag{
+			Name:  "restore-config",
+			Usage: "config file to use when restoring from backup",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		isLite := cctx.Bool("lite")
@@ -185,7 +198,20 @@ var DaemonCmd = &cli.Command{
 			return fmt.Errorf("unrecognized profile type: %q", profile)
 		}
 
-		ctx, _ := tag.New(context.Background(), tag.Insert(metrics.Version, build.BuildVersion), tag.Insert(metrics.Commit, build.CurrentCommit))
+		ctx, _ := tag.New(context.Background(),
+			tag.Insert(metrics.Version, build.BuildVersion),
+			tag.Insert(metrics.Commit, build.CurrentCommit),
+			tag.Insert(metrics.NodeType, "chain"),
+		)
+		// Register all metric views
+		if err = view.Register(
+			metrics.ChainNodeViews...,
+		); err != nil {
+			log.Fatalf("Cannot register the view: %v", err)
+		}
+		// Set the metric to one so it is published to the exporter
+		stats.Record(ctx, metrics.EpikInfo.M(1))
+
 		{
 			dir, err := homedir.Expand(cctx.String("repo"))
 			if err != nil {
@@ -204,9 +230,15 @@ var DaemonCmd = &cli.Command{
 			r.SetConfigPath(cctx.String("config"))
 		}
 
-		if err := r.Init(repo.FullNode); err != nil && err != repo.ErrRepoExists {
+		err = r.Init(repo.FullNode)
+		if err != nil && err != repo.ErrRepoExists {
 			return xerrors.Errorf("repo init error: %w", err)
 		}
+		if cctx.Bool("init") {
+			log.Info("daemon repo init completed.")
+			return nil
+		}
+		freshRepo := err != repo.ErrRepoExists
 
 		if !isLite {
 			if err := paramfetch.GetParams(lcli.ReqContext(cctx), build.ParametersJSON(), 0); err != nil {
@@ -224,6 +256,15 @@ var DaemonCmd = &cli.Command{
 			genBytes = build.MaybeGenesis()
 		}
 
+		if cctx.IsSet("restore") {
+			if !freshRepo {
+				return xerrors.Errorf("restoring from backup is only possible with a fresh repo!")
+			}
+			if err := restore(cctx, r); err != nil {
+				return xerrors.Errorf("restoring from backup: %w", err)
+			}
+		}
+
 		chainfile := cctx.String("import-chain")
 		snapshot := cctx.String("import-snapshot")
 		if chainfile != "" || snapshot != "" {
@@ -236,7 +277,7 @@ var DaemonCmd = &cli.Command{
 				issnapshot = true
 			}
 
-			if err := ImportChain(r, chainfile, issnapshot); err != nil {
+			if err := ImportChain(ctx, r, chainfile, issnapshot); err != nil {
 				return err
 			}
 			if cctx.Bool("halt-after-import") {
@@ -282,10 +323,11 @@ var DaemonCmd = &cli.Command{
 		stop, err := node.New(ctx,
 			node.FullAPI(&api, node.Lite(isLite)),
 
-			node.Override(new(dtypes.Bootstrapper), isBootstrapper),
-			node.Override(new(dtypes.ShutdownChan), shutdownChan),
 			node.Online(),
 			node.Repo(r),
+
+			node.Override(new(dtypes.Bootstrapper), isBootstrapper),
+			node.Override(new(dtypes.ShutdownChan), shutdownChan),
 
 			genesis,
 			liteModeDeps,
@@ -313,16 +355,6 @@ var DaemonCmd = &cli.Command{
 				log.Errorf("importing key failed: %+v", err)
 			}
 		}
-
-		// Register all metric views
-		if err = view.Register(
-			append(metrics.DefaultViews, metrics.EpikViews...)...,
-		); err != nil {
-			log.Fatalf("Cannot register the view: %v", err)
-		}
-
-		// Set the metric to one so it is published to the exporter
-		stats.Record(ctx, metrics.EpikInfo.M(1))
 
 		endpoint, err := r.APIEndpoint()
 		if err != nil {
@@ -373,7 +405,7 @@ func importKey(ctx context.Context, api api.FullNode, f string) error {
 	return nil
 }
 
-func ImportChain(r repo.Repo, fname string, snapshot bool) (err error) {
+func ImportChain(ctx context.Context, r repo.Repo, fname string, snapshot bool) (err error) {
 	var rd io.Reader
 	var l int64
 	if strings.HasPrefix(fname, "http://") || strings.HasPrefix(fname, "https://") {
@@ -384,7 +416,7 @@ func ImportChain(r repo.Repo, fname string, snapshot bool) (err error) {
 		defer resp.Body.Close() //nolint:errcheck
 
 		if resp.StatusCode != http.StatusOK {
-			return xerrors.Errorf("non-200 response: %d", resp.StatusCode)
+			return xerrors.Errorf("fetching chain CAR failed with non-200 response: %d", resp.StatusCode)
 		}
 
 		rd = resp.Body
@@ -416,12 +448,12 @@ func ImportChain(r repo.Repo, fname string, snapshot bool) (err error) {
 	}
 	defer lr.Close() //nolint:errcheck
 
-	bs, err := lr.Blockstore(repo.BlockstoreChain)
+	bs, err := lr.Blockstore(ctx, repo.UniversalBlockstore)
 	if err != nil {
 		return xerrors.Errorf("failed to open blockstore: %w", err)
 	}
 
-	mds, err := lr.Datastore("/metadata")
+	mds, err := lr.Datastore(context.TODO(), "/metadata")
 	if err != nil {
 		return err
 	}
@@ -457,7 +489,7 @@ func ImportChain(r repo.Repo, fname string, snapshot bool) (err error) {
 		return xerrors.Errorf("flushing validation cache failed: %w", err)
 	}
 
-	gb, err := cst.GetTipsetByHeight(context.TODO(), 0, ts, true)
+	gb, err := cst.GetTipsetByHeight(ctx, 0, ts, true)
 	if err != nil {
 		return err
 	}
@@ -471,13 +503,13 @@ func ImportChain(r repo.Repo, fname string, snapshot bool) (err error) {
 
 	if !snapshot {
 		log.Infof("validating imported chain...")
-		if err := stm.ValidateChain(context.TODO(), ts); err != nil {
+		if err := stm.ValidateChain(ctx, ts); err != nil {
 			return xerrors.Errorf("chain validation failed: %w", err)
 		}
 	}
 
 	log.Infof("accepting %s as new head", ts.Cids())
-	if err := cst.ForceHeadSilent(context.Background(), ts); err != nil {
+	if err := cst.ForceHeadSilent(ctx, ts); err != nil {
 		return err
 	}
 

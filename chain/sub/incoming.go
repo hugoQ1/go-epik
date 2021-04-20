@@ -24,13 +24,14 @@ import (
 
 	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/stmgr"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/impl/client"
@@ -104,7 +105,7 @@ func HandleIncomingBlocks(ctx context.Context, bsub *pubsub.Subscription, s *cha
 					[]tag.Mutator{tag.Insert(metrics.MinerID, blk.Header.Miner.String())},
 					metrics.BlockDelay.M(delay),
 				)
-				log.Warnf("Received block with large delay %d from miner %s", delay, blk.Header.Miner)
+				log.Warnw("received block with large delay from miner", "block", blk.Cid(), "delay", delay, "miner", blk.Header.Miner)
 			}
 
 			if s.InformNewBlock(msg.ReceivedFrom, &types.FullBlock{
@@ -396,9 +397,15 @@ func (bv *BlockValidator) isChainNearSynced() bool {
 func (bv *BlockValidator) validateMsgMeta(ctx context.Context, msg *types.BlockMsg) error {
 	// TODO there has to be a simpler way to do this without the blockstore dance
 	// block headers use adt0
-	store := blockadt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewTemporary()))
-	bmArr := blockadt.MakeEmptyArray(store)
-	smArr := blockadt.MakeEmptyArray(store)
+	store := blockadt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewMemory()))
+	bmArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return err
+	}
+	smArr, err := blockadt.MakeEmptyArray(store, adt.DefaultMsgAmtBitwidth)
+	if err != nil {
+		return err
+	}
 
 	for i, m := range msg.BlsMessages {
 		c := cbg.CborCid(m)

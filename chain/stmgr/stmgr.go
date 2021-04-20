@@ -10,6 +10,7 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 	logging "github.com/ipfs/go-log/v2"
 	cbg "github.com/whyrusleeping/cbor-gen"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
@@ -21,6 +22,10 @@ import (
 	// Used for genesis.
 
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
+	"github.com/filecoin-project/specs-actors/v2/actors/migration/nv10"
+
+	// we use the same adt for all receipts
+	blockadt "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
@@ -28,7 +33,9 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/cron"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
 	_init "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -36,13 +43,16 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 )
 
 const LookbackNoLimit = abi.ChainEpoch(-1)
+const ReceiptAmtBitwidth = 3
 
 var log = logging.Logger("statemgr")
 
@@ -59,15 +69,24 @@ type versionSpec struct {
 	atOrBelow      abi.ChainEpoch
 }
 
+type migration struct {
+	upgrade       MigrationFunc
+	preMigrations []PreMigration
+	cache         *nv10.MemMigrationCache
+}
+
 type StateManager struct {
 	cs *store.ChainStore
+
+	cancel   context.CancelFunc
+	shutdown chan struct{}
 
 	// Determines the network version at any given epoch.
 	networkVersions []versionSpec
 	latestVersion   network.Version
 
-	// Maps chain epochs to upgrade functions.
-	stateMigrations map[abi.ChainEpoch]UpgradeFunc
+	// Maps chain epochs to migrations.
+	stateMigrations map[abi.ChainEpoch]*migration
 	// A set of potentially expensive/time consuming upgrades. Explicit
 	// calls for, e.g., gas estimation fail against this epoch with
 	// ErrExpensiveFork.
@@ -97,16 +116,21 @@ func NewStateManagerWithUpgradeSchedule(cs *store.ChainStore, us UpgradeSchedule
 		return nil, err
 	}
 
-	stateMigrations := make(map[abi.ChainEpoch]UpgradeFunc, len(us))
+	stateMigrations := make(map[abi.ChainEpoch]*migration, len(us))
 	expensiveUpgrades := make(map[abi.ChainEpoch]struct{}, len(us))
 	var networkVersions []versionSpec
-	lastVersion := network.Version6
+	lastVersion := network.Version10
 	if len(us) > 0 {
 		// If we have any upgrades, process them and create a version
 		// schedule.
 		for _, upgrade := range us {
-			if upgrade.Migration != nil {
-				stateMigrations[upgrade.Height] = upgrade.Migration
+			if upgrade.Migration != nil || upgrade.PreMigrations != nil {
+				migration := &migration{
+					upgrade:       upgrade.Migration,
+					preMigrations: upgrade.PreMigrations,
+					cache:         nv10.NewMemMigrationCache(),
+				}
+				stateMigrations[upgrade.Height] = migration
 			}
 			if upgrade.Expensive {
 				expensiveUpgrades[upgrade.Height] = struct{}{}
@@ -140,6 +164,33 @@ func cidsToKey(cids []cid.Cid) string {
 		out += c.KeyString()
 	}
 	return out
+}
+
+// Start starts the state manager's optional background processes. At the moment, this schedules
+// pre-migration functions to run ahead of network upgrades.
+//
+// This method is not safe to invoke from multiple threads or concurrently with Stop.
+func (sm *StateManager) Start(context.Context) error {
+	var ctx context.Context
+	ctx, sm.cancel = context.WithCancel(context.Background())
+	sm.shutdown = make(chan struct{})
+	go sm.preMigrationWorker(ctx)
+	return nil
+}
+
+// Stop starts the state manager's background processes.
+//
+// This method is not safe to invoke concurrently with Start.
+func (sm *StateManager) Stop(ctx context.Context) error {
+	if sm.cancel != nil {
+		sm.cancel()
+		select {
+		case <-sm.shutdown:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
 }
 
 func (sm *StateManager) TipSetState(ctx context.Context, ts *types.TipSet) (st cid.Cid, rec cid.Cid, err error) {
@@ -248,7 +299,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			StateBase:      base,
 			Epoch:          epoch,
 			Rand:           r,
-			Bstore:         sm.cs.Blockstore(),
+			Bstore:         sm.cs.StateBlockstore(),
 			Syscalls:       sm.cs.VMSys(),
 			CircSupplyCalc: sm.GetVMCirculatingSupply,
 			NtwkVersion:    sm.GetNtwkVersion,
@@ -326,6 +377,13 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 
 	var receipts []cbg.CBORMarshaler
 	processedMsgs := make(map[cid.Cid]struct{})
+	applyStart := build.Clock.Now()
+	defer func() {
+		count := len(processedMsgs)
+		duration := metrics.SinceInSeconds(applyStart)
+		stats.Record(ctx, metrics.TipsetMessagesCount.M(int64(count)))
+		stats.Record(ctx, metrics.TipsetMessagesRate.M(float64(count)/duration))
+	}()
 	for _, b := range bms {
 		penalty := big.Zero()
 		gasReward := big.Zero()
@@ -398,10 +456,9 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		return cid.Cid{}, cid.Cid{}, err
 	}
 
-	// XXX: Is the height correct? Or should it be epoch-1?
-	rectarr, err := adt.NewArray(sm.cs.Store(ctx), actors.VersionForNetwork(sm.GetNtwkVersion(ctx, epoch)))
+	rectarr, err := blockadt.MakeEmptyArray(sm.cs.ActorStore(ctx), adt.DefaultMsgAmtBitwidth)
 	if err != nil {
-		return cid.Undef, cid.Undef, xerrors.Errorf("failed to create receipts amt: %w", err)
+		return cid.Undef, cid.Undef, err
 	}
 	for i, receipt := range receipts {
 		if err := rectarr.Set(uint64(i), receipt); err != nil {
@@ -487,13 +544,26 @@ func (sm *StateManager) ResolveToKeyAddress(ctx context.Context, addr address.Ad
 		ts = sm.cs.GetHeaviestTipSet()
 	}
 
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
+
+	// First try to resolve the actor in the parent state, so we don't have to compute anything.
+	tree, err := state.LoadStateTree(cst, ts.ParentState())
+	if err != nil {
+		return address.Undef, xerrors.Errorf("failed to load parent state tree: %w", err)
+	}
+
+	resolved, err := vm.ResolveToKeyAddr(tree, cst, addr)
+	if err == nil {
+		return resolved, nil
+	}
+
+	// If that fails, compute the tip-set and try again.
 	st, _, err := sm.TipSetState(ctx, ts)
 	if err != nil {
 		return address.Undef, xerrors.Errorf("resolve address failed to get tipset state: %w", err)
 	}
 
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
-	tree, err := state.LoadStateTree(cst, st)
+	tree, err = state.LoadStateTree(cst, st)
 	if err != nil {
 		return address.Undef, xerrors.Errorf("failed to load state tree")
 	}
@@ -515,7 +585,7 @@ func (sm *StateManager) GetBlsPublicKey(ctx context.Context, addr address.Addres
 }
 
 func (sm *StateManager) LookupID(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error) {
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
 	state, err := state.LoadStateTree(cst, sm.parentState(ts))
 	if err != nil {
 		return address.Undef, xerrors.Errorf("load state tree: %w", err)
@@ -580,7 +650,7 @@ func (sm *StateManager) WaitForMessage(ctx context.Context, mcid cid.Cid, confid
 	go func() {
 		fts, r, foundMsg, err := sm.searchBackForMsg(ctx, head[0].Val, msg, lookbackLimit)
 		if err != nil {
-			log.Warnf("failed to look back through chain for message: %w", err)
+			log.Warnf("failed to look back through chain for message: %v", err)
 			return
 		}
 
@@ -653,7 +723,7 @@ func (sm *StateManager) WaitForMessage(ctx context.Context, mcid cid.Cid, confid
 	}
 }
 
-func (sm *StateManager) SearchForMessage(ctx context.Context, mcid cid.Cid) (*types.TipSet, *types.MessageReceipt, cid.Cid, error) {
+func (sm *StateManager) SearchForMessage(ctx context.Context, mcid cid.Cid, lookbackLimit abi.ChainEpoch) (*types.TipSet, *types.MessageReceipt, cid.Cid, error) {
 	msg, err := sm.cs.GetCMessage(mcid)
 	if err != nil {
 		return nil, nil, cid.Undef, fmt.Errorf("failed to load message: %w", err)
@@ -670,7 +740,7 @@ func (sm *StateManager) SearchForMessage(ctx context.Context, mcid cid.Cid) (*ty
 		return head, r, foundMsg, nil
 	}
 
-	fts, r, foundMsg, err := sm.searchBackForMsg(ctx, head, msg, LookbackNoLimit)
+	fts, r, foundMsg, err := sm.searchBackForMsg(ctx, head, msg, lookbackLimit)
 
 	if err != nil {
 		log.Warnf("failed to look back through chain for message %s", mcid)
@@ -841,7 +911,7 @@ func (sm *StateManager) MarketBalance(ctx context.Context, addr address.Address,
 		return api.MarketBalance{}, err
 	}
 
-	mstate, err := market.Load(sm.cs.Store(ctx), act)
+	mstate, err := market.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return api.MarketBalance{}, err
 	}
@@ -948,7 +1018,7 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		return xerrors.Errorf("getting genesis tipset state: %w", err)
 	}
 
-	cst := cbor.NewCborStore(sm.cs.Blockstore())
+	cst := cbor.NewCborStore(sm.cs.StateBlockstore())
 	sTree, err := state.LoadStateTree(cst, st)
 	if err != nil {
 		return xerrors.Errorf("loading state tree: %w", err)
@@ -969,7 +1039,7 @@ func (sm *StateManager) setupGenesisActors(ctx context.Context) error {
 		if builtin.IsMultisigActor(act.Code) {
 			// TODO: should exclude govern/fundation/... actor
 
-			s, err := multisig.Load(sm.cs.Store(ctx), act)
+			s, err := multisig.Load(sm.cs.ActorStore(ctx), act)
 			if err != nil {
 				return err
 			}
@@ -1458,19 +1528,20 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			break
 		case a == _init.Address ||
 			a == reward.Address ||
-			// a == verifreg.Address ||
 			// The power actor itself should never receive funds
 			a == power.Address ||
+			a == expertfund.Address ||
+			a == retrieval.Address ||
+			a == vote.Address ||
+			a == knowledge.Address ||
 			a == builtin.SystemActorAddr ||
 			a == builtin.CronActorAddr ||
 			a == builtin.BurntFundsActorAddr:
-			// a == builtin.SaftAddress ||
-			// a == builtin.ReserveAddress:
 
 			unCirc = big.Add(unCirc, actor.Balance)
 
 		case a == market.Address:
-			mst, err := market.Load(sm.cs.Store(ctx), actor)
+			mst, err := market.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1482,13 +1553,12 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 
 			circ = big.Add(circ, big.Sub(actor.Balance, lb))
 			unCirc = big.Add(unCirc, lb)
-		// TODO: vote/knowledge/expert/retrieval
 
 		case builtin.IsAccountActor(actor.Code) || builtin.IsPaymentChannelActor(actor.Code):
 			circ = big.Add(circ, actor.Balance)
 
 		case builtin.IsStorageMinerActor(actor.Code):
-			mst, err := miner.Load(sm.cs.Store(ctx), actor)
+			mst, err := miner.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1505,7 +1575,7 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			}
 
 		case builtin.IsMultisigActor(actor.Code):
-			mst, err := multisig.Load(sm.cs.Store(ctx), actor)
+			mst, err := multisig.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
@@ -1559,7 +1629,7 @@ func (sm *StateManager) GetPaychState(ctx context.Context, addr address.Address,
 		return nil, nil, err
 	}
 
-	actState, err := paych.Load(sm.cs.Store(ctx), act)
+	actState, err := paych.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1577,7 +1647,7 @@ func (sm *StateManager) GetMarketState(ctx context.Context, ts *types.TipSet) (m
 		return nil, err
 	}
 
-	actState, err := market.Load(sm.cs.Store(ctx), act)
+	actState, err := market.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return nil, err
 	}

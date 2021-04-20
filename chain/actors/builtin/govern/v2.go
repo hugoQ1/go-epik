@@ -7,6 +7,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
 	"github.com/ipfs/go-cid"
 
@@ -36,7 +37,7 @@ func (s *state) Governor(addr address.Address) (*GovernorInfo, error) {
 		return nil, fmt.Errorf("not a ID-address")
 	}
 
-	governors, err := adt2.AsMap(s.store, s.Governors)
+	governors, err := adt2.AsMap(s.store, s.Governors, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func (s *state) Governor(addr address.Address) (*GovernorInfo, error) {
 }
 
 func (s *state) ListGovrnors() ([]*GovernorInfo, error) {
-	governors, err := adt2.AsMap(s.store, s.Governors)
+	governors, err := adt2.AsMap(s.store, s.Governors, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (s *state) ListGovrnors() ([]*GovernorInfo, error) {
 }
 
 func convert(store adt.Store, ga govern.GrantedAuthorities) ([]Authority, error) {
-	codeMethods, err := adt2.AsMap(store, ga.CodeMethods)
+	codeMethods, err := adt2.AsMap(store, ga.CodeMethods, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}

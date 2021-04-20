@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -60,20 +59,20 @@ import (
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
 	"github.com/EpiK-Protocol/go-epik/metrics"
-	metrics2 "github.com/libp2p/go-libp2p-core/metrics"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/gen/slashfilter"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
 	"github.com/EpiK-Protocol/go-epik/markets/retrievaladapter"
-	"github.com/EpiK-Protocol/go-epik/miner"
+	lotusminer "github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node/config"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
@@ -134,8 +133,12 @@ func SealProofType(maddr dtypes.MinerAddress, fnapi lapi.FullNode) (abi.Register
 	if err != nil {
 		return 0, err
 	}
+	networkVersion, err := fnapi.StateNetworkVersion(context.TODO(), types.EmptyTSK)
+	if err != nil {
+		return 0, err
+	}
 
-	return mi.SealProofType, nil
+	return miner.PreferredSealProofTypeFromWindowPoStType(networkVersion, mi.WindowPoStProofType)
 }
 
 type sidsc struct {
@@ -159,6 +162,9 @@ func AddressSelector(addrConf *config.MinerAddressConfig) func() (*storage.Addre
 			return as, nil
 		}
 
+		as.DisableOwnerFallback = addrConf.DisableOwnerFallback
+		as.DisableWorkerFallback = addrConf.DisableWorkerFallback
+
 		for _, s := range addrConf.PreCommitControl {
 			addr, err := address.NewFromString(s)
 			if err != nil {
@@ -175,6 +181,15 @@ func AddressSelector(addrConf *config.MinerAddressConfig) func() (*storage.Addre
 			}
 
 			as.CommitControl = append(as.CommitControl, addr)
+		}
+
+		for _, s := range addrConf.TerminateControl {
+			addr, err := address.NewFromString(s)
+			if err != nil {
+				return nil, xerrors.Errorf("parsing terminate control address: %w", err)
+			}
+
+			as.TerminateControl = append(as.TerminateControl, addr)
 		}
 
 		return as, nil
@@ -220,7 +235,7 @@ func StorageMiner(fc config.MinerFeeConfig) func(params StorageMinerParams) (*st
 
 		ctx := helpers.LifecycleCtx(mctx, lc)
 
-		fps, err := storage.NewWindowedPoStScheduler(api, fc, as, sealer, sealer, j, maddr)
+		fps, err := storage.NewWindowedPoStScheduler(api, fc, as, sealer, verif, sealer, j, maddr)
 		if err != nil {
 			return nil, err
 		}
@@ -278,68 +293,6 @@ func HandleDeals(mctx helpers.MetricsCtx, lc fx.Lifecycle, host host.Host, h sto
 	})
 }
 
-func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {
-	ctx := helpers.LifecycleCtx(mctx, lc)
-	stop := make(chan struct{})
-	lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
-			go metrics.RunSysInspector(ctx, reporter, 5*time.Second, stop)
-
-			go func() {
-				b2f := func(amt abi.TokenAmount) float64 {
-					f := 0.0
-					r := new(big.Rat).SetFrac(amt.Int, big.NewInt(int64(build.EpkPrecision)))
-					if r.Sign() != 0 {
-						f, _ = r.Float64()
-					}
-					return f
-				}
-
-				tagsT := []tag.Mutator{
-					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
-					tag.Insert(metrics.Type, "total"),
-				}
-				tagsA := []tag.Mutator{
-					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
-					tag.Insert(metrics.Type, "available"),
-				}
-
-				ticker := time.NewTicker(time.Duration(build.BlockDelaySecs) * time.Second)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-stop:
-						return
-					case <-ticker.C:
-						head, err := node.ChainHead(ctx)
-						if err != nil {
-							log.Warnf("failed to get head: %w", err)
-							continue
-						}
-						ava, err := node.StateMinerAvailableBalance(ctx, address.Address(minerAddress), head.Key())
-						if err != nil {
-							log.Warnf("failed to get available balance: %w", err)
-							continue
-						}
-						act, err := node.StateGetActor(ctx, address.Address(minerAddress), head.Key())
-						if err != nil {
-							log.Warnf("failed to get total balance: %w", err)
-							continue
-						}
-						stats.RecordWithTags(ctx, tagsT, metrics.MinerBalance.M(b2f(act.Balance)))
-						stats.RecordWithTags(ctx, tagsA, metrics.MinerBalance.M(b2f(ava)))
-					}
-				}
-			}()
-			return nil
-		},
-		OnStop: func(context.Context) error {
-			close(stop)
-			return nil
-		},
-	})
-}
-
 func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.FullNode, minerAddress dtypes.MinerAddress) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -357,19 +310,19 @@ func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.
 			}
 			ts, err := node.ChainHead(ctx)
 			if err != nil {
-				log.Errorf("provider funds migration - getting chain head: %w", err)
+				log.Errorf("provider funds migration - getting chain head: %v", err)
 				return nil
 			}
 
 			mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), ts.Key())
 			if err != nil {
-				log.Errorf("provider funds migration - getting miner info %s: %w", minerAddress, err)
+				log.Errorf("provider funds migration - getting miner info %s: %v", minerAddress, err)
 				return nil
 			}
 
 			_, err = node.MarketReserveFunds(ctx, mi.Worker, address.Address(minerAddress), value)
 			if err != nil {
-				log.Errorf("provider funds migration - reserving funds (wallet %s, addr %s, funds %d): %w",
+				log.Errorf("provider funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
 					mi.Worker, minerAddress, value, err)
 				return nil
 			}
@@ -451,8 +404,9 @@ func NewProviderPieceStore(lc fx.Lifecycle, ds dtypes.MetadataDS) (dtypes.Provid
 	return ps, nil
 }
 
-func StagingMultiDatastore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.StagingMultiDstore, error) {
-	ds, err := r.Datastore("/staging")
+func StagingMultiDatastore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.StagingMultiDstore, error) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	ds, err := r.Datastore(ctx, "/staging")
 	if err != nil {
 		return nil, xerrors.Errorf("getting datastore out of reop: %w", err)
 	}
@@ -473,13 +427,14 @@ func StagingMultiDatastore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.StagingMu
 
 // StagingBlockstore creates a blockstore for staging blocks for a miner
 // in a storage deal, prior to sealing
-func StagingBlockstore(r repo.LockedRepo) (dtypes.StagingBlockstore, error) {
-	stagingds, err := r.Datastore("/staging")
+func StagingBlockstore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.StagingBlockstore, error) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	stagingds, err := r.Datastore(ctx, "/staging")
 	if err != nil {
 		return nil, err
 	}
 
-	return blockstore.NewBlockstore(stagingds), nil
+	return blockstore.FromDatastore(stagingds), nil
 }
 
 // StagingDAG is a DAGService for the StagingBlockstore
@@ -513,13 +468,13 @@ func StagingGraphsync(mctx helpers.MetricsCtx, lc fx.Lifecycle, ibs dtypes.Stagi
 	return gs
 }
 
-func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter, j journal.Journal) (*miner.Miner, error) {
+func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter, j journal.Journal) (*lotusminer.Miner, error) {
 	minerAddr, err := minerAddrFromDS(ds)
 	if err != nil {
 		return nil, err
 	}
 
-	m := miner.NewMiner(api, epp, minerAddr, sf, j)
+	m := lotusminer.NewMiner(api, epp, minerAddr, sf, j)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -899,6 +854,7 @@ func NewSetSealConfigFunc(r repo.LockedRepo) (dtypes.SetSealingConfigFunc, error
 				MaxSealingSectors:         cfg.MaxSealingSectors,
 				MaxSealingSectorsForDeals: cfg.MaxSealingSectorsForDeals,
 				WaitDealsDelay:            config.Duration(cfg.WaitDealsDelay),
+				AlwaysKeepUnsealedCopy:    cfg.AlwaysKeepUnsealedCopy,
 			}
 		})
 		return
@@ -913,6 +869,7 @@ func NewGetSealConfigFunc(r repo.LockedRepo) (dtypes.GetSealingConfigFunc, error
 				MaxSealingSectors:         cfg.Sealing.MaxSealingSectors,
 				MaxSealingSectorsForDeals: cfg.Sealing.MaxSealingSectorsForDeals,
 				WaitDealsDelay:            time.Duration(cfg.Sealing.WaitDealsDelay),
+				AlwaysKeepUnsealedCopy:    cfg.Sealing.AlwaysKeepUnsealedCopy,
 			}
 		})
 		return

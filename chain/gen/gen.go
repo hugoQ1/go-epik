@@ -13,7 +13,6 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/google/uuid"
-	block "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
@@ -27,6 +26,7 @@ import (
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
@@ -40,7 +40,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 	"github.com/EpiK-Protocol/go-epik/journal"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
@@ -84,43 +83,32 @@ type ChainGen struct {
 	lr repo.LockedRepo
 }
 
-type mybs struct {
-	blockstore.Blockstore
+/*
+var rootkeyMultisig = genesis.MultisigMeta{
+	Signers:         []address.Address{remAccTestKey},
+	Threshold:       1,
+	VestingDuration: 0,
+	VestingStart:    0,
 }
 
-func (m mybs) Get(c cid.Cid) (block.Block, error) {
-	b, err := m.Blockstore.Get(c)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+var DefaultVerifregRootkeyActor = genesis.Actor{
+	Type:    genesis.TMultisig,
+	Balance: big.NewInt(0),
+	Meta:    rootkeyMultisig.ActorMeta(),
 }
 
-// var rootkeyMultisig = genesis.MultisigMeta{
-// 	Signers:         []address.Address{remAccTestKey},
-// 	Threshold:       1,
-// 	VestingDuration: 0,
-// 	VestingStart:    0,
-// }
+var remAccTestKey, _ = address.NewFromString("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy")
+var remAccMeta = genesis.MultisigMeta{
+	Signers:   []address.Address{remAccTestKey},
+	Threshold: 1,
+}
 
-// var DefaultVerifregRootkeyActor = genesis.Actor{
-// 	Type:    genesis.TMultisig,
-// 	Balance: big.NewInt(0),
-// 	Meta:    rootkeyMultisig.ActorMeta(),
-// }
-
-// var remAccTestKey, _ = address.NewFromString("t1ceb34gnsc6qk5dt6n7xg6ycwzasjhbxm3iylkiy")
-// var remAccMeta = genesis.MultisigMeta{
-// 	Signers:   []address.Address{remAccTestKey},
-// 	Threshold: 1,
-// }
-
-// var DefaultRemainderAccountActor = genesis.Actor{
-// 	Type:    genesis.TMultisig,
-// 	Balance: big.NewInt(0),
-// 	Meta:    remAccMeta.ActorMeta(),
-// }
+var DefaultRemainderAccountActor = genesis.Actor{
+	Type:    genesis.TMultisig,
+	Balance: big.NewInt(0),
+	Meta:    remAccMeta.ActorMeta(),
+}
+*/
 
 func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 	j := journal.NilJournal()
@@ -133,12 +121,12 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 		return nil, xerrors.Errorf("taking mem-repo lock failed: %w", err)
 	}
 
-	ds, err := lr.Datastore("/metadata")
+	ds, err := lr.Datastore(context.TODO(), "/metadata")
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get metadata datastore: %w", err)
 	}
 
-	bs, err := lr.Blockstore(repo.BlockstoreChain)
+	bs, err := lr.Blockstore(context.TODO(), repo.UniversalBlockstore)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +138,6 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 			}
 		}
 	}()
-
-	bs = mybs{bs}
 
 	ks, err := lr.KeyStore()
 	if err != nil {
@@ -468,7 +454,12 @@ func (cg *ChainGen) NextTipSetFromMinersWithMessages(base *types.TipSet, miners 
 		}
 	}
 
-	return store.NewFullTipSet(blks), nil
+	fts := store.NewFullTipSet(blks)
+	if err := cg.cs.PutTipSet(context.TODO(), fts.TipSet()); err != nil {
+		return nil, err
+	}
+
+	return fts, nil
 }
 
 func (cg *ChainGen) makeBlock(parents *types.TipSet, m address.Address, vrfticket *types.Ticket,

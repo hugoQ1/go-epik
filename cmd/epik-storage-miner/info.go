@@ -17,16 +17,13 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
-	"github.com/EpiK-Protocol/go-epik/lib/bufbstore"
 )
 
 var infoCmd = &cli.Command{
@@ -103,7 +100,7 @@ func infoCmdAct(cctx *cli.Context) error {
 		return err
 	}
 
-	tbs := bufbstore.NewTieredBstore(apibstore.NewAPIBlockstore(api), blockstore.NewTemporary())
+	tbs := blockstore.NewTieredBstore(blockstore.NewAPIBlockstore(api), blockstore.NewMemory())
 	mas, err := miner.Load(adt.WrapStore(ctx, cbor.NewCborStore(tbs)), mact)
 	if err != nil {
 		return err
@@ -155,60 +152,6 @@ func infoCmdAct(cctx *cli.Context) error {
 			types.SizeStr(types.BigMul(types.NewInt(proving), types.NewInt(uint64(mi.SectorSize)))),
 			types.SizeStr(types.BigMul(types.NewInt(nfaults), types.NewInt(uint64(mi.SectorSize)))),
 			faultyPercentage)
-	}
-
-	// mining start countdown
-	{
-		var lbr abi.ChainEpoch
-		if head.Height() > policy.ChainFinality {
-			lbr = head.Height() - policy.ChainFinality
-		}
-
-		lbts, err := api.ChainGetTipSetByHeight(ctx, lbr, types.EmptyTSK)
-		if err != nil {
-			return err
-		}
-		actives, err := api.StateMinerActives(ctx, maddr, lbts.Key())
-		if err != nil {
-			return err
-		}
-		count, err := actives.Count()
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			actives, err := api.StateMinerActives(ctx, maddr, types.EmptyTSK)
-			if err != nil {
-				return err
-			}
-			all, err := actives.All(10000)
-			if err != nil {
-				return err
-			}
-			var earliestSector *miner.SectorOnChainInfo
-			err = actives.ForEach(func(sno uint64) error {
-				si, err := api.StateSectorGetInfo(ctx, maddr, abi.SectorNumber(sno), types.EmptyTSK)
-				if err != nil {
-					return xerrors.Errorf("failed to get sector %d info: %w", sno, err)
-				}
-				if si.Activation > lbr && (earliestSector == nil || si.Activation < earliestSector.Activation) {
-					earliestSector = si
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-			if earliestSector != nil {
-				fmt.Printf("Estimated mining start time: in %d epochs\n", policy.ChainFinality-(head.Height()-earliestSector.Activation))
-				fmt.Printf("\t[DEBUG] head %d, all active sectors: %v\n", head.Height(), all)
-				fmt.Printf("\t[DEBUG] earliest sector %d activated at %d\n", earliestSector.SectorNumber, earliestSector.Activation)
-				if lbts.Height() < lbr {
-					fmt.Printf("\t[DEBUG] null round found at %d\n", lbr)
-				}
-			}
-		}
 	}
 
 	if !pow.HasMinPower {
@@ -328,6 +271,7 @@ var stateList = []stateMeta{
 
 	{col: color.FgBlue, state: sealing.Empty},
 	{col: color.FgBlue, state: sealing.WaitDeals},
+	{col: color.FgBlue, state: sealing.AddPiece},
 
 	{col: color.FgRed, state: sealing.UndefinedSectorState},
 	{col: color.FgYellow, state: sealing.Packing},
@@ -350,6 +294,7 @@ var stateList = []stateMeta{
 	{col: color.FgCyan, state: sealing.Removed},
 
 	{col: color.FgRed, state: sealing.FailedUnrecoverable},
+	{col: color.FgRed, state: sealing.AddPieceFailed},
 	{col: color.FgRed, state: sealing.SealPreCommit1Failed},
 	{col: color.FgRed, state: sealing.SealPreCommit2Failed},
 	{col: color.FgRed, state: sealing.PreCommitFailed},

@@ -9,12 +9,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"contrib.go.opencensus.io/exporter/prometheus"
 	mux "github.com/gorilla/mux"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
-	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"golang.org/x/xerrors"
@@ -71,14 +70,20 @@ var runCmd = &cli.Command{
 			return xerrors.Errorf("getting full node api: %w", err)
 		}
 		defer ncloser()
-		ctx := lcli.DaemonContext(cctx)
 
+		ctx, _ := tag.New(lcli.DaemonContext(cctx),
+			tag.Insert(metrics.Version, build.BuildVersion),
+			tag.Insert(metrics.Commit, build.CurrentCommit),
+			tag.Insert(metrics.NodeType, "miner"),
+		)
 		// Register all metric views
 		if err := view.Register(
-			append(metrics.DefaultViews, metrics.MinerViews...)...,
+			metrics.MinerNodeViews...,
 		); err != nil {
 			log.Fatalf("Cannot register the view: %v", err)
 		}
+		// Set the metric to one so it is published to the exporter
+		stats.Record(ctx, metrics.EpikInfo.M(1))
 
 		v, err := nodeApi.Version(ctx)
 		if err != nil {
@@ -91,8 +96,8 @@ var runCmd = &cli.Command{
 			}
 		}
 
-		if v.APIVersion != build.FullAPIVersion {
-			return xerrors.Errorf("epik-daemon API version doesn't match: expected: %s", api.Version{APIVersion: build.FullAPIVersion})
+		if v.APIVersion != api.FullAPIVersion {
+			return xerrors.Errorf("epik-daemon API version doesn't match: expected: %s", api.APIVersion{APIVersion: api.FullAPIVersion})
 		}
 
 		log.Info("Checking full node sync status")
@@ -165,24 +170,8 @@ var runCmd = &cli.Command{
 
 		mux.Handle("/rpc/v0", rpcServer)
 		mux.PathPrefix("/remote").HandlerFunc(minerapi.(*impl.StorageMinerAPI).ServeRemote)
+		mux.Handle("/debug/metrics", metrics.Exporter())
 		mux.PathPrefix("/").Handler(http.DefaultServeMux) // pprof
-
-		// Prometheus globals are exposed as interfaces, but the prometheus
-		// OpenCensus exporter expects a concrete *Registry. The concrete type of
-		// the globals are actually *Registry, so we downcast them, staying
-		// defensive in case things change under the hood.
-		registry, ok := promclient.DefaultRegisterer.(*promclient.Registry)
-		if !ok {
-			log.Warnf("failed to export default prometheus registry; some metrics will be unavailable; unexpected type: %T", promclient.DefaultRegisterer)
-		}
-		exporter, err := prometheus.NewExporter(prometheus.Options{
-			Registry:  registry,
-			Namespace: "EpiK",
-		})
-		if err != nil {
-			log.Fatalf("could not create the prometheus stats exporter: %v", err)
-		}
-		http.Handle("/debug/metrics", exporter)
 
 		ah := &auth.Handler{
 			Verify: minerapi.AuthVerify,

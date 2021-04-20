@@ -9,8 +9,8 @@ import (
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/ipfs/go-cid"
 
-	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	msig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
+	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
@@ -18,15 +18,15 @@ import (
 )
 
 func init() {
-	builtin.RegisterActorState(builtin2.MultisigActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
-		return load2(store, root)
+	builtin.RegisterActorState(builtin3.MultisigActorCodeID, func(store adt.Store, root cid.Cid) (cbor.Marshaler, error) {
+		return load3(store, root)
 	})
 }
 
 func Load(store adt.Store, act *types.Actor) (State, error) {
 	switch act.Code {
-	case builtin2.MultisigActorCodeID:
-		return load2(store, act.Head)
+	case builtin3.MultisigActorCodeID:
+		return load3(store, act.Head)
 	}
 	return nil, xerrors.Errorf("unknown actor code %s", act.Code)
 }
@@ -42,11 +42,11 @@ type State interface {
 	Signers() ([]address.Address, error)
 
 	ForEachPendingTxn(func(id int64, txn Transaction) error) error
-	PendingTxn(id int64) (Transaction, error)
 	PendingTxnChanged(State) (bool, error)
+	PendingTxn(id int64) (Transaction, error)
 
 	transactions() (adt.Map, error)
 	decodeTransaction(val *cbg.Deferred) (Transaction, error)
 }
 
-type Transaction = msig2.Transaction
+type Transaction = multisig.Transaction

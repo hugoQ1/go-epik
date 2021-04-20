@@ -37,7 +37,15 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 )
 
-// FullNode API is a low-level interface to the Filecoin network full node
+//go:generate go run github.com/golang/mock/mockgen -destination=mocks/mock_full.go -package=mocks . FullNode
+
+// ChainIO abstracts operations for accessing raw IPLD objects.
+type ChainIO interface {
+	ChainReadObj(context.Context, cid.Cid) ([]byte, error)
+	ChainHasObj(context.Context, cid.Cid) (bool, error)
+}
+
+// FullNode API is a low-level interface to the EpiK network full node
 type FullNode interface {
 	Common
 
@@ -133,7 +141,7 @@ type FullNode interface {
 	// MethodGroup: Beacon
 	// The Beacon method group contains methods for interacting with the random beacon (DRAND)
 
-	// BeaconGetEntry returns the beacon entry for the given filecoin epoch. If
+	// BeaconGetEntry returns the beacon entry for the given epoch. If
 	// the entry has not yet been produced, the call will block until the entry
 	// becomes available
 	BeaconGetEntry(ctx context.Context, epoch abi.ChainEpoch) (*types.BeaconEntry, error)
@@ -363,10 +371,14 @@ type FullNode interface {
 
 	// MethodGroup: State
 	// The State methods are used to query, inspect, and interact with chain state.
-	// Most methods take a TipSetKey as a parameter. The state looked up is the state at that tipset.
+	// Most methods take a TipSetKey as a parameter. The state looked up is the parent state of the tipset.
 	// A nil TipSetKey can be provided as a param, this will cause the heaviest tipset in the chain to be used.
 
 	// StateCall runs the given message and returns its result without any persisted changes.
+	//
+	// StateCall applies the message to the tipset's parent state. The
+	// message is not applied on-top-of the messages in the passed-in
+	// tipset.
 	StateCall(context.Context, *types.Message, types.TipSetKey) (*InvocResult, error)
 	// StateReplay replays a given message, assuming it was included in a block in the specified tipset.
 	// If no tipset key is provided, the appropriate tipset is looked up.
@@ -429,6 +441,8 @@ type FullNode interface {
 	StateSectorPartition(ctx context.Context, maddr address.Address, sectorNumber abi.SectorNumber, tok types.TipSetKey) (*miner.SectorLocation, error)
 	// StateSearchMsg searches for a message in the chain, and returns its receipt and the tipset where it was executed
 	StateSearchMsg(context.Context, cid.Cid) (*MsgLookup, error)
+	// StateSearchMsgLimited looks back up to limit epochs in the chain for a message, and returns its receipt and the tipset where it was executed
+	StateSearchMsgLimited(ctx context.Context, msg cid.Cid, limit abi.ChainEpoch) (*MsgLookup, error)
 	// StateWaitMsg looks back in the chain for a message. If not found, it blocks until the
 	// message arrives on chain, and gets to the indicated confidence depth.
 	StateWaitMsg(ctx context.Context, cid cid.Cid, confidence uint64) (*MsgLookup, error)
@@ -481,10 +495,10 @@ type FullNode interface {
 	StateDealProviderCollateralBounds(context.Context, abi.PaddedPieceSize, bool, types.TipSetKey) (DealCollateralBounds, error) */
 
 	StateTotalMinedDetail(ctx context.Context, tsk types.TipSetKey) (*reward.TotalMinedDetail, error)
-	// StateCirculatingSupply returns the exact circulating supply of Filecoin at the given tipset.
+	// StateCirculatingSupply returns the exact circulating supply of EPK at the given tipset.
 	// This is not used anywhere in the protocol itself, and is only for external consumption.
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
-	// StateVMCirculatingSupplyInternal returns an approximation of the circulating supply of Filecoin at the given tipset.
+	// StateVMCirculatingSupplyInternal returns an approximation of the circulating supply of EPK at the given tipset.
 	// This is the value reported by the runtime interface to actors code.
 	StateVMCirculatingSupplyInternal(context.Context, types.TipSetKey) (CirculatingSupply, error)
 	// StateNetworkVersion returns the network version at the given tipset
@@ -492,7 +506,7 @@ type FullNode interface {
 	// StateListExperts returns the addresses of every expert.
 	StateListExperts(context.Context, types.TipSetKey) ([]address.Address, error)
 	// StateExpertInfo returns info about the indicated expert.
-	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)
+	StateExpertInfo(context.Context, address.Address, types.TipSetKey) (*ExpertInfo, error)
 	// StateExpertInfo lists expert's data
 	StateExpertDatas(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error)
 	// StateExpertFileInfo returns expert's file
@@ -519,12 +533,12 @@ type FullNode interface {
 	// StateDataIndex data index
 	StateDataIndex(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*DataIndex, error)
 
-	// StateMinerNoPieces check miner has storage the data by pieceIDs
-	StateMinerNoPieces(context.Context, address.Address, []cid.Cid, types.TipSetKey) error
+	// StateMinerStoredAnyPiece check miner has storage the data by pieceIDs
+	StateMinerStoredAnyPiece(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)
 
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
-	// filecoin network
+	// epik network
 
 	// MsigGetAvailableBalance returns the portion of a multisig's balance that can be withdrawn or spent
 	MsigGetAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
@@ -533,6 +547,12 @@ type FullNode interface {
 	// MsigGetVested returns the amount of EPK that vested in a multisig in a certain period.
 	// It takes the following params: <multisig address>, <start epoch>, <end epoch>
 	MsigGetVested(context.Context, address.Address, types.TipSetKey, types.TipSetKey) (types.BigInt, error)
+
+	//MsigGetPending returns pending transactions for the given multisig
+	//wallet. Once pending transactions are fully approved, they will no longer
+	//appear here.
+	MsigGetPending(context.Context, address.Address, types.TipSetKey) ([]*MsigTransaction, error)
+
 	// MsigCreate creates a multisig wallet
 	// It takes the following params: <required number of senders>, <approving addresses>, <unlock duration>
 	//<initial balance>, <sender address of the create msg>, <gas price>
@@ -724,6 +744,7 @@ type Message struct {
 
 type ActorState struct {
 	Balance types.BigInt
+	Code    cid.Cid
 	State   interface{}
 }
 
@@ -935,6 +956,8 @@ const (
 
 func (v SyncStateStage) String() string {
 	switch v {
+	case StageIdle:
+		return "idle"
 	case StageHeaders:
 		return "header sync"
 	case StagePersistHeaders:
@@ -1037,7 +1060,8 @@ const (
 )
 
 type Deadline struct {
-	PostSubmissions bitfield.BitField
+	PostSubmissions      bitfield.BitField
+	DisputableProofCount uint64
 }
 
 type Partition struct {
@@ -1117,4 +1141,19 @@ type RetrievalDeal struct {
 	MinerWallet  address.Address
 	Status       retrievalmarket.DealStatus
 	Message      string
+}
+
+type MsigTransaction struct {
+	ID     int64
+	To     address.Address
+	Value  abi.TokenAmount
+	Method abi.MethodNum
+	Params []byte
+
+	Approved []address.Address
+}
+
+type ExpertInfo struct {
+	expert.ExpertInfo
+	TotalReward abi.TokenAmount
 }

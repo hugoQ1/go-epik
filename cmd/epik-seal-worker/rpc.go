@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"golang.org/x/xerrors"
 
-	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/api"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
@@ -23,8 +23,8 @@ type worker struct {
 	disabled int64
 }
 
-func (w *worker) Version(context.Context) (build.Version, error) {
-	return build.WorkerAPIVersion, nil
+func (w *worker) Version(context.Context) (api.Version, error) {
+	return api.WorkerAPIVersion, nil
 }
 
 func (w *worker) StorageAddLocal(ctx context.Context, path string) error {

@@ -7,6 +7,8 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 )
 
+const DefaultMsgAmtBitwidth = 5
+
 type Store interface {
 	Context() context.Context
 	cbor.IpldStore

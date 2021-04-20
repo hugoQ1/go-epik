@@ -5,7 +5,6 @@ import (
 	"math"
 	"time"
 
-	logging "github.com/ipfs/go-log/v2"
 	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -13,8 +12,6 @@ import (
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
-
-var log = logging.Logger("node-metrics")
 
 func RunSysInspector(ctx context.Context, reporter p2pmetrics.Reporter, interval time.Duration, done <-chan struct{}) {
 

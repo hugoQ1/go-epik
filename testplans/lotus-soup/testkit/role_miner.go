@@ -20,6 +20,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
+	"github.com/EpiK-Protocol/go-epik/markets/storageadapter"
 	"github.com/EpiK-Protocol/go-epik/miner"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
@@ -108,7 +109,7 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 	}
 
 	sectors := 1 //t.IntParam("sectors")
-	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg2KiBV1_1, 0, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
+	genMiner, keyInfo, err := seed.PreSeal(minerAddr, abi.RegisteredSealProof_StackedDrg8MiBV1, 0, presealDir, []byte("TODO: randomize this"), &walletKey.KeyInfo, false)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 			return nil, err
 		}
 
-		ds, err := lr.Datastore("/metadata")
+		ds, err := lr.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return nil, err
 		}
@@ -265,6 +266,10 @@ func PrepareMiner(t *TestEnvironment) (*LotusMiner, error) {
 		node.Online(),
 		node.Repo(minerRepo),
 		node.Override(new(api.FullNode), n.FullApi),
+		node.Override(new(*storageadapter.DealPublisher), storageadapter.NewDealPublisher(nil, storageadapter.PublishMsgConfig{
+			Period:         15 * time.Second,
+			MaxDealsPerMsg: 1,
+		})),
 		withApiEndpoint(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", t.PortNumber("miner_rpc", "0"))),
 		withMinerListenAddress(minerIP),
 	}
@@ -596,14 +601,14 @@ func startStorageMinerAPIServer(t *TestEnvironment, repo repo.Repo, minerApi api
 	mux := mux.NewRouter()
 
 	rpcServer := jsonrpc.NewServer()
-	rpcServer.Register("Filecoin", minerApi)
+	rpcServer.Register("EpiK", minerApi)
 
 	mux.Handle("/rpc/v0", rpcServer)
 	mux.PathPrefix("/remote").HandlerFunc(minerApi.(*impl.StorageMinerAPI).ServeRemote)
 	mux.PathPrefix("/").Handler(http.DefaultServeMux) // pprof
 
 	exporter, err := prometheus.NewExporter(prometheus.Options{
-		Namespace: "lotus",
+		Namespace: "epik",
 	})
 	if err != nil {
 		return nil, err

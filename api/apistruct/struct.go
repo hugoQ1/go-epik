@@ -33,7 +33,6 @@ import (
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
@@ -65,12 +64,13 @@ type CommonStruct struct {
 		NetBandwidthStatsByPeer     func(ctx context.Context) (map[string]metrics.Stats, error)      `perm:"read"`
 		NetBandwidthStatsByProtocol func(ctx context.Context) (map[protocol.ID]metrics.Stats, error) `perm:"read"`
 		NetAgentVersion             func(ctx context.Context, p peer.ID) (string, error)             `perm:"read"`
+		NetPeerInfo                 func(context.Context, peer.ID) (*api.ExtendedPeerInfo, error)    `perm:"read"`
 		NetBlockAdd                 func(ctx context.Context, acl api.NetBlockList) error            `perm:"admin"`
 		NetBlockRemove              func(ctx context.Context, acl api.NetBlockList) error            `perm:"admin"`
 		NetBlockList                func(ctx context.Context) (api.NetBlockList, error)              `perm:"read"`
 
-		ID      func(context.Context) (peer.ID, error)     `perm:"read"`
-		Version func(context.Context) (api.Version, error) `perm:"read"`
+		ID      func(context.Context) (peer.ID, error)        `perm:"read"`
+		Version func(context.Context) (api.APIVersion, error) `perm:"read"`
 
 		LogList     func(context.Context) ([]string, error)     `perm:"write"`
 		LogSetLevel func(context.Context, string, string) error `perm:"write"`
@@ -224,6 +224,7 @@ type FullNodeStruct struct {
 		StateWaitMsg               func(ctx context.Context, cid cid.Cid, confidence uint64) (*api.MsgLookup, error)                                   `perm:"read"`
 		StateWaitMsgLimited        func(context.Context, cid.Cid, uint64, abi.ChainEpoch) (*api.MsgLookup, error)                                      `perm:"read"`
 		StateSearchMsg             func(context.Context, cid.Cid) (*api.MsgLookup, error)                                                              `perm:"read"`
+		StateSearchMsgLimited      func(context.Context, cid.Cid, abi.ChainEpoch) (*api.MsgLookup, error)                                              `perm:"read"`
 		StateListMiners            func(context.Context, types.TipSetKey) ([]address.Address, error)                                                   `perm:"read"`
 		StateListActors            func(context.Context, types.TipSetKey) ([]address.Address, error)                                                   `perm:"read"`
 		StateMarketBalance         func(context.Context, address.Address, types.TipSetKey) (api.MarketBalance, error)                                  `perm:"read"`
@@ -249,7 +250,7 @@ type FullNodeStruct struct {
 		StateVMCirculatingSupplyInternal func(context.Context, types.TipSetKey) (api.CirculatingSupply, error)                                                `perm:"read"`
 		StateNetworkVersion              func(context.Context, types.TipSetKey) (stnetwork.Version, error)                                                    `perm:"read"`
 		StateListExperts                 func(context.Context, types.TipSetKey) ([]address.Address, error)                                                    `perm:"read"`
-		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*expert.ExpertInfo, error)                                  `perm:"read"`
+		StateExpertInfo                  func(context.Context, address.Address, types.TipSetKey) (*api.ExpertInfo, error)                                     `perm:"read"`
 		StateExpertDatas                 func(context.Context, address.Address, *bitfield.BitField, bool, types.TipSetKey) ([]*expert.DataOnChainInfo, error) `perm:"read"`
 		StateExpertFileInfo              func(context.Context, cid.Cid, types.TipSetKey) (*api.ExpertFileInfo, error)                                         `perm:"read"`
 		StateVoteTally                   func(context.Context, types.TipSetKey) (*vote.Tally, error)                                                          `perm:"read"`
@@ -260,11 +261,12 @@ type FullNodeStruct struct {
 		StateRetrievalInfo               func(context.Context, types.TipSetKey) (*api.RetrievalInfo, error)                                                   `perm:"read"`
 		StateRetrievalPledge             func(context.Context, address.Address, types.TipSetKey) (*api.RetrievalState, error)                                 `perm:"read"`
 		StateDataIndex                   func(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*api.DataIndex, error)                                     `perm:"read"`
-		StateMinerNoPieces               func(context.Context, address.Address, []cid.Cid, types.TipSetKey) error                                             `perm:"read"`
+		StateMinerStoredAnyPiece         func(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)                                     `perm:"read"`
 
 		MsigGetAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                                                    `perm:"read"`
 		MsigGetVestingSchedule  func(context.Context, address.Address, types.TipSetKey) (api.MsigVesting, error)                                                                 `perm:"read"`
 		MsigGetVested           func(context.Context, address.Address, types.TipSetKey, types.TipSetKey) (types.BigInt, error)                                                   `perm:"read"`
+		MsigGetPending          func(context.Context, address.Address, types.TipSetKey) ([]*api.MsigTransaction, error)                                                          `perm:"read"`
 		MsigCreate              func(context.Context, uint64, []address.Address, abi.ChainEpoch, types.BigInt, address.Address, types.BigInt) (cid.Cid, error)                   `perm:"sign"`
 		MsigPropose             func(context.Context, address.Address, address.Address, types.BigInt, address.Address, uint64, []byte) (cid.Cid, error)                          `perm:"sign"`
 		MsigApprove             func(context.Context, address.Address, uint64, address.Address) (cid.Cid, error)                                                                 `perm:"sign"`
@@ -331,10 +333,12 @@ type StorageMinerStruct struct {
 		MarketGetRetrievalAsk     func(ctx context.Context) (*retrievalmarket.Ask, error)                                                                                                                      `perm:"read"`
 		MarketListDataTransfers   func(ctx context.Context) ([]api.DataTransferChannel, error)                                                                                                                 `perm:"write"`
 		MarketDataTransferUpdates func(ctx context.Context) (<-chan api.DataTransferChannel, error)                                                                                                            `perm:"write"`
-		MarketRestartDataTransfer func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error                                                                     `perm:"read"`
-		MarketCancelDataTransfer  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error                                                                     `perm:"read"`
+		MarketRestartDataTransfer func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error                                                                     `perm:"write"`
+		MarketCancelDataTransfer  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error                                                                     `perm:"write"`
+		MarketPendingDeals        func(ctx context.Context) (api.PendingDealInfo, error)                                                                                                                       `perm:"write"`
+		MarketPublishPendingDeals func(ctx context.Context) error                                                                                                                                              `perm:"admin"`
 
-		PledgeSector func(context.Context) error `perm:"write"`
+		PledgeSector func(context.Context) (abi.SectorID, error) `perm:"write"`
 
 		SectorsStatus                 func(ctx context.Context, sid abi.SectorNumber, showOnChainInfo bool) (api.SectorInfo, error) `perm:"read"`
 		SectorsList                   func(context.Context) ([]abi.SectorNumber, error)                                             `perm:"read"`
@@ -414,7 +418,7 @@ type WorkerStruct struct {
 	Internal struct {
 		// TODO: lower perms
 
-		Version func(context.Context) (build.Version, error) `perm:"admin"`
+		Version func(context.Context) (api.Version, error) `perm:"admin"`
 
 		TaskTypes func(context.Context) (map[sealtasks.TaskType]struct{}, error) `perm:"admin"`
 		Paths     func(context.Context) ([]stores.StoragePath, error)            `perm:"admin"`
@@ -462,6 +466,7 @@ type GatewayStruct struct {
 		MpoolPush               func(ctx context.Context, sm *types.SignedMessage) (cid.Cid, error)
 		MsigGetAvailableBalance func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (types.BigInt, error)
 		MsigGetVested           func(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
+		MsigGetPending          func(context.Context, address.Address, types.TipSetKey) ([]*api.MsigTransaction, error)
 		StateAccountKey         func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
 		// StateDealProviderCollateralBounds func(ctx context.Context, size abi.PaddedPieceSize, verified bool, tsk types.TipSetKey) (api.DealCollateralBounds, error)
 		StateGetActor             func(ctx context.Context, actor address.Address, ts types.TipSetKey) (*types.Actor, error)
@@ -473,7 +478,9 @@ type GatewayStruct struct {
 		StateMinerPower           func(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
 		StateMarketBalance        func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
 		StateMarketStorageDeal    func(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
+		StateReadState            func(context.Context, address.Address, types.TipSetKey) (*api.ActorState, error)
 		StateNetworkVersion       func(ctx context.Context, tsk types.TipSetKey) (stnetwork.Version, error)
+		StateSearchMsg            func(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error)
 		StateSectorGetInfo        func(ctx context.Context, maddr address.Address, n abi.SectorNumber, tsk types.TipSetKey) (*miner.SectorOnChainInfo, error)
 		// StateVerifiedClientStatus         func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
 		StateWaitMsg func(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error)
@@ -562,13 +569,17 @@ func (c *CommonStruct) NetAgentVersion(ctx context.Context, p peer.ID) (string, 
 	return c.Internal.NetAgentVersion(ctx, p)
 }
 
+func (c *CommonStruct) NetPeerInfo(ctx context.Context, p peer.ID) (*api.ExtendedPeerInfo, error) {
+	return c.Internal.NetPeerInfo(ctx, p)
+}
+
 // ID implements API.ID
 func (c *CommonStruct) ID(ctx context.Context) (peer.ID, error) {
 	return c.Internal.ID(ctx)
 }
 
 // Version implements API.Version
-func (c *CommonStruct) Version(ctx context.Context) (api.Version, error) {
+func (c *CommonStruct) Version(ctx context.Context) (api.APIVersion, error) {
 	return c.Internal.Version(ctx)
 }
 
@@ -1094,6 +1105,10 @@ func (c *FullNodeStruct) StateSearchMsg(ctx context.Context, msgc cid.Cid) (*api
 	return c.Internal.StateSearchMsg(ctx, msgc)
 }
 
+func (c *FullNodeStruct) StateSearchMsgLimited(ctx context.Context, msgc cid.Cid, limit abi.ChainEpoch) (*api.MsgLookup, error) {
+	return c.Internal.StateSearchMsgLimited(ctx, msgc, limit)
+}
+
 func (c *FullNodeStruct) StateListMiners(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error) {
 	return c.Internal.StateListMiners(ctx, tsk)
 }
@@ -1190,7 +1205,7 @@ func (c *FullNodeStruct) StateListExperts(ctx context.Context, tsk types.TipSetK
 	return c.Internal.StateListExperts(ctx, tsk)
 }
 
-func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*expert.ExpertInfo, error) {
+func (c *FullNodeStruct) StateExpertInfo(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.ExpertInfo, error) {
 	return c.Internal.StateExpertInfo(ctx, addr, tsk)
 }
 
@@ -1234,8 +1249,8 @@ func (c *FullNodeStruct) StateDataIndex(ctx context.Context, epoch abi.ChainEpoc
 	return c.Internal.StateDataIndex(ctx, epoch, tsk)
 }
 
-func (c *FullNodeStruct) StateMinerNoPieces(ctx context.Context, addr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) error {
-	return c.Internal.StateMinerNoPieces(ctx, addr, pieceIDs, tsk)
+func (c *FullNodeStruct) StateMinerStoredAnyPiece(ctx context.Context, addr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) (bool, error) {
+	return c.Internal.StateMinerStoredAnyPiece(ctx, addr, pieceIDs, tsk)
 }
 
 func (c *FullNodeStruct) MsigGetAvailableBalance(ctx context.Context, a address.Address, tsk types.TipSetKey) (types.BigInt, error) {
@@ -1248,6 +1263,10 @@ func (c *FullNodeStruct) MsigGetVestingSchedule(ctx context.Context, a address.A
 
 func (c *FullNodeStruct) MsigGetVested(ctx context.Context, a address.Address, sTsk types.TipSetKey, eTsk types.TipSetKey) (types.BigInt, error) {
 	return c.Internal.MsigGetVested(ctx, a, sTsk, eTsk)
+}
+
+func (c *FullNodeStruct) MsigGetPending(ctx context.Context, a address.Address, tsk types.TipSetKey) ([]*api.MsigTransaction, error) {
+	return c.Internal.MsigGetPending(ctx, a, tsk)
 }
 
 func (c *FullNodeStruct) MsigCreate(ctx context.Context, req uint64, addrs []address.Address, duration abi.ChainEpoch, val types.BigInt, src address.Address, gp types.BigInt) (cid.Cid, error) {
@@ -1404,7 +1423,7 @@ func (c *StorageMinerStruct) ActorAddressConfig(ctx context.Context) (api.Addres
 	return c.Internal.ActorAddressConfig(ctx)
 }
 
-func (c *StorageMinerStruct) PledgeSector(ctx context.Context) error {
+func (c *StorageMinerStruct) PledgeSector(ctx context.Context) (abi.SectorID, error) {
 	return c.Internal.PledgeSector(ctx)
 }
 
@@ -1634,6 +1653,14 @@ func (c *StorageMinerStruct) MarketCancelDataTransfer(ctx context.Context, trans
 	return c.Internal.MarketCancelDataTransfer(ctx, transferID, otherPeer, isInitiator)
 }
 
+func (c *StorageMinerStruct) MarketPendingDeals(ctx context.Context) (api.PendingDealInfo, error) {
+	return c.Internal.MarketPendingDeals(ctx)
+}
+
+func (c *StorageMinerStruct) MarketPublishPendingDeals(ctx context.Context) error {
+	return c.Internal.MarketPublishPendingDeals(ctx)
+}
+
 func (c *StorageMinerStruct) DealsImportData(ctx context.Context, dealPropCid cid.Cid, file string) error {
 	return c.Internal.DealsImportData(ctx, dealPropCid, file)
 }
@@ -1712,7 +1739,7 @@ func (c *StorageMinerStruct) CheckProvable(ctx context.Context, pp abi.Registere
 
 // WorkerStruct
 
-func (w *WorkerStruct) Version(ctx context.Context) (build.Version, error) {
+func (w *WorkerStruct) Version(ctx context.Context) (api.Version, error) {
 	return w.Internal.Version(ctx)
 }
 
@@ -1856,6 +1883,10 @@ func (g GatewayStruct) MsigGetVested(ctx context.Context, addr address.Address, 
 	return g.Internal.MsigGetVested(ctx, addr, start, end)
 }
 
+func (g GatewayStruct) MsigGetPending(ctx context.Context, addr address.Address, tsk types.TipSetKey) ([]*api.MsigTransaction, error) {
+	return g.Internal.MsigGetPending(ctx, addr, tsk)
+}
+
 func (g GatewayStruct) StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error) {
 	return g.Internal.StateAccountKey(ctx, addr, tsk)
 }
@@ -1914,6 +1945,10 @@ func (g GatewayStruct) StateSectorGetInfo(ctx context.Context, maddr address.Add
 
 func (g GatewayStruct) StateWaitMsg(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error) {
 	return g.Internal.StateWaitMsg(ctx, msg, confidence)
+}
+
+func (g GatewayStruct) StateReadState(ctx context.Context, addr address.Address, ts types.TipSetKey) (*api.ActorState, error) {
+	return g.Internal.StateReadState(ctx, addr, ts)
 }
 
 func (c *WalletStruct) WalletNew(ctx context.Context, typ types.KeyType) (address.Address, error) {

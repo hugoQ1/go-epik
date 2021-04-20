@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -47,6 +48,7 @@ type TestStorageNode struct {
 	ListenAddr multiaddr.Multiaddr
 
 	MineOne func(context.Context, miner.MineReq) error
+	Stop    func(context.Context) error
 }
 
 var PresealGenesis = -1
@@ -56,6 +58,7 @@ const GenesisPreseals = 2
 // Options for setting up a mock storage miner
 type StorageMiner struct {
 	Full    int
+	Opts    node.Option
 	Preseal int
 }
 
@@ -108,14 +111,19 @@ var OneMiner = []StorageMiner{{Full: 0, Preseal: PresealGenesis}}
 var OneFull = DefaultFullOpts(1)
 var TwoFull = DefaultFullOpts(2)
 
-var FullNodeWithActorsV2At = func(upgradeHeight abi.ChainEpoch) FullNodeOpts {
+var FullNodeWithActorsV3At = func(upgradeHeight abi.ChainEpoch) FullNodeOpts {
 	return FullNodeOpts{
 		Opts: func(nodes []TestNode) node.Option {
 			return node.Override(new(stmgr.UpgradeSchedule), stmgr.UpgradeSchedule{ /* {
-					// Skip directly to tape height so precommits work.
-					Network:   network.Version5,
-					Height:    upgradeHeight,
+					// prepare for upgrade.
+					Network:   network.Version9,
+					Height:    1,
 					Migration: stmgr.UpgradeActorsV2,
+				}, {
+					// Skip directly to tape height so precommits work.
+					Network:   network.Version10,
+					Height:    upgradeHeight,
+					Migration: stmgr.UpgradeActorsV3,
 				} */})
 		},
 	}
@@ -146,17 +154,21 @@ var MineNext = miner.MineReq{
 }
 
 func (ts *testSuite) testVersion(t *testing.T) {
-	build.RunningNodeType = build.NodeFull
+	api.RunningNodeType = api.NodeFull
 
 	ctx := context.Background()
 	apis, _ := ts.makeNodes(t, OneFull, OneMiner)
-	api := apis[0]
+	napi := apis[0]
 
-	v, err := api.Version(ctx)
+	v, err := napi.Version(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	require.Equal(t, v.Version, build.BuildVersion)
+	versions := strings.Split(v.Version, "+")
+	if len(versions) <= 0 {
+		t.Fatal("empty version")
+	}
+	require.Equal(t, versions[0], build.BuildVersion)
 }
 
 func (ts *testSuite) testSearchMsg(t *testing.T) {

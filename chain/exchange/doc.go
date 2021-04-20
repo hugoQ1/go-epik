@@ -1,6 +1,6 @@
 // Package exchange contains the ChainExchange server and client components.
 //
-// ChainExchange is the basic chain synchronization protocol of Filecoin.
+// ChainExchange is the basic chain synchronization protocol of EpiK.
 // ChainExchange is an RPC-oriented protocol, with a single operation to
 // request blocks for now.
 //

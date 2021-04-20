@@ -40,9 +40,13 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	lapi "github.com/EpiK-Protocol/go-epik/api"
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
+
+	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 )
 
 var CidBaseFlag = cli.StringFlag{
@@ -81,6 +85,7 @@ var clientCmd = &cli.Command{
 		WithCategory("storage", clientGetDealCmd),
 		WithCategory("storage", clientListAsksCmd),
 		WithCategory("storage", clientDealStatsCmd),
+		WithCategory("storage", miningPledgeCmd),
 		WithCategory("data", clientImportCmd),
 		WithCategory("data", clientDropCmd),
 		WithCategory("data", clientLocalCmd),
@@ -100,6 +105,7 @@ var clientCmd = &cli.Command{
 		WithCategory("util", clientListTransfers),
 		WithCategory("util", clientRestartTransfer),
 		WithCategory("util", clientCancelTransfer),
+		WithCategory("util", clientCancelAllTransfer),
 	},
 }
 
@@ -111,6 +117,10 @@ var clientImportCmd = &cli.Command{
 		&cli.BoolFlag{
 			Name:  "car",
 			Usage: "import from a car file instead of a regular file",
+		},
+		&cli.BoolFlag{
+			Name:  "local",
+			Usage: "import the file to local and not start storage deal",
 		},
 		&cli.StringFlag{
 			Name:  "expert",
@@ -143,52 +153,63 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
-		// from
-		var from address.Address
-		if v := cctx.String("from"); v != "" {
-			from, err = address.NewFromString(v)
-			if err != nil {
-				return xerrors.Errorf("failed to parse 'from' address: %w", err)
-			}
-		} else {
-			from, err = api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-		}
-
-		// expert
-		var expert address.Address
-		if v := cctx.String("expert"); v != "" {
-			expert, err = address.NewFromString(v)
-			if err != nil {
-				return err
-			}
-		}
-
-		// miner
-		var miner address.Address
-		if minerStr := cctx.String("miner"); minerStr != "" {
-			miner, err = address.NewFromString(minerStr)
-			if err != nil {
-				return xerrors.Errorf("failed to parse 'miner' address: %w", err)
-			}
-		}
-
-		c, err := api.ClientImportAndDeal(ctx, &lapi.ImportAndDealParams{
-			Ref: lapi.FileRef{
+		var res *lapi.ImportRes
+		if cctx.Bool("local") {
+			res, err = api.ClientImport(ctx, lapi.FileRef{
 				Path:  absPath,
 				IsCAR: cctx.Bool("car"),
-			},
-			Miner:  miner,
-			From:   from,
-			Expert: expert,
-		})
-		if err != nil {
-			return err
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			// from
+			var from address.Address
+			if v := cctx.String("from"); v != "" {
+				from, err = address.NewFromString(v)
+				if err != nil {
+					return xerrors.Errorf("failed to parse 'from' address: %w", err)
+				}
+			} else {
+				from, err = api.WalletDefaultAddress(ctx)
+				if err != nil {
+					return err
+				}
+			}
+
+			// expert
+			var expert address.Address
+			if v := cctx.String("expert"); v != "" {
+				expert, err = address.NewFromString(v)
+				if err != nil {
+					return err
+				}
+			}
+
+			// miner
+			var miner address.Address
+			if minerStr := cctx.String("miner"); minerStr != "" {
+				miner, err = address.NewFromString(minerStr)
+				if err != nil {
+					return xerrors.Errorf("failed to parse 'miner' address: %w", err)
+				}
+			}
+
+			res, err = api.ClientImportAndDeal(ctx, &lapi.ImportAndDealParams{
+				Ref: lapi.FileRef{
+					Path:  absPath,
+					IsCAR: cctx.Bool("car"),
+				},
+				Miner:  miner,
+				From:   from,
+				Expert: expert,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
-		ds, err := api.ClientDealPieceCID(ctx, c.Root)
+		ds, err := api.ClientDealPieceCID(ctx, res.Root)
 		if err != nil {
 			return err
 		}
@@ -198,8 +219,8 @@ var clientImportCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("Import ID: %d\n", c.ImportID)
-		fmt.Printf("Root: %s\n", encoder.Encode(c.Root))
+		fmt.Printf("Import ID: %d\n", res.ImportID)
+		fmt.Printf("Root: %s\n", encoder.Encode(res.Root))
 		fmt.Printf("Piece CID: %s\n", encoder.Encode(ds.PieceCID))
 		fmt.Printf("Piece Size: %d\n", ds.PieceSize)
 		fmt.Printf("Payload Size: %d\n", ds.PayloadSize)
@@ -1551,12 +1572,182 @@ var clientDealStatsCmd = &cli.Command{
 	},
 }
 
+var miningPledgeCmd = &cli.Command{
+	Name:  "mining-pledge",
+	Usage: "Manipulate pledge funds for mining",
+	Subcommands: []*cli.Command{
+		miningPledgeAddCmd,
+		miningPledgeWithdrawCmd,
+	},
+}
+
+var miningPledgeAddCmd = &cli.Command{
+	Name:      "add",
+	Usage:     "Add pledge funds",
+	ArgsUsage: "[minerAddress] [amount (EPK)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return xerrors.New("'add' expects two arguments, address and amount")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		maddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		f, err := types.ParseEPK(cctx.Args().Get(1))
+		if err != nil {
+			return xerrors.Errorf("parsing 'amount' argument: %w", err)
+		}
+		amount := abi.TokenAmount(f)
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:   fromAddr,
+			To:     maddr,
+			Value:  amount,
+			Method: miner.Methods.AddPledge,
+			Params: nil,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Sent 'mining-pledge add' message %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var miningPledgeWithdrawCmd = &cli.Command{
+	Name:      "withdraw",
+	Usage:     "Withdraw pledge funds",
+	ArgsUsage: "[minerAddress] [amount (EPK, optional)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Args().Present() {
+			return xerrors.New("'withdraw' expects at least one argument, miner address")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		maddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		amount, err := api.StateMiningPledge(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		if amount.IsZero() {
+			return xerrors.New("no pledge funds")
+		}
+		if cctx.Args().Len() > 1 {
+			arg1, err := types.ParseEPK(cctx.Args().Get(1))
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+			reqAmount := abi.TokenAmount(arg1)
+			if reqAmount.GreaterThan(amount) {
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(amount), types.EPK(reqAmount))
+			}
+			amount = reqAmount
+		}
+
+		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{
+			AmountRequested: amount, // Default to attempting to withdraw all the extra funds in the miner actor
+		})
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     maddr,
+			From:   fromAddr,
+			Value:  types.NewInt(0),
+			Method: miner.Methods.WithdrawPledge,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Sent 'mining-pledge withdraw' %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
 var clientListAsksCmd = &cli.Command{
 	Name:  "list-asks",
 	Usage: "List asks for top miners",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name: "by-ping",
+		},
+		&cli.StringFlag{
+			Name:  "output-format",
+			Value: "text",
+			Usage: "Either 'text' or 'csv'",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -1577,11 +1768,16 @@ var clientListAsksCmd = &cli.Command{
 				return asks[i].Ping < asks[j].Ping
 			})
 		}
+		pfmt := "%s: min:%s max:%s ping:%s\n"
+		if cctx.String("output-format") == "csv" {
+			fmt.Printf("Miner,Min,Max,Ping\n")
+			pfmt = "%s,%s,%s,%s\n"
+		}
 
 		for _, a := range asks {
 			ask := a.Ask
 
-			fmt.Printf("%s: min:%s max:%s ping:%s\n", ask.Miner,
+			fmt.Printf(pfmt, ask.Miner,
 				types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))),
 				types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))),
 				// types.EPK(ask.Price),
@@ -1600,7 +1796,13 @@ type QueriedAsk struct {
 }
 
 func GetAsks(ctx context.Context, api lapi.FullNode) ([]QueriedAsk, error) {
-	color.Blue(".. getting miner list")
+	isTTY := true
+	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) == 0 {
+		isTTY = false
+	}
+	if isTTY {
+		color.Blue(".. getting miner list")
+	}
 	miners, err := api.StateListMiners(ctx, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("getting miner list: %w", err)
@@ -1645,14 +1847,18 @@ loop:
 	for {
 		select {
 		case <-time.After(150 * time.Millisecond):
-			fmt.Printf("\r* Found %d miners with power", atomic.LoadInt64(&found))
+			if isTTY {
+				fmt.Printf("\r* Found %d miners with power", atomic.LoadInt64(&found))
+			}
 		case <-done:
 			break loop
 		}
 	}
-	fmt.Printf("\r* Found %d miners with power\n", atomic.LoadInt64(&found))
+	if isTTY {
+		fmt.Printf("\r* Found %d miners with power\n", atomic.LoadInt64(&found))
 
-	color.Blue(".. querying asks")
+		color.Blue(".. querying asks")
+	}
 
 	var asks []QueriedAsk
 	var queried, got int64
@@ -1712,12 +1918,16 @@ loop2:
 	for {
 		select {
 		case <-time.After(150 * time.Millisecond):
-			fmt.Printf("\r* Queried %d asks, got %d responses", atomic.LoadInt64(&queried), atomic.LoadInt64(&got))
+			if isTTY {
+				fmt.Printf("\r* Queried %d asks, got %d responses", atomic.LoadInt64(&queried), atomic.LoadInt64(&got))
+			}
 		case <-done:
 			break loop2
 		}
 	}
-	fmt.Printf("\r* Queried %d asks, got %d responses\n", atomic.LoadInt64(&queried), atomic.LoadInt64(&got))
+	if isTTY {
+		fmt.Printf("\r* Queried %d asks, got %d responses\n", atomic.LoadInt64(&queried), atomic.LoadInt64(&got))
+	}
 
 	/* sort.Slice(asks, func(i, j int) bool {
 		return asks[i].Ask.Price.LessThan(asks[j].Ask.Price)
@@ -2311,6 +2521,61 @@ var clientCancelTransfer = &cli.Command{
 		timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
 		defer cancel()
 		return api.ClientCancelDataTransfer(timeoutCtx, transferID, other, initiator)
+	},
+}
+
+var clientCancelAllTransfer = &cli.Command{
+	Name:  "cancel-all-transfer",
+	Usage: "Force cancel all data transfer",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "force",
+			Usage: "force cancel all data transfers",
+			Value: false,
+		},
+		&cli.DurationFlag{
+			Name:  "cancel-timeout",
+			Usage: "time to wait for cancel to be sent to storage provider",
+			Value: 5 * time.Second,
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Bool("force") {
+			return cli.ShowCommandHelp(cctx, cctx.Command.Name)
+		}
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		channels, err := api.ClientListDataTransfers(ctx)
+		if err != nil {
+			return err
+		}
+
+		var cancelChannels []lapi.DataTransferChannel
+		for _, channel := range channels {
+			if channel.Status == datatransfer.Completed {
+				continue
+			}
+			if channel.Status == datatransfer.Failed || channel.Status == datatransfer.Cancelled {
+				continue
+			}
+			cancelChannels = append(cancelChannels, channel)
+		}
+		fmt.Printf("cancel data-transfer need cancel channels:%d\n", len(cancelChannels))
+
+		for _, channel := range cancelChannels {
+			timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
+			defer cancel()
+			if err := api.ClientCancelDataTransfer(timeoutCtx, channel.TransferID, channel.OtherPeer, channel.IsInitiator); err != nil {
+				continue
+			}
+			fmt.Printf("cancel data-transfer:%v, %v, %s\n", channel.TransferID, channel.OtherPeer, datatransfer.Statuses[channel.Status])
+		}
+		return nil
 	},
 }
 

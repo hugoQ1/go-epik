@@ -11,10 +11,10 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 
+	badgerbs "github.com/EpiK-Protocol/go-epik/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
-	badgerbs "github.com/EpiK-Protocol/go-epik/lib/blockstore/badger"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
 )
 
@@ -131,7 +131,7 @@ var stateTreePruneCmd = &cli.Command{
 
 		defer lkrepo.Close() //nolint:errcheck
 
-		bs, err := lkrepo.Blockstore(repo.BlockstoreChain)
+		bs, err := lkrepo.Blockstore(ctx, repo.UniversalBlockstore)
 		if err != nil {
 			return fmt.Errorf("failed to open blockstore: %w", err)
 		}
@@ -151,7 +151,7 @@ var stateTreePruneCmd = &cli.Command{
 			return fmt.Errorf("only badger blockstores are supported")
 		}
 
-		mds, err := lkrepo.Datastore("/metadata")
+		mds, err := lkrepo.Datastore(context.Background(), "/metadata")
 		if err != nil {
 			return err
 		}
@@ -191,7 +191,7 @@ var stateTreePruneCmd = &cli.Command{
 
 		rrLb := abi.ChainEpoch(cctx.Int64("keep-from-lookback"))
 
-		if err := cs.WalkSnapshot(ctx, ts, rrLb, true, func(c cid.Cid) error {
+		if err := cs.WalkSnapshot(ctx, ts, rrLb, true, true, func(c cid.Cid) error {
 			if goodSet.Len()%20 == 0 {
 				fmt.Printf("\renumerating keep set: %d             ", goodSet.Len())
 			}

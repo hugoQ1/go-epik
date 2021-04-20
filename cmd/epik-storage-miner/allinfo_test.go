@@ -11,8 +11,8 @@ import (
 
 	"github.com/filecoin-project/go-state-types/abi"
 
+	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/api/test"
-	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/policy"
 	"github.com/EpiK-Protocol/go-epik/lib/epiklog"
 	"github.com/EpiK-Protocol/go-epik/node/repo"
@@ -55,7 +55,7 @@ func TestMinerAllInfo(t *testing.T) {
 			"testnode-full":    n[0],
 			"testnode-storage": sn[0],
 		}
-		build.RunningNodeType = build.NodeMiner
+		api.RunningNodeType = api.NodeMiner
 
 		cctx := cli.NewContext(app, flag.NewFlagSet("", flag.ContinueOnError), nil)
 

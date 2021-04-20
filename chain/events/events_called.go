@@ -489,7 +489,7 @@ func (me *messageEvents) checkNewCalls(ts *types.TipSet) (map[triggerID]eventDat
 
 		// Run each trigger's matcher against the message
 		for tid, matchFn := range me.matchers {
-			matched, err := matchFn(msg)
+			matched, err := matchFn(msg, ts)
 			if err != nil {
 				log.Errorf("event matcher failed: %s", err)
 				continue
@@ -546,7 +546,7 @@ func (me *messageEvents) messagesForTs(ts *types.TipSet, consume func(*types.Mes
 // `curH`-`ts.Height` = `confidence`
 type MsgHandler func(msg *types.Message, rec *types.MessageReceipt, ts *types.TipSet, curH abi.ChainEpoch) (more bool, err error)
 
-type MsgMatchFunc func(msg *types.Message) (matched bool, err error)
+type MsgMatchFunc func(msg *types.Message, ts *types.TipSet) (matched bool, err error)
 
 // Called registers a callback which is triggered when a specified method is
 //  called on an actor, or a timeout is reached.

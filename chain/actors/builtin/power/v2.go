@@ -1,6 +1,6 @@
 package power
 
-import (
+/* import (
 	"bytes"
 
 	"github.com/filecoin-project/go-address"
@@ -75,10 +75,6 @@ func (s *state2) MinerPower(addr address.Address) (Claim, bool, error) {
 func (s *state2) MinerNominalPowerMeetsConsensusMinimum(a address.Address) (bool, error) {
 	return s.State.MinerNominalPowerMeetsConsensusMinimum(s.store, a)
 }
-
-/* func (s *state2) TotalPowerSmoothed() (builtin.FilterEstimate, error) {
-	return builtin.FromV2FilterEstimate(s.State.ThisEpochQAPowerSmoothed), nil
-} */
 
 func (s *state2) MinerCounts() (uint64, uint64, error) {
 	return uint64(s.State.MinerAboveMinPowerCount), uint64(s.State.MinerCount), nil
@@ -179,4 +175,4 @@ func fromV2Claim(v2 power2.Claim) Claim {
 		RawBytePower:    v2.RawBytePower,
 		QualityAdjPower: v2.QualityAdjPower,
 	}
-}
+} */

@@ -15,7 +15,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
+	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
@@ -31,6 +32,7 @@ import (
 	"golang.org/x/xerrors"
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
 	gov2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
@@ -39,57 +41,55 @@ import (
 
 var govCmd = &cli.Command{
 	Name:  "gov",
-	Usage: "Govern epik network",
-	// Flags: []cli.Flag{
-	// 	&cli.BoolFlag{
-	// 		Name:  "really-do-it",
-	// 		Usage: "Actually send transaction performing the action",
-	// 		Value: false,
-	// 	},
-	// },
-	Subcommands: []*cli.Command{
-		govPropose,
-		govApproveTx,
-		govListGovernorsCmd,
-	},
-	// Before: func(cctx *cli.Context) error {
-	// 	if !cctx.Bool("really-do-it") {
-	// 		return fmt.Errorf("Pass --really-do-it to actually execute this action")
-	// 	}
-	// 	return nil
-	// },
-}
-
-////////////////////
-//     propose
-////////////////////
-
-var govPropose = &cli.Command{
-	Name:  "propose",
-	Usage: "Propose a governance transation",
+	Usage: "Govern EpiK network",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "from",
-			Usage:   "Specify the proposer address, otherwise use the default wallet address",
+			Usage:   "Optionally specify the governor (or multisig signer) address, otherwise it will use the default wallet address",
 			Aliases: []string{"f"},
+		},
+		&cli.StringFlag{
+			Name:    "msig-governor",
+			Usage:   "Optionally specify the multisig governor address",
+			Aliases: []string{"m"},
+		},
+		&cli.IntFlag{
+			Name:    "confidence",
+			Usage:   "number of block confirmations to wait for",
+			Value:   int(build.MessageConfidence),
+			Aliases: []string{"c"},
 		},
 	},
 	Subcommands: []*cli.Command{
-		govProposeGrant,
-		govProposeRevoke,
-		govProposeSetKnowledgePayee,
-		govProposeResetPieceQuota,
-		govProposeSetInitialQuota,
+		govAuth,
+		govMarket,
+		govKnowledge,
+		govExpert,
+		govExpertfund,
+		govApprove,
+	}}
+
+//////////////////////////
+//     gov auth
+//////////////////////////
+
+var govAuth = &cli.Command{
+	Name:  "auth",
+	Usage: "Manipulate governance authorizations",
+	Subcommands: []*cli.Command{
+		govAuthGrant,
+		govAuthRevoke,
+		govAuthListCmd,
 	},
 }
 
-var govProposeGrant = &cli.Command{
+var govAuthGrant = &cli.Command{
 	Name:      "grant",
 	Usage:     "Propose granting priviledges to governor",
-	ArgsUsage: "[targetAddress]",
+	ArgsUsage: "[governorAddress]",
 	Action: func(cctx *cli.Context) error {
 		if !cctx.Args().Present() {
-			return ShowHelp(cctx, fmt.Errorf("'grant' expects one argument, target governor"))
+			return ShowHelp(cctx, fmt.Errorf("'grant' expects one argument, governor address"))
 		}
 
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -100,14 +100,14 @@ var govProposeGrant = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		// target
-		target, err := address.NewFromString(cctx.Args().First())
+		// governor
+		governor, err := address.NewFromString(cctx.Args().First())
 		if err != nil {
-			return fmt.Errorf("failed to parse target address: %w", err)
+			return fmt.Errorf("failed to parse governor address: %w", err)
 		}
-		ida, err := api.StateLookupID(ctx, target, types.EmptyTSK)
+		ida, err := api.StateLookupID(ctx, governor, types.EmptyTSK)
 		if err != nil {
-			return fmt.Errorf("failed to lookup id address for %s", target)
+			return fmt.Errorf("failed to lookup id address for %s", governor)
 		}
 
 		// from
@@ -136,13 +136,13 @@ var govProposeGrant = &cli.Command{
 	},
 }
 
-var govProposeRevoke = &cli.Command{
+var govAuthRevoke = &cli.Command{
 	Name:      "revoke",
 	Usage:     "Propose revoking priviledges from governor",
-	ArgsUsage: "[targetAddress]",
+	ArgsUsage: "[governorAddress]",
 	Action: func(cctx *cli.Context) error {
 		if !cctx.Args().Present() {
-			return ShowHelp(cctx, fmt.Errorf("'revoke' expects one argument, target governor"))
+			return ShowHelp(cctx, fmt.Errorf("'revoke' expects one argument, governor address"))
 		}
 
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -153,14 +153,14 @@ var govProposeRevoke = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		// target
-		target, err := address.NewFromString(cctx.Args().First())
+		// governor
+		governor, err := address.NewFromString(cctx.Args().First())
 		if err != nil {
-			return fmt.Errorf("failed to parse target address: %w", err)
+			return fmt.Errorf("failed to parse governor address: %w", err)
 		}
-		ida, err := api.StateLookupID(ctx, target, types.EmptyTSK)
+		ida, err := api.StateLookupID(ctx, governor, types.EmptyTSK)
 		if err != nil {
-			return fmt.Errorf("failed to lookup id address for %s", target)
+			return fmt.Errorf("failed to lookup id address for %s", governor)
 		}
 
 		// from
@@ -189,149 +189,16 @@ var govProposeRevoke = &cli.Command{
 	},
 }
 
-var govProposeSetKnowledgePayee = &cli.Command{
-	Name:      "set-knowledge-payee",
-	Usage:     "Set knowledge fund payee address",
-	ArgsUsage: "[governorAddress] [newPayeeAddress]",
-	Action: func(cctx *cli.Context) error {
-		if cctx.Args().Len() != 2 {
-			return fmt.Errorf("expect two arguments, governor and new payee address")
-		}
-
-		// governor(msig)
-		governor, err := address.NewFromString(cctx.Args().Get(0))
-		if err != nil {
-			return err
-		}
-		newPayee, err := address.NewFromString(cctx.Args().Get(1))
-		if err != nil {
-			return err
-		}
-
-		api, acloser, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer acloser()
-		ctx := ReqContext(cctx)
-
-		fromAddr, err := parseFrom(cctx, ctx, api, true)
-		if err != nil {
-			return err
-		}
-
-		sp, err := actors.SerializeParams(&newPayee)
-		if err != nil {
-			return xerrors.Errorf("serializing params: %w", err)
-		}
-
-		return sendProposal(cctx, ctx, api, governor, builtin2.KnowledgeFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsKnowledge.ChangePayee, sp)
+var govAuthListCmd = &cli.Command{
+	Name:  "list",
+	Usage: "List all authorizations",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "tipset",
+			Usage: "specify tipset to view block space usage of",
+			Value: "@head",
+		},
 	},
-}
-
-var govProposeResetPieceQuota = &cli.Command{
-	Name:      "reset-piece-quota",
-	Usage:     "Reset reward quota for PieceCID",
-	ArgsUsage: "[governorAddress] [PieceCID number] [PieceCID number] [...]",
-	Action: func(cctx *cli.Context) error {
-
-		if cctx.Args().Len() < 3 || cctx.Args().Len()%2 != 1 {
-			return fmt.Errorf("expect governor address and at least one [PieceCID number] pair")
-		}
-
-		api, acloser, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer acloser()
-
-		ctx := ReqContext(cctx)
-
-		// governor(msig)
-		governor, err := address.NewFromString(cctx.Args().Get(0))
-		if err != nil {
-			return err
-		}
-		// [PieceCID number] pair
-		params := &market2.ResetQuotasParams{}
-		for i := 0; i < cctx.Args().Len()/2; i++ {
-			pieceCid, err := cid.Decode(cctx.Args().Get(i*2 + 1))
-			if err != nil {
-				return err
-			}
-			quota, err := strconv.ParseInt(cctx.Args().Get(i*2+2), 10, 64)
-			if err != nil {
-				return err
-			}
-			if quota < 0 {
-				return fmt.Errorf("negatvie quota not allowed")
-			}
-			params.NewQuotas = append(params.NewQuotas, market2.NewQuota{PieceCID: pieceCid, Quota: quota})
-		}
-
-		fromAddr, err := parseFrom(cctx, ctx, api, true)
-		if err != nil {
-			return err
-		}
-
-		sp, err := actors.SerializeParams(params)
-		if err != nil {
-			return xerrors.Errorf("serializing params: %w", err)
-		}
-
-		return sendProposal(cctx, ctx, api, governor, builtin2.StorageMarketActorAddr, fromAddr, big.Zero(), builtin2.MethodsMarket.ResetQuotas, sp)
-	},
-}
-
-var govProposeSetInitialQuota = &cli.Command{
-	Name:      "set-initial-quota",
-	Usage:     "Set initial quota for new piece",
-	ArgsUsage: "[governorAddress] [quota]",
-	Action: func(cctx *cli.Context) error {
-
-		if cctx.Args().Len() != 2 {
-			return fmt.Errorf("expect two arguments, governor address and initial quota number")
-		}
-
-		api, acloser, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer acloser()
-
-		ctx := ReqContext(cctx)
-
-		// governor(msig)
-		governor, err := address.NewFromString(cctx.Args().Get(0))
-		if err != nil {
-			return err
-		}
-
-		fromAddr, err := parseFrom(cctx, ctx, api, true)
-		if err != nil {
-			return err
-		}
-
-		quota, err := strconv.ParseInt(cctx.Args().Get(1), 10, 64)
-		if err != nil {
-			return err
-		}
-		if quota <= 0 {
-			return fmt.Errorf("non-positive quota not allowed")
-		}
-		cbgQuota := cbg.CborInt(quota)
-		sp, err := actors.SerializeParams(&cbgQuota)
-		if err != nil {
-			return xerrors.Errorf("serializing params: %w", err)
-		}
-
-		return sendProposal(cctx, ctx, api, governor, builtin2.StorageMarketActorAddr, fromAddr, big.Zero(), builtin2.MethodsMarket.SetInitialQuota, sp)
-	},
-}
-
-var govListGovernorsCmd = &cli.Command{
-	Name:  "list-governors",
-	Usage: "List all governors",
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -366,36 +233,338 @@ var govListGovernorsCmd = &cli.Command{
 	},
 }
 
+//////////////////////////
+//     gov knowledge
+//////////////////////////
+var govKnowledge = &cli.Command{
+	Name:  "knowledge",
+	Usage: "Manipulate knowledge fund params",
+	Subcommands: []*cli.Command{
+		govKnowledgeSetPayee,
+	},
+}
+
+var govKnowledgeSetPayee = &cli.Command{
+	Name:      "set-payee",
+	Usage:     "Set knowledge fund payee address",
+	ArgsUsage: "<newPayee>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 1 {
+			return fmt.Errorf("'set-payee' expects one arguments, new payee address")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		newPayee, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return err
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&newPayee)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.KnowledgeFundActorAddr, big.Zero(), builtin2.MethodsKnowledge.ChangePayee, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.KnowledgeFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsKnowledge.ChangePayee, sp)
+		}
+	},
+}
+
+//////////////////////////
+//     gov market
+//////////////////////////
+var govMarket = &cli.Command{
+	Name:  "market",
+	Usage: "Manipulate market actor",
+	Subcommands: []*cli.Command{
+		govMarketResetQuota,
+		govMarketSetInitialQuota,
+	},
+}
+
+var govMarketResetQuota = &cli.Command{
+	Name:      "reset-quota",
+	Usage:     "Reset power reward quota for specific PieceCID",
+	ArgsUsage: "<PieceCID quota> <PieceCID quota> ...",
+	Action: func(cctx *cli.Context) error {
+
+		if !cctx.Args().Present() || cctx.Args().Len()%2 != 0 {
+			return fmt.Errorf("'reset-quota' expects at least one <PieceCID number> pair")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+
+		ctx := ReqContext(cctx)
+
+		// <PieceCID quota> pair
+		params := &market2.ResetQuotasParams{}
+		for i := 0; i < cctx.Args().Len()/2; i++ {
+			pieceCid, err := cid.Decode(cctx.Args().Get(i * 2))
+			if err != nil {
+				return err
+			}
+			quota, err := strconv.ParseInt(cctx.Args().Get(i*2+1), 10, 64)
+			if err != nil {
+				return err
+			}
+			if quota < 0 {
+				return fmt.Errorf("negative quota not allowed")
+			}
+			params.NewQuotas = append(params.NewQuotas, market2.NewQuota{PieceCID: pieceCid, Quota: quota})
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(params)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.StorageMarketActorAddr, big.Zero(), builtin2.MethodsMarket.ResetQuotas, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.StorageMarketActorAddr, fromAddr, big.Zero(), builtin2.MethodsMarket.ResetQuotas, sp)
+		}
+	},
+}
+
+var govMarketSetInitialQuota = &cli.Command{
+	Name:      "set-initial-quota",
+	Usage:     "Set initial power reward quota for new pieces",
+	ArgsUsage: "<quota>",
+	Action: func(cctx *cli.Context) error {
+
+		if cctx.Args().Len() != 1 {
+			return fmt.Errorf("'set-initial-quota' expects one argument, initial quota number")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+
+		ctx := ReqContext(cctx)
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		quota, err := strconv.ParseInt(cctx.Args().First(), 10, 64)
+		if err != nil {
+			return err
+		}
+		if quota <= 0 {
+			return fmt.Errorf("non-positive quota not allowed")
+		}
+		cbgQuota := cbg.CborInt(quota)
+		sp, err := actors.SerializeParams(&cbgQuota)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.StorageMarketActorAddr, big.Zero(), builtin2.MethodsMarket.SetInitialQuota, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.StorageMarketActorAddr, fromAddr, big.Zero(), builtin2.MethodsMarket.SetInitialQuota, sp)
+		}
+	},
+}
+
+//////////////////////////
+//     gov expert
+//////////////////////////
+var govExpert = &cli.Command{
+	Name:  "expert",
+	Usage: "Manipulate expert actor",
+	Subcommands: []*cli.Command{
+		govExpertSetOwner,
+		govExpertBlock,
+	},
+}
+var govExpertSetOwner = &cli.Command{
+	Name:      "set-owner",
+	Usage:     "Set new owner address for an expert",
+	ArgsUsage: "<expertAddress newOwnerAddress>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 2 {
+			return fmt.Errorf("'set-owner' expects two arguments, expert and new owner address")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		expert, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return err
+		}
+
+		newOwner, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&newOwner)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, expert, big.Zero(), builtin2.MethodsExpert.GovChangeOwner, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, expert, fromAddr, big.Zero(), builtin2.MethodsExpert.GovChangeOwner, sp)
+		}
+	},
+}
+
+var govExpertBlock = &cli.Command{
+	Name:      "block",
+	Usage:     "Block an expert",
+	ArgsUsage: "<expertAddress>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return fmt.Errorf("'block' expects one argument, expert address")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		expert, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, expert, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, expert, fromAddr, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+		}
+	},
+}
+
+//////////////////////////
+//     gov expertfund
+//////////////////////////
+var govExpertfund = &cli.Command{
+	Name:  "expertfund",
+	Usage: "Manipulate expertfund actor",
+	Subcommands: []*cli.Command{
+		govExpertfundSetThreshold,
+	},
+}
+var govExpertfundSetThreshold = &cli.Command{
+	Name:      "set-threshold",
+	Usage:     "Set new threshold of data redundancy for valid expert acknowledgement",
+	ArgsUsage: "<newThreshold>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return fmt.Errorf("'set-threshold' expects one arguments, new threshold number")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		threshold, err := strconv.ParseUint(cctx.Args().First(), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&expertfund.ChangeThresholdParams{DataStoreThreshold: threshold})
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.ExpertFundActorAddr, big.Zero(), builtin2.MethodsExpertFunds.ChangeThreshold, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.ExpertFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsExpertFunds.ChangeThreshold, sp)
+		}
+	},
+}
+
 ////////////////////
 //     approve
 ////////////////////
 
-var govApproveTx = &cli.Command{
+var govApprove = &cli.Command{
 	Name:      "approve",
-	Usage:     "Approve a governance transation",
-	ArgsUsage: "[multisigAddress] [txId]",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "from",
-			Usage:   "Specify the approver address, otherwise use the default wallet address",
-			Aliases: []string{"f"},
-		},
-	},
+	Usage:     "Approve a multisig message",
+	ArgsUsage: "<messageId>",
 	Action: func(cctx *cli.Context) error {
-		if cctx.Args().Len() != 2 {
-			return ShowHelp(cctx, fmt.Errorf("'approve' expects two argument, multisig address and transaction ID"))
-		}
-
-		// msig
-		msig, err := address.NewFromString(cctx.Args().Get(0))
-		if err != nil {
-			return err
-		}
-
-		// txid
-		txid, err := strconv.ParseUint(cctx.Args().Get(1), 10, 64)
-		if err != nil {
-			return err
+		if cctx.Args().Len() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("'approve' expects one argument, message ID"))
 		}
 
 		api, closer, err := GetFullNodeAPI(cctx)
@@ -404,6 +573,23 @@ var govApproveTx = &cli.Command{
 		}
 		defer closer()
 		ctx := ReqContext(cctx)
+
+		// msig
+		var msig address.Address
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return fmt.Errorf("flag 'msig-governor' is required on command 'gov'")
+		} else {
+			msig, err = address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+		}
+
+		// txid
+		txid, err := strconv.ParseUint(cctx.Args().Get(0), 10, 64)
+		if err != nil {
+			return err
+		}
 
 		// from
 		fromAddr, err := parseFrom(cctx, ctx, api, true)
@@ -423,7 +609,7 @@ var govApproveTx = &cli.Command{
 				return err
 			}
 
-			store := adt.WrapStore(ctx, cbor.NewCborStore(apibstore.NewAPIBlockstore(api)))
+			store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
 			mstate, err := multisig.Load(store, act)
 			if err != nil {
 				return err
@@ -620,18 +806,6 @@ outer:
 	}
 }
 
-func parseFrom(cctx *cli.Context, ctx context.Context, api api.FullNode, useDef bool) (address.Address, error) {
-	from := cctx.String("from")
-	if from == "" {
-		if !useDef {
-			return address.Undef, fmt.Errorf("from not set")
-		}
-		return api.WalletDefaultAddress(ctx)
-	}
-
-	return address.NewFromString(from)
-}
-
 func sendProposal(cctx *cli.Context, ctx context.Context, api api.FullNode,
 	msigAddr, destAddr, fromAddr address.Address,
 	value abi.TokenAmount,
@@ -687,5 +861,32 @@ func sendApprove(cctx *cli.Context, ctx context.Context, api api.FullNode, msig 
 
 	fmt.Println("approve returned exit Ok")
 
+	return nil
+}
+
+func sendTransaction(cctx *cli.Context, ctx context.Context, api api.FullNode,
+	from, to address.Address, value abi.TokenAmount,
+	method abi.MethodNum, methodParam []byte,
+) error {
+	smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+		To:     to,
+		From:   from,
+		Value:  value,
+		Method: method,
+		Params: methodParam,
+	}, nil)
+	if err != nil {
+		return err
+	}
+	fmt.Println("wait message: ", smsg.Cid())
+
+	wait, err := api.StateWaitMsg(ctx, smsg.Cid(), uint64(cctx.Int("confidence")))
+	if err != nil {
+		return err
+	}
+
+	if wait.Receipt.ExitCode != 0 {
+		return fmt.Errorf("message exit %d", wait.Receipt.ExitCode)
+	}
 	return nil
 }

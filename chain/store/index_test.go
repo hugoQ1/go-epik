@@ -5,10 +5,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
 	"github.com/EpiK-Protocol/go-epik/chain/types/mock"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
 	"github.com/filecoin-project/go-state-types/abi"
 	datastore "github.com/ipfs/go-datastore"
 	syncds "github.com/ipfs/go-datastore/sync"
@@ -30,7 +30,7 @@ func TestIndexSeeks(t *testing.T) {
 
 	ctx := context.TODO()
 
-	nbs := blockstore.NewTemporarySync()
+	nbs := blockstore.NewMemorySync()
 	cs := store.NewChainStore(nbs, nbs, syncds.MutexWrap(datastore.NewMapDatastore()), nil, nil)
 	defer cs.Close() //nolint:errcheck
 

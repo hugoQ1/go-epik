@@ -4,6 +4,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/knowledge"
 	"github.com/ipfs/go-cid"
 
@@ -27,7 +28,7 @@ type state struct {
 }
 
 func (s *state) Info() (*Info, error) {
-	tally, err := adt2.AsMap(s.store, s.Tally)
+	tally, err := adt2.AsMap(s.store, s.Tally, builtin.DefaultHamtBitwidth)
 	if err != nil {
 		return nil, err
 	}

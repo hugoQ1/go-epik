@@ -362,11 +362,11 @@ var mpoolReplaceCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "gas-feecap",
-			Usage: "gas feecap for new message (burn and pay to miner, attoFIL/GasUnit)",
+			Usage: "gas feecap for new message (burn and pay to miner, attoEPK/GasUnit)",
 		},
 		&cli.StringFlag{
 			Name:  "gas-premium",
-			Usage: "gas price for new message (pay to miner, attoFIL/GasUnit)",
+			Usage: "gas price for new message (pay to miner, attoEPK/GasUnit)",
 		},
 		&cli.Int64Flag{
 			Name:  "gas-limit",

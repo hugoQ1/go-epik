@@ -3,9 +3,9 @@ package retrievalstoremgr
 import (
 	"errors"
 
-	"github.com/filecoin-project/go-multistore"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/node/repo/importmgr"
+	"github.com/filecoin-project/go-multistore"
 	"github.com/ipfs/go-blockservice"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	ipldformat "github.com/ipfs/go-ipld-format"
@@ -73,13 +73,13 @@ func (mrs *multiStoreRetrievalStore) DAGService() ipldformat.DAGService {
 
 // BlockstoreRetrievalStoreManager manages a single blockstore as if it were multiple stores
 type BlockstoreRetrievalStoreManager struct {
-	bs blockstore.Blockstore
+	bs blockstore.BasicBlockstore
 }
 
 var _ RetrievalStoreManager = &BlockstoreRetrievalStoreManager{}
 
 // NewBlockstoreRetrievalStoreManager returns a new blockstore based RetrievalStoreManager
-func NewBlockstoreRetrievalStoreManager(bs blockstore.Blockstore) RetrievalStoreManager {
+func NewBlockstoreRetrievalStoreManager(bs blockstore.BasicBlockstore) RetrievalStoreManager {
 	return &BlockstoreRetrievalStoreManager{
 		bs: bs,
 	}

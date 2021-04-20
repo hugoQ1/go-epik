@@ -9,7 +9,7 @@ import (
 	dssync "github.com/ipfs/go-datastore/sync"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/lib/blockstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
@@ -45,7 +45,7 @@ func NewProxyingStores(ctx context.Context, api api.FullNode) *Stores {
 	bs := &proxyingBlockstore{
 		ctx:        ctx,
 		api:        api,
-		Blockstore: blockstore.NewBlockstore(ds),
+		Blockstore: blockstore.FromDatastore(ds),
 	}
 	return NewStores(ctx, ds, bs)
 }
@@ -82,7 +82,7 @@ type TracingBlockstore interface {
 }
 
 // proxyingBlockstore is a Blockstore wrapper that fetches unknown CIDs from
-// a Filecoin node via JSON-RPC.
+// a EpiK node via JSON-RPC.
 type proxyingBlockstore struct {
 	ctx context.Context
 	api api.FullNode

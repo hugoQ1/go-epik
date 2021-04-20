@@ -1,9 +1,9 @@
 package sealing
 
 import (
-	"bytes"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"golang.org/x/xerrors"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -353,6 +353,7 @@ func (m *Sealing) handleRecoverDealIDs(ctx statemachine.Context, sector SectorIn
 	}
 
 	var toFix []int
+	paddingPieces := 0
 
 	for i, p := range sector.Pieces {
 		// if no deal is associated with the piece, ensure that we added it as
@@ -362,10 +363,11 @@ func (m *Sealing) handleRecoverDealIDs(ctx statemachine.Context, sector SectorIn
 			if !p.Piece.PieceCID.Equals(exp) {
 				return xerrors.Errorf("sector %d piece %d had non-zero PieceCID %+v", sector.SectorNumber, i, p.Piece.PieceCID)
 			}
+			paddingPieces++
 			continue
 		}
 
-		proposal, err := m.api.StateMarketStorageDeal(ctx.Context(), p.DealInfo.DealID, tok)
+		proposal, err := m.api.StateMarketStorageDealProposal(ctx.Context(), p.DealInfo.DealID, tok)
 		if err != nil {
 			log.Warnf("getting deal %d for piece %d: %+v", p.DealInfo.DealID, i, err)
 			toFix = append(toFix, i)
@@ -397,6 +399,7 @@ func (m *Sealing) handleRecoverDealIDs(ctx statemachine.Context, sector SectorIn
 		}
 	}
 
+	failed := map[int]error{}
 	updates := map[int]abi.DealID{}
 	for _, i := range toFix {
 		p := sector.Pieces[i]
@@ -408,26 +411,32 @@ func (m *Sealing) handleRecoverDealIDs(ctx statemachine.Context, sector SectorIn
 			return ctx.Send(SectorRemove{})
 		}
 
-		ml, err := m.api.StateSearchMsg(ctx.Context(), *p.DealInfo.PublishCid)
+		var dp *market.DealProposal
+		if p.DealInfo.DealProposal != nil {
+			mdp := market.DealProposal(*p.DealInfo.DealProposal)
+			dp = &mdp
+		}
+		res, err := m.dealInfo.GetCurrentDealInfo(ctx.Context(), tok, dp, *p.DealInfo.PublishCid)
 		if err != nil {
-			return xerrors.Errorf("looking for publish deal message %s (sector %d, piece %d): %w", *p.DealInfo.PublishCid, sector.SectorNumber, i, err)
+			failed[i] = xerrors.Errorf("getting current deal info for piece %d: %w", i, err)
 		}
 
-		if ml.Receipt.ExitCode != exitcode.Ok {
-			return xerrors.Errorf("looking for publish deal message %s (sector %d, piece %d): non-ok exit code: %s", *p.DealInfo.PublishCid, sector.SectorNumber, i, ml.Receipt.ExitCode)
+		updates[i] = res.DealID
+	}
+
+	if len(failed) > 0 {
+		var merr error
+		for _, e := range failed {
+			merr = multierror.Append(merr, e)
 		}
 
-		var retval market.PublishStorageDealsReturn
-		if err := retval.UnmarshalCBOR(bytes.NewReader(ml.Receipt.Return)); err != nil {
-			return xerrors.Errorf("looking for publish deal message: unmarshaling message return: %w", err)
+		if len(failed)+paddingPieces == len(sector.Pieces) {
+			log.Errorf("removing sector %d: all deals expired or unrecoverable: %+v", sector.SectorNumber, merr)
+			return ctx.Send(SectorRemove{})
 		}
 
-		if len(retval.IDs) != 1 {
-			// market currently only ever sends messages with 1 deal
-			return xerrors.Errorf("can't recover dealIDs from publish deal message with more than 1 deal")
-		}
-
-		updates[i] = retval.IDs[0]
+		// todo: try to remove bad pieces (hard; see the todo above)
+		return xerrors.Errorf("failed to recover some deals: %w", merr)
 	}
 
 	// Not much to do here, we can't go back in time to commit this sector

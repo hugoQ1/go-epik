@@ -16,7 +16,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/api/apibstore"
+	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
@@ -202,7 +202,7 @@ func (p *Processor) processMiners(ctx context.Context, minerTips map[types.TipSe
 		log.Debugw("Processed Miners", "duration", time.Since(start).String())
 	}()
 
-	stor := store.ActorStore(ctx, apibstore.NewAPIBlockstore(p.node))
+	stor := store.ActorStore(ctx, blockstore.NewAPIBlockstore(p.node))
 
 	var out []minerActorInfo
 	// TODO add parallel calls if this becomes slow
@@ -651,7 +651,7 @@ func (p *Processor) getMinerStateAt(ctx context.Context, maddr address.Address, 
 	if err != nil {
 		return nil, err
 	}
-	return miner.Load(store.ActorStore(ctx, apibstore.NewAPIBlockstore(p.node)), prevActor)
+	return miner.Load(store.ActorStore(ctx, blockstore.NewAPIBlockstore(p.node)), prevActor)
 }
 
 func (p *Processor) getMinerPreCommitChanges(ctx context.Context, m minerActorInfo) (*miner.PreCommitChanges, error) {

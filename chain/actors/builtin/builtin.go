@@ -12,7 +12,6 @@ import (
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
-	smoothing2 "github.com/filecoin-project/specs-actors/v2/actors/util/smoothing"
 )
 
 var SystemActorAddr = builtin.SystemActorAddr
@@ -44,9 +43,10 @@ const (
 // TODO: Why does actors have 2 different versions of this?
 type SectorInfo = proof.SectorInfo
 type PoStProof = proof.PoStProof
-type FilterEstimate = smoothing2.FilterEstimate
 
-/* func FromV0FilterEstimate(v0 smoothing2.FilterEstimate) FilterEstimate {
+/* type FilterEstimate = smoothing2.FilterEstimate
+
+func FromV0FilterEstimate(v0 smoothing2.FilterEstimate) FilterEstimate {
 	return (FilterEstimate)(v0)
 }
 
@@ -55,8 +55,12 @@ func QAPowerForWeight(size abi.SectorSize, duration abi.ChainEpoch, dealWeight, 
 	return miner2.QAPowerForWeight(size, duration, dealWeight, verifiedWeight)
 }
 
-func FromV2FilterEstimate(v1 smoothing2.FilterEstimate) FilterEstimate {
-	return (FilterEstimate)(v1)
+func FromV2FilterEstimate(v2 smoothing2.FilterEstimate) FilterEstimate {
+	return (FilterEstimate)(v2)
+}
+
+func FromV3FilterEstimate(v3 smoothing3.FilterEstimate) FilterEstimate {
+	return (FilterEstimate)(v3)
 } */
 
 type ActorStateLoader func(store adt.Store, root cid.Cid) (cbor.Marshaler, error)
