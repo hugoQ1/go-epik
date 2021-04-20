@@ -62,18 +62,35 @@ func (s *state3) VestedFunds(epoch abi.ChainEpoch) (abi.TokenAmount, error) {
 	return s.CheckVestedFunds(s.store, epoch)
 }
 
-func (s *state3) LockedFunds() (LockedFunds, error) {
-	return LockedFunds{
-		VestingFunds: s.State.LockedFunds,
-	}, nil
-}
-
 func (s *state3) FeeDebt() (abi.TokenAmount, error) {
 	return s.State.FeeDebt, nil
 }
 
-func (s *state3) TotalPledge() (abi.TokenAmount, error) {
-	return s.State.TotalPledge, nil
+func (s *state3) Funds() (Funds, error) {
+	m, err := adt3.AsMap(s.store, s.Pledges, builtin3.DefaultHamtBitwidth)
+	if err != nil {
+		return Funds{}, err
+	}
+
+	pledgors := make(map[string]abi.TokenAmount)
+	var amt abi.TokenAmount
+	err = m.ForEach(&amt, func(k string) error {
+		ad, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		pledgors[ad.String()] = amt
+		return nil
+	})
+	if err != nil {
+		return Funds{}, xerrors.Errorf("failed to iterate pledges: %w", err)
+	}
+
+	return Funds{
+		MiningPledge:   s.State.TotalPledge,
+		VestingFunds:   s.State.LockedFunds,
+		MiningPledgors: pledgors,
+	}, nil
 }
 
 func (s *state3) GetSector(num abi.SectorNumber) (*SectorOnChainInfo, error) {

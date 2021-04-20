@@ -1694,27 +1694,27 @@ var miningPledgeWithdrawCmd = &cli.Command{
 			fromAddr = addr
 		}
 
-		amount, err := api.StateMiningPledge(ctx, maddr, types.EmptyTSK)
+		funds, err := api.StateMinerFunds(ctx, maddr, types.EmptyTSK)
 		if err != nil {
 			return err
 		}
-		if amount.IsZero() {
+		if funds.MiningPledge.IsZero() {
 			return xerrors.New("no pledge funds")
 		}
+		reqAmount := funds.MiningPledge
 		if cctx.Args().Len() > 1 {
 			arg1, err := types.ParseEPK(cctx.Args().Get(1))
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
-			reqAmount := abi.TokenAmount(arg1)
-			if reqAmount.GreaterThan(amount) {
-				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(amount), types.EPK(reqAmount))
+			if abi.TokenAmount(arg1).GreaterThan(funds.MiningPledge) {
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
 			}
-			amount = reqAmount
+			reqAmount = abi.TokenAmount(arg1)
 		}
 
 		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{
-			AmountRequested: amount, // Default to attempting to withdraw all the extra funds in the miner actor
+			AmountRequested: reqAmount, // Default to attempting to withdraw all the extra funds in the miner actor
 		})
 		if err != nil {
 			return err

@@ -210,7 +210,7 @@ type FullNodeStruct struct {
 		/* StateMinerPreCommitDepositForPower func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"`
 		StateMinerInitialPledgeCollateral  func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"` */
 		StateMinerAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
-		StateMiningPledge          func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
+		StateMinerFunds            func(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)                                        `perm:"read"`
 		StateMinerSectorAllocated  func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)                             `perm:"read"`
 		StateSectorPreCommitInfo   func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error) `perm:"read"`
 		StateSectorGetInfo         func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorOnChainInfo, error)         `perm:"read"`
@@ -1049,8 +1049,8 @@ func (c *FullNodeStruct) StateMinerAvailableBalance(ctx context.Context, maddr a
 	return c.Internal.StateMinerAvailableBalance(ctx, maddr, tsk)
 }
 
-func (c *FullNodeStruct) StateMiningPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
-	return c.Internal.StateMiningPledge(ctx, maddr, tsk)
+func (c *FullNodeStruct) StateMinerFunds(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (miner.Funds, error) {
+	return c.Internal.StateMinerFunds(ctx, maddr, tsk)
 }
 
 func (c *FullNodeStruct) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {

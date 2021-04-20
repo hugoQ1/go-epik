@@ -425,8 +425,8 @@ type FullNode interface {
 	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
 	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
 	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
-	// StateMiningPledge returns the total pledge collateral for mining
-	StateMiningPledge(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	// StateMinerFunds returns the total pledge collateral for mining
+	StateMinerFunds(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)
 	// StateMinerSectorAllocated checks if a sector is allocated
 	StateMinerSectorAllocated(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)
 	// StateSectorPreCommitInfo returns the PreCommit info for the specified miner's sector

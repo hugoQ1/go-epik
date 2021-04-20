@@ -705,7 +705,7 @@ func info(t *testkit.TestEnvironment, m *testkit.LotusMiner, maddr address.Addre
 		return nil, err
 	}
 
-	funds, err := mas.LockedFunds()
+	funds, err := mas.Funds()
 	if err != nil {
 		return nil, err
 	}
