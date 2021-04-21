@@ -68,7 +68,7 @@ var DefaultFundraisingAccountActor = genesis.Actor{
 		VestingStart:    0,
 		InitialVestedTarget: &builtin.BigFrac{
 			Numerator:   big.NewInt(1),
-			Denominator: big.NewInt(8),
+			Denominator: big.NewInt(7),
 		},
 	}).ActorMeta(),
 }
