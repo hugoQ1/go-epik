@@ -234,10 +234,6 @@ var DaemonCmd = &cli.Command{
 		if err != nil && err != repo.ErrRepoExists {
 			return xerrors.Errorf("repo init error: %w", err)
 		}
-		if cctx.Bool("init") {
-			log.Info("daemon repo init completed.")
-			return nil
-		}
 		freshRepo := err != repo.ErrRepoExists
 
 		if !isLite {
@@ -348,6 +344,11 @@ var DaemonCmd = &cli.Command{
 		)
 		if err != nil {
 			return xerrors.Errorf("initializing node: %w", err)
+		}
+
+		if cctx.Bool("init") {
+			log.Info("daemon repo init completed.")
+			return nil
 		}
 
 		if cctx.String("import-key") != "" {
