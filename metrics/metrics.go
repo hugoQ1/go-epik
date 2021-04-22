@@ -79,13 +79,15 @@ var (
 	VMFlushCopyDuration                 = stats.Float64("vm/flush_copy_ms", "Time spent in VM Flush Copy", stats.UnitMilliseconds)
 	VMFlushCopyCount                    = stats.Int64("vm/flush_copy_count", "Number of copied objects", stats.UnitDimensionless)
 
-	MessageReceivedBytes = stats.Int64("message/received_bytes", "Counter for total bytes of received messages", stats.UnitBytes)
-	BlockReceivedBytes   = stats.Int64("block/received_bytes", "Counter for total bytes of received blocks", stats.UnitBytes)
-	ServeSyncSuccess     = stats.Int64("serve/sync_success", "Counter for successes", stats.UnitDimensionless)
-	ServeSyncFailure     = stats.Int64("serve/sync_failure", "Counter for failures", stats.UnitDimensionless)
-	ServeSyncBytes       = stats.Int64("serve/sync_bytes", "Counter for total sent bytes", stats.UnitBytes)
-	TipsetMessagesCount  = stats.Int64("tipset/messages_count", "Counter of messages in tipsets", stats.UnitDimensionless)
-	TipsetMessagesRate   = stats.Float64("tipset/messages_rate", "Counter of processed messages per second", stats.UnitDimensionless)
+	MessageReceivedBytes    = stats.Int64("message/received_bytes", "Counter for total bytes of received messages", stats.UnitBytes)
+	BlockReceivedBytes      = stats.Int64("block/received_bytes", "Counter for total bytes of received blocks", stats.UnitBytes)
+	ServeSyncSuccess        = stats.Int64("serve/sync_success", "Counter for successes", stats.UnitDimensionless)
+	ServeSyncFailure        = stats.Int64("serve/sync_failure", "Counter for failures", stats.UnitDimensionless)
+	ServeSyncBytes          = stats.Int64("serve/sync_bytes", "Counter for total sent bytes", stats.UnitBytes)
+	TipsetMessagesCount     = stats.Int64("tipset/messages_count", "Counter of messages in tipsets", stats.UnitDimensionless)
+	TipsetMessagesRate      = stats.Float64("tipset/messages_rate", "Counter of processed messages per second", stats.UnitDimensionless)
+	TipsetPublishDealsCount = stats.Int64("tipset/publishdeals_count", "Counter of publishdeals in tipsets", stats.UnitDimensionless)
+	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
 
 	// Sys
 	BandwidthTotal = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
@@ -262,29 +264,40 @@ var (
 		Measure:     TipsetMessagesRate,
 		Aggregation: view.LastValue(),
 	}
+	TipsetPublishDealsCountView = &view.View{
+		Measure:     TipsetPublishDealsCount,
+		Aggregation: view.LastValue(),
+	}
+	TipsetSubmitPoStsCountView = &view.View{
+		Measure:     TipsetSubmitPoStsCount,
+		Aggregation: view.LastValue(),
+	}
 
 	// default
 	BandwidthTotalView = &view.View{
 		Measure:     BandwidthTotal,
 		Aggregation: view.LastValue(),
-		TagKeys:     []tag.Key{Type},
+		TagKeys:     []tag.Key{Type, NodeType},
 	}
 	BandwidthRateView = &view.View{
 		Measure:     BandwidthRate,
 		Aggregation: view.LastValue(),
-		TagKeys:     []tag.Key{Type},
+		TagKeys:     []tag.Key{Type, NodeType},
 	}
 	SysCpuUsedView = &view.View{
 		Measure:     SysCpuUsed,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
 	}
 	SysMemUsedView = &view.View{
 		Measure:     SysMemUsed,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
 	}
 	SysDiskUsedView = &view.View{
 		Measure:     SysDiskUsed,
 		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
 	}
 
 	// miner
@@ -404,6 +417,8 @@ var ChainNodeViews = append([]*view.View{
 	ServeSyncBytesView,
 	TipsetMessagesCountView,
 	TipsetMessagesRateView,
+	TipsetPublishDealsCountView,
+	TipsetSubmitPoStsCountView,
 }, DefaultViews...)
 
 var MinerNodeViews = append([]*view.View{

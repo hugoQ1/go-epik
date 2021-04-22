@@ -188,8 +188,6 @@ func defaults() []Option {
 		}),
 
 		Override(new(dtypes.ShutdownChan), make(chan struct{})),
-
-		Override(RunSysMetricsKey, modules.RunSysMetrics),
 	}
 }
 
@@ -356,6 +354,8 @@ var ChainNode = Options(
 		Override(HandleIncomingMessagesKey, modules.HandleIncomingMessages),
 		Override(HandleIncomingBlocksKey, modules.HandleIncomingBlocks),
 	),
+
+	Override(RunSysMetricsKey, modules.RunChainSysMetrics),
 )
 
 var MinerNode = Options(
@@ -437,6 +437,7 @@ var MinerNode = Options(
 	Override(new(dtypes.GetExpectedSealDurationFunc), modules.NewGetExpectedSealDurationFunc),
 
 	Override(RunMinerMetricsKey, modules.RunMinerMetrics),
+	Override(RunSysMetricsKey, modules.RunMinerSysMetrics),
 )
 
 // Online sets up basic libp2p node

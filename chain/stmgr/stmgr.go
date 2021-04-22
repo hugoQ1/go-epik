@@ -377,13 +377,19 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 
 	var receipts []cbg.CBORMarshaler
 	processedMsgs := make(map[cid.Cid]struct{})
+
+	pubDeals := int64(0)
+	subPoSt := int64(0)
 	applyStart := build.Clock.Now()
 	defer func() {
 		count := len(processedMsgs)
 		duration := metrics.SinceInSeconds(applyStart)
 		stats.Record(ctx, metrics.TipsetMessagesCount.M(int64(count)))
 		stats.Record(ctx, metrics.TipsetMessagesRate.M(float64(count)/duration))
+		stats.Record(ctx, metrics.TipsetPublishDealsCount.M(pubDeals))
+		stats.Record(ctx, metrics.TipsetSubmitPoStsCount.M(subPoSt))
 	}()
+
 	for _, b := range bms {
 		penalty := big.Zero()
 		gasReward := big.Zero()
@@ -408,6 +414,17 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 				}
 			}
 			processedMsgs[m.Cid()] = struct{}{}
+
+			act, err := vmi.StateTree().GetActor(m.To)
+			if err == nil && act != nil {
+				if builtin.IsStorageMarketActor(act.Code) && m.Method == market.Methods.PublishStorageDeals {
+					pubDeals++
+					continue
+				}
+				if builtin.IsStorageMinerActor(act.Code) && m.Method == miner.Methods.SubmitWindowedPoSt {
+					subPoSt++
+				}
+			}
 		}
 
 		params, err := actors.SerializeParams(&reward.AwardBlockRewardParams{

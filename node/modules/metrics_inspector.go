@@ -32,19 +32,14 @@ import (
 	"go.uber.org/fx"
 )
 
-func RunSysMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, reporter metrics2.Reporter) {
+func RunMinerSysMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, reporter metrics2.Reporter) {
 	ctx := helpers.LifecycleCtx(mctx, lc)
-	stop := make(chan struct{})
-	lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
-			go metrics.RunSysInspector(ctx, reporter, 5*time.Second, stop)
-			return nil
-		},
-		OnStop: func(context.Context) error {
-			close(stop)
-			return nil
-		},
-	})
+	go metrics.RunSysInspector(ctx, reporter, 5*time.Second, "miner")
+}
+
+func RunChainSysMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, reporter metrics2.Reporter) {
+	ctx := helpers.LifecycleCtx(mctx, lc)
+	go metrics.RunSysInspector(ctx, reporter, 5*time.Second, "chain")
 }
 
 func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {

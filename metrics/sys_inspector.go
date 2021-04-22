@@ -13,23 +13,24 @@ import (
 	"go.opencensus.io/tag"
 )
 
-func RunSysInspector(ctx context.Context, reporter p2pmetrics.Reporter, interval time.Duration, done <-chan struct{}) {
+func RunSysInspector(ctx context.Context, reporter p2pmetrics.Reporter, interval time.Duration, nodeType string) {
 
-	tagsIn := []tag.Mutator{tag.Insert(Type, "in")}
-	tagsOut := []tag.Mutator{tag.Insert(Type, "out")}
+	tagsIn := []tag.Mutator{tag.Insert(Type, "in"), tag.Insert(NodeType, nodeType)}
+	tagsOut := []tag.Mutator{tag.Insert(Type, "out"), tag.Insert(NodeType, nodeType)}
+	tagsCom := []tag.Mutator{tag.Insert(NodeType, nodeType)}
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	cpuCh := make(chan int64)
-	go getCpuUsage(ctx, interval, cpuCh, done)
+	go getCpuUsage(ctx, interval, cpuCh)
 
 	for {
 		select {
-		case <-done:
+		case <-ctx.Done():
 			return
 		case usage := <-cpuCh:
-			stats.Record(ctx, SysCpuUsed.M(usage))
+			stats.RecordWithTags(ctx, tagsCom, SysCpuUsed.M(usage))
 		case <-ticker.C:
 			totals := reporter.GetBandwidthTotals()
 			stats.RecordWithTags(ctx, tagsIn, BandwidthTotal.M(totals.TotalIn))
@@ -37,20 +38,20 @@ func RunSysInspector(ctx context.Context, reporter p2pmetrics.Reporter, interval
 			stats.RecordWithTags(ctx, tagsOut, BandwidthTotal.M(totals.TotalOut))
 			stats.RecordWithTags(ctx, tagsOut, BandwidthRate.M(totals.RateOut))
 
-			stats.Record(ctx, SysMemUsed.M(getMemUsage()))
-			stats.Record(ctx, SysDiskUsed.M(getDiskUsage()))
+			stats.RecordWithTags(ctx, tagsCom, SysMemUsed.M(getMemUsage()))
+			stats.RecordWithTags(ctx, tagsCom, SysDiskUsed.M(getDiskUsage()))
 		}
 	}
 }
 
-func getCpuUsage(ctx context.Context, interval time.Duration, out chan<- int64, done <-chan struct{}) {
+func getCpuUsage(ctx context.Context, interval time.Duration, out chan<- int64) {
 	if interval < time.Second {
 		log.Errorf("interval too short: %d", interval)
 		return
 	}
 	for {
 		select {
-		case <-done:
+		case <-ctx.Done():
 			return
 		default:
 			used, err := cpu.PercentWithContext(ctx, interval, false)
