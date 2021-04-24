@@ -19,6 +19,7 @@ type Blockstore interface {
 	blockstore.Blockstore
 	blockstore.Viewer
 	BatchDeleter
+	CollectGarbage
 }
 
 // BasicBlockstore is an alias to the original IPFS Blockstore.
@@ -28,6 +29,10 @@ type Viewer = blockstore.Viewer
 
 type BatchDeleter interface {
 	DeleteMany(cids []cid.Cid) error
+}
+
+type CollectGarbage interface {
+	CollectGarbage() error
 }
 
 // WrapIDStore wraps the underlying blockstore in an "identity" blockstore.
@@ -79,6 +84,10 @@ func (a *adaptedBlockstore) DeleteMany(cids []cid.Cid) error {
 		}
 	}
 
+	return nil
+}
+
+func (a *adaptedBlockstore) CollectGarbage() error {
 	return nil
 }
 

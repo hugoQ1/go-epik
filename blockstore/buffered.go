@@ -2,10 +2,9 @@ package blockstore
 
 import (
 	"context"
-	"os"
-
 	block "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
+	"os"
 )
 
 // buflog is a logger for the buffered blockstore. It is subscoped from the
@@ -102,6 +101,13 @@ func (bs *BufferedBlockstore) DeleteMany(cids []cid.Cid) error {
 	}
 
 	return bs.write.DeleteMany(cids)
+}
+
+func (bs *BufferedBlockstore) CollectGarbage() error {
+	if err := bs.read.CollectGarbage(); err != nil {
+		return err
+	}
+	return bs.write.CollectGarbage()
 }
 
 func (bs *BufferedBlockstore) View(c cid.Cid, callback func([]byte) error) error {

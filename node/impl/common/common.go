@@ -34,14 +34,15 @@ var session = uuid.New()
 type CommonAPI struct {
 	fx.In
 
-	APISecret    *dtypes.APIAlg
-	RawHost      lp2p.RawHost
-	Host         host.Host
-	Router       lp2p.BaseIpfsRouting
-	ConnGater    *conngater.BasicConnectionGater
-	Reporter     metrics.Reporter
-	Sk           *dtypes.ScoreKeeper
-	ShutdownChan dtypes.ShutdownChan
+	UniversalStore dtypes.UniversalBlockstore
+	APISecret      *dtypes.APIAlg
+	RawHost        lp2p.RawHost
+	Host           host.Host
+	Router         lp2p.BaseIpfsRouting
+	ConnGater      *conngater.BasicConnectionGater
+	Reporter       metrics.Reporter
+	Sk             *dtypes.ScoreKeeper
+	ShutdownChan   dtypes.ShutdownChan
 }
 
 type jwtPayload struct {
@@ -231,6 +232,10 @@ func (a *CommonAPI) LogList(context.Context) ([]string, error) {
 
 func (a *CommonAPI) LogSetLevel(ctx context.Context, subsystem, level string) error {
 	return logging.SetLogLevel(subsystem, level)
+}
+
+func (a *CommonAPI) GC(ctx context.Context) error {
+	return a.UniversalStore.CollectGarbage()
 }
 
 func (a *CommonAPI) Shutdown(ctx context.Context) error {
