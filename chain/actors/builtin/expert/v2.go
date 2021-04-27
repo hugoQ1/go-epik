@@ -6,6 +6,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
@@ -36,11 +37,10 @@ func (s *state2) Info() (*ExpertInfo, error) {
 
 	ret := &ExpertInfo{
 		ExpertInfo:      *info,
-		LostEpoch:       expert2.NoLostEpoch,
-		Status:          s.Status,
+		Status:          s.ExpertState,
 		ImplicatedTimes: s.ImplicatedTimes,
 		DataCount:       s.DataCount,
-		CurrentVotes:    big.Zero(),
+		CurrentVotes:    s.CurrentVotes,
 		RequiredVotes:   big.Add(expert2.ExpertVoteThreshold, big.Mul(big.NewIntUnsigned(s.ImplicatedTimes), expert2.ExpertVoteThresholdAddition)),
 	}
 
@@ -73,7 +73,7 @@ func (s *state2) Data(pieceCID cid.Cid) (*DataOnChainInfo, error) {
 	}
 
 	var info DataOnChainInfo
-	found, err := datas.Get(adt2.StringKey(pieceCID.String()), &info)
+	found, err := datas.Get(abi.CidKey(pieceCID), &info)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get expert data %s: %w", pieceCID, err)
 	}

@@ -39,8 +39,10 @@ type State interface {
 
 	DataExpert(cid.Cid) (address.Address, error)
 	ListAllExperts() ([]address.Address, error)
-	ExpertFundInfo(a address.Address) (*ExpertFundInfo, error)
+	ExpertInfo(address.Address) (*ExpertInfo, error)
+	DisqualifiedExpertInfo(address.Address) (*DisqualifiedExpertInfo, error)
 	Threshold() uint64
 }
 
-type ExpertFundInfo = expertfund2.ExpertInfo
+type ExpertInfo = expertfund2.ExpertInfo
+type DisqualifiedExpertInfo = expertfund2.DisqualifiedExpertInfo

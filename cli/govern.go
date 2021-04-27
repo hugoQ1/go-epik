@@ -31,6 +31,7 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
@@ -492,14 +493,19 @@ var govExpertBlock = &cli.Command{
 			return err
 		}
 
+		sp, err := actors.SerializeParams(&expert)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
 		if fmsig := cctx.String("msig"); fmsig == "" {
-			return sendTransaction(cctx, ctx, api, fromAddr, expert, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin.ExpertFundActorAddr, big.Zero(), builtin2.MethodsExpertFunds.BlockExpert, sp)
 		} else {
 			governor, err := address.NewFromString(fmsig)
 			if err != nil {
 				return err
 			}
-			return sendProposal(cctx, ctx, api, governor, expert, fromAddr, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+			return sendProposal(cctx, ctx, api, governor, builtin.ExpertFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsExpertFunds.BlockExpert, sp)
 		}
 	},
 }

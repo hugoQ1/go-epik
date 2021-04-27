@@ -16,9 +16,8 @@ func SetupExpertFundActor(bs bstore.Blockstore) (*types.Actor, error) {
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 
 	pool, err := store.Put(store.Context(), &expertfund.PoolInfo{
-		TotalExpertDataSize: 0,
-		AccPerShare:         abi.NewTokenAmount(0),
-		LastRewardBalance:   abi.NewTokenAmount(0),
+		AccPerShare:       abi.NewTokenAmount(0),
+		LastRewardBalance: abi.NewTokenAmount(0),
 	})
 	if err != nil {
 		return nil, err

@@ -27,12 +27,12 @@ type state3 struct {
 }
 
 func (s *state3) DataExpert(pieceCID cid.Cid) (address.Address, error) {
-	pieceToInfo, err := s.State.GetDataInfos(s.store, pieceCID)
+	pieceToExpert, _, err := s.State.GetPieceInfos(s.store, pieceCID)
 	if err != nil {
 		return address.Undef, err
 	}
 
-	return pieceToInfo[pieceCID].Expert, nil
+	return pieceToExpert[pieceCID], nil
 }
 
 func (s *state3) ListAllExperts() ([]address.Address, error) {
@@ -61,8 +61,13 @@ func (s *state3) experts() (adt.Map, error) {
 	return adt3.AsMap(s.store, s.Experts, builtin3.DefaultHamtBitwidth)
 }
 
-func (s *state3) ExpertFundInfo(a address.Address) (*ExpertFundInfo, error) {
+func (s *state3) ExpertInfo(a address.Address) (*ExpertInfo, error) {
 	return s.State.GetExpert(s.store, a)
+}
+
+func (s *state3) DisqualifiedExpertInfo(a address.Address) (*DisqualifiedExpertInfo, error) {
+	info, _, err := s.State.GetDisqualifiedExpertInfo(s.store, a)
+	return info, err
 }
 
 func (s *state3) Threshold() uint64 {

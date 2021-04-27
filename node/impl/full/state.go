@@ -3,6 +3,7 @@ package full
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strconv"
 
 	cid "github.com/ipfs/go-cid"
@@ -1506,46 +1507,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
-	}
-
-	info, err := eas.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	// query votes
-	tally, err := a.StateVoteTally(ctx, tsk)
-	if err != nil {
-		return nil, err
-	}
-	votes, ok := tally.Candidates[addr.String()]
-	if !ok {
-		info.CurrentVotes = abi.NewTokenAmount(0)
-	} else {
-		info.CurrentVotes = votes
-	}
-
-	switch info.Status {
-	case expert2.ExpertStateRegistered:
-		info.StatusDesc = "registered"
-	case expert2.ExpertStateDisqualified:
-		info.StatusDesc = "disqualified"
-	case expert2.ExpertStateNominated:
-		info.StatusDesc = "nominated(voting)"
-	case expert2.ExpertStateNormal:
-		info.StatusDesc = "normal"
-		if info.CurrentVotes.LessThan(info.RequiredVotes) {
-			info.StatusDesc = "normal(votes not enough)"
-		}
-	case expert2.ExpertStateBlocked:
-		info.StatusDesc = "blocked"
-	default:
-		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
-	}
-
+	// expertfund
 	efAct, err := a.StateGetActor(ctx, builtin.ExpertFundActorAddr, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expertfund actor: %w", err)
@@ -1556,9 +1518,38 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
 
-	efInfo, err := efs.ExpertFundInfo(addr)
+	efInfo, err := efs.ExpertInfo(addr)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get expertfund info: %w", err)
+	}
+	defInfo, err := efs.DisqualifiedExpertInfo(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get disqualification info: %w", err)
+	}
+
+	// expert
+	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
+	}
+
+	info, err := eas.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	switch info.Status {
+	case expert2.ExpertStateRegistered:
+		info.StatusDesc = "registered"
+	case expert2.ExpertStateUnqualified:
+		info.StatusDesc = fmt.Sprintf("unqualified (no enough votes, disqualified at %d)", defInfo.DisqualifiedAt)
+		info.LostEpoch = defInfo.DisqualifiedAt
+	case expert2.ExpertStateQualified:
+		info.StatusDesc = "qualified"
+	case expert2.ExpertStateBlocked:
+		info.StatusDesc = "blocked"
+	default:
+		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
 	}
 
 	return &api.ExpertInfo{

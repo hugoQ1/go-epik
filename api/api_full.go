@@ -1111,7 +1111,7 @@ type ImportAndDealParams struct {
 
 type ExpertFileInfo struct {
 	Expert     address.Address
-	PieceID    string
+	PieceID    cid.Cid
 	PieceSize  abi.PaddedPieceSize
 	Redundancy uint64
 }
