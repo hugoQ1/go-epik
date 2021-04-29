@@ -48,7 +48,7 @@ func DoSetGenesis(_ dtypes.AfterGenesisSet) {}
 func SetGenesis(cs *store.ChainStore, g Genesis) (dtypes.AfterGenesisSet, error) {
 	genFromRepo, err := cs.GetGenesis()
 	if err == nil {
-		if os.Getenv("LOTUS_SKIP_GENESIS_CHECK") != "_yes_" {
+		if os.Getenv("EPIK_SKIP_GENESIS_CHECK") != "_yes_" {
 			expectedGenesis, err := g()
 			if err != nil {
 				return dtypes.AfterGenesisSet{}, xerrors.Errorf("getting expected genesis failed: %w", err)
