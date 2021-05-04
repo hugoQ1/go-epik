@@ -8,6 +8,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/node/impl/client"
 	"github.com/EpiK-Protocol/go-epik/node/impl/common"
+	"github.com/EpiK-Protocol/go-epik/node/impl/flowch"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	"github.com/EpiK-Protocol/go-epik/node/impl/market"
 	"github.com/EpiK-Protocol/go-epik/node/impl/paych"
@@ -24,6 +25,7 @@ type FullNodeAPI struct {
 	full.GasAPI
 	market.MarketAPI
 	paych.PaychAPI
+	flowch.FlowchAPI
 	full.StateAPI
 	full.MsigAPI
 	full.WalletAPI

@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -359,7 +360,7 @@ type FullNode interface {
 	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
 	// ClientRetrievePledge retrieval pledge amount
-	ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	ClientRetrievePledge(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
 	// ClientRetrieveApplyForWithdraw apply for withdraw
 	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
@@ -642,6 +643,26 @@ type FullNode interface {
 	PaychVoucherList(context.Context, address.Address) ([]*paych.SignedVoucher, error)
 	PaychVoucherSubmit(context.Context, address.Address, *paych.SignedVoucher, []byte, []byte) (cid.Cid, error)
 
+	// MethodGroup: Flowch
+	// The Flowch methods are for interacting with and managing payment channels
+
+	FlowchGet(ctx context.Context, from, to address.Address, amt types.BigInt) (*ChannelInfo, error)
+	FlowchGetWaitReady(context.Context, cid.Cid) (address.Address, error)
+	FlowchAvailableFunds(ctx context.Context, ch address.Address) (*ChannelAvailableFunds, error)
+	FlowchAvailableFundsByFromTo(ctx context.Context, from, to address.Address) (*ChannelAvailableFunds, error)
+	FlowchList(context.Context) ([]address.Address, error)
+	FlowchStatus(context.Context, address.Address) (*FlowchStatus, error)
+	FlowchSettle(context.Context, address.Address) (cid.Cid, error)
+	FlowchCollect(context.Context, address.Address) (cid.Cid, error)
+	FlowchAllocateLane(ctx context.Context, ch address.Address) (uint64, error)
+	FlowchNewPayment(ctx context.Context, from, to address.Address, vouchers []FlowVoucherSpec) (*FlowInfo, error)
+	FlowchVoucherCheckValid(context.Context, address.Address, *flowch.SignedVoucher) error
+	FlowchVoucherCheckSpendable(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (bool, error)
+	FlowchVoucherCreate(context.Context, address.Address, types.BigInt, uint64) (*FlowVoucherCreateResult, error)
+	FlowchVoucherAdd(context.Context, address.Address, *flowch.SignedVoucher, []byte, types.BigInt) (types.BigInt, error)
+	FlowchVoucherList(context.Context, address.Address) ([]*flowch.SignedVoucher, error)
+	FlowchVoucherSubmit(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (cid.Cid, error)
+
 	// CreateBackup creates node backup onder the specified file name. The
 	// method requires that the epik daemon is running with the
 	// EPIK_BACKUP_BASE_PATH environment variable set to some path, and that
@@ -809,6 +830,36 @@ type VoucherCreateResult struct {
 	// Voucher that was created, or nil if there was an error or if there
 	// were insufficient funds in the channel
 	Voucher *paych.SignedVoucher
+	// Shortfall is the additional amount that would be needed in the channel
+	// in order to be able to create the voucher
+	Shortfall types.BigInt
+}
+
+type FlowchStatus struct {
+	ControlAddr address.Address
+	Direction   PCHDir
+}
+
+type FlowInfo struct {
+	Channel      address.Address
+	WaitSentinel cid.Cid
+	Vouchers     []*flowch.SignedVoucher
+}
+
+type FlowVoucherSpec struct {
+	Amount      types.BigInt
+	TimeLockMin abi.ChainEpoch
+	TimeLockMax abi.ChainEpoch
+	MinSettle   abi.ChainEpoch
+
+	Extra *flowch.ModVerifyParams
+}
+
+// FlowVoucherCreateResult is the response to calling PaychVoucherCreate
+type FlowVoucherCreateResult struct {
+	// Voucher that was created, or nil if there was an error or if there
+	// were insufficient funds in the channel
+	Voucher *flowch.SignedVoucher
 	// Shortfall is the additional amount that would be needed in the channel
 	// in order to be able to create the voucher
 	Shortfall types.BigInt
@@ -1122,6 +1173,7 @@ type RetrievalInfo struct {
 	PendingReward abi.TokenAmount
 }
 type RetrievalState struct {
+	BindMiners  []address.Address
 	Balance     abi.TokenAmount
 	DayExpend   abi.TokenAmount
 	Locked      abi.TokenAmount

@@ -24,8 +24,17 @@ type state struct {
 	store adt.Store
 }
 
-func (s *state) EscrowBalance(fromAddr address.Address) (abi.TokenAmount, error) {
-	return s.State.EscrowBalance(s.store, fromAddr)
+func (s *state) StateInfo(fromAddr address.Address) (*RetrievalState, error) {
+	info, err := s.State.StateInfo(s.store, fromAddr)
+	if err != nil {
+		return nil, err
+	}
+	return &RetrievalState{
+		BindMiners: info.Miners,
+		Amount:     info.Amount,
+		EpochDate:  info.EpochDate,
+		DateSize:   info.DateSize,
+	}, nil
 }
 
 func (s *state) DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.TokenAmount, error) {

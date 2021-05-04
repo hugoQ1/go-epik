@@ -1792,7 +1792,7 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
 	}
-	balance, err := state.EscrowBalance(ida)
+	info, err := state.StateInfo(ida)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
 	}
@@ -1809,7 +1809,8 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
 	return &api.RetrievalState{
-		Balance:     balance,
+		BindMiners:  info.BindMiners,
+		Balance:     info.Amount,
 		DayExpend:   expend,
 		Locked:      locked.Amount,
 		LockedEpoch: locked.ApplyEpoch,

@@ -796,7 +796,7 @@ func (a *API) clientRetrieve(ctx context.Context, order api.RetrievalOrder, ref 
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		finish(xerrors.Errorf("Error in retrieval params: %s", err))
 		return
@@ -1254,7 +1254,7 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}
@@ -1285,8 +1285,11 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 	return a.ClientRetrieveGetDeal(ctx, dealID)
 }
 
-func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&wallet)
+func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrieval.DepositParams{
+		Address: wallet,
+		Miner:   miner,
+	})
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
 	}
@@ -1295,7 +1298,7 @@ func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, 
 		To:     retrieval.Address,
 		From:   wallet,
 		Value:  amount,
-		Method: retrieval.Methods.AddBalance,
+		Method: retrieval.Methods.Deposit,
 		Params: params,
 	}, nil)
 	if aerr != nil {
