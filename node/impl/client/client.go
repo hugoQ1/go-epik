@@ -581,8 +581,8 @@ func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRe
 		return nil, xerrors.Errorf("failed to get expert info: %w", err)
 	}
 
-	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-		RootID:    params.RootID.String(),
+	expertParams, err := actors.SerializeParams(&expert.ImportDataParams{
+		RootID:    params.RootID,
 		PieceID:   params.PieceID,
 		PieceSize: params.PieceSize,
 	})
@@ -1355,9 +1355,7 @@ func (a *API) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address
 }
 
 func (a *API) ClientExpertNominate(ctx context.Context, expertAddr address.Address, targetExpert address.Address) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&expert.NominateExpertParams{
-		Expert: targetExpert,
-	})
+	params, aerr := actors.SerializeParams(&targetExpert)
 	if aerr != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", aerr)
 	}

@@ -13,7 +13,11 @@ func (cs *ChainStore) compressedTakeHeaviestTipSet(ctx context.Context, ts *type
 	if len(cs.compressingCh) > 2 {
 		log.Warnf("slow head compressing %d", len(cs.compressingCh))
 	}
-	cs.compressingCh <- ts
+	if cs.heaviest == nil {
+		cs.heaviest = ts
+	} else {
+		cs.compressingCh <- ts
+	}
 	return nil
 }
 

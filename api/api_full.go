@@ -65,6 +65,7 @@ type FullNode interface {
 
 	// ChainGetRandomnessFromBeacon is used to sample the beacon for randomness.
 	ChainGetRandomnessFromBeacon(ctx context.Context, tsk types.TipSetKey, personalization crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainAllowNoWindowPoSt(ctx context.Context, tsk types.TipSetKey, challenge abi.ChainEpoch, rand abi.Randomness) (bool, error)
 
 	// ChainGetBlock returns the block specified by the given CID.
 	ChainGetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
@@ -462,9 +463,7 @@ type FullNode interface {
 	StateMarketDeals(context.Context, types.TipSetKey) (map[string]MarketDeal, error)
 	// StateMarketStorageDeal returns information about the indicated deal
 	StateMarketStorageDeal(context.Context, abi.DealID, types.TipSetKey) (*MarketDeal, error)
-	// StateMarketInitialQuota returns current initial quota for all new deal piece
-	StateMarketInitialQuota(context.Context, types.TipSetKey) (int64, error)
-	// StateMarketInitialQuota returns remaining quota of piece
+	// StateMarketRemainingQuota returns remaining quota of piece
 	StateMarketRemainingQuota(context.Context, cid.Cid, types.TipSetKey) (int64, error)
 	// StateLookupID retrieves the ID address of the given address
 	StateLookupID(context.Context, address.Address, types.TipSetKey) (address.Address, error)
@@ -523,6 +522,8 @@ type FullNode interface {
 	StateGovernSupervisor(context.Context, types.TipSetKey) (address.Address, error)
 	// StateGovernorList returns all governors
 	StateGovernorList(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)
+
+	StateGovernParams(context.Context, types.TipSetKey) (*govern.GovParams, error)
 
 	// StateRetrievalInfo retrieval pledge info
 	StateRetrievalInfo(context.Context, types.TipSetKey) (*RetrievalInfo, error)
@@ -1110,7 +1111,7 @@ type ImportAndDealParams struct {
 
 type ExpertFileInfo struct {
 	Expert     address.Address
-	PieceID    string
+	PieceID    cid.Cid
 	PieceSize  abi.PaddedPieceSize
 	Redundancy uint64
 }

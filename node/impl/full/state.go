@@ -3,6 +3,7 @@ package full
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strconv"
 
 	cid "github.com/ipfs/go-cid"
@@ -26,6 +27,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/multisig"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
@@ -761,24 +763,6 @@ func (m *StateModule) StateMarketStorageDeal(ctx context.Context, dealId abi.Dea
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
 	return stmgr.GetStorageDeal(ctx, m.StateManager, dealId, ts)
-}
-
-func (m *StateAPI) StateMarketInitialQuota(ctx context.Context, tsk types.TipSetKey) (int64, error) {
-	act, err := m.StateManager.LoadActorTsk(ctx, market.Address, tsk)
-	if err != nil {
-		return 0, xerrors.Errorf("failed to load market actor: %w", err)
-	}
-
-	mState, err := market.Load(m.Chain.ActorStore(ctx), act)
-	if err != nil {
-		return 0, xerrors.Errorf("failed to load market actor state: %w", err)
-	}
-
-	qs, err := mState.Quotas()
-	if err != nil {
-		return 0, xerrors.Errorf("failed to get quotas: %w", err)
-	}
-	return qs.InitialQuota(), nil
 }
 
 func (m *StateAPI) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (int64, error) {
@@ -1523,46 +1507,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
 	}
 
-	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
-	}
-
-	info, err := eas.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	// query votes
-	tally, err := a.StateVoteTally(ctx, tsk)
-	if err != nil {
-		return nil, err
-	}
-	votes, ok := tally.Candidates[addr.String()]
-	if !ok {
-		info.CurrentVotes = abi.NewTokenAmount(0)
-	} else {
-		info.CurrentVotes = votes
-	}
-
-	switch info.Status {
-	case expert2.ExpertStateRegistered:
-		info.StatusDesc = "registered"
-	case expert2.ExpertStateDisqualified:
-		info.StatusDesc = "disqualified"
-	case expert2.ExpertStateNominated:
-		info.StatusDesc = "nominated(voting)"
-	case expert2.ExpertStateNormal:
-		info.StatusDesc = "normal"
-		if info.CurrentVotes.LessThan(info.RequiredVotes) {
-			info.StatusDesc = "normal(votes not enough)"
-		}
-	case expert2.ExpertStateBlocked:
-		info.StatusDesc = "blocked"
-	default:
-		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
-	}
-
+	// expertfund
 	efAct, err := a.StateGetActor(ctx, builtin.ExpertFundActorAddr, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expertfund actor: %w", err)
@@ -1573,9 +1518,38 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
 
-	efInfo, err := efs.ExpertFundInfo(addr)
+	efInfo, err := efs.ExpertInfo(addr)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get expertfund info: %w", err)
+	}
+	defInfo, err := efs.DisqualifiedExpertInfo(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get disqualification info: %w", err)
+	}
+
+	// expert
+	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expert actor state: %w", err)
+	}
+
+	info, err := eas.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	switch info.Status {
+	case expert2.ExpertStateRegistered:
+		info.StatusDesc = "registered"
+	case expert2.ExpertStateUnqualified:
+		info.StatusDesc = fmt.Sprintf("unqualified (no enough votes, disqualified at %d)", defInfo.DisqualifiedAt)
+		info.LostEpoch = defInfo.DisqualifiedAt
+	case expert2.ExpertStateQualified:
+		info.StatusDesc = "qualified"
+	case expert2.ExpertStateBlocked:
+		info.StatusDesc = "blocked"
+	default:
+		return nil, xerrors.Errorf("unknow expert status: %d", info.Status)
 	}
 
 	return &api.ExpertInfo{
@@ -1674,7 +1648,13 @@ func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk
 	if err != nil {
 		return nil, xerrors.Errorf("failed to look up id for %s: %w", addr, err)
 	}
-	return vst.VoterInfo(ida, ts.Height())
+
+	vAct, err := sTree.GetActor(builtin.VoteFundActorAddr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load votefund actor: %w", err)
+	}
+
+	return vst.VoterInfo(ida, ts.Height(), vAct.Balance)
 }
 
 func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {
@@ -1714,6 +1694,57 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 		return nil, xerrors.Errorf("failed to load govern actor state: %w", err)
 	}
 	return govState.ListGovrnors()
+}
+
+func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (*govern.GovParams, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, govern.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load govern actor: %w", err)
+	}
+	store := a.Chain.ActorStore(ctx)
+
+	var out govern.GovParams
+
+	// ratio
+	powerState, err := power.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load power actor state: %w", err)
+	}
+	out.MinersPoStRatio, err = powerState.PoStRatio()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get ratio")
+	}
+
+	// quota
+	marketState, err := market.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
+	}
+	quotas, err := marketState.Quotas()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get quotas: %w", err)
+	}
+	out.MarketInitialQuota = quotas.InitialQuota()
+
+	// knowledge
+	knowState, err := knowledge.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load knowledge actor state: %w", err)
+	}
+	info, err := knowState.Info()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get knowledge fund info: %w", err)
+	}
+	out.KnowledgePayee = info.Payee
+
+	// threshold
+	efState, err := expertfund.Load(store, act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
+	}
+	out.ExpertfundThreshold = efState.Threshold()
+
+	return &out, nil
 }
 
 func (a *StateAPI) StateRetrievalInfo(ctx context.Context, tsk types.TipSetKey) (*api.RetrievalInfo, error) {

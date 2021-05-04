@@ -194,17 +194,17 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("\tType: %s\n", expertType)
 		fmt.Printf("\tHash: %s\n", info.ApplicationHash)
 
-		fmt.Printf("\nStatus: %d (%s)\n", info.Status, info.StatusDesc)
-		fmt.Printf("\tVotes: %s (required %s)\n", types.EPK(info.CurrentVotes), types.EPK(info.RequiredVotes))
+		fmt.Printf("\nVotes: %s (required %s)\n", types.EPK(info.CurrentVotes), types.EPK(info.RequiredVotes))
 		fmt.Printf("\tImplicated: %d times\n", info.ImplicatedTimes)
-		fmt.Printf("\tData: %d\n", info.DataCount)
-		if info.CurrentVotes.LessThan(info.RequiredVotes) {
+		fmt.Printf("\tData Count: %d\n", info.DataCount)
+		fmt.Printf("\tStatus: %d (%s)\n", info.Status, info.StatusDesc)
+		if info.Status == expert.ExpertStateUnqualified {
 			head, err := api.ChainHead(ctx)
 			if err != nil {
 				return err
 			}
 			elapsed := head.Height() - info.LostEpoch
-			fmt.Printf("Will be disqualified in %d epochs (since %d)\n", expert.ExpertVoteCheckPeriod-elapsed, info.LostEpoch)
+			fmt.Printf("Will lose shares in %d epochs (since epoch %d)\n", expertfund.ClearExpertContributionDelay-elapsed, info.LostEpoch)
 		}
 
 		fmt.Printf("\nRewards: %d\n", types.EPK(info.TotalReward))

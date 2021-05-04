@@ -489,6 +489,15 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di dline.Info, ts *ty
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get chain randomness from beacon for window post (ts=%d; deadline=%d): %w", ts.Height(), di, err)
 	}
+	if di.Challenge > 0 {
+		allowNoPoSt, err := s.api.ChainAllowNoWindowPoSt(ctx, headTs.Key(), di.Challenge, rand)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to check allow no post for window post (ts=%d; deadline=%d): %w", ts.Height(), di, err)
+		}
+		if allowNoPoSt {
+			return []miner.SubmitWindowedPoStParams{}, nil
+		}
+	}
 
 	// Get the partitions for the given deadline
 	partitions, err := s.api.StateMinerPartitions(ctx, s.actor, di.Index, ts.Key())

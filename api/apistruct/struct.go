@@ -92,6 +92,7 @@ type FullNodeStruct struct {
 		ChainHead                     func(context.Context) (*types.TipSet, error)                                                                       `perm:"read"`
 		ChainGetRandomnessFromTickets func(context.Context, types.TipSetKey, crypto.DomainSeparationTag, abi.ChainEpoch, []byte) (abi.Randomness, error) `perm:"read"`
 		ChainGetRandomnessFromBeacon  func(context.Context, types.TipSetKey, crypto.DomainSeparationTag, abi.ChainEpoch, []byte) (abi.Randomness, error) `perm:"read"`
+		ChainAllowNoWindowPoSt        func(context.Context, types.TipSetKey, abi.ChainEpoch, abi.Randomness) (bool, error)                               `perm:"read"`
 		ChainGetBlock                 func(context.Context, cid.Cid) (*types.BlockHeader, error)                                                         `perm:"read"`
 		ChainGetTipSet                func(context.Context, types.TipSetKey) (*types.TipSet, error)                                                      `perm:"read"`
 		ChainGetBlockMessages         func(context.Context, cid.Cid) (*api.BlockMessages, error)                                                         `perm:"read"`
@@ -233,7 +234,6 @@ type FullNodeStruct struct {
 		StateMarketParticipants    func(context.Context, types.TipSetKey) (map[string]api.MarketBalance, error)                                        `perm:"read"`
 		StateMarketDeals           func(context.Context, types.TipSetKey) (map[string]api.MarketDeal, error)                                           `perm:"read"`
 		StateMarketStorageDeal     func(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)                                         `perm:"read"`
-		StateMarketInitialQuota    func(context.Context, types.TipSetKey) (int64, error)                                                               `perm:"read"`
 		StateMarketRemainingQuota  func(context.Context, cid.Cid, types.TipSetKey) (int64, error)                                                      `perm:"read"`
 		StateLookupID              func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)                       `perm:"read"`
 		StateAccountKey            func(context.Context, address.Address, types.TipSetKey) (address.Address, error)                                    `perm:"read"`
@@ -260,6 +260,7 @@ type FullNodeStruct struct {
 		StateKnowledgeInfo               func(context.Context, types.TipSetKey) (*knowledge.Info, error)                                                      `perm:"read"`
 		StateGovernSupervisor            func(context.Context, types.TipSetKey) (address.Address, error)                                                      `perm:"read"`
 		StateGovernorList                func(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)                                               `perm:"read"`
+		StateGovernParams                func(context.Context, types.TipSetKey) (*govern.GovParams, error)                                                    `perm:"read"`
 		StateRetrievalInfo               func(context.Context, types.TipSetKey) (*api.RetrievalInfo, error)                                                   `perm:"read"`
 		StateRetrievalPledge             func(context.Context, address.Address, types.TipSetKey) (*api.RetrievalState, error)                                 `perm:"read"`
 		StateDataIndex                   func(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*api.DataIndex, error)                                     `perm:"read"`
@@ -827,6 +828,10 @@ func (c *FullNodeStruct) ChainGetRandomnessFromBeacon(ctx context.Context, tsk t
 	return c.Internal.ChainGetRandomnessFromBeacon(ctx, tsk, personalization, randEpoch, entropy)
 }
 
+func (c *FullNodeStruct) ChainAllowNoWindowPoSt(ctx context.Context, tsk types.TipSetKey, challenge abi.ChainEpoch, rand abi.Randomness) (bool, error) {
+	return c.Internal.ChainAllowNoWindowPoSt(ctx, tsk, challenge, rand)
+}
+
 func (c *FullNodeStruct) ChainGetTipSetByHeight(ctx context.Context, h abi.ChainEpoch, tsk types.TipSetKey) (*types.TipSet, error) {
 	return c.Internal.ChainGetTipSetByHeight(ctx, h, tsk)
 }
@@ -1139,10 +1144,6 @@ func (c *FullNodeStruct) StateMarketStorageDeal(ctx context.Context, dealid abi.
 	return c.Internal.StateMarketStorageDeal(ctx, dealid, tsk)
 }
 
-func (c *FullNodeStruct) StateMarketInitialQuota(ctx context.Context, tsk types.TipSetKey) (int64, error) {
-	return c.Internal.StateMarketInitialQuota(ctx, tsk)
-}
-
 func (c *FullNodeStruct) StateMarketRemainingQuota(ctx context.Context, pieceCid cid.Cid, tsk types.TipSetKey) (int64, error) {
 	return c.Internal.StateMarketRemainingQuota(ctx, pieceCid, tsk)
 }
@@ -1241,6 +1242,10 @@ func (c *FullNodeStruct) StateGovernSupervisor(ctx context.Context, tsk types.Ti
 
 func (c *FullNodeStruct) StateGovernorList(ctx context.Context, tsk types.TipSetKey) ([]*govern.GovernorInfo, error) {
 	return c.Internal.StateGovernorList(ctx, tsk)
+}
+
+func (c *FullNodeStruct) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (*govern.GovParams, error) {
+	return c.Internal.StateGovernParams(ctx, tsk)
 }
 
 func (c *FullNodeStruct) StateRetrievalInfo(ctx context.Context, tsk types.TipSetKey) (*api.RetrievalInfo, error) {

@@ -102,7 +102,6 @@ func IsStorageMinerActor(c cid.Cid) bool {
 
 func IsMultisigActor(c cid.Cid) bool {
 	return c == builtin.MultisigActorCodeID
-
 }
 
 func IsPaymentChannelActor(c cid.Cid) bool {
@@ -111,6 +110,10 @@ func IsPaymentChannelActor(c cid.Cid) bool {
 
 func IsStorageMarketActor(c cid.Cid) bool {
 	return c == builtin.StorageMarketActorCodeID
+}
+
+func IsExpertActor(c cid.Cid) bool {
+	return c == builtin.ExpertActorCodeID
 }
 
 func makeAddress(addr string) address.Address {

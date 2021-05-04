@@ -510,7 +510,8 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		return cid.Undef, xerrors.Errorf("failed to generate genesis file piece CID: %w", err)
 	}
 	psize, _ := pt.SectorSize()
-	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{
+	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ImportDataParams{
+		RootID:    inis.PresealPieceCID,
 		PieceID:   inis.PresealPieceCID,
 		PieceSize: abi.PaddedPieceSize(psize),
 	}))

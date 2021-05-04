@@ -98,10 +98,10 @@ func ReadBackup(r io.Reader, cb func(key datastore.Key, value []byte) error) err
 		if err := ent.UnmarshalCBOR(bp); err != nil {
 			switch err {
 			case io.EOF, io.ErrUnexpectedEOF:
-				if os.Getenv("LOTUS_ALLOW_TRUNCATED_LOG") == "1" {
+				if os.Getenv("EPIK_ALLOW_TRUNCATED_LOG") == "1" {
 					panic("handleme; just ignore and tell the caller about the corrupted file") // todo
 				} else {
-					return xerrors.Errorf("log entry potentially truncated, set LOTUS_ALLOW_TRUNCATED_LOG=1 to proceed: %w", err)
+					return xerrors.Errorf("log entry potentially truncated, set EPIK_ALLOW_TRUNCATED_LOG=1 to proceed: %w", err)
 				}
 			default:
 				return xerrors.Errorf("unmarshaling log entry: %w", err)
