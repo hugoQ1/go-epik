@@ -28,15 +28,25 @@ var (
 	DealParallelNum = 32
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
+
+	// MinerDefaultScore default score
+	MinerDefaultScore = 8
+
+	// MinerMaxScore max score
+	MinerMaxScore = 10
+
+	// MinerPunishmentScore
+	MinerPunishmentScore = 2
 )
 
 type DataRef struct {
-	pieceID     cid.Cid
-	rootCID     cid.Cid
-	miners      []address.Address
-	tryCount    int
-	isRetrieved bool
-	isDealed    bool
+	pieceID      cid.Cid
+	rootCID      cid.Cid
+	miners       map[address.Address]int
+	tryCount     int
+	retrieveTime time.Time
+	isRetrieved  bool
+	isDealed     bool
 }
 
 type MinerData struct {
@@ -64,20 +74,12 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 	if err != nil {
 		panic(err)
 	}
-	retrievals, err := lru.NewARC(1000)
-	if err != nil {
-		panic(err)
-	}
-	deals, err := lru.NewARC(1000)
-	if err != nil {
-		panic(err)
-	}
 	return &MinerData{
 		api:                api,
 		address:            addr,
 		dataRefs:           data,
-		retrievals:         retrievals,
-		deals:              deals,
+		retrievals:         nil,
+		deals:              nil,
 		checkHeight:        10,
 		totalDataCount:     0,
 		totalRetrieveCount: 0,
@@ -136,10 +138,10 @@ func (m *MinerData) syncData(ctx context.Context) {
 			log.Warnf("failed to retrieve data: %s", err)
 		}
 
-		if err := m.dealChainData(ctx); err != nil {
+		if err := m.storageChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
 		}
-		log.Infof("sync data height:%d, data:%d, retrieve:%d, deal:%d, wait deal:%d", m.checkHeight, m.totalDataCount, m.totalRetrieveCount, m.totalDealCount, m.dataRefs.Len())
+		log.Infof("sync data height:%d, data:%d, retrieved:%d, storaged:%d, retrievaling:%d, dealing:%d", m.checkHeight, m.totalDataCount, m.totalRetrieveCount, m.totalDealCount, m.retrievals.Len(), m.deals.Len())
 		m.niceSleep(LoopWaitingSeconds)
 	}
 }
@@ -175,7 +177,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 				dataRef = &DataRef{
 					pieceID:     data.PieceCID,
 					rootCID:     data.RootCID,
-					miners:      []address.Address{},
+					miners:      make(map[address.Address]int),
 					isRetrieved: false,
 					isDealed:    false,
 				}
@@ -183,7 +185,7 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			} else {
 				dataRef = ref.(*DataRef)
 			}
-			dataRef.miners = append(dataRef.miners, data.Miner)
+			dataRef.miners[data.Miner] = MinerDefaultScore
 			m.dataRefs.Add(data.PieceCID.String(), dataRef)
 		}
 
@@ -192,7 +194,42 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 	return nil
 }
 
+func (m *MinerData) loadRetrievalData(ctx context.Context) (*lru.ARCCache, error) {
+	retrievals, err := lru.NewARC(RetrieveParallelNum * 2)
+	if err != nil {
+		return nil, err
+	}
+
+	deals, err := m.api.ClientRetrieveListDeals(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range deals {
+		if retrievalmarket.IsTerminalSuccess(d.Status) {
+			dataObj, ok := m.dataRefs.Get(d.PieceCID.String())
+			if ok {
+				data := dataObj.(*DataRef)
+				data.isRetrieved = true
+				m.totalRetrieveCount++
+			}
+		}
+		if !(d.Status == retrievalmarket.DealStatusErrored ||
+			d.Status == retrievalmarket.DealStatusCancelled ||
+			retrievalmarket.IsTerminalStatus(d.Status)) {
+			retrievals.Add(d.PieceCID.String(), d)
+		}
+	}
+	return retrievals, nil
+}
+
 func (m *MinerData) retrieveChainData(ctx context.Context) error {
+	if m.retrievals == nil {
+		data, err := m.loadRetrievalData(ctx)
+		if err != nil {
+			return err
+		}
+		m.retrievals = data
+	}
 	// check retrieve deals state
 	retrieveKeys := m.retrievals.Keys()
 	for _, rk := range retrieveKeys {
@@ -204,9 +241,9 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			return err
 		}
 
-		if retrievalmarket.IsTerminalSuccess(nDeal.Status) {
-			dataObj, _ := m.dataRefs.Get(rk)
-			data := dataObj.(*DataRef)
+		dataObj, _ := m.dataRefs.Get(rk)
+		data := dataObj.(*DataRef)
+		if !data.isRetrieved && retrievalmarket.IsTerminalSuccess(nDeal.Status) {
 			data.isRetrieved = true
 			m.totalRetrieveCount++
 		}
@@ -214,16 +251,18 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			nDeal.Status == retrievalmarket.DealStatusCancelled ||
 			retrievalmarket.IsTerminalStatus(nDeal.Status) {
 			m.retrievals.Remove(rk)
+			if !retrievalmarket.IsTerminalSuccess(nDeal.Status) {
+				data.tryCount++
+				data.miners[nDeal.MinerWallet] = data.miners[nDeal.MinerWallet] - MinerPunishmentScore
+				if data.miners[nDeal.MinerWallet] < 1 {
+					data.miners[nDeal.MinerWallet] = 1
+				}
+			}
 		}
 	}
 	if m.retrievals.Len() >= RetrieveParallelNum {
 		log.Infof("wait for retrieval:%d", m.retrievals.Len())
 		return nil
-	}
-
-	deals, err := m.api.ClientRetrieveListDeals(ctx)
-	if err != nil {
-		return err
 	}
 
 	keys := m.dataRefs.Keys()
@@ -235,36 +274,28 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
+		if m.retrievals.Contains(rk) {
+			continue
+		}
+
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
 			log.Errorf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
-			log.Infof("data has been storaged:%s", data.pieceID)
-			data.isRetrieved = true
-			m.totalRetrieveCount++
-			continue
-		}
-
-		for _, d := range deals {
-			if d.PieceCID.Equals(data.pieceID) {
-				if retrievalmarket.IsTerminalSuccess(d.Status) {
-					data.isRetrieved = true
-					m.totalRetrieveCount++
-				}
-				if !(d.Status == retrievalmarket.DealStatusErrored ||
-					d.Status == retrievalmarket.DealStatusCancelled ||
-					retrievalmarket.IsTerminalStatus(d.Status)) {
-					m.retrievals.Add(rk, d)
-				}
-				break
+			log.Infof("data has been storaged in miner:%s", data.pieceID)
+			if !data.isRetrieved {
+				data.isRetrieved = true
+				m.totalRetrieveCount++
 			}
-		}
-
-		if data.isRetrieved {
 			continue
 		}
 
-		if m.retrievals.Contains(rk) {
+		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
+			log.Infof("data has been storaged in daemon:%s", data.pieceID)
+			if !data.isRetrieved {
+				data.isRetrieved = true
+				m.totalRetrieveCount++
+			}
 			continue
 		}
 
@@ -273,10 +304,26 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			break
 		}
 
-		miner := data.miners[rand.Intn(len(data.miners))]
+		if data.tryCount > 3 {
+			if time.Now().Before(data.retrieveTime.Add(30 * time.Minute)) {
+				continue
+			}
+		}
+
+		var addrs []address.Address
+		for k, v := range data.miners {
+			for i := 0; i < v; i++ {
+				addrs = append(addrs, k)
+			}
+		}
+
+		miner := addrs[rand.Intn(len(addrs))]
 		deal, err := m.api.ClientRetrieveQuery(ctx, data.rootCID, &data.pieceID, miner)
 		if err != nil {
-			data.tryCount++
+			data.miners[miner] = data.miners[miner] - MinerPunishmentScore
+			if data.miners[miner] < 1 {
+				data.miners[miner] = 1
+			}
 			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", miner, data.rootCID, data.tryCount, err)
 			// if data.tryCount > RetrieveTryCountMax {
 			// 	for index, m := range data.miners {
@@ -289,6 +336,8 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			// }
 			continue
 		}
+		data.tryCount++
+		data.retrieveTime = time.Now()
 		log.Warnf("client retrieve miner:%s, data:%s", miner, data.rootCID)
 
 		m.retrievals.Add(rk, deal)
@@ -308,7 +357,44 @@ func checkDealStatus(deal *api.DealInfo) (bool, bool) {
 	return isDealed || isError, isDealed
 }
 
-func (m *MinerData) dealChainData(ctx context.Context) error {
+func (m *MinerData) loadStorageData(ctx context.Context) (*lru.ARCCache, error) {
+	storages, err := lru.NewARC(DealParallelNum * 2)
+	if err != nil {
+		return nil, err
+	}
+
+	deals, err := m.api.ClientListDeals(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range deals {
+		if d.Provider == m.address {
+			dataObj, ok := m.dataRefs.Get(d.PieceCID.String())
+			if ok {
+				isFinish, isDealed := checkDealStatus(&d)
+				if isDealed {
+					data := dataObj.(*DataRef)
+					data.isDealed = true
+					m.totalDealCount++
+				}
+				if !isFinish {
+					storages.Add(d.PieceCID.String(), d.ProposalCid)
+				}
+			}
+		}
+	}
+	return storages, nil
+}
+
+func (m *MinerData) storageChainData(ctx context.Context) error {
+	if m.deals == nil {
+		lru, err := m.loadStorageData(ctx)
+		if err != nil {
+			return err
+		}
+		m.deals = lru
+	}
+
 	dealKeys := m.deals.Keys()
 	for _, rk := range dealKeys {
 		id, _ := m.deals.Get(rk)
@@ -318,9 +404,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			return err
 		}
 		isFinish, isDealed := checkDealStatus(deal)
-		if isDealed {
-			dataObj, _ := m.dataRefs.Get(rk)
-			data := dataObj.(*DataRef)
+		dataObj, _ := m.dataRefs.Get(rk)
+		data := dataObj.(*DataRef)
+		if !data.isDealed && isDealed {
 			data.isDealed = true
 			m.totalDealCount++
 		}
@@ -333,10 +419,6 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 		return nil
 	}
 
-	deals, err := m.api.ClientListDeals(ctx)
-	if err != nil {
-		return err
-	}
 	keys := m.dataRefs.Keys()
 	for _, rk := range keys {
 		dataObj, _ := m.dataRefs.Get(rk)
@@ -351,32 +433,9 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		}
 
-		for _, d := range deals {
-			if d.Provider == m.address && d.PieceCID.Equals(data.pieceID) {
-				isFinish, isDealed := checkDealStatus(&d)
-				if isDealed {
-					data.isDealed = true
-					m.totalDealCount++
-				}
-				if !isFinish {
-					m.deals.Add(rk, d.ProposalCid)
-				}
-				break
-			}
-		}
-
-		if data.isDealed {
-			continue
-		}
-
 		// if miner is dealing, go to next one
 		if m.deals.Contains(rk) {
 			continue
-		}
-
-		if m.deals.Len() >= DealParallelNum {
-			log.Infof("wait for deal:%d", m.deals.Len())
-			break
 		}
 
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
@@ -384,24 +443,17 @@ func (m *MinerData) dealChainData(ctx context.Context) error {
 			continue
 		} else if stored {
 			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
-			data.isDealed = true
-			m.totalDealCount++
+			if !data.isDealed {
+				data.isDealed = true
+				m.totalDealCount++
+			}
 			continue
 		}
 
-		// mi, err := m.api.StateMinerInfo(ctx, m.address, types.EmptyTSK)
-		// if err != nil {
-		// 	return err
-		// }
-
-		// if *mi.PeerId == peer.ID("SETME") {
-		// 	return fmt.Errorf("the miner hasn't initialized yet")
-		// }
-
-		/* ask, err := m.api.ClientQueryAsk(ctx, *mi.PeerId, m.address)
-		if err != nil {
-			return err
-		} */
+		if m.deals.Len() >= DealParallelNum {
+			log.Infof("wait for deal:%d", m.deals.Len())
+			break
+		}
 
 		stData := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,

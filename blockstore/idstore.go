@@ -158,6 +158,10 @@ func (b *idstore) DeleteMany(cids []cid.Cid) error {
 	return nil
 }
 
+func (b *idstore) CollectGarbage() error {
+	return b.bs.CollectGarbage()
+}
+
 func (b *idstore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
 	return b.bs.AllKeysChan(ctx)
 }

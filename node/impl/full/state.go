@@ -1274,22 +1274,22 @@ func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address
 	return types.BigAdd(abal, vested), nil
 }
 
-func (a *StateAPI) StateMiningPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+func (a *StateAPI) StateMinerFunds(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (miner.Funds, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+		return miner.Funds{}, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
 
 	act, err := a.StateManager.LoadActor(ctx, maddr, ts)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("failed to load miner actor: %w", err)
+		return miner.Funds{}, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
 	mas, err := miner.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("failed to load miner actor state: %w", err)
+		return miner.Funds{}, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
-	return mas.TotalPledge()
+	return mas.Funds()
 }
 
 func (a *StateAPI) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {

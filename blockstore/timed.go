@@ -159,6 +159,12 @@ func (t *TimedCacheBlockstore) DeleteMany(ks []cid.Cid) error {
 	return multierr.Combine(t.active.DeleteMany(ks), t.inactive.DeleteMany(ks))
 }
 
+func (t *TimedCacheBlockstore) CollectGarbage() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return multierr.Combine(t.active.CollectGarbage(), t.inactive.CollectGarbage())
+}
+
 func (t *TimedCacheBlockstore) AllKeysChan(_ context.Context) (<-chan cid.Cid, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()

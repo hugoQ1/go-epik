@@ -27,6 +27,7 @@ import (
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
 	"github.com/EpiK-Protocol/go-epik/lib/ulimit"
 	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/metrics/influxexporter"
 	"github.com/EpiK-Protocol/go-epik/node"
 	"github.com/EpiK-Protocol/go-epik/node/impl"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -76,7 +77,7 @@ var runCmd = &cli.Command{
 			tag.Insert(metrics.NodeType, "miner"),
 		)
 		// Register all metric views
-		if err = view.Register(
+		if err := view.Register(
 			metrics.MinerNodeViews...,
 		); err != nil {
 			log.Fatalf("Cannot register the view: %v", err)
@@ -185,6 +186,13 @@ var runCmd = &cli.Command{
 			},
 		}
 
+		ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
+		if err != nil {
+			log.Warnf("unable to register influx exporter: %v", err)
+		} else {
+			view.RegisterExporter(ifExporter)
+		}
+
 		sigChan := make(chan os.Signal, 2)
 		go func() {
 			select {
@@ -192,6 +200,10 @@ var runCmd = &cli.Command{
 				log.Warnw("received shutdown", "signal", sig)
 			case <-shutdownChan:
 				log.Warn("received shutdown")
+			}
+
+			if ifCloser != nil {
+				ifCloser()
 			}
 
 			log.Warn("Shutting down...")

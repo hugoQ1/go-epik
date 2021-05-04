@@ -114,12 +114,12 @@ var stateMinerInfo = &cli.Command{
 		if err != nil {
 			return xerrors.Errorf("getting miner available balance: %w", err)
 		}
-		mpledge, err := api.StateMiningPledge(ctx, addr, ts.Key())
+		funds, err := api.StateMinerFunds(ctx, addr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting miner total pledge: %w", err)
 		}
 		fmt.Printf("Available Balance: %s\n", types.EPK(availableBalance))
-		fmt.Printf("Mining Pledge: %s\n", types.EPK(mpledge))
+		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
 		fmt.Printf("Worker:  \t%s\n", mi.Worker)
 		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)

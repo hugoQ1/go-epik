@@ -114,6 +114,7 @@ const (
 
 	// System processes.
 	InitMemoryWatchdog
+	RunSysMetricsKey
 
 	// libp2p
 	PstoreAddSelfKeysKey
@@ -139,6 +140,7 @@ const (
 	HandleDealsKey
 	HandleRetrievalKey
 	RunSectorServiceKey
+	RunMinerMetricsKey
 
 	// daemon
 	ExtractApiKey
@@ -352,6 +354,8 @@ var ChainNode = Options(
 		Override(HandleIncomingMessagesKey, modules.HandleIncomingMessages),
 		Override(HandleIncomingBlocksKey, modules.HandleIncomingBlocks),
 	),
+
+	Override(RunSysMetricsKey, modules.RunChainSysMetrics),
 )
 
 var MinerNode = Options(
@@ -431,6 +435,9 @@ var MinerNode = Options(
 	Override(new(dtypes.GetSealingConfigFunc), modules.NewGetSealConfigFunc),
 	Override(new(dtypes.SetExpectedSealDurationFunc), modules.NewSetExpectedSealDurationFunc),
 	Override(new(dtypes.GetExpectedSealDurationFunc), modules.NewGetExpectedSealDurationFunc),
+
+	Override(RunMinerMetricsKey, modules.RunMinerMetrics),
+	Override(RunSysMetricsKey, modules.RunMinerSysMetrics),
 )
 
 // Online sets up basic libp2p node

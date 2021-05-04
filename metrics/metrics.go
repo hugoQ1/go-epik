@@ -9,6 +9,7 @@ import (
 	"go.opencensus.io/tag"
 
 	rpcmetrics "github.com/filecoin-project/go-jsonrpc/metrics"
+	_ "github.com/influxdata/influxdb1-client"
 
 	"github.com/EpiK-Protocol/go-epik/blockstore"
 )
@@ -41,6 +42,7 @@ var (
 	Endpoint, _     = tag.NewKey("endpoint")
 	APIInterface, _ = tag.NewKey("api") // to distinguish between gateway api and full node api endpoint calls
 
+	Type, _ = tag.NewKey("type")
 	// miner
 	TaskType, _       = tag.NewKey("task_type")
 	WorkerHostname, _ = tag.NewKey("worker_hostname")
@@ -77,11 +79,33 @@ var (
 	VMFlushCopyDuration                 = stats.Float64("vm/flush_copy_ms", "Time spent in VM Flush Copy", stats.UnitMilliseconds)
 	VMFlushCopyCount                    = stats.Int64("vm/flush_copy_count", "Number of copied objects", stats.UnitDimensionless)
 
+	MessageReceivedBytes    = stats.Int64("message/received_bytes", "Counter for total bytes of received messages", stats.UnitBytes)
+	BlockReceivedBytes      = stats.Int64("block/received_bytes", "Counter for total bytes of received blocks", stats.UnitBytes)
+	ServeSyncSuccess        = stats.Int64("serve/sync_success", "Counter for successes", stats.UnitDimensionless)
+	ServeSyncFailure        = stats.Int64("serve/sync_failure", "Counter for failures", stats.UnitDimensionless)
+	ServeSyncBytes          = stats.Int64("serve/sync_bytes", "Counter for total sent bytes", stats.UnitBytes)
+	TipsetMessagesCount     = stats.Int64("tipset/messages_count", "Counter of messages in tipsets", stats.UnitDimensionless)
+	TipsetMessagesRate      = stats.Float64("tipset/messages_rate", "Counter of processed messages per second", stats.UnitDimensionless)
+	TipsetPublishDealsCount = stats.Int64("tipset/publishdeals_count", "Counter of publishdeals in tipsets", stats.UnitDimensionless)
+	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
+
+	// Sys
+	BandwidthTotal = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
+	BandwidthRate  = stats.Float64("bandwidth/rate", "Counter for bytes per second", stats.UnitBytes)
+	SysCpuUsed     = stats.Int64("sys/cpu_used", "Counter for used percentage of cpu used", stats.UnitDimensionless)
+	SysMemUsed     = stats.Int64("sys/mem_used", "Counter for used percentage of ram used", stats.UnitDimensionless)
+	SysDiskUsed    = stats.Int64("sys/disk_used", "Counter for used percentage of disk", stats.UnitDimensionless)
+
 	// miner
 	WorkerCallsStarted           = stats.Int64("sealing/worker_calls_started", "Counter of started worker tasks", stats.UnitDimensionless)
 	WorkerCallsReturnedCount     = stats.Int64("sealing/worker_calls_returned_count", "Counter of returned worker tasks", stats.UnitDimensionless)
 	WorkerCallsReturnedDuration  = stats.Float64("sealing/worker_calls_returned_ms", "Counter of returned worker tasks", stats.UnitMilliseconds)
 	WorkerUntrackedCallsReturned = stats.Int64("sealing/worker_untracked_calls_returned", "Counter of returned untracked worker tasks", stats.UnitDimensionless)
+
+	ServeTransferBytes  = stats.Int64("serve/transfer_bytes", "Counter for total sent bytes", stats.UnitBytes)
+	ServeTransferAccept = stats.Int64("serve/transfer_accept", "Counter for total accepted requests", stats.UnitDimensionless)
+	ServeTransferResult = stats.Int64("serve/transfer_result", "Counter for process results", stats.UnitDimensionless)
+	MinerBalance        = stats.Float64("miner/balance", "Counter for miner balance in EPK", stats.UnitDimensionless)
 
 	// splitstore
 	SplitstoreMiss                  = stats.Int64("splitstore/miss", "Number of misses in hotstre access", stats.UnitDimensionless)
@@ -209,6 +233,73 @@ var (
 		Aggregation: view.Sum(),
 	}
 
+	MessageReceivedBytesView = &view.View{
+		Measure:     MessageReceivedBytes,
+		Aggregation: view.Sum(),
+	}
+	BlockReceivedBytesView = &view.View{
+		Measure:     BlockReceivedBytes,
+		Aggregation: view.Sum(),
+	}
+	ServeSyncSuccessView = &view.View{
+		Measure:     ServeSyncSuccess,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{Type},
+	}
+	ServeSyncFailureView = &view.View{
+		Measure:     ServeSyncFailure,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{FailureType},
+	}
+	ServeSyncBytesView = &view.View{
+		Measure:     ServeSyncBytes,
+		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{Type},
+	}
+	TipsetMessagesCountView = &view.View{
+		Measure:     TipsetMessagesCount,
+		Aggregation: view.LastValue(),
+	}
+	TipsetMessagesRateView = &view.View{
+		Measure:     TipsetMessagesRate,
+		Aggregation: view.LastValue(),
+	}
+	TipsetPublishDealsCountView = &view.View{
+		Measure:     TipsetPublishDealsCount,
+		Aggregation: view.LastValue(),
+	}
+	TipsetSubmitPoStsCountView = &view.View{
+		Measure:     TipsetSubmitPoStsCount,
+		Aggregation: view.LastValue(),
+	}
+
+	// default
+	BandwidthTotalView = &view.View{
+		Measure:     BandwidthTotal,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type, NodeType},
+	}
+	BandwidthRateView = &view.View{
+		Measure:     BandwidthRate,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type, NodeType},
+	}
+	SysCpuUsedView = &view.View{
+		Measure:     SysCpuUsed,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
+	}
+	SysMemUsedView = &view.View{
+		Measure:     SysMemUsed,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
+	}
+	SysDiskUsedView = &view.View{
+		Measure:     SysDiskUsed,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{NodeType},
+	}
+
 	// miner
 	WorkerCallsStartedView = &view.View{
 		Measure:     WorkerCallsStarted,
@@ -228,6 +319,26 @@ var (
 		Measure:     WorkerCallsReturnedDuration,
 		Aggregation: workMillisecondsDistribution,
 		TagKeys:     []tag.Key{TaskType, WorkerHostname},
+	}
+
+	ServeTransferBytesView = &view.View{
+		Measure:     ServeTransferBytes,
+		Aggregation: view.Sum(),
+		TagKeys:     []tag.Key{Type},
+	}
+	ServeTransferAcceptView = &view.View{
+		Measure:     ServeTransferAccept,
+		Aggregation: view.Count(),
+	}
+	ServeTransferResultView = &view.View{
+		Measure:     ServeTransferResult,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{Type},
+	}
+	MinerBalanceView = &view.View{
+		Measure:     MinerBalance,
+		Aggregation: view.LastValue(),
+		TagKeys:     []tag.Key{Type, MinerID},
 	}
 
 	// splitstore
@@ -259,6 +370,12 @@ var DefaultViews = func() []*view.View {
 		InfoView,
 		PeerCountView,
 		APIRequestDurationView,
+
+		BandwidthTotalView,
+		BandwidthRateView,
+		SysCpuUsedView,
+		SysMemUsedView,
+		SysDiskUsedView,
 	}
 	views = append(views, blockstore.DefaultViews...)
 	views = append(views, rpcmetrics.DefaultViews...)
@@ -292,6 +409,16 @@ var ChainNodeViews = append([]*view.View{
 	SplitstoreCompactionHotView,
 	SplitstoreCompactionColdView,
 	SplitstoreCompactionDeadView,
+
+	MessageReceivedBytesView,
+	BlockReceivedBytesView,
+	ServeSyncSuccessView,
+	ServeSyncFailureView,
+	ServeSyncBytesView,
+	TipsetMessagesCountView,
+	TipsetMessagesRateView,
+	TipsetPublishDealsCountView,
+	TipsetSubmitPoStsCountView,
 }, DefaultViews...)
 
 var MinerNodeViews = append([]*view.View{
@@ -299,11 +426,20 @@ var MinerNodeViews = append([]*view.View{
 	WorkerCallsReturnedCountView,
 	WorkerUntrackedCallsReturnedView,
 	WorkerCallsReturnedDurationView,
+
+	MinerBalanceView,
+	ServeTransferBytesView,
+	ServeTransferAcceptView,
+	ServeTransferResultView,
 }, DefaultViews...)
 
 // SinceInMilliseconds returns the duration of time since the provide time as a float64.
 func SinceInMilliseconds(startTime time.Time) float64 {
 	return float64(time.Since(startTime).Nanoseconds()) / 1e6
+}
+
+func SinceInSeconds(startTime time.Time) float64 {
+	return float64(time.Since(startTime).Nanoseconds()) / 1e9
 }
 
 // Timer is a function stopwatch, calling it starts the timer,

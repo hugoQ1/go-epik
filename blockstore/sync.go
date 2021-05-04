@@ -32,6 +32,12 @@ func (m *SyncBlockstore) DeleteMany(ks []cid.Cid) error {
 	return m.bs.DeleteMany(ks)
 }
 
+func (m *SyncBlockstore) CollectGarbage() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.bs.CollectGarbage()
+}
+
 func (m *SyncBlockstore) Has(k cid.Cid) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

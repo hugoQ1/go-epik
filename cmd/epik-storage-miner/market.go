@@ -27,6 +27,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
 
+	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
@@ -582,6 +583,7 @@ var dataTransfersCmd = &cli.Command{
 		transfersListCmd,
 		marketRestartTransfer,
 		marketCancelTransfer,
+		marketCancelAllTransfers,
 	},
 }
 
@@ -642,6 +644,83 @@ var marketRestartTransfer = &cli.Command{
 		}
 
 		return nodeApi.MarketRestartDataTransfer(ctx, transferID, other, initiator)
+	},
+}
+
+var marketCancelAllTransfers = &cli.Command{
+	Name:  "cancel-all",
+	Usage: "Force cancel transfers not failed/cancelled and completed",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "force",
+			Usage: "cancel all transfers not failed/cancelled and completed",
+			Value: false,
+		},
+		&cli.BoolFlag{
+			Name:  "sending",
+			Usage: "specify only transfers where peer is/is not sender",
+			Value: false,
+		},
+		&cli.DurationFlag{
+			Name:  "cancel-timeout",
+			Usage: "time to wait for cancel to be sent to client",
+			Value: 5 * time.Second,
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Bool("force") {
+			return cli.ShowCommandHelp(cctx, cctx.Command.Name)
+		}
+		api, closer, err := lcli.GetStorageMinerAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := lcli.ReqContext(cctx)
+
+		channels, err := api.MarketListDataTransfers(ctx)
+		if err != nil {
+			return err
+		}
+
+		var receivingChannels, sendingChannels []lapi.DataTransferChannel
+		for _, channel := range channels {
+			if channel.Status == datatransfer.Completed {
+				continue
+			}
+			if channel.Status == datatransfer.Failed || channel.Status == datatransfer.Cancelled {
+				continue
+			}
+			if channel.IsSender {
+				sendingChannels = append(sendingChannels, channel)
+			} else {
+				receivingChannels = append(receivingChannels, channel)
+			}
+		}
+		fmt.Printf("cancel data-transfer sendingChannels:%d, receivingChannels:%d\n", len(sendingChannels), len(receivingChannels))
+
+		isSender := cctx.Bool("sending")
+		if isSender {
+			for _, channel := range sendingChannels {
+				timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
+				defer cancel()
+				if err := api.MarketCancelDataTransfer(timeoutCtx, channel.TransferID, channel.OtherPeer, channel.IsInitiator); err != nil {
+					continue
+				}
+				fmt.Printf("cancel data-transfer:%v, %v, %s\n", channel.TransferID, channel.OtherPeer, datatransfer.Statuses[channel.Status])
+			}
+		} else {
+			for _, channel := range receivingChannels {
+				timeoutCtx, cancel := context.WithTimeout(ctx, cctx.Duration("cancel-timeout"))
+				defer cancel()
+				if err := api.MarketCancelDataTransfer(timeoutCtx, channel.TransferID, channel.OtherPeer, channel.IsInitiator); err != nil {
+					continue
+				}
+				fmt.Printf("cancel data-transfer:%v, %v, %s\n", channel.TransferID, channel.OtherPeer, datatransfer.Statuses[channel.Status])
+			}
+		}
+		return nil
+
 	},
 }
 

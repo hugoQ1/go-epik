@@ -61,6 +61,9 @@ type Common interface {
 	LogList(context.Context) ([]string, error)
 	LogSetLevel(context.Context, string, string) error
 
+	// GC handle the db gc
+	GC(context.Context) error
+
 	// trigger graceful shutdown
 	Shutdown(context.Context) error
 

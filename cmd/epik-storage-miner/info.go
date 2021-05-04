@@ -199,27 +199,21 @@ func infoCmdAct(cctx *cli.Context) error {
 
 	spendable := big.Zero()
 
-	// NOTE: there's no need to unlock anything here. Funds only
-	// vest on deadline boundaries, and they're unlocked by cron.
-	lockedFunds, err := mas.LockedFunds()
-	if err != nil {
-		return xerrors.Errorf("getting locked funds: %w", err)
-	}
 	availBalance, err := mas.AvailableBalance(mact.Balance)
 	if err != nil {
 		return xerrors.Errorf("getting available balance: %w", err)
 	}
 	spendable = big.Add(spendable, availBalance)
 
-	mpledge, err := mas.TotalPledge()
+	funds, err := mas.Funds()
 	if err != nil {
 		return xerrors.Errorf("getting mining pledge: %w", err)
 	}
 
 	fmt.Printf("Miner Balance:        %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
-	fmt.Printf("      Vesting:        %s\n", types.EPK(lockedFunds.VestingFunds).Short())
+	fmt.Printf("      Vesting:        %s\n", types.EPK(funds.VestingFunds).Short())
 	color.Green("      Available:      %s", types.EPK(availBalance).Short())
-	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(mpledge))
+	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(funds.MiningPledge))
 
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {

@@ -8,8 +8,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
@@ -28,6 +31,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 
 	"github.com/filecoin-project/go-address"
+	datatransfer "github.com/filecoin-project/go-data-transfer"
 	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
 	dtnet "github.com/filecoin-project/go-data-transfer/network"
 	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
@@ -54,6 +58,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/extern/storage-sealing/sealiface"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 
 	lapi "github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/blockstore"
@@ -359,6 +364,21 @@ func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.S
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			dt.SubscribeToEvents(marketevents.DataTransferLogger)
+			// subscribe retrievals
+			dt.SubscribeToEvents(func(event datatransfer.Event, channelState datatransfer.ChannelState) {
+				if !channelState.IsPull() || channelState.SelfPeer() != channelState.Sender() {
+					return
+				}
+				switch channelState.Status() {
+				case datatransfer.Cancelled, datatransfer.Failed, datatransfer.Completed:
+					ctx, _ := tag.New(ctx, tag.Upsert(metrics.Type, strings.ToLower(datatransfer.Statuses[channelState.Status()])))
+					stats.Record(ctx, metrics.ServeTransferResult.M(1))
+					stats.Record(ctx, metrics.ServeTransferBytes.M(int64(channelState.Sent())))
+				case datatransfer.Ongoing:
+					stats.Record(ctx, metrics.ServeTransferAccept.M(1))
+				default:
+				}
+			})
 			return dt.Start(ctx)
 		},
 		OnStop: func(ctx context.Context) error {

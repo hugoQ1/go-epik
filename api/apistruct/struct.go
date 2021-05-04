@@ -75,6 +75,8 @@ type CommonStruct struct {
 		LogList     func(context.Context) ([]string, error)     `perm:"write"`
 		LogSetLevel func(context.Context, string, string) error `perm:"write"`
 
+		GC func(context.Context) error `perm:"admin"`
+
 		Shutdown func(context.Context) error                    `perm:"admin"`
 		Session  func(context.Context) (uuid.UUID, error)       `perm:"read"`
 		Closing  func(context.Context) (<-chan struct{}, error) `perm:"read"`
@@ -210,7 +212,7 @@ type FullNodeStruct struct {
 		/* StateMinerPreCommitDepositForPower func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"`
 		StateMinerInitialPledgeCollateral  func(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)            `perm:"read"` */
 		StateMinerAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
-		StateMiningPledge          func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                       `perm:"read"`
+		StateMinerFunds            func(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)                                        `perm:"read"`
 		StateMinerSectorAllocated  func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (bool, error)                             `perm:"read"`
 		StateSectorPreCommitInfo   func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error) `perm:"read"`
 		StateSectorGetInfo         func(context.Context, address.Address, abi.SectorNumber, types.TipSetKey) (*miner.SectorOnChainInfo, error)         `perm:"read"`
@@ -589,6 +591,10 @@ func (c *CommonStruct) LogList(ctx context.Context) ([]string, error) {
 
 func (c *CommonStruct) LogSetLevel(ctx context.Context, group, level string) error {
 	return c.Internal.LogSetLevel(ctx, group, level)
+}
+
+func (c *CommonStruct) GC(ctx context.Context) error {
+	return c.Internal.GC(ctx)
 }
 
 func (c *CommonStruct) Shutdown(ctx context.Context) error {
@@ -1049,8 +1055,8 @@ func (c *FullNodeStruct) StateMinerAvailableBalance(ctx context.Context, maddr a
 	return c.Internal.StateMinerAvailableBalance(ctx, maddr, tsk)
 }
 
-func (c *FullNodeStruct) StateMiningPledge(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
-	return c.Internal.StateMiningPledge(ctx, maddr, tsk)
+func (c *FullNodeStruct) StateMinerFunds(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (miner.Funds, error) {
+	return c.Internal.StateMinerFunds(ctx, maddr, tsk)
 }
 
 func (c *FullNodeStruct) StateMinerSectorAllocated(ctx context.Context, maddr address.Address, s abi.SectorNumber, tsk types.TipSetKey) (bool, error) {

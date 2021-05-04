@@ -276,6 +276,7 @@ func (bv *BlockValidator) Validate(ctx context.Context, pid peer.ID, msg *pubsub
 	}()
 
 	stats.Record(ctx, metrics.BlockReceived.M(1))
+	stats.Record(ctx, metrics.BlockReceivedBytes.M(int64(msg.Size())))
 
 	recordFailureFlagPeer := func(what string) {
 		recordFailure(ctx, metrics.BlockValidationFailure, what)
@@ -518,6 +519,7 @@ func (mv *MessageValidator) Validate(ctx context.Context, pid peer.ID, msg *pubs
 	}
 
 	stats.Record(ctx, metrics.MessageReceived.M(1))
+	stats.Record(ctx, metrics.MessageReceivedBytes.M(int64(msg.Size())))
 	m, err := types.DecodeSignedMessage(msg.Message.GetData())
 	if err != nil {
 		log.Warnf("failed to decode incoming message: %s", err)
