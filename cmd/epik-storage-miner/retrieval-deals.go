@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/urfave/cli/v2"
 
 	"github.com/EpiK-Protocol/go-epik/chain/types"
@@ -165,14 +164,6 @@ var retrievalSetAskCmd = &cli.Command{
 	Usage: "Configure the provider's retrieval ask",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "price",
-			Usage: "Set the price of the ask for retrievals (EPK/GiB)",
-		},
-		&cli.StringFlag{
-			Name:  "unseal-price",
-			Usage: "Set the price to unseal",
-		},
-		&cli.StringFlag{
 			Name:        "payment-interval",
 			Usage:       "Set the payment interval (in bytes) for retrieval",
 			DefaultText: "1MiB",
@@ -195,22 +186,6 @@ var retrievalSetAskCmd = &cli.Command{
 		ask, err := api.MarketGetRetrievalAsk(ctx)
 		if err != nil {
 			return err
-		}
-
-		if cctx.IsSet("price") {
-			v, err := types.ParseEPK(cctx.String("price"))
-			if err != nil {
-				return err
-			}
-			ask.PricePerByte = types.BigDiv(types.BigInt(v), types.NewInt(1<<30))
-		}
-
-		if cctx.IsSet("unseal-price") {
-			v, err := types.ParseEPK(cctx.String("unseal-price"))
-			if err != nil {
-				return err
-			}
-			ask.UnsealPrice = abi.TokenAmount(v)
 		}
 
 		if cctx.IsSet("payment-interval") {

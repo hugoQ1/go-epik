@@ -180,6 +180,7 @@ type MinerInfo struct {
 	SectorSize                 abi.SectorSize
 	WindowPoStPartitionSectors uint64
 	ConsensusFaultElapsed      abi.ChainEpoch
+	RetrievalDepositor         address.Address
 }
 
 func (mi MinerInfo) IsController(addr address.Address) bool {

@@ -1261,6 +1261,10 @@ var clientRetrievePledgeCmd = &cli.Command{
 			Name:  "from",
 			Usage: "address to send transactions from",
 		},
+		&cli.StringFlag{
+			Name:  "miner",
+			Usage: "address to bind miner",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 1 {
@@ -1291,11 +1295,23 @@ var clientRetrievePledgeCmd = &cli.Command{
 			fromAddr = addr
 		}
 
+		var minerAddr address.Address
+		if miner := cctx.String("miner"); miner == "" {
+			minerAddr = address.Undef
+		} else {
+			addr, err := address.NewFromString(miner)
+			if err != nil {
+				return err
+			}
+
+			minerAddr = addr
+		}
+
 		val, err := types.ParseEPK(cctx.Args().Get(0))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievePledge(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrievePledge(ctx, fromAddr, minerAddr, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}

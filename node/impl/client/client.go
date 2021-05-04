@@ -1285,8 +1285,11 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 	return a.ClientRetrieveGetDeal(ctx, dealID)
 }
 
-func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&wallet)
+func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrieval.DepositParams{
+		Address: wallet,
+		Miner:   miner,
+	})
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
 	}
@@ -1295,7 +1298,7 @@ func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, 
 		To:     retrieval.Address,
 		From:   wallet,
 		Value:  amount,
-		Method: retrieval.Methods.AddBalance,
+		Method: retrieval.Methods.Deposit,
 		Params: params,
 	}, nil)
 	if aerr != nil {

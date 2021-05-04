@@ -312,6 +312,9 @@ func (s *state3) Info() (MinerInfo, error) {
 		mi.NewWorker = info.PendingWorkerKey.NewWorker
 		mi.WorkerChangeEpoch = info.PendingWorkerKey.EffectiveAt
 	}
+	if info.RetrievalDepositor != nil {
+		mi.RetrievalDepositor = *info.RetrievalDepositor
+	}
 
 	return mi, nil
 }

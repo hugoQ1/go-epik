@@ -351,7 +351,7 @@ type FullNode interface {
 	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
 	// ClientRetrievePledge retrieval pledge amount
-	ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	ClientRetrievePledge(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
 	// ClientRetrieveApplyForWithdraw apply for withdraw
 	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
@@ -1162,6 +1162,7 @@ type RetrievalInfo struct {
 	PendingReward abi.TokenAmount
 }
 type RetrievalState struct {
+	BindMiners  []address.Address
 	Balance     abi.TokenAmount
 	DayExpend   abi.TokenAmount
 	Locked      abi.TokenAmount

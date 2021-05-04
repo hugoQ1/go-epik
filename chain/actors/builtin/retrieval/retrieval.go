@@ -24,9 +24,17 @@ var (
 	Methods = builtin2.MethodsRetrieval
 )
 
+type DepositParams = retrieval2.DepositParams
 type RetrievalData = retrieval2.RetrievalDataParams
 type WithdrawBalanceParams = retrieval2.WithdrawBalanceParams
 type LockedState = retrieval2.LockedState
+
+type RetrievalState struct {
+	BindMiners []address.Address
+	Amount     abi.TokenAmount
+	EpochDate  uint64
+	DateSize   abi.PaddedPieceSize // date retrieval size
+}
 
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
@@ -39,7 +47,7 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
-	EscrowBalance(fromAddr address.Address) (abi.TokenAmount, error)
+	StateInfo(fromAddr address.Address) (*RetrievalState, error)
 	DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.TokenAmount, error)
 	LockedState(fromAddr address.Address) (*LockedState, error)
 	TotalCollateral() (abi.TokenAmount, error)
