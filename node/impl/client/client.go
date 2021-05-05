@@ -509,7 +509,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 	// check if registered
 	existence, err := a.StateExpertFileInfo(ctx, ds.PieceCID, ts.Key())
-	if err != nil && !strings.Contains(err.Error(), "failed to find expert with data") {
+	if err != nil && !strings.Contains(err.Error(), "piece not found") {
 		return nil, xerrors.Errorf("failed to check file registered %s: %w", ds.PieceCID, err)
 	}
 	dealExpert := ""

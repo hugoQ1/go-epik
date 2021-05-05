@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/journal"
 
 	"github.com/ipfs/go-cid"
@@ -518,31 +517,6 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 	}))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
-	}
-
-	// add retrieval deposit
-	{
-		idas, err := ParseIDAddresses(template.FoundationAccountActor, keyIDs)
-		if err != nil {
-			return cid.Undef, xerrors.Errorf("failed to parse id addresses: %w", err)
-		}
-		from := idas[0]
-		miners := []address.Address{}
-		for _, m := range template.Miners {
-			miners = append(miners, m.ID)
-		}
-		pledgeParams := &retrieval.PledgeParams{
-			Address: from,
-			Miners:  miners,
-		}
-		params := mustEnc(pledgeParams)
-		initAmount := big.Mul(big.NewInt(1000), big.NewInt(int64(build.EpkPrecision)))
-		_, err = doExecValue(ctx, vm, builtin2.RetrievalFundActorAddr, from, initAmount, builtin2.MethodsRetrieval.Pledge, params)
-		if err != nil {
-			return cid.Undef, xerrors.Errorf("failed to add genesis retrieval pledge %s: %w", err)
-		}
-
-		fmt.Printf("add genesis retrieval pledge %s: %s\n", from, initAmount)
 	}
 
 	// verify pre seal
