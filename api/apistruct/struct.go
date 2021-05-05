@@ -165,39 +165,39 @@ type FullNodeStruct struct {
 		WalletDelete          func(context.Context, address.Address) error                                         `perm:"write"`
 		WalletValidateAddress func(context.Context, string) (address.Address, error)                               `perm:"read"`
 
-		ClientImport                              func(ctx context.Context, ref api.FileRef) (*api.ImportRes, error)                                                `perm:"admin"`
-		ClientListImports                         func(ctx context.Context) ([]api.Import, error)                                                                   `perm:"write"`
-		ClientRemoveImport                        func(ctx context.Context, importID multistore.StoreID) error                                                      `perm:"admin"`
-		ClientHasLocal                            func(ctx context.Context, root cid.Cid) (bool, error)                                                             `perm:"write"`
-		ClientFindData                            func(ctx context.Context, root cid.Cid, piece *cid.Cid) ([]api.QueryOffer, error)                                 `perm:"read"`
-		ClientMinerQueryOffer                     func(ctx context.Context, miner address.Address, root cid.Cid, piece *cid.Cid) (api.QueryOffer, error)            `perm:"read"`
-		ClientStartDeal                           func(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)                                          `perm:"admin"`
-		ClientImportAndDeal                       func(ctx context.Context, params *api.ImportAndDealParams) (*api.ImportRes, error)                                `perm:"admin"`
-		ClientExpertRegisterFile                  func(ctx context.Context, params *api.ExpertRegisterFileParams) (*cid.Cid, error)                                 `perm:"admin"`
-		ClientGetDealInfo                         func(context.Context, cid.Cid) (*api.DealInfo, error)                                                             `perm:"read"`
-		ClientGetDealStatus                       func(context.Context, uint64) (string, error)                                                                     `perm:"read"`
-		ClientListDeals                           func(ctx context.Context) ([]api.DealInfo, error)                                                                 `perm:"write"`
-		ClientGetDealUpdates                      func(ctx context.Context) (<-chan api.DealInfo, error)                                                            `perm:"read"`
-		ClientRetrieve                            func(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error                                       `perm:"admin"`
-		ClientRetrieveWithEvents                  func(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) (<-chan marketevents.RetrievalEvent, error) `perm:"admin"`
-		ClientQueryAsk                            func(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.StorageAsk, error)                    `perm:"read"`
-		ClientDealPieceCID                        func(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)                                                  `perm:"read"`
-		ClientCalcCommP                           func(ctx context.Context, inpath string) (*api.CommPRet, error)                                                   `perm:"read"`
-		ClientGenCar                              func(ctx context.Context, ref api.FileRef, outpath string) error                                                  `perm:"write"`
-		ClientDealSize                            func(ctx context.Context, root cid.Cid) (api.DataSize, error)                                                     `perm:"read"`
-		ClientListDataTransfers                   func(ctx context.Context) ([]api.DataTransferChannel, error)                                                      `perm:"write"`
-		ClientDataTransferUpdates                 func(ctx context.Context) (<-chan api.DataTransferChannel, error)                                                 `perm:"write"`
-		ClientRestartDataTransfer                 func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
-		ClientCancelDataTransfer                  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error          `perm:"write"`
-		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                   `perm:"write"`
-		ClientRetrieveGetDeal                     func(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error)                              `perm:"read"`
-		ClientRetrieveListDeals                   func(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error)                                  `perm:"read"`
-		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                  `perm:"admin"`
-		ClientRetrieveQuery                       func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)        `perm:"read"`
-		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error) `perm:"admin"`
-		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
-		ClientRetrieveWithdraw                    func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                        `perm:"admin"`
-		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                        `perm:"admin"`
+		ClientImport                              func(ctx context.Context, ref api.FileRef) (*api.ImportRes, error)                                                   `perm:"admin"`
+		ClientListImports                         func(ctx context.Context) ([]api.Import, error)                                                                      `perm:"write"`
+		ClientRemoveImport                        func(ctx context.Context, importID multistore.StoreID) error                                                         `perm:"admin"`
+		ClientHasLocal                            func(ctx context.Context, root cid.Cid) (bool, error)                                                                `perm:"write"`
+		ClientFindData                            func(ctx context.Context, root cid.Cid, piece *cid.Cid) ([]api.QueryOffer, error)                                    `perm:"read"`
+		ClientMinerQueryOffer                     func(ctx context.Context, miner address.Address, root cid.Cid, piece *cid.Cid) (api.QueryOffer, error)               `perm:"read"`
+		ClientStartDeal                           func(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)                                             `perm:"admin"`
+		ClientImportAndDeal                       func(ctx context.Context, params *api.ImportAndDealParams) (*api.ImportRes, error)                                   `perm:"admin"`
+		ClientExpertRegisterFile                  func(ctx context.Context, params *api.ExpertRegisterFileParams) (*cid.Cid, error)                                    `perm:"admin"`
+		ClientGetDealInfo                         func(context.Context, cid.Cid) (*api.DealInfo, error)                                                                `perm:"read"`
+		ClientGetDealStatus                       func(context.Context, uint64) (string, error)                                                                        `perm:"read"`
+		ClientListDeals                           func(ctx context.Context) ([]api.DealInfo, error)                                                                    `perm:"write"`
+		ClientGetDealUpdates                      func(ctx context.Context) (<-chan api.DealInfo, error)                                                               `perm:"read"`
+		ClientRetrieve                            func(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error                                          `perm:"admin"`
+		ClientRetrieveWithEvents                  func(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) (<-chan marketevents.RetrievalEvent, error)    `perm:"admin"`
+		ClientQueryAsk                            func(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.StorageAsk, error)                       `perm:"read"`
+		ClientDealPieceCID                        func(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)                                                     `perm:"read"`
+		ClientCalcCommP                           func(ctx context.Context, inpath string) (*api.CommPRet, error)                                                      `perm:"read"`
+		ClientGenCar                              func(ctx context.Context, ref api.FileRef, outpath string) error                                                     `perm:"write"`
+		ClientDealSize                            func(ctx context.Context, root cid.Cid) (api.DataSize, error)                                                        `perm:"read"`
+		ClientListDataTransfers                   func(ctx context.Context) ([]api.DataTransferChannel, error)                                                         `perm:"write"`
+		ClientDataTransferUpdates                 func(ctx context.Context) (<-chan api.DataTransferChannel, error)                                                    `perm:"write"`
+		ClientRestartDataTransfer                 func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error             `perm:"write"`
+		ClientCancelDataTransfer                  func(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error             `perm:"write"`
+		ClientRetrieveTryRestartInsufficientFunds func(ctx context.Context, paymentChannel address.Address) error                                                      `perm:"write"`
+		ClientRetrieveGetDeal                     func(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error)                                 `perm:"read"`
+		ClientRetrieveListDeals                   func(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error)                                     `perm:"read"`
+		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                     `perm:"admin"`
+		ClientRetrieveQuery                       func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)           `perm:"read"`
+		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) `perm:"admin"`
+		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                           `perm:"admin"`
+		ClientRetrieveWithdraw                    func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                           `perm:"admin"`
+		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                           `perm:"admin"`
 
 		StateNetworkName          func(context.Context) (dtypes.NetworkName, error)                                                               `perm:"read"`
 		StateMinerSectors         func(context.Context, address.Address, *bitfield.BitField, types.TipSetKey) ([]*miner.SectorOnChainInfo, error) `perm:"read"`
@@ -747,8 +747,8 @@ func (c *FullNodeStruct) ClientRetrieveQuery(ctx context.Context, root cid.Cid, 
 	return c.Internal.ClientRetrieveQuery(ctx, root, piece, miner)
 }
 
-func (c *FullNodeStruct) ClientRetrievePledge(ctx context.Context, wallet address.Address, miner address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	return c.Internal.ClientRetrievePledge(ctx, wallet, miner, amount)
+func (c *FullNodeStruct) ClientRetrievePledge(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrievePledge(ctx, wallet, miners, amount)
 }
 
 func (c *FullNodeStruct) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {

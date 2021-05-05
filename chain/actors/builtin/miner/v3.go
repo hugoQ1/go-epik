@@ -329,8 +329,8 @@ func (s *state3) Info() (MinerInfo, error) {
 		mi.NewWorker = info.PendingWorkerKey.NewWorker
 		mi.WorkerChangeEpoch = info.PendingWorkerKey.EffectiveAt
 	}
-	if info.RetrievalDepositor != nil {
-		mi.RetrievalDepositor = *info.RetrievalDepositor
+	if info.RetrievalPledger != nil {
+		mi.RetrievalPledger = *info.RetrievalPledger
 	}
 
 	return mi, nil

@@ -95,6 +95,7 @@ var clientCmd = &cli.Command{
 		WithCategory("retrieval", clientRetrieveDealCmd),
 		WithCategory("retrieval", clientRetrieveListCmd),
 		WithCategory("retrieval", clientRetrievePledgeCmd),
+		WithCategory("retrieval", clientRetrieveBindCmd),
 		WithCategory("retrieval", clientRetrieveInfoCmd),
 		WithCategory("retrieval", clientRetrievePledgeStateCmd),
 		WithCategory("retrieval", clientRetrieveApplyForWithdrawCmd),
@@ -1311,27 +1312,67 @@ var clientRetrievePledgeCmd = &cli.Command{
 			fromAddr = addr
 		}
 
-		var minerAddr address.Address
-		if miner := cctx.String("miner"); miner == "" {
-			minerAddr = address.Undef
-		} else {
+		miners := []address.Address{}
+		if miner := cctx.String("miner"); miner != "" {
 			addr, err := address.NewFromString(miner)
 			if err != nil {
 				return err
 			}
-
-			minerAddr = addr
+			miners = append(miners, addr)
 		}
 
 		val, err := types.ParseEPK(cctx.Args().Get(0))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievePledge(ctx, fromAddr, minerAddr, big.Int(val))
+		msg, err := api.ClientRetrievePledge(ctx, fromAddr, miners, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
 		fmt.Printf("retrieve pledge: %s\n", msg)
+		return nil
+	},
+}
+
+var clientRetrieveBindCmd = &cli.Command{
+	Name:      "retrieve-bind",
+	Usage:     "bind miners for storage retrieval",
+	ArgsUsage: "[miner]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() < 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+		fmt.Printf("Retrieve Bind from: %s\n", fromAddr)
 		return nil
 	},
 }

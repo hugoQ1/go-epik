@@ -24,10 +24,11 @@ var (
 	Methods = builtin2.MethodsRetrieval
 )
 
-type DepositParams = retrieval2.DepositParams
+type PledgeParams = retrieval2.PledgeParams
 type RetrievalData = retrieval2.RetrievalDataParams
 type WithdrawBalanceParams = retrieval2.WithdrawBalanceParams
 type LockedState = retrieval2.LockedState
+type BindMiners = retrieval2.BindMinersParams
 
 type RetrievalState struct {
 	BindMiners []address.Address
