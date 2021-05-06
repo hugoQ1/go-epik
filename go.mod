@@ -164,8 +164,8 @@ replace github.com/filecoin-project/test-vectors => ./extern/test-vectors
 
 replace github.com/filecoin-project/specs-storage => github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4
 
-replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210506091243-54046ceccf0e
+replace github.com/filecoin-project/specs-actors/v2 => github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210506114353-415a599d339e
 
-replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210504181226-87d53a7f6114
+replace github.com/filecoin-project/go-fil-markets => github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210506195917-44a1ad3eedf7
 
 replace github.com/filecoin-project/go-data-transfer => github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2
