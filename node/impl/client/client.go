@@ -1309,6 +1309,34 @@ func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, 
 	return mid, nil
 }
 
+func (a *API) ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrieval.BindMinersParams{
+		Pledger: wallet,
+		Miners:  miners,
+	})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	method := retrieval.Methods.BindMiners
+	if reverse {
+		method = retrieval.Methods.UnbindMiners
+	}
+	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     retrieval.Address,
+		From:   wallet,
+		Value:  abi.NewTokenAmount(0),
+		Method: method,
+		Params: params,
+	}, nil)
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
+}
+
 func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
 		ProviderOrClientAddress: wallet,

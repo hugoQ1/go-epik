@@ -1337,11 +1337,15 @@ var clientRetrievePledgeCmd = &cli.Command{
 var clientRetrieveBindCmd = &cli.Command{
 	Name:      "retrieve-bind",
 	Usage:     "bind miners for storage retrieval",
-	ArgsUsage: "[miner]",
+	ArgsUsage: "[miners ...]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "from",
 			Usage: "address to send transactions from",
+		},
+		&cli.BoolFlag{
+			Name:  "reverse",
+			Usage: "reverse for unbind miners",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -1372,7 +1376,20 @@ var clientRetrieveBindCmd = &cli.Command{
 
 			fromAddr = addr
 		}
-		fmt.Printf("Retrieve Bind from: %s\n", fromAddr)
+		reverse := cctx.Bool("reverse")
+		miners := []address.Address{}
+		for _, m := range cctx.Args().Slice() {
+			miner, err := address.NewFromString(m)
+			if err != nil {
+				return err
+			}
+			miners = append(miners, miner)
+		}
+		msg, err := api.ClientRetrieveBind(ctx, fromAddr, miners, reverse)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
+		}
+		fmt.Printf("retrieve pledge: %s\n", msg)
 		return nil
 	},
 }

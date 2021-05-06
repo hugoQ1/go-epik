@@ -195,6 +195,7 @@ type FullNodeStruct struct {
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                     `perm:"admin"`
 		ClientRetrieveQuery                       func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)           `perm:"read"`
 		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) `perm:"admin"`
+		ClientRetrieveBind                        func(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)           `perm:"admin"`
 		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                           `perm:"admin"`
 		ClientRetrieveWithdraw                    func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                           `perm:"admin"`
 		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                           `perm:"admin"`
@@ -749,6 +750,10 @@ func (c *FullNodeStruct) ClientRetrieveQuery(ctx context.Context, root cid.Cid, 
 
 func (c *FullNodeStruct) ClientRetrievePledge(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	return c.Internal.ClientRetrievePledge(ctx, wallet, miners, amount)
+}
+
+func (c *FullNodeStruct) ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error) {
+	return c.Internal.ClientRetrieveBind(ctx, wallet, miners, reverse)
 }
 
 func (c *FullNodeStruct) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {

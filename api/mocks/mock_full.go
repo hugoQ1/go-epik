@@ -844,10 +844,25 @@ func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.A
 	return ret0, ret1
 }
 
+// ClientRetrieveBind mocks base method
+func (m *MockFullNode) ClientRetrieveBind(arg0 context.Context, arg1 address.Address, arg2 bool) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClientRetrieveBind", arg0, arg1, arg2)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
 // ClientRetrievePledge indicates an expected call of ClientRetrievePledge
 func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2)
+}
+
+// ClientRetrieveBind indicates an expected call of ClientRetrieveBind
+func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2)
 }
 
 // ClientRetrieveQuery mocks base method
