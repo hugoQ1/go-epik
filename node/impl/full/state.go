@@ -1604,7 +1604,7 @@ func (a *StateAPI) StateExpertFileInfo(ctx context.Context, pieceCid cid.Cid, ts
 	}
 	return &api.ExpertFileInfo{
 		Expert:     expertAddr,
-		PieceID:    data.PieceID,
+		PieceID:    pieceCid,
 		PieceSize:  data.PieceSize,
 		Redundancy: data.Redundancy,
 	}, nil
