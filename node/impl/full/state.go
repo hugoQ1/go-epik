@@ -1794,7 +1794,7 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	}
 	info, err := state.StateInfo(ida)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
+		return nil, xerrors.Errorf("failed to load retrieval state info: %w", err)
 	}
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
@@ -1802,7 +1802,7 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	}
 	expend, err := state.DayExpend(ts.Height(), ida)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to load retrieval balance: %w", err)
+		return nil, xerrors.Errorf("failed to load retrieval expend: %w", err)
 	}
 	locked, err := state.LockedState(ida)
 	if err != nil {
