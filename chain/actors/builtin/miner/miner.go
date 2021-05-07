@@ -51,11 +51,6 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
-	// Total available balance to spend.
-	AvailableBalance(abi.TokenAmount) (abi.TokenAmount, error)
-	// Funds that will vest by the given epoch.
-	VestedFunds(abi.ChainEpoch) (abi.TokenAmount, error)
-	FeeDebt() (abi.TokenAmount, error)
 	Funds() (Funds, error)
 
 	GetSector(abi.SectorNumber) (*SectorOnChainInfo, error)
@@ -219,7 +214,8 @@ type PreCommitChanges struct {
 }
 
 type Funds struct {
-	VestingFunds   abi.TokenAmount
 	MiningPledge   abi.TokenAmount
 	MiningPledgors map[string]abi.TokenAmount
+	FeeDebt        abi.TokenAmount
+	ReporterDebts  map[string]abi.TokenAmount
 }

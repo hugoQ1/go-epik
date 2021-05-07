@@ -81,7 +81,7 @@ var stateCmd = &cli.Command{
 var stateMinerInfo = &cli.Command{
 	Name:      "miner-info",
 	Usage:     "Retrieve miner information",
-	ArgsUsage: "[minerAddress]",
+	ArgsUsage: "[coinbase]",
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -110,16 +110,12 @@ var stateMinerInfo = &cli.Command{
 			return err
 		}
 
-		availableBalance, err := api.StateMinerAvailableBalance(ctx, addr, ts.Key())
-		if err != nil {
-			return xerrors.Errorf("getting miner available balance: %w", err)
-		}
 		funds, err := api.StateMinerFunds(ctx, addr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting miner total pledge: %w", err)
 		}
-		fmt.Printf("Available Balance: %s\n", types.EPK(availableBalance))
 		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
+		fmt.Printf("FeeDebt: \t%s\n", types.EPK(funds.FeeDebt))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
 		fmt.Printf("Worker:  \t%s\n", mi.Worker)
 		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)

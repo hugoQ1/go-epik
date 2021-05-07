@@ -57,15 +57,6 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 					return f
 				}
 
-				tagsT := []tag.Mutator{
-					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
-					tag.Insert(metrics.Type, "total"),
-				}
-				tagsA := []tag.Mutator{
-					tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
-					tag.Insert(metrics.Type, "available"),
-				}
-
 				ticker := time.NewTicker(time.Duration(build.BlockDelaySecs) * time.Second)
 				defer ticker.Stop()
 				for {
@@ -78,18 +69,29 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 							log.Warnf("failed to get head: %w", err)
 							continue
 						}
-						ava, err := node.StateMinerAvailableBalance(ctx, address.Address(minerAddress), head.Key())
+
+						mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), head.Key())
 						if err != nil {
-							log.Warnf("failed to get available balance: %w", err)
+							log.Warnf("failed to get minerinfo: %w", err)
 							continue
 						}
-						act, err := node.StateGetActor(ctx, address.Address(minerAddress), head.Key())
+						tagsT := []tag.Mutator{
+							tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
+							tag.Insert(metrics.Type, "total"),
+						}
+						tagsA := []tag.Mutator{
+							tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
+							tag.Insert(metrics.Type, "available"),
+						}
+
+						ci, err := node.StateCoinbase(ctx, mi.Coinbase, head.Key())
 						if err != nil {
-							log.Warnf("failed to get total balance: %w", err)
+							log.Warnf("failed to get coinbase info: %w", err)
 							continue
 						}
-						stats.RecordWithTags(ctx, tagsT, metrics.MinerBalance.M(b2f(act.Balance)))
-						stats.RecordWithTags(ctx, tagsA, metrics.MinerBalance.M(b2f(ava)))
+
+						stats.RecordWithTags(ctx, tagsT, metrics.CoinbaseBalance.M(b2f(ci.Total)))
+						stats.RecordWithTags(ctx, tagsA, metrics.CoinbaseBalance.M(b2f(ci.Vested)))
 					}
 				}
 			}()

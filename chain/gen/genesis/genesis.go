@@ -301,6 +301,15 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 
+	// Create vesting actor
+	vestingact, err := SetupVestingActor(bs)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup vesting actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.VestingActorAddr, vestingact); err != nil {
+		return nil, nil, xerrors.Errorf("set vesting actor: %w", err)
+	}
+
 	// Create pre-allocation actors
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.DefaultGovernorIDAddress, template.DefaultGovernorActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up initial governor: %w", err)

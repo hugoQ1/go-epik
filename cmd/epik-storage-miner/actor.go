@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 
-	cbor "github.com/ipfs/go-ipld-cbor"
-
 	"github.com/fatih/color"
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
@@ -19,10 +17,8 @@ import (
 
 	miner2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/miner"
 
-	"github.com/EpiK-Protocol/go-epik/blockstore"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	lcli "github.com/EpiK-Protocol/go-epik/cli"
@@ -34,8 +30,8 @@ var actorCmd = &cli.Command{
 	Usage: "manipulate the miner actor",
 	Subcommands: []*cli.Command{
 		actorSetAddrsCmd,
-		actorWithdrawCmd,
-		actorRepayDebtCmd,
+		// actorWithdrawCmd,
+		// actorRepayDebtCmd,
 		actorSetPeeridCmd,
 		actorSetOwnerCmd,
 		actorControl,
@@ -187,7 +183,7 @@ var actorSetPeeridCmd = &cli.Command{
 	},
 }
 
-var actorWithdrawCmd = &cli.Command{
+/* var actorWithdrawCmd = &cli.Command{
 	Name:      "withdraw",
 	Usage:     "withdraw available balance",
 	ArgsUsage: "[amount (EPK)]",
@@ -356,7 +352,7 @@ var actorRepayDebtCmd = &cli.Command{
 
 		return nil
 	},
-}
+} */
 
 var actorControl = &cli.Command{
 	Name:  "control",

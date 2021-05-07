@@ -38,6 +38,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/tools/stats"
 )
@@ -635,7 +636,7 @@ type refunderNodeApi interface {
 	/* StateMinerInitialPledgeCollateral(ctx context.Context, addr address.Address, precommitInfo miner.SectorPreCommitInfo, tsk types.TipSetKey) (types.BigInt, error) */
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
 	StateSectorPreCommitInfo(ctx context.Context, addr address.Address, sector abi.SectorNumber, tsk types.TipSetKey) (miner.SectorPreCommitOnChainInfo, error)
-	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	StateCoinbase(context.Context, address.Address, types.TipSetKey) (*vesting.CoinbaseInfo, error)
 	StateMinerSectors(ctx context.Context, addr address.Address, filter *bitfield.BitField, tsk types.TipSetKey) ([]*miner.SectorOnChainInfo, error)
 	StateMinerFaults(ctx context.Context, addr address.Address, tsk types.TipSetKey) (bitfield.BitField, error)
 	StateMinerActives(ctx context.Context, addr address.Address, tsk types.TipSetKey) (bitfield.BitField, error)
@@ -683,11 +684,11 @@ func (r *refunder) FindMiners(ctx context.Context, tipset *types.TipSet, refunds
 			continue
 		}
 
-		minerAvailableBalance, err := r.api.StateMinerAvailableBalance(ctx, maddr, tipset.Key())
-		if err != nil {
-			log.Errorw("failed", "err", err, "height", tipset.Height(), "key", tipset.Key(), "miner", maddr)
-			continue
-		}
+		// minerAvailableBalance, err := r.api.StateMinerAvailableBalance(ctx, maddr, tipset.Key())
+		// if err != nil {
+		// 	log.Errorw("failed", "err", err, "height", tipset.Height(), "key", tipset.Key(), "miner", maddr)
+		// 	continue
+		// }
 
 		// Look up and find all addresses associated with the miner
 		minerInfo, err := r.api.StateMinerInfo(ctx, maddr, tipset.Key())
@@ -726,7 +727,7 @@ func (r *refunder) FindMiners(ctx context.Context, tipset *types.TipSet, refunds
 			}
 		}
 
-		totalAvailableBalance := big.Add(addrSum, minerAvailableBalance)
+		totalAvailableBalance := addrSum //big.Add(addrSum, minerAvailableBalance)
 
 		if totalAvailableBalance.GreaterThanEqual(r.threshold) {
 			continue
@@ -780,11 +781,11 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 			continue
 		}
 
-		minerAvailableBalance, err := r.api.StateMinerAvailableBalance(ctx, maddr, tipset.Key())
-		if err != nil {
-			log.Errorw("failed", "err", err, "height", tipset.Height(), "key", tipset.Key(), "miner", maddr)
-			continue
-		}
+		// minerAvailableBalance, err := r.api.StateMinerAvailableBalance(ctx, maddr, tipset.Key())
+		// if err != nil {
+		// 	log.Errorw("failed", "err", err, "height", tipset.Height(), "key", tipset.Key(), "miner", maddr)
+		// 	continue
+		// }
 
 		// Look up and find all addresses associated with the miner
 		minerInfo, err := r.api.StateMinerInfo(ctx, maddr, tipset.Key())
@@ -829,7 +830,7 @@ func (r *refunder) EnsureMinerMinimums(ctx context.Context, tipset *types.TipSet
 			continue
 		}
 
-		totalAvailableBalance := big.Add(addrSum, minerAvailableBalance)
+		totalAvailableBalance := addrSum // big.Add(addrSum, minerAvailableBalance)
 		balanceCutoff := big.Mul(big.Div(big.NewIntUnsigned(faultsCount), big.NewInt(10)), big.NewIntUnsigned(build.EpkPrecision))
 
 		if totalAvailableBalance.GreaterThan(balanceCutoff) {

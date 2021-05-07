@@ -280,13 +280,13 @@ var chainBalanceStateCmd = &cli.Command{
 					return xerrors.Errorf("failed to compute live sector count: %w", err)
 				}
 
-				funds, err := st.Funds()
-				if err != nil {
-					return xerrors.Errorf("failed to compute locked funds: %w", err)
-				}
+				// funds, err := st.Funds()
+				// if err != nil {
+				// 	return xerrors.Errorf("failed to compute locked funds: %w", err)
+				// }
 
 				/* ai.InitialPledge = types.EPK(lockedFunds.InitialPledgeRequirement) */
-				ai.LockedFunds = types.EPK(funds.VestingFunds)
+				// ai.LockedFunds = types.EPK(funds.VestingFunds)
 				/* ai.PreCommits = types.EPK(lockedFunds.PreCommitDeposits) */
 				ai.Sectors = liveSectorCount
 

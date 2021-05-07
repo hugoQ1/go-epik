@@ -20,6 +20,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -428,8 +429,8 @@ type FullNode interface {
 	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
 	// StateMinerInitialPledgeCollateral returns the initial pledge collateral for the specified miner's sector
 	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
-	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
-	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	// StateCoinbase returns the portion of a miner's balance that can be withdrawn or spent
+	StateCoinbase(context.Context, address.Address, types.TipSetKey) (*vesting.CoinbaseInfo, error)
 	// StateMinerFunds returns the total pledge collateral for mining
 	StateMinerFunds(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)
 	// StateMinerSectorAllocated checks if a sector is allocated

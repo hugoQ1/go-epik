@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"strings"
 
@@ -16,7 +17,10 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vesting"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 )
@@ -36,6 +40,7 @@ var walletCmd = &cli.Command{
 		walletVerify,
 		walletDelete,
 		walletMarket,
+		walletCoinbase,
 	},
 }
 
@@ -684,6 +689,114 @@ var walletMarketAdd = &cli.Command{
 		}
 
 		fmt.Printf("AddBalance message cid: %s\n", smsg)
+
+		return nil
+	},
+}
+
+var walletCoinbase = &cli.Command{
+	Name:  "coinbase",
+	Usage: "Interact with coinbase balances",
+	Subcommands: []*cli.Command{
+		walletCoinbaseWithdraw,
+		walletCoinbaseInfo,
+	},
+}
+
+var walletCoinbaseWithdraw = &cli.Command{
+	Name:      "withdraw",
+	Usage:     "Withdraw funds from the coinbase",
+	ArgsUsage: "[amount (EPK) optional, otherwise will withdraw max available]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "address",
+			Usage:   "Specify coinbase address to withdraw from, otherwise it will use the default wallet address",
+			Aliases: []string{"a"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return xerrors.Errorf("getting node API: %w", err)
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var coinbase address.Address
+		if cctx.String("address") != "" {
+			coinbase, err = address.NewFromString(cctx.String("address"))
+			if err != nil {
+				return xerrors.Errorf("parsing coinbase: %w", err)
+			}
+		} else {
+			coinbase, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return xerrors.Errorf("getting default wallet address: %w", err)
+			}
+		}
+
+		amount := big.NewInt(math.MaxInt64)
+		if cctx.Args().Present() {
+			f, err := types.ParseEPK(cctx.Args().First())
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+			amount = abi.TokenAmount(f)
+		}
+
+		params, err := actors.SerializeParams(&vesting.WithdrawBalanceParams{
+			AmountRequested: amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VestingActorAddr,
+			From:   coinbase,
+			Value:  types.NewInt(0),
+			Method: builtin.MethodsVesting.WithdrawBalance,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("WithdrawBalance message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var walletCoinbaseInfo = &cli.Command{
+	Name:      "info",
+	Usage:     "Show coinbase info",
+	ArgsUsage: "[coinbase]",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return xerrors.Errorf("getting node API: %w", err)
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		if !cctx.Args().Present() {
+			return xerrors.Errorf("'info' requires one argument, coinbase address")
+		}
+
+		coinbase, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return xerrors.Errorf("parsing coinbase: %w", err)
+		}
+
+		ci, err := api.StateCoinbase(ctx, coinbase, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Coinbase Balance:   %s\n", types.EPK(ci.Total))
+		fmt.Printf("\t Locked:    %s\n", types.EPK(ci.Vesting))
+		fmt.Printf("\t Available: %s\n", types.EPK(ci.Vested))
 
 		return nil
 	},

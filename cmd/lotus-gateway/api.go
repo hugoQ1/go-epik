@@ -8,6 +8,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
@@ -67,7 +68,7 @@ type gatewayDepsAPI interface {
 	StateMinerRecoveries(context.Context, address.Address, types.TipSetKey) (bitfield.BitField, error)
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
 	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]api.Deadline, error)
-	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	StateCoinbase(context.Context, address.Address, types.TipSetKey) (*vesting.CoinbaseInfo, error)
 	StateMinerFunds(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)
 	StateMinerProvingDeadline(context.Context, address.Address, types.TipSetKey) (*dline.Info, error)
 	StateCirculatingSupply(context.Context, types.TipSetKey) (abi.TokenAmount, error)
@@ -368,11 +369,11 @@ func (a *GatewayAPI) StateMinerDeadlines(ctx context.Context, m address.Address,
 	return a.api.StateMinerDeadlines(ctx, m, tsk)
 }
 
-func (a *GatewayAPI) StateMinerAvailableBalance(ctx context.Context, m address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+func (a *GatewayAPI) StateCoinbase(ctx context.Context, m address.Address, tsk types.TipSetKey) (*vesting.CoinbaseInfo, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
-		return types.BigInt{}, err
+		return nil, err
 	}
-	return a.api.StateMinerAvailableBalance(ctx, m, tsk)
+	return a.api.StateCoinbase(ctx, m, tsk)
 }
 
 func (a *GatewayAPI) StateMinerFunds(ctx context.Context, m address.Address, tsk types.TipSetKey) (miner.Funds, error) {

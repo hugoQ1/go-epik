@@ -30,6 +30,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
@@ -1229,33 +1230,23 @@ func (a *StateAPI) StateMinerInitialPledgeCollateral(ctx context.Context, maddr 
 	return types.BigDiv(types.BigMul(initialPledge, initialPledgeNum), initialPledgeDen), nil
 } */
 
-func (a *StateAPI) StateMinerAvailableBalance(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (types.BigInt, error) {
+func (a *StateAPI) StateCoinbase(ctx context.Context, coinbase address.Address, tsk types.TipSetKey) (*vesting.CoinbaseInfo, error) {
 	ts, err := a.Chain.GetTipSetFromKey(tsk)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
 	}
 
-	act, err := a.StateManager.LoadActor(ctx, maddr, ts)
+	act, err := a.StateManager.LoadActor(ctx, builtin.VestingActorAddr, ts)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("failed to load miner actor: %w", err)
+		return nil, xerrors.Errorf("failed to load miner actor: %w", err)
 	}
 
-	mas, err := miner.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
+	vas, err := vesting.Load(a.StateManager.ChainStore().ActorStore(ctx), act)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("failed to load miner actor state: %w", err)
+		return nil, xerrors.Errorf("failed to load miner actor state: %w", err)
 	}
 
-	vested, err := mas.VestedFunds(ts.Height())
-	if err != nil {
-		return types.EmptyInt, err
-	}
-
-	abal, err := mas.AvailableBalance(act.Balance)
-	if err != nil {
-		return types.EmptyInt, err
-	}
-
-	return types.BigAdd(abal, vested), nil
+	return vas.Coinbase(coinbase, ts.Height())
 }
 
 func (a *StateAPI) StateMinerFunds(ctx context.Context, maddr address.Address, tsk types.TipSetKey) (miner.Funds, error) {
