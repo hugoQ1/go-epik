@@ -45,6 +45,11 @@ func (s *state3) SettlingAt() (abi.ChainEpoch, error) {
 	return s.State.SettlingAt, nil
 }
 
+// Amount of channel received
+func (s *state3) Received() (abi.TokenAmount, error) {
+	return s.State.Received, nil
+}
+
 // Amount successfully redeemed through the payment channel, paid out on `Collect()`
 func (s *state3) ToSend() (abi.TokenAmount, error) {
 	return s.State.ToSend, nil

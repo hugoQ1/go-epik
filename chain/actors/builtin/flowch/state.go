@@ -47,6 +47,9 @@ type State interface {
 	// Height at which the channel can be `Collected`
 	SettlingAt() (abi.ChainEpoch, error)
 
+	// Amount of channel received
+	Received() (abi.TokenAmount, error)
+
 	// Amount successfully redeemed through the payment channel, paid out on `Collect()`
 	ToSend() (abi.TokenAmount, error)
 

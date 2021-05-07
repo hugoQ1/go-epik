@@ -181,7 +181,7 @@ func (ca *channelAccessor) checkVoucherValidUnlocked(ctx context.Context, ch add
 	}
 
 	// Load payment channel actor state
-	act, pchState, err := ca.sa.loadFlowchActorState(ctx, ch)
+	_, pchState, err := ca.sa.loadFlowchActorState(ctx, ch)
 	if err != nil {
 		return nil, err
 	}
@@ -260,8 +260,12 @@ func (ca *channelAccessor) checkVoucherValidUnlocked(ctx context.Context, ch add
 	}
 
 	// Total required balance must not exceed actor balance
-	if act.Balance.LessThan(totalRedeemed) {
-		return nil, newErrInsufficientFunds(types.BigSub(totalRedeemed, act.Balance))
+	balance, err := pchState.Received()
+	if err != nil {
+		return nil, err
+	}
+	if balance.LessThan(totalRedeemed) {
+		return nil, newErrInsufficientFunds(types.BigSub(totalRedeemed, balance))
 	}
 
 	if len(sv.Merges) != 0 {

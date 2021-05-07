@@ -461,7 +461,7 @@ func (ca *channelAccessor) waitFlowchCreateMsg(channelID string, mcid cid.Cid) e
 
 // addFunds sends a message to add funds to the channel and returns the message cid
 func (ca *channelAccessor) addFunds(ctx context.Context, channelInfo *ChannelInfo, amt types.BigInt) (*cid.Cid, error) {
-	mb, err := ca.messageBuilder(ctx, ca.from)
+	mb, err := ca.messageBuilder(ctx, channelInfo.Control)
 	if err != nil {
 		return nil, err
 	}
