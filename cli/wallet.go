@@ -771,7 +771,13 @@ var walletCoinbaseWithdraw = &cli.Command{
 var walletCoinbaseInfo = &cli.Command{
 	Name:      "info",
 	Usage:     "Show coinbase info",
-	ArgsUsage: "[coinbase]",
+	ArgsUsage: "[coinbase optional, default the wallet address]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "tipset",
+			Usage: "specify tipset to call method on (pass comma separated array of cids)",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -780,16 +786,30 @@ var walletCoinbaseInfo = &cli.Command{
 		defer closer()
 		ctx := ReqContext(cctx)
 
+		var coinbase address.Address
 		if !cctx.Args().Present() {
-			return xerrors.Errorf("'info' requires one argument, coinbase address")
+			coinbase, err = api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return xerrors.Errorf("getting default wallet address: %w", err)
+			}
+		} else {
+			coinbase, err = address.NewFromString(cctx.Args().First())
+			if err != nil {
+				return xerrors.Errorf("parsing coinbase: %w", err)
+			}
 		}
 
-		coinbase, err := address.NewFromString(cctx.Args().First())
+		ts, err := LoadTipSet(ctx, cctx, api)
 		if err != nil {
-			return xerrors.Errorf("parsing coinbase: %w", err)
+			return err
 		}
 
-		ci, err := api.StateCoinbase(ctx, coinbase, types.EmptyTSK)
+		ida, err := api.StateLookupID(ctx, coinbase, ts.Key())
+		if err != nil {
+			return xerrors.Errorf("looking up id address: %w", err)
+		}
+
+		ci, err := api.StateCoinbase(ctx, ida, ts.Key())
 		if err != nil {
 			return err
 		}
