@@ -1222,7 +1222,9 @@ var clientRetrieveDealCmd = &cli.Command{
 		fmt.Printf("Retrieve Miner: %s\n", deal.MinerWallet)
 		fmt.Printf("Retrieve Status: %s\n", retrievalmarket.DealStatuses[deal.Status])
 		fmt.Printf("Retrieve Message: %s\n", deal.Message)
-		fmt.Printf("Retrieve WaitMsgCID: %s\n", deal.WaitMsgCID.String())
+		if deal.WaitMsgCID != nil {
+			fmt.Printf("Retrieve WaitMsgCID: %s\n", deal.WaitMsgCID.String())
+		}
 		return nil
 	},
 }
