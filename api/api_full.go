@@ -1197,6 +1197,7 @@ type RetrievalDeal struct {
 	MinerWallet  address.Address
 	Status       retrievalmarket.DealStatus
 	Message      string
+	WaitMsgCID   *cid.Cid // the CID of any message the client deal is waiting for
 }
 
 type MsigTransaction struct {

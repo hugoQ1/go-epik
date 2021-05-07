@@ -1173,6 +1173,7 @@ func convertRetrieveState(state *rm.ClientDealState) *api.RetrievalDeal {
 		MinerWallet:  state.MinerWallet,
 		Status:       state.Status,
 		Message:      state.Message,
+		WaitMsgCID:   state.WaitMsgCID,
 	}
 }
 
