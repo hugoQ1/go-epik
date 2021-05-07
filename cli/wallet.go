@@ -815,7 +815,7 @@ var walletCoinbaseInfo = &cli.Command{
 		}
 
 		fmt.Printf("Coinbase Balance:   %s\n", types.EPK(ci.Total))
-		fmt.Printf("\t Locked:    %s\n", types.EPK(ci.Vesting))
+		fmt.Printf("\t Vesting:   %s\n", types.EPK(ci.Vesting))
 		fmt.Printf("\t Available: %s\n", types.EPK(ci.Vested))
 
 		return nil
