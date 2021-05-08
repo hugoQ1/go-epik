@@ -6,7 +6,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	expert2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
@@ -73,12 +72,12 @@ func (s *state2) Data(pieceCID cid.Cid) (*DataOnChainInfo, error) {
 	}
 
 	var info DataOnChainInfo
-	found, err := datas.Get(abi.CidKey(pieceCID), &info)
+	found, err := datas.Get(adt2.StringKey(pieceCID.String()), &info)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get expert data %s: %w", pieceCID, err)
 	}
 	if !found {
-		return nil, nil
+		return nil, xerrors.Errorf("failed to found expert data: %s", pieceCID)
 	}
 	return &info, nil
 }
