@@ -61,7 +61,7 @@ var genesisNewCmd = &cli.Command{
 
 			TeamAccountActor:        gen.DefaultTeamAccountActor,
 			FoundationAccountActor:  gen.DefaultFoundationAccountActor,
-			FundraisingAccountActor: gen.DefaultFundraisingAccountActor,
+			InvestorAccountActor:    gen.DefaultInvestorAccountActor,
 			DefaultGovernorActor:    gen.DefaultGovernorActor,
 			DefaultExpertActor:      gen.DefaultExpertActor,
 			DefaultKgFundPayeeActor: gen.DefaultKgFundPayeeActor,

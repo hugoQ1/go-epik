@@ -153,19 +153,19 @@ func RunCheckRewards(t *TestEnvironment, ctx context.Context, genesisAccounts []
 
 	initTeam := f(builtin.TeamIDAddress, genTs.Key())
 	initFoundation := f(builtin.FoundationIDAddress, genTs.Key())
-	initFundraising := f(builtin.FundraisingIDAddress, genTs.Key())
-	t.RecordMessage("genesis alloc balance: team %s, foundation %s, fundraising %s", types.EPK(initTeam), types.EPK(initFoundation), types.EPK(initFundraising))
+	initInvestor := f(builtin.InvestorIDAddress, genTs.Key())
+	t.RecordMessage("genesis alloc balance: team %s, foundation %s, investor %s", types.EPK(initTeam), types.EPK(initFoundation), types.EPK(initInvestor))
 
 	initCirc, err := client.StateVMCirculatingSupplyInternal(ctx, genTs.Key())
 	if err != nil {
 		panic(err)
 	}
 	t.RecordMessage("@%d vested %s, circ %s, pledge %s", genTs.Height(), types.EPK(initCirc.EpkVested), types.EPK(initCirc.EpkCirculating), types.EPK(initCirc.TotalRetrievalPledge))
-	t.RecordMessage("genesis alloc vested: team %s, foundation %s, fundraising %s",
-		types.EPK(initCirc.EpkTeamVested), types.EPK(initCirc.EpkFoundationVested), types.EPK(initCirc.EpkFundraisingVested))
+	t.RecordMessage("genesis alloc vested: team %s, foundation %s, investor %s",
+		types.EPK(initCirc.EpkTeamVested), types.EPK(initCirc.EpkFoundationVested), types.EPK(initCirc.EpkInvestorVested))
 
 	// Expect: genesis vested funds is zero
-	RequireEquals(initCirc.EpkVested, big.Sum(initCirc.EpkTeamVested, initCirc.EpkFoundationVested, initCirc.EpkFundraisingVested), genTs, "genesis vested")
+	RequireEquals(initCirc.EpkVested, big.Sum(initCirc.EpkTeamVested, initCirc.EpkFoundationVested, initCirc.EpkInvestorVested), genTs, "genesis vested")
 
 	height := 0
 	headlag := 3
@@ -202,7 +202,7 @@ func RunCheckRewards(t *TestEnvironment, ctx context.Context, genesisAccounts []
 			panic(err)
 		}
 
-		actualVested := big.Sum(circ.EpkTeamVested, circ.EpkFoundationVested, circ.EpkFundraisingVested)
+		actualVested := big.Sum(circ.EpkTeamVested, circ.EpkFoundationVested, circ.EpkInvestorVested)
 		curTsBalance := big.Zero()
 		for _, ga := range genesisAccounts {
 			curTsBalance = big.Add(curTsBalance, f(ga, tipset.Key()))
@@ -211,7 +211,7 @@ func RunCheckRewards(t *TestEnvironment, ctx context.Context, genesisAccounts []
 			actualVested = big.Add(actualVested, big.Sub(genesisAccountsBalance, curTsBalance))
 		}
 
-		// Expect: total vested == alloc vested (team/foundation/fundraising) + genesis account paid out (clients & miners)
+		// Expect: total vested == alloc vested (team/foundation/investor) + genesis account paid out (clients & miners)
 		RequireEquals(circ.EpkVested, actualVested, tipset, "total vested")
 		if lastCirc != nil {
 			RequireGreaterThan(circ.EpkVested, lastCirc.EpkVested, tipset, "total vested inc")

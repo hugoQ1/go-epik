@@ -314,8 +314,8 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.DefaultGovernorIDAddress, template.DefaultGovernorActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up initial governor: %w", err)
 	}
-	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FundraisingIDAddress, template.FundraisingAccountActor, keyIDs); err != nil {
-		return nil, nil, xerrors.Errorf("failed to set up fundraising account: %w", err)
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.InvestorIDAddress, template.InvestorAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up investor account: %w", err)
 	}
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.TeamIDAddress, template.TeamAccountActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up team account: %w", err)

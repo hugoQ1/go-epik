@@ -55,8 +55,8 @@ var DefaultFoundationAccountActor = genesis.Actor{
 	}).ActorMeta(),
 }
 
-// fundraising
-var DefaultFundraisingAccountActor = genesis.Actor{
+// investor
+var DefaultInvestorAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
 	Balance: types.FromEpk(200_000_000), //  200M
 	Meta: (&genesis.MultisigMeta{

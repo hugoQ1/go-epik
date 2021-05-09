@@ -1309,11 +1309,11 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
 func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (
-	vf, team, foundation, fundraising abi.TokenAmount, err error) {
+	vf, team, foundation, investor abi.TokenAmount, err error) {
 	vf = big.Zero()
 	team = big.Zero()
 	foundation = big.Zero()
-	fundraising = big.Zero()
+	investor = big.Zero()
 	/* if height <= build.UpgradeIgnitionHeight {
 		for _, v := range sm.preIgnitionGenInfos.genesisMsigs {
 			au := big.Sub(v.InitialBalance, v.AmountLocked(height))
@@ -1336,8 +1336,8 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 			team = au
 		case builtin.FoundationIDAddress:
 			foundation = au
-		case builtin.FundraisingIDAddress:
-			fundraising = au
+		case builtin.InvestorIDAddress:
+			investor = au
 		default:
 		}
 	}
@@ -1503,7 +1503,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup genesis information: %w", err)
 		}
 	}
-	epkVested, team, foundation, fundraising, err := sm.GetEpkVested(ctx, height, st)
+	epkVested, team, foundation, investor, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)
 	}
@@ -1549,7 +1549,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 		EpkVested:            epkVested,
 		EpkTeamVested:        team,
 		EpkFoundationVested:  foundation,
-		EpkFundraisingVested: fundraising,
+		EpkInvestorVested:    investor,
 		EpkMined:             epkMined,
 		EpkBurnt:             epkBurnt,
 		EpkLocked:            epkLocked,

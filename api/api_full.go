@@ -1057,7 +1057,7 @@ type CirculatingSupply struct {
 	EpkVested            abi.TokenAmount
 	EpkTeamVested        abi.TokenAmount
 	EpkFoundationVested  abi.TokenAmount
-	EpkFundraisingVested abi.TokenAmount
+	EpkInvestorVested    abi.TokenAmount
 	EpkMined             abi.TokenAmount
 	EpkBurnt             abi.TokenAmount
 	EpkLocked            abi.TokenAmount

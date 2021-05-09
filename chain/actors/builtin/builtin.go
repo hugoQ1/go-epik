@@ -20,7 +20,7 @@ var CronActorAddr = builtin.CronActorAddr
 
 var (
 	FoundationIDAddress      = makeAddress("t080")
-	FundraisingIDAddress     = makeAddress("t081")
+	InvestorIDAddress        = makeAddress("t081")
 	TeamIDAddress            = makeAddress("t082")
 	DefaultGovernorIDAddress = makeAddress("t083")
 )

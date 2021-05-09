@@ -222,7 +222,7 @@ func NewGeneratorWithSectors(numSectors int) (*ChainGen, error) {
 
 		TeamAccountActor:        DefaultTeamAccountActor,
 		FoundationAccountActor:  DefaultFoundationAccountActor,
-		FundraisingAccountActor: DefaultFundraisingAccountActor,
+		InvestorAccountActor:    DefaultInvestorAccountActor,
 		DefaultGovernorActor:    DefaultGovernorActor,
 		DefaultExpertActor:      DefaultExpertActor,
 		DefaultKgFundPayeeActor: DefaultKgFundPayeeActor,

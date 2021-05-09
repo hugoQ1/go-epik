@@ -100,7 +100,7 @@ func PrepareBootstrapper(t *TestEnvironment) (*Bootstrapper, error) {
 		Timestamp:               uint64(time.Now().Unix()) - uint64(t.IntParam("genesis_timestamp_offset")),
 		TeamAccountActor:        gen.DefaultTeamAccountActor,
 		FoundationAccountActor:  gen.DefaultFoundationAccountActor,
-		FundraisingAccountActor: gen.DefaultFundraisingAccountActor,
+		InvestorAccountActor:    gen.DefaultInvestorAccountActor,
 		DefaultGovernorActor:    gen.DefaultGovernorActor,
 		DefaultExpertActor:      gen.DefaultExpertActor,
 		DefaultKgFundPayeeActor: gen.DefaultKgFundPayeeActor,

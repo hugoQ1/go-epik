@@ -1712,7 +1712,7 @@ var stateCircSupplyCmd = &cli.Command{
 			fmt.Println("Mined: ", types.EPK(circ.EpkMined))
 			fmt.Println("Total vested: ", types.EPK(circ.EpkVested))
 			fmt.Println("Foundation vested: ", types.EPK(circ.EpkFoundationVested))
-			fmt.Println("Fundraising vested: ", types.EPK(circ.EpkFundraisingVested))
+			fmt.Println("Investor vested: ", types.EPK(circ.EpkInvestorVested))
 			fmt.Println("Team vested: ", types.EPK(circ.EpkTeamVested))
 			fmt.Println("Burnt: ", types.EPK(circ.EpkBurnt))
 			fmt.Println("Locked: ", types.EPK(circ.EpkLocked))
