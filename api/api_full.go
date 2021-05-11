@@ -361,7 +361,7 @@ type FullNode interface {
 	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
 	// ClientRetrievePledge retrieval pledge amount
-	ClientRetrievePledge(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
 	// ClientRetrieveBind retrieval bind miners, if reverse, unbind the miners
 	ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)

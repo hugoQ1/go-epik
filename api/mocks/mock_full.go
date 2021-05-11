@@ -836,9 +836,9 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieveListDeals(arg0 interface{}) *g
 }
 
 // ClientRetrievePledge mocks base method
-func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.Address, arg2 big.Int) (cid.Cid, error) {
+func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.Address, arg2 address.Address, arg3 big.Int) (cid.Cid, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(cid.Cid)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -854,15 +854,15 @@ func (m *MockFullNode) ClientRetrieveBind(arg0 context.Context, arg1 address.Add
 }
 
 // ClientRetrievePledge indicates an expected call of ClientRetrievePledge
-func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
 }
 
 // ClientRetrieveBind indicates an expected call of ClientRetrieveBind
-func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
 }
 
 // ClientRetrieveQuery mocks base method

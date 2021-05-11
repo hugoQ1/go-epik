@@ -21,7 +21,7 @@ import (
 
 var flowchCmd = &cli.Command{
 	Name:  "flowch",
-	Usage: "Manage payment channels",
+	Usage: "Manage flowch channels",
 	Subcommands: []*cli.Command{
 		flowchAddFundsCmd,
 		flowchListCmd,

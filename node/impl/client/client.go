@@ -1286,9 +1286,9 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 	return a.ClientRetrieveGetDeal(ctx, dealID)
 }
 
-func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.PledgeParams{
-		Address: wallet,
+		Address: target,
 		Miners:  miners,
 	})
 	if err != nil {
