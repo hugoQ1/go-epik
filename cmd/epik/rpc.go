@@ -36,6 +36,8 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 	serverOptions := make([]jsonrpc.ServerOption, 0)
 	if maxRequestSize != 0 { // config set
 		serverOptions = append(serverOptions, jsonrpc.WithMaxRequestSize(maxRequestSize))
+	} else {
+		serverOptions = append(serverOptions, jsonrpc.WithMaxRequestSize(2<<20)) // 2 MiB
 	}
 	rpcServer := jsonrpc.NewServer(serverOptions...)
 	rpcServer.Register("EpiK", apistruct.PermissionedFullAPI(metrics.MetricedFullAPI(a)))
