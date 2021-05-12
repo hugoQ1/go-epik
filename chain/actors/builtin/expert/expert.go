@@ -41,6 +41,7 @@ type State interface {
 	Data(cid.Cid) (*DataOnChainInfo, error)
 }
 
+type BatchImportDataParams = expert2.BatchImportDataParams
 type ImportDataParams = expert2.ImportDataParams
 type DataOnChainInfo = expert2.DataOnChainInfo
 

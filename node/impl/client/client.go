@@ -581,10 +581,14 @@ func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRe
 		return nil, xerrors.Errorf("failed to get expert info: %w", err)
 	}
 
-	expertParams, err := actors.SerializeParams(&expert.ImportDataParams{
-		RootID:    params.RootID,
-		PieceID:   params.PieceID,
-		PieceSize: params.PieceSize,
+	expertParams, err := actors.SerializeParams(&expert.BatchImportDataParams{
+		Datas: []expert.ImportDataParams{
+			expert.ImportDataParams{
+				RootID:    params.RootID,
+				PieceID:   params.PieceID,
+				PieceSize: params.PieceSize,
+			},
+		},
 	})
 	if err != nil {
 		return nil, xerrors.Errorf("serializing params failed: %w", err)
