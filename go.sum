@@ -43,8 +43,12 @@ github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2 h
 github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2/go.mod h1:mvjZ+C3NkBX10JP4JMu27DCjUouHFjHwUGh+Xc4yvDA=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210507171235-0fd92034a680 h1:g8hQNq7y2roevT35/1cnsdd4qFWu/FNfTjvreIFiXlk=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210507171235-0fd92034a680/go.mod h1:MDNBURdS1GXdcm4O5LTCINJMBzgnyoX4BNcOD60h0m8=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210512064730-dc858e4a8bd1 h1:nmXBK+hJdApYKSGfguQZp8TDIWjDyAqJe+5R47l6ees=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210512064730-dc858e4a8bd1/go.mod h1:MDNBURdS1GXdcm4O5LTCINJMBzgnyoX4BNcOD60h0m8=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210506195917-44a1ad3eedf7 h1:0BeHAv1N8ULbPrn3ZAvzUo2EK5NybqdQHwVxFJTuQPE=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210506195917-44a1ad3eedf7/go.mod h1:7txidnb06bkghGtH12ymLjo913VfIMnitMOBfltzlUY=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118 h1:II8x29L9VUs/GaUgXG2XZX9kBGGzz2TdodC81WJ0niU=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118/go.mod h1:s2BsE4KJ4BcK4hThWCMqKXKQ36YVAPt46kyxxNyHczc=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4 h1:VqXg3SYH5FlHLclagcT6oIQ9r1knlcvKe/OF02/dT08=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4/go.mod h1:kmKOGzuaPgIShW+JiPnALWb59tLkTkfWBrUr79JJzCk=
 github.com/GeertJohan/go.incremental v1.0.0 h1:7AH+pY1XUgQE4Y1HcXYaMqAI0m9yrFqo/jt0CW30vsg=
@@ -254,11 +258,14 @@ github.com/fatih/color v1.8.0/go.mod h1:3l45GVGkyrnYNl9HoIjnp2NnNWvh6hLAqD8yTfGj
 github.com/fatih/color v1.9.0 h1:8xPHl4/q1VyqGIPif1F+1V3Y3lSmrq01EabUW3CoW5s=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
 github.com/fd/go-nat v1.0.0/go.mod h1:BTBu/CKvMmOMUPkKVef1pngt2WFH/lg7E6yQnulfp6E=
+github.com/filecoin-project/go-address v0.0.2-0.20200218010043-eb9bb40ed5be/go.mod h1:SAOwJoakQ8EPjwNIsiakIQKsoKdkcbx8U3IapgCg9R0=
 github.com/filecoin-project/go-address v0.0.3/go.mod h1:jr8JxKsYx+lQlQZmF5i2U0Z+cGQ59wMIps/8YW/lDj8=
 github.com/filecoin-project/go-address v0.0.5 h1:SSaFT/5aLfPXycUlFyemoHYhRgdyXClXCyDdNJKPlDM=
 github.com/filecoin-project/go-address v0.0.5/go.mod h1:jr8JxKsYx+lQlQZmF5i2U0Z+cGQ59wMIps/8YW/lDj8=
+github.com/filecoin-project/go-amt-ipld/v2 v2.0.1-0.20200131012142-05d80eeccc5e/go.mod h1:boRtQhzmxNocrMxOXo1NYn4oUc1NGvR8tEa79wApNXg=
 github.com/filecoin-project/go-amt-ipld/v3 v3.0.0 h1:Ou/q82QeHGOhpkedvaxxzpBYuqTxLCcj5OChkDNx4qc=
 github.com/filecoin-project/go-amt-ipld/v3 v3.0.0/go.mod h1:Qa95YNAbtoVCTSVtX38aAC1ptBnJfPma1R/zZsKmx4o=
+github.com/filecoin-project/go-bitfield v0.0.0-20200416002808-b3ee67ec9060/go.mod h1:iodsLxOFZnqKtjj2zkgqzoGNrv6vUqj69AT/J8DKXEw=
 github.com/filecoin-project/go-bitfield v0.2.3/go.mod h1:CNl9WG8hgR5mttCnUErjcQjGvuiZjRqK9rHVBsQF4oM=
 github.com/filecoin-project/go-bitfield v0.2.4 h1:uZ7MeE+XfM5lqrHJZ93OnhQKc/rveW8p9au0C68JPgk=
 github.com/filecoin-project/go-bitfield v0.2.4/go.mod h1:CNl9WG8hgR5mttCnUErjcQjGvuiZjRqK9rHVBsQF4oM=
@@ -294,6 +301,8 @@ github.com/filecoin-project/go-statestore v0.1.1-0.20210311122610-6c7a5aedbdea h
 github.com/filecoin-project/go-statestore v0.1.1-0.20210311122610-6c7a5aedbdea/go.mod h1:LFc9hD+fRxPqiHiaqUEZOinUJB4WARkRfNl10O7kTnI=
 github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b h1:fkRZSPrYpk42PV3/lIXiL0LHetxde7vyYYvSsttQtfg=
 github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b/go.mod h1:Q0GQOBtKf1oE10eSXSlhN45kDBdGvEcVOqMiffqX+N8=
+github.com/filecoin-project/specs-actors v1.0.0 h1:H0G6n2R8MnfvYuI0irmY7Bj5FI/JHUxnIldg/YX472I=
+github.com/filecoin-project/specs-actors v1.0.0/go.mod h1:nQYnFbQ7Y0bHZyq6HDEuVlCPR+U3z5Q3wMOQ+2aiV+Y=
 github.com/filecoin-project/test-vectors/schema v0.0.5 h1:w3zHQhzM4pYxJDl21avXjOKBLF8egrvwUwjpT8TquDg=
 github.com/filecoin-project/test-vectors/schema v0.0.5/go.mod h1:iQ9QXLpYWL3m7warwvK1JC/pTri8mnfEmKygNDqqY6E=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
@@ -574,6 +583,7 @@ github.com/ipfs/go-graphsync v0.1.0/go.mod h1:jMXfqIEDFukLPZHqDPp8tJMbHO9Rmeb9CE
 github.com/ipfs/go-graphsync v0.5.2/go.mod h1:e2ZxnClqBBYAtd901g9vXMJzS47labjAtOzsWtOzKNk=
 github.com/ipfs/go-graphsync v0.6.0 h1:x6UvDUGA7wjaKNqx5Vbo7FGT8aJ5ryYA0dMQ5jN3dF0=
 github.com/ipfs/go-graphsync v0.6.0/go.mod h1:e2ZxnClqBBYAtd901g9vXMJzS47labjAtOzsWtOzKNk=
+github.com/ipfs/go-hamt-ipld v0.0.15-0.20200131012125-dd88a59d3f2e/go.mod h1:9aQJu/i/TaRDW6jqB5U217dLIDopn50wxLdHXM2CTfE=
 github.com/ipfs/go-ipfs-blockstore v0.0.1/go.mod h1:d3WClOmRQKFnJ0Jz/jj/zmksX0ma1gROTlovZKBmN08=
 github.com/ipfs/go-ipfs-blockstore v0.1.0/go.mod h1:5aD0AvHPi7mZc6Ci1WCAhiBQu2IsfTduLl+422H6Rqw=
 github.com/ipfs/go-ipfs-blockstore v0.1.4/go.mod h1:Jxm3XMVjh6R17WvxFEiyKBLUGr86HgIYJW/D/MwqeYQ=

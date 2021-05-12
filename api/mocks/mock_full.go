@@ -866,18 +866,18 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2, arg3 in
 }
 
 // ClientRetrieveQuery mocks base method
-func (m *MockFullNode) ClientRetrieveQuery(arg0 context.Context, arg1 cid.Cid, arg2 *cid.Cid, arg3 address.Address) (*api.RetrievalDeal, error) {
+func (m *MockFullNode) ClientRetrieveQuery(arg0 context.Context, arg1 address.Address, arg2 cid.Cid, arg3 *cid.Cid, arg4 address.Address) (*api.RetrievalDeal, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrieveQuery", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "ClientRetrieveQuery", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*api.RetrievalDeal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClientRetrieveQuery indicates an expected call of ClientRetrieveQuery
-func (mr *MockFullNodeMockRecorder) ClientRetrieveQuery(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrieveQuery(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveQuery", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveQuery), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveQuery", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveQuery), arg0, arg1, arg2, arg3, arg4)
 }
 
 // ClientRetrieveTryRestartInsufficientFunds mocks base method

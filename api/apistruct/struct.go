@@ -194,7 +194,7 @@ type FullNodeStruct struct {
 		ClientRetrieveGetDeal                     func(ctx context.Context, dealID retrievalmarket.DealID) (*api.RetrievalDeal, error)                                                         `perm:"read"`
 		ClientRetrieveListDeals                   func(ctx context.Context) (map[retrievalmarket.DealID]*api.RetrievalDeal, error)                                                             `perm:"read"`
 		ClientRemove                              func(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)                                                             `perm:"admin"`
-		ClientRetrieveQuery                       func(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)                                   `perm:"read"`
+		ClientRetrieveQuery                       func(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)           `perm:"read"`
 		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) `perm:"admin"`
 		ClientRetrieveBind                        func(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)                                   `perm:"admin"`
 		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                                                   `perm:"admin"`
@@ -745,8 +745,8 @@ func (c *FullNodeStruct) ClientRemove(ctx context.Context, root cid.Cid, wallet 
 	return c.Internal.ClientRemove(ctx, root, wallet)
 }
 
-func (c *FullNodeStruct) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
-	return c.Internal.ClientRetrieveQuery(ctx, root, piece, miner)
+func (c *FullNodeStruct) ClientRetrieveQuery(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
+	return c.Internal.ClientRetrieveQuery(ctx, wallet, root, piece, miner)
 }
 
 func (c *FullNodeStruct) ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {

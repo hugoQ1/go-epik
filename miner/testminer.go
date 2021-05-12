@@ -6,12 +6,12 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	ds "github.com/ipfs/go-datastore"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/gen/slashfilter"
 	"github.com/EpiK-Protocol/go-epik/journal"
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 )
 
 type MineReq struct {
@@ -49,7 +49,7 @@ func NewTestMiner(nextCh <-chan MineReq, addr address.Address) func(api.FullNode
 			journal:           journal.NilJournal(),
 			minerData: &MinerData{
 				api:        api,
-				address:    addr,
+				miner:      addr,
 				dataRefs:   data,
 				retrievals: retrievals,
 				deals:      deals,

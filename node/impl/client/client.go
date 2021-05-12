@@ -1225,10 +1225,13 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return cid.Undef, nil
 }
 
-func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
-	payer, err := a.WalletDefaultAddress(ctx)
-	if err != nil {
-		return nil, err
+func (a *API) ClientRetrieveQuery(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
+	if wallet == address.Undef {
+		payer, err := a.WalletDefaultAddress(ctx)
+		if err != nil {
+			return nil, err
+		}
+		wallet = payer
 	}
 
 	// offers, err := a.ClientFindData(ctx, root)
@@ -1248,7 +1251,7 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 		return nil, xerrors.Errorf("query offer failed:%s", offer.Err)
 	}
 
-	order := offer.Order(payer)
+	order := offer.Order(wallet)
 	if order.Size == 0 {
 		return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")
 	}

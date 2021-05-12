@@ -358,7 +358,7 @@ type FullNode interface {
 	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
 
 	// ClientRetrieveQuery query file status by file root or retrieve id
-	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
+	ClientRetrieveQuery(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
 	// ClientRetrievePledge retrieval pledge amount
 	ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error)

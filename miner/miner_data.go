@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/EpiK-Protocol/go-epik/api"
+	mineractor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 
 	"github.com/filecoin-project/go-address"
@@ -52,8 +53,9 @@ type DataRef struct {
 type MinerData struct {
 	api api.FullNode
 
-	lk      sync.Mutex
-	address address.Address
+	lk        sync.Mutex
+	miner     address.Address
+	minerInfo mineractor.MinerInfo
 
 	stop     chan struct{}
 	stopping chan struct{}
@@ -76,7 +78,7 @@ func newMinerData(api api.FullNode, addr address.Address) *MinerData {
 	}
 	return &MinerData{
 		api:                api,
-		address:            addr,
+		miner:              addr,
 		dataRefs:           data,
 		retrievals:         nil,
 		deals:              nil,
@@ -195,6 +197,11 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 }
 
 func (m *MinerData) loadRetrievalData(ctx context.Context) (*lru.ARCCache, error) {
+	info, err := m.api.StateMinerInfo(ctx, m.miner, types.EmptyTSK)
+	if err != nil {
+		return nil, err
+	}
+	m.minerInfo = info
 	retrievals, err := lru.NewARC(RetrieveParallelNum * 2)
 	if err != nil {
 		return nil, err
@@ -278,7 +285,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
 			log.Errorf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
@@ -318,7 +325,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		}
 
 		miner := addrs[rand.Intn(len(addrs))]
-		deal, err := m.api.ClientRetrieveQuery(ctx, data.rootCID, &data.pieceID, miner)
+		deal, err := m.api.ClientRetrieveQuery(ctx, m.minerInfo.Owner, data.rootCID, &data.pieceID, miner)
 		if err != nil {
 			data.miners[miner] = data.miners[miner] - MinerPunishmentScore
 			if data.miners[miner] < 1 {
@@ -368,7 +375,7 @@ func (m *MinerData) loadStorageData(ctx context.Context) (*lru.ARCCache, error) 
 		return nil, err
 	}
 	for _, d := range deals {
-		if d.Provider == m.address {
+		if d.Provider == m.miner {
 			dataObj, ok := m.dataRefs.Get(d.PieceCID.String())
 			if ok {
 				isFinish, isDealed := checkDealStatus(&d)
@@ -438,7 +445,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 			continue
 		}
 
-		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.address, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
+		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
 			log.Errorf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
@@ -462,7 +469,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		params := &api.StartDealParams{
 			Data:   stData,
 			Wallet: address.Undef,
-			Miner:  m.address,
+			Miner:  m.miner,
 			/* EpochPrice:        ask.Price,
 			MinBlocksDuration: uint64(ask.Expiry - ts.Height()), */
 			FastRetrieval: true,
@@ -472,7 +479,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 			log.Errorf("failed to start deal: %s", err)
 			continue
 		}
-		log.Warnf("start deal with miner:%s deal: %s", m.address, dealID.String())
+		log.Warnf("start deal with miner:%s deal: %s", m.miner, dealID.String())
 		m.deals.Add(rk, *dealID)
 	}
 	return nil
