@@ -1533,10 +1533,12 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	case expert2.ExpertStateRegistered:
 		info.StatusDesc = "registered"
 	case expert2.ExpertStateUnqualified:
-		info.StatusDesc = fmt.Sprintf("unqualified (no enough votes, disqualified at %d)", defInfo.DisqualifiedAt)
-		info.LostEpoch = -1
 		if defInfo != nil {
+			info.StatusDesc = fmt.Sprintf("unqualified (no enough votes, disqualified at %d)", defInfo.DisqualifiedAt)
 			info.LostEpoch = defInfo.DisqualifiedAt
+		} else {
+			info.StatusDesc = "no enough votes"
+			info.LostEpoch = -1
 		}
 	case expert2.ExpertStateQualified:
 		info.StatusDesc = "qualified"
