@@ -278,7 +278,7 @@ minerLoop:
 			}
 
 			if err := m.sf.MinedBlock(b.Header, base.TipSet.Height()+base.NullRounds, false); err != nil {
-				log.Errorf("<!!> SLASH FILTER ERROR: %s", err)
+				log.Errorf("<!!> SLASH FILTER ERROR: block %d, base %d, null %d, %s", b.Header.Height, base.TipSet.Height(), base.NullRounds, err)
 				continue
 			}
 
