@@ -1562,7 +1562,7 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 			for _, m := range state.BindMiners {
 				miners = miners + "," + m.String()
 			}
-			miners = strings.TrimRight(miners, ",")
+			miners = strings.TrimLeft(miners, ",")
 			fmt.Printf("Bind Miners: %s\n", miners)
 		}
 		return nil
