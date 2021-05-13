@@ -57,6 +57,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
 	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
+	"github.com/EpiK-Protocol/go-epik/flowchmgr"
+	flowsettler "github.com/EpiK-Protocol/go-epik/flowchmgr/settler"
 	"github.com/EpiK-Protocol/go-epik/journal"
 	"github.com/EpiK-Protocol/go-epik/lib/peermgr"
 	_ "github.com/EpiK-Protocol/go-epik/lib/sigs/bls"
@@ -133,6 +135,7 @@ const (
 	HandleIncomingMessagesKey
 	HandleMigrateClientFundsKey
 	HandlePaymentChannelManagerKey
+	HandleFlowChannelManagerKey
 
 	// miner
 	GetParamsKey
@@ -146,6 +149,7 @@ const (
 	ExtractApiKey
 	HeadMetricsKey
 	SettlePaymentChannelsKey
+	SettleFlowChannelsKey
 	RunPeerTaggerKey
 	SetupFallbackBlockstoresKey
 
@@ -313,6 +317,12 @@ var ChainNode = Options(
 	Override(new(*paychmgr.Manager), paychmgr.NewManager),
 	Override(HandlePaymentChannelManagerKey, paychmgr.HandleManager),
 	Override(SettlePaymentChannelsKey, settler.SettlePaymentChannels),
+
+	// Service: Flow channels
+	Override(new(*flowchmgr.Store), flowchmgr.NewStore),
+	Override(new(*flowchmgr.Manager), flowchmgr.NewManager),
+	Override(HandleFlowChannelManagerKey, flowchmgr.HandleManager),
+	Override(SettleFlowChannelsKey, flowsettler.SettlePaymentChannels),
 
 	// Markets (common)
 	Override(new(*discoveryimpl.Local), modules.NewLocalDiscovery),

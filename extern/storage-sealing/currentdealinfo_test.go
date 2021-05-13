@@ -259,6 +259,9 @@ func (mapi *CurrentDealInfoMockAPI) ChainGetMessage(ctx context.Context, c cid.C
 				Data: []byte("foo bar cat dog"),
 				Type: crypto.SigTypeBLS,
 			},
+			DataRef: market2.StorageDataRef{
+				RootCID: dl.Proposal.PieceCID,
+			},
 		})
 	}
 	sort.SliceStable(deals, func(i, j int) bool {

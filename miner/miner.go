@@ -277,8 +277,8 @@ minerLoop:
 					"block-time", btime, "time", build.Clock.Now(), "difference", build.Clock.Since(btime))
 			}
 
-			if err := m.sf.MinedBlock(b.Header, base.TipSet.Height()+base.NullRounds, false); err != nil {
-				log.Errorf("<!!> SLASH FILTER ERROR: %s", err)
+			if err := m.sf.MinedBlock(b.Header, base.TipSet.Height()+base.NullRounds); err != nil {
+				log.Errorf("<!!> SLASH FILTER ERROR: block %d, base %d, null %d, %s", b.Header.Height, base.TipSet.Height(), base.NullRounds, err)
 				continue
 			}
 
@@ -292,10 +292,6 @@ minerLoop:
 
 			if err := m.api.SyncSubmitBlock(ctx, b); err != nil {
 				log.Errorf("failed to submit newly mined block: %+v", err)
-			} else {
-				if err := m.sf.MarkMined(b.Header); err != nil {
-					log.Errorf("failed to mark mined block: %+v", err)
-				}
 			}
 		} else {
 			base.NullRounds++

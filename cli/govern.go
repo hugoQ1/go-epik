@@ -31,12 +31,14 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/exported"
 	gov2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/govern"
 	market2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/market"
 	msig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 )
 
 var govCmd = &cli.Command{
@@ -66,6 +68,8 @@ var govCmd = &cli.Command{
 		govKnowledge,
 		govExpert,
 		govExpertfund,
+		govMiners,
+		govListParamsCmd,
 		govApprove,
 	}}
 
@@ -489,14 +493,19 @@ var govExpertBlock = &cli.Command{
 			return err
 		}
 
+		sp, err := actors.SerializeParams(&expert)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
 		if fmsig := cctx.String("msig"); fmsig == "" {
-			return sendTransaction(cctx, ctx, api, fromAddr, expert, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin.ExpertFundActorAddr, big.Zero(), builtin2.MethodsExpertFunds.BlockExpert, sp)
 		} else {
 			governor, err := address.NewFromString(fmsig)
 			if err != nil {
 				return err
 			}
-			return sendProposal(cctx, ctx, api, governor, expert, fromAddr, big.Zero(), builtin2.MethodsExpert.GovBlock, nil)
+			return sendProposal(cctx, ctx, api, governor, builtin.ExpertFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsExpertFunds.BlockExpert, sp)
 		}
 	},
 }
@@ -551,6 +560,92 @@ var govExpertfundSetThreshold = &cli.Command{
 			}
 			return sendProposal(cctx, ctx, api, governor, builtin2.ExpertFundActorAddr, fromAddr, big.Zero(), builtin2.MethodsExpertFunds.ChangeThreshold, sp)
 		}
+	},
+}
+
+//////////////////////////
+//     gov miner
+//////////////////////////
+var govMiners = &cli.Command{
+	Name:  "miners",
+	Usage: "Manipulate miner params",
+	Subcommands: []*cli.Command{
+		govMinersSetPoStRatio,
+	},
+}
+
+var govMinersSetPoStRatio = &cli.Command{
+	Name:      "set-post-ratio",
+	Usage:     "Set proportion of window PoSt, 0~1000(‰)",
+	ArgsUsage: "<ratio (0~1000)>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return xerrors.New("'set-post-ratio' expects one arguments, ratio ∈ [0, 1000]")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		ratio, err := strconv.ParseUint(cctx.Args().First(), 10, 64)
+		if err != nil {
+			return err
+		}
+		if !power.IsValidWdPoStRatio(ratio) {
+			return xerrors.Errorf("'ratio' must be between %d and %d", power.MinWindowPoStRatio, power.MaxWindowPoStRatio)
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&power.ChangeWdPoStRatioParams{Ratio: ratio})
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.StoragePowerActorAddr, big.Zero(), builtin2.MethodsPower.ChangeWdPoStRatio, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.StoragePowerActorAddr, fromAddr, big.Zero(), builtin2.MethodsPower.ChangeWdPoStRatio, sp)
+		}
+	},
+}
+
+//////////////////////////
+//     gov params
+//////////////////////////
+var govListParamsCmd = &cli.Command{
+	Name:  "list-params",
+	Usage: "List consensus params",
+	Action: func(cctx *cli.Context) error {
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		params, err := api.StateGovernParams(ctx, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("[Power] Initial Quota:         %d\n", params.MarketInitialQuota)
+		fmt.Printf("[Experts] Threshold of Reward:  %d\n", params.ExpertfundThreshold)
+		fmt.Printf("[Knowledge Fund] Payee:        %s\n", params.KnowledgePayee)
+		fmt.Printf("[Miners] PoSt Ratio:            %d (effected at epoch %d)\n",
+			params.MinersPoStRatio.Ratio, params.MinersPoStRatio.EffectiveEpoch)
+
+		return nil
 	},
 }
 

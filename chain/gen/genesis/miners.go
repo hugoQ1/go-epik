@@ -10,6 +10,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -226,6 +227,17 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 	for i, m := range miners {
 		// Commit sectors
 		{
+			// add retrieval pledge
+			pledgeParams := &retrieval.PledgeParams{
+				Address: m.Worker,
+				Miners:  []address.Address{m.ID},
+			}
+			params := mustEnc(pledgeParams)
+			_, err = doExecValue(ctx, vm, builtin2.RetrievalFundActorAddr, m.Worker, power2.ConsensusMinerMinPledge, builtin2.MethodsRetrieval.Pledge, params)
+			if err != nil {
+				return cid.Undef, xerrors.Errorf("failed to add retrieval pledge:%w", err)
+			}
+
 			// add mining pledge
 			_, err = doExecValue(ctx, vm, minerInfos[i].maddr, m.Worker, power2.ConsensusMinerMinPledge, builtin2.MethodsMiner.AddPledge, nil)
 			if err != nil {

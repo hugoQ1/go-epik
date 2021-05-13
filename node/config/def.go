@@ -150,6 +150,7 @@ type Splitstore struct {
 	EnableFullCompaction bool
 	EnableGC             bool // EXPERIMENTAL
 	Archival             bool
+	EnableColdDrop       bool
 }
 
 // // Full Node

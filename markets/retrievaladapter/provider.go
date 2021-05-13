@@ -5,9 +5,7 @@ import (
 	"io"
 
 	"github.com/EpiK-Protocol/go-epik/api"
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
@@ -76,41 +74,16 @@ func (rpn *retrievalProviderNode) UnsealSector(ctx context.Context, sectorID abi
 	return r, nil
 }
 
-func (rpn *retrievalProviderNode) SavePaymentVoucher(ctx context.Context, paymentChannel address.Address, voucher *paych.SignedVoucher, proof []byte, expectedAmount abi.TokenAmount, tok shared.TipSetToken) (abi.TokenAmount, error) {
+func (rpn *retrievalProviderNode) SavePaymentVoucher(ctx context.Context, paymentChannel address.Address, voucher *flowch.SignedVoucher, proof []byte, expectedAmount abi.TokenAmount, tok shared.TipSetToken) (abi.TokenAmount, error) {
 	// TODO: respect the provided TipSetToken (a serialized TipSetKey) when
 	// querying the chain
-	// added, err := rpn.full.PaychVoucherAdd(ctx, paymentChannel, voucher, proof, expectedAmount)
-	// return added, err
-	return expectedAmount, nil
+	added, err := rpn.full.FlowchVoucherAdd(ctx, paymentChannel, voucher, proof, expectedAmount)
+	return added, err
 }
 
-func (rpn *retrievalProviderNode) ConfirmComplete(ctx context.Context, pieceCid cid.Cid, size uint64) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&retrieval.RetrievalData{
-		PieceID:  pieceCid,
-		Size:     size,
-		Provider: rpn.miner.Address(),
-	})
-	if aerr != nil {
-		return cid.Undef, aerr
-	}
-
-	addr, err := rpn.full.WalletDefaultAddress(ctx)
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	msg := types.Message{
-		To:     retrieval.Address,
-		From:   addr,
-		Value:  abi.NewTokenAmount(0),
-		Method: retrieval.Methods.ConfirmData,
-		Params: params,
-	}
-	sm, err := rpn.full.MpoolPushMessage(ctx, &msg, nil)
-	if err != nil {
-		return cid.Undef, err
-	}
-	return sm.Cid(), nil
+func (rpn *retrievalProviderNode) OnComplete(ctx context.Context, paymentChannel address.Address) error {
+	// _, err := rpn.full.FlowchSettle(ctx, paymentChannel)
+	return nil
 }
 
 func (rpn *retrievalProviderNode) GetChainHead(ctx context.Context) (shared.TipSetToken, abi.ChainEpoch, error) {

@@ -199,11 +199,11 @@ func infoCmdAct(cctx *cli.Context) error {
 
 	spendable := big.Zero()
 
-	availBalance, err := mas.AvailableBalance(mact.Balance)
-	if err != nil {
-		return xerrors.Errorf("getting available balance: %w", err)
-	}
-	spendable = big.Add(spendable, availBalance)
+	// availBalance, err := mas.AvailableBalance(mact.Balance)
+	// if err != nil {
+	// 	return xerrors.Errorf("getting available balance: %w", err)
+	// }
+	// spendable = big.Add(spendable, availBalance)
 
 	funds, err := mas.Funds()
 	if err != nil {
@@ -211,9 +211,8 @@ func infoCmdAct(cctx *cli.Context) error {
 	}
 
 	fmt.Printf("Miner Balance:        %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
-	fmt.Printf("      Vesting:        %s\n", types.EPK(funds.VestingFunds).Short())
-	color.Green("      Available:      %s", types.EPK(availBalance).Short())
 	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(funds.MiningPledge))
+	fmt.Printf("      FeeDebt:        %s\n", types.EPK(funds.FeeDebt).Short())
 
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {

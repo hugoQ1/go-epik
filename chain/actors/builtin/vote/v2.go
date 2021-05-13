@@ -50,16 +50,15 @@ func (s *state) Tally() (*Tally, error) {
 		return nil, err
 	}
 	return &Tally{
-		TotalVotes:       s.State.TotalVotes,
-		UnownedFunds:     s.State.UnownedFunds,
+		TotalVotes:       s.State.CurrEpochEffectiveVotes,
 		FallbackReceiver: s.State.FallbackReceiver,
 		Candidates:       votes,
 		Blocked:          blocked,
 	}, nil
 }
 
-func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInfo, error) {
-	voter, err := s.EstimateSettle(s.store, vaddr, curr)
+func (s *state) VoterInfo(vaddr address.Address, currEpoch abi.ChainEpoch, currBalance abi.TokenAmount) (*VoterInfo, error) {
+	voter, err := s.EstimateSettle(s.store, vaddr, currEpoch, currBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func (s *state) VoterInfo(vaddr address.Address, curr abi.ChainEpoch) (*VoterInf
 		}
 		cands[a.String()] = info.Votes
 		if !info.RescindingVotes.IsZero() {
-			if curr <= info.LastRescindEpoch+vote.RescindingUnlockDelay {
+			if currEpoch <= info.LastRescindEpoch+vote.RescindingUnlockDelay {
 				unlocking = big.Add(unlocking, info.RescindingVotes)
 			} else {
 				unlocked = big.Add(unlocked, info.RescindingVotes)

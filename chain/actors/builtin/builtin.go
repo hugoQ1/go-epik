@@ -20,7 +20,7 @@ var CronActorAddr = builtin.CronActorAddr
 
 var (
 	FoundationIDAddress      = makeAddress("t080")
-	FundraisingIDAddress     = makeAddress("t081")
+	InvestorIDAddress        = makeAddress("t081")
 	TeamIDAddress            = makeAddress("t082")
 	DefaultGovernorIDAddress = makeAddress("t083")
 )
@@ -102,7 +102,6 @@ func IsStorageMinerActor(c cid.Cid) bool {
 
 func IsMultisigActor(c cid.Cid) bool {
 	return c == builtin.MultisigActorCodeID
-
 }
 
 func IsPaymentChannelActor(c cid.Cid) bool {
@@ -111,6 +110,14 @@ func IsPaymentChannelActor(c cid.Cid) bool {
 
 func IsStorageMarketActor(c cid.Cid) bool {
 	return c == builtin.StorageMarketActorCodeID
+}
+
+func IsExpertActor(c cid.Cid) bool {
+	return c == builtin.ExpertActorCodeID
+}
+
+func IsFlowChannelActor(c cid.Cid) bool {
+	return c == builtin.FlowChannelActorCodeID
 }
 
 func makeAddress(addr string) address.Address {

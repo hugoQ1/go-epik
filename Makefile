@@ -69,6 +69,8 @@ debug: epik epik-miner epik-worker epik-seed
 2k: GOFLAGS+=-tags=2k
 2k: epik epik-miner epik-worker epik-seed
 
+dev: epik epik-miner epik-worker epik-seed
+
 epik: $(BUILD_DEPS)
 	rm -f epik
 	go build $(GOFLAGS) -o epik ./cmd/epik
@@ -104,6 +106,7 @@ epik-gateway: $(BUILD_DEPS)
 .PHONY: epik-gateway
 BINS+=epik-gateway
 
+build: GOFLAGS+=-tags=testnet
 build: epik epik-miner epik-worker
 	@[[ $$(type -P "epik") ]] && echo "Caution: you have \
 an existing epik binary in your PATH. This may cause problems if you don't run 'sudo make install'" || true

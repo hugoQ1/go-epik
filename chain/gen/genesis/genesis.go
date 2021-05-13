@@ -301,12 +301,21 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template ge
 		return nil, nil, xerrors.Errorf("set knowledge actor: %w", err)
 	}
 
+	// Create vesting actor
+	vestingact, err := SetupVestingActor(bs)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("setup vesting actor: %w", err)
+	}
+	if err := state.SetActor(builtin2.VestingActorAddr, vestingact); err != nil {
+		return nil, nil, xerrors.Errorf("set vesting actor: %w", err)
+	}
+
 	// Create pre-allocation actors
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.DefaultGovernorIDAddress, template.DefaultGovernorActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up initial governor: %w", err)
 	}
-	if err := createMultisigAccount(ctx, bs, cst, state, builtin.FundraisingIDAddress, template.FundraisingAccountActor, keyIDs); err != nil {
-		return nil, nil, xerrors.Errorf("failed to set up fundraising account: %w", err)
+	if err := createMultisigAccount(ctx, bs, cst, state, builtin.InvestorIDAddress, template.InvestorAccountActor, keyIDs); err != nil {
+		return nil, nil, xerrors.Errorf("failed to set up investor account: %w", err)
 	}
 	if err := createMultisigAccount(ctx, bs, cst, state, builtin.TeamIDAddress, template.TeamAccountActor, keyIDs); err != nil {
 		return nil, nil, xerrors.Errorf("failed to set up team account: %w", err)
@@ -510,10 +519,15 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		return cid.Undef, xerrors.Errorf("failed to generate genesis file piece CID: %w", err)
 	}
 	psize, _ := pt.SectorSize()
-	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(), builtin2.MethodsExpert.ImportData, mustEnc(&expert2.ExpertDataParams{
-		PieceID:   inis.PresealPieceCID,
-		PieceSize: abi.PaddedPieceSize(psize),
-	}))
+	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(),
+		builtin2.MethodsExpert.ImportData,
+		mustEnc(&expert2.BatchImportDataParams{
+			Datas: []expert2.ImportDataParams{expert2.ImportDataParams{
+				RootID:    inis.PresealPieceCID,
+				PieceID:   inis.PresealPieceCID,
+				PieceSize: abi.PaddedPieceSize(psize),
+			}},
+		}))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to import expert data: %w", err)
 	}

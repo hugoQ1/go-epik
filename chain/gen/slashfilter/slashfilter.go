@@ -25,19 +25,7 @@ func New(dstore ds.Batching) *SlashFilter {
 	}
 }
 
-func (f *SlashFilter) putEpoch(epochKey ds.Key, value []byte) error {
-	if err := f.byEpoch.Put(epochKey, value); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
-	}
-	return nil
-}
-
-func (f *SlashFilter) MarkMined(bh *types.BlockHeader) error {
-	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
-	return f.putEpoch(epochKey, bh.Cid().Bytes())
-}
-
-func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch, mark bool) error {
+func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch) error {
 	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
 	{
 		// double-fork mining (2 blocks at one epoch)
@@ -80,6 +68,7 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 			for _, c := range bh.Parents {
 				if c.Equals(parent) {
 					found = true
+					break
 				}
 			}
 
@@ -89,20 +78,13 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 		}
 	}
 
-	if mark {
-		if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
-			return xerrors.Errorf("putting byEpoch entry: %w", err)
-		}
-
-		return f.putEpoch(epochKey, bh.Cid().Bytes())
-	}
-	/* 	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
+	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
+		return xerrors.Errorf("putting byParents entry: %w", err)
 	}
 
 	if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
 		return xerrors.Errorf("putting byEpoch entry: %w", err)
-	} */
+	}
 
 	return nil
 }

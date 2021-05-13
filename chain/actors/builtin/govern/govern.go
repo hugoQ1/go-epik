@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
+	power3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 )
@@ -47,4 +48,11 @@ type GovernorInfo struct {
 type Authority struct {
 	ActorCodeID cid.Cid
 	Methods     []abi.MethodNum
+}
+
+type GovParams struct {
+	MinersPoStRatio     power3.WdPoStRatio
+	MarketInitialQuota  int64
+	ExpertfundThreshold uint64
+	KnowledgePayee      address.Address
 }

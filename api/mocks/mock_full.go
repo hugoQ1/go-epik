@@ -7,7 +7,6 @@ package mocks
 import (
 	context "context"
 	api "github.com/EpiK-Protocol/go-epik/api"
-	expert "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	govern "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	knowledge "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	miner "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -28,7 +27,7 @@ import (
 	crypto "github.com/filecoin-project/go-state-types/crypto"
 	dline "github.com/filecoin-project/go-state-types/dline"
 	network "github.com/filecoin-project/go-state-types/network"
-	expert0 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	expert "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
 	paych "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
@@ -106,6 +105,21 @@ func (m *MockFullNode) BeaconGetEntry(arg0 context.Context, arg1 abi.ChainEpoch)
 func (mr *MockFullNodeMockRecorder) BeaconGetEntry(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeaconGetEntry", reflect.TypeOf((*MockFullNode)(nil).BeaconGetEntry), arg0, arg1)
+}
+
+// ChainAllowNoWindowPoSt mocks base method
+func (m *MockFullNode) ChainAllowNoWindowPoSt(arg0 context.Context, arg1 types.TipSetKey, arg2 abi.ChainEpoch, arg3 abi.Randomness) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChainAllowNoWindowPoSt", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChainAllowNoWindowPoSt indicates an expected call of ChainAllowNoWindowPoSt
+func (mr *MockFullNodeMockRecorder) ChainAllowNoWindowPoSt(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainAllowNoWindowPoSt", reflect.TypeOf((*MockFullNode)(nil).ChainAllowNoWindowPoSt), arg0, arg1, arg2, arg3)
 }
 
 // ChainDeleteObj mocks base method
@@ -822,33 +836,48 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieveListDeals(arg0 interface{}) *g
 }
 
 // ClientRetrievePledge mocks base method
-func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.Address, arg2 big.Int) (cid.Cid, error) {
+func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.Address, arg2 address.Address, arg3 big.Int) (cid.Cid, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClientRetrieveBind mocks base method
+func (m *MockFullNode) ClientRetrieveBind(arg0 context.Context, arg1 address.Address, arg2 bool) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClientRetrieveBind", arg0, arg1, arg2)
 	ret0, _ := ret[0].(cid.Cid)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClientRetrievePledge indicates an expected call of ClientRetrievePledge
-func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
+}
+
+// ClientRetrieveBind indicates an expected call of ClientRetrieveBind
+func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
 }
 
 // ClientRetrieveQuery mocks base method
-func (m *MockFullNode) ClientRetrieveQuery(arg0 context.Context, arg1 cid.Cid, arg2 *cid.Cid, arg3 address.Address) (*api.RetrievalDeal, error) {
+func (m *MockFullNode) ClientRetrieveQuery(arg0 context.Context, arg1 address.Address, arg2 cid.Cid, arg3 *cid.Cid, arg4 address.Address) (*api.RetrievalDeal, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrieveQuery", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "ClientRetrieveQuery", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*api.RetrievalDeal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClientRetrieveQuery indicates an expected call of ClientRetrieveQuery
-func (mr *MockFullNodeMockRecorder) ClientRetrieveQuery(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrieveQuery(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveQuery", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveQuery), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveQuery", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveQuery), arg0, arg1, arg2, arg3, arg4)
 }
 
 // ClientRetrieveTryRestartInsufficientFunds mocks base method
@@ -2220,10 +2249,10 @@ func (mr *MockFullNodeMockRecorder) StateDecodeParams(arg0, arg1, arg2, arg3, ar
 }
 
 // StateExpertDatas mocks base method
-func (m *MockFullNode) StateExpertDatas(arg0 context.Context, arg1 address.Address, arg2 *bitfield.BitField, arg3 bool, arg4 types.TipSetKey) ([]*expert0.DataOnChainInfo, error) {
+func (m *MockFullNode) StateExpertDatas(arg0 context.Context, arg1 address.Address, arg2 *bitfield.BitField, arg3 bool, arg4 types.TipSetKey) ([]*expert.DataOnChainInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StateExpertDatas", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].([]*expert0.DataOnChainInfo)
+	ret0, _ := ret[0].([]*expert.DataOnChainInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2292,6 +2321,21 @@ func (m *MockFullNode) StateGetReceipt(arg0 context.Context, arg1 cid.Cid, arg2 
 func (mr *MockFullNodeMockRecorder) StateGetReceipt(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateGetReceipt", reflect.TypeOf((*MockFullNode)(nil).StateGetReceipt), arg0, arg1, arg2)
+}
+
+// StateGovernParams mocks base method
+func (m *MockFullNode) StateGovernParams(arg0 context.Context, arg1 types.TipSetKey) (*govern.GovParams, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StateGovernParams", arg0, arg1)
+	ret0, _ := ret[0].(*govern.GovParams)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StateGovernParams indicates an expected call of StateGovernParams
+func (mr *MockFullNodeMockRecorder) StateGovernParams(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateGovernParams", reflect.TypeOf((*MockFullNode)(nil).StateGovernParams), arg0, arg1)
 }
 
 // StateGovernSupervisor mocks base method
@@ -2442,21 +2486,6 @@ func (m *MockFullNode) StateMarketDeals(arg0 context.Context, arg1 types.TipSetK
 func (mr *MockFullNodeMockRecorder) StateMarketDeals(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMarketDeals", reflect.TypeOf((*MockFullNode)(nil).StateMarketDeals), arg0, arg1)
-}
-
-// StateMarketInitialQuota mocks base method
-func (m *MockFullNode) StateMarketInitialQuota(arg0 context.Context, arg1 types.TipSetKey) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StateMarketInitialQuota", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// StateMarketInitialQuota indicates an expected call of StateMarketInitialQuota
-func (mr *MockFullNodeMockRecorder) StateMarketInitialQuota(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMarketInitialQuota", reflect.TypeOf((*MockFullNode)(nil).StateMarketInitialQuota), arg0, arg1)
 }
 
 // StateMarketParticipants mocks base method

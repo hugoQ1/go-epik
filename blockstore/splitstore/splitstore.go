@@ -97,6 +97,9 @@ type Config struct {
 	// do NOT enable this if you synced from a snapshot.
 	// Only applies if you enabled full compaction
 	Archival bool
+
+	// drop the cold store, the node only save the hot data.
+	EnableColdDrop bool
 }
 
 // ChainAccessor allows the Splitstore to access the chain. It will most likely
@@ -117,6 +120,7 @@ type SplitStore struct {
 	enableGC        bool
 	skipOldMsgs     bool
 	skipMsgReceipts bool
+	dropColdData    bool
 
 	baseEpoch   abi.ChainEpoch
 	warmupEpoch abi.ChainEpoch
@@ -169,6 +173,7 @@ func Open(path string, ds dstore.Datastore, hot, cold bstore.Blockstore, cfg *Co
 		enableGC:        cfg.EnableGC,
 		skipOldMsgs:     !(cfg.EnableFullCompaction && cfg.Archival),
 		skipMsgReceipts: !(cfg.EnableFullCompaction && cfg.Archival),
+		dropColdData:    cfg.EnableColdDrop,
 
 		coldPurgeSize: defaultColdPurgeSize,
 	}
@@ -731,6 +736,11 @@ func (s *SplitStore) compactSimple(curTs *types.TipSet) error {
 }
 
 func (s *SplitStore) moveColdBlocks(cold []cid.Cid) error {
+	// if cold data need not save, don't do anything
+	if s.dropColdData {
+		return nil
+	}
+
 	batch := make([]blocks.Block, 0, batchSize)
 
 	for _, cid := range cold {

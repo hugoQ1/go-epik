@@ -509,7 +509,7 @@ func (a *API) ClientImportAndDeal(ctx context.Context, params *api.ImportAndDeal
 
 	// check if registered
 	existence, err := a.StateExpertFileInfo(ctx, ds.PieceCID, ts.Key())
-	if err != nil && !strings.Contains(err.Error(), "failed to find expert with data") {
+	if err != nil && !strings.Contains(err.Error(), "piece not found") {
 		return nil, xerrors.Errorf("failed to check file registered %s: %w", ds.PieceCID, err)
 	}
 	dealExpert := ""
@@ -581,10 +581,14 @@ func (a *API) ClientExpertRegisterFile(ctx context.Context, params *api.ExpertRe
 		return nil, xerrors.Errorf("failed to get expert info: %w", err)
 	}
 
-	expertParams, err := actors.SerializeParams(&expert.ExpertDataParams{
-		RootID:    params.RootID.String(),
-		PieceID:   params.PieceID,
-		PieceSize: params.PieceSize,
+	expertParams, err := actors.SerializeParams(&expert.BatchImportDataParams{
+		Datas: []expert.ImportDataParams{
+			expert.ImportDataParams{
+				RootID:    params.RootID,
+				PieceID:   params.PieceID,
+				PieceSize: params.PieceSize,
+			},
+		},
 	})
 	if err != nil {
 		return nil, xerrors.Errorf("serializing params failed: %w", err)
@@ -796,7 +800,7 @@ func (a *API) clientRetrieve(ctx context.Context, order api.RetrievalOrder, ref 
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		finish(xerrors.Errorf("Error in retrieval params: %s", err))
 		return
@@ -1173,6 +1177,7 @@ func convertRetrieveState(state *rm.ClientDealState) *api.RetrievalDeal {
 		MinerWallet:  state.MinerWallet,
 		Status:       state.Status,
 		Message:      state.Message,
+		WaitMsgCID:   state.WaitMsgCID,
 	}
 }
 
@@ -1224,10 +1229,13 @@ func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Add
 	return cid.Undef, nil
 }
 
-func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
-	payer, err := a.WalletDefaultAddress(ctx)
-	if err != nil {
-		return nil, err
+func (a *API) ClientRetrieveQuery(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error) {
+	if wallet == address.Undef {
+		payer, err := a.WalletDefaultAddress(ctx)
+		if err != nil {
+			return nil, err
+		}
+		wallet = payer
 	}
 
 	// offers, err := a.ClientFindData(ctx, root)
@@ -1247,14 +1255,14 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 		return nil, xerrors.Errorf("query offer failed:%s", offer.Err)
 	}
 
-	order := offer.Order(payer)
+	order := offer.Order(wallet)
 	if order.Size == 0 {
 		return nil, xerrors.Errorf("cannot make retrieval deal for zero bytes")
 	}
 
 	ppb := types.BigDiv(order.Total, types.NewInt(order.Size))
 
-	params, err := rm.NewParamsV1(ppb, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
+	params, err := rm.NewParamsV1(ppb, order.Size, order.PaymentInterval, order.PaymentIntervalIncrease, shared.AllSelector(), order.Piece, order.UnsealPrice)
 	if err != nil {
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}
@@ -1285,8 +1293,11 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.
 	return a.ClientRetrieveGetDeal(ctx, dealID)
 }
 
-func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&wallet)
+func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrieval.PledgeParams{
+		Address: target,
+		Miners:  miners,
+	})
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
 	}
@@ -1295,7 +1306,35 @@ func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, 
 		To:     retrieval.Address,
 		From:   wallet,
 		Value:  amount,
-		Method: retrieval.Methods.AddBalance,
+		Method: retrieval.Methods.Pledge,
+		Params: params,
+	}, nil)
+	if aerr != nil {
+		return cid.Undef, aerr
+	}
+
+	mid := sm.Cid()
+	return mid, nil
+}
+
+func (a *API) ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error) {
+	params, err := actors.SerializeParams(&retrieval.BindMinersParams{
+		Pledger: wallet,
+		Miners:  miners,
+	})
+	if err != nil {
+		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
+	}
+
+	method := retrieval.Methods.BindMiners
+	if reverse {
+		method = retrieval.Methods.UnbindMiners
+	}
+	sm, aerr := a.MpoolAPI.MpoolPushMessage(ctx, &types.Message{
+		To:     retrieval.Address,
+		From:   wallet,
+		Value:  abi.NewTokenAmount(0),
+		Method: method,
 		Params: params,
 	}, nil)
 	if aerr != nil {
@@ -1355,9 +1394,7 @@ func (a *API) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address
 }
 
 func (a *API) ClientExpertNominate(ctx context.Context, expertAddr address.Address, targetExpert address.Address) (cid.Cid, error) {
-	params, aerr := actors.SerializeParams(&expert.NominateExpertParams{
-		Expert: targetExpert,
-	})
+	params, aerr := actors.SerializeParams(&targetExpert)
 	if aerr != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", aerr)
 	}

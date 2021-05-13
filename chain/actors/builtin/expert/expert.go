@@ -41,9 +41,9 @@ type State interface {
 	Data(cid.Cid) (*DataOnChainInfo, error)
 }
 
-type ExpertDataParams = expert2.ExpertDataParams
+type BatchImportDataParams = expert2.BatchImportDataParams
+type ImportDataParams = expert2.ImportDataParams
 type DataOnChainInfo = expert2.DataOnChainInfo
-type NominateExpertParams = expert2.NominateExpertParams
 
 type ExpertInfo struct {
 	expert2.ExpertInfo

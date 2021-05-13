@@ -46,26 +46,6 @@ type partition3 struct {
 	store adt.Store
 }
 
-func (s *state3) AvailableBalance(bal abi.TokenAmount) (available abi.TokenAmount, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = xerrors.Errorf("failed to get available balance: %w", r)
-			available = abi.NewTokenAmount(0)
-		}
-	}()
-	// this panics if the miner doesnt have enough funds to cover their locked pledge
-	available, err = s.GetAvailableBalance(bal)
-	return available, err
-}
-
-func (s *state3) VestedFunds(epoch abi.ChainEpoch) (abi.TokenAmount, error) {
-	return s.CheckVestedFunds(s.store, epoch)
-}
-
-func (s *state3) FeeDebt() (abi.TokenAmount, error) {
-	return s.State.FeeDebt, nil
-}
-
 func (s *state3) Funds() (Funds, error) {
 	m, err := adt3.AsMap(s.store, s.Pledges, builtin3.DefaultHamtBitwidth)
 	if err != nil {
@@ -86,10 +66,27 @@ func (s *state3) Funds() (Funds, error) {
 		return Funds{}, xerrors.Errorf("failed to iterate pledges: %w", err)
 	}
 
+	// reporters
+	reporters := make(map[string]abi.TokenAmount)
+	reporterDebts, err := adt3.AsMap(s.store, s.ReporterDebts, builtin3.DefaultHamtBitwidth)
+	if err != nil {
+		return Funds{}, err
+	}
+	var debt abi.TokenAmount
+	err = reporterDebts.ForEach(&debt, func(k string) error {
+		reporter, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		reporters[reporter.String()] = debt
+		return nil
+	})
+
 	return Funds{
 		MiningPledge:   s.State.TotalPledge,
-		VestingFunds:   s.State.LockedFunds,
 		MiningPledgors: pledgors,
+		FeeDebt:        s.State.FeeDebt,
+		ReporterDebts:  reporters,
 	}, nil
 }
 
@@ -328,6 +325,9 @@ func (s *state3) Info() (MinerInfo, error) {
 	if info.PendingWorkerKey != nil {
 		mi.NewWorker = info.PendingWorkerKey.NewWorker
 		mi.WorkerChangeEpoch = info.PendingWorkerKey.EffectiveAt
+	}
+	if info.RetrievalPledger != nil {
+		mi.RetrievalPledger = *info.RetrievalPledger
 	}
 
 	return mi, nil

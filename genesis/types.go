@@ -107,7 +107,7 @@ type Template struct {
 
 	TeamAccountActor        Actor
 	FoundationAccountActor  Actor
-	FundraisingAccountActor Actor
+	InvestorAccountActor    Actor
 	DefaultGovernorActor    Actor
 	DefaultExpertActor      Actor
 	DefaultKgFundPayeeActor Actor

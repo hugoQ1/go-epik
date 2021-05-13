@@ -81,7 +81,7 @@ var stateCmd = &cli.Command{
 var stateMinerInfo = &cli.Command{
 	Name:      "miner-info",
 	Usage:     "Retrieve miner information",
-	ArgsUsage: "[minerAddress]",
+	ArgsUsage: "[coinbase]",
 	Action: func(cctx *cli.Context) error {
 		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
@@ -110,16 +110,12 @@ var stateMinerInfo = &cli.Command{
 			return err
 		}
 
-		availableBalance, err := api.StateMinerAvailableBalance(ctx, addr, ts.Key())
-		if err != nil {
-			return xerrors.Errorf("getting miner available balance: %w", err)
-		}
 		funds, err := api.StateMinerFunds(ctx, addr, ts.Key())
 		if err != nil {
 			return xerrors.Errorf("getting miner total pledge: %w", err)
 		}
-		fmt.Printf("Available Balance: %s\n", types.EPK(availableBalance))
 		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
+		fmt.Printf("FeeDebt: \t%s\n", types.EPK(funds.FeeDebt))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
 		fmt.Printf("Worker:  \t%s\n", mi.Worker)
 		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)
@@ -1716,7 +1712,7 @@ var stateCircSupplyCmd = &cli.Command{
 			fmt.Println("Mined: ", types.EPK(circ.EpkMined))
 			fmt.Println("Total vested: ", types.EPK(circ.EpkVested))
 			fmt.Println("Foundation vested: ", types.EPK(circ.EpkFoundationVested))
-			fmt.Println("Fundraising vested: ", types.EPK(circ.EpkFundraisingVested))
+			fmt.Println("Investor vested: ", types.EPK(circ.EpkInvestorVested))
 			fmt.Println("Team vested: ", types.EPK(circ.EpkTeamVested))
 			fmt.Println("Burnt: ", types.EPK(circ.EpkBurnt))
 			fmt.Println("Locked: ", types.EPK(circ.EpkLocked))
@@ -1816,7 +1812,6 @@ var stateMarketCmd = &cli.Command{
 	Usage: "Inspect the storage market actor",
 	Subcommands: []*cli.Command{
 		stateMarketBalanceCmd,
-		stateMarketInitialQuotaCmd,
 		stateMarketRemainingQuotaCmd,
 	},
 }
@@ -1854,34 +1849,6 @@ var stateMarketBalanceCmd = &cli.Command{
 
 		fmt.Printf("Escrow: %s\n", types.EPK(balance.Escrow))
 		fmt.Printf("Locked: %s\n", types.EPK(balance.Locked))
-
-		return nil
-	},
-}
-
-var stateMarketInitialQuotaCmd = &cli.Command{
-	Name:  "initial-quota",
-	Usage: "Get current initial quota for new deal piece",
-	Action: func(cctx *cli.Context) error {
-		api, closer, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-
-		ctx := ReqContext(cctx)
-
-		ts, err := LoadTipSet(ctx, cctx, api)
-		if err != nil {
-			return err
-		}
-
-		n, err := api.StateMarketInitialQuota(ctx, ts.Key())
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Initial Quota: %d\n", n)
 
 		return nil
 	},

@@ -23,7 +23,7 @@ import (
 func SetupInitActor(bs bstore.Blockstore, tpl genesis.Template) (int64, *types.Actor, map[address.Address]address.Address, error) {
 	initialActors := append(tpl.Accounts,
 		tpl.FoundationAccountActor,
-		tpl.FundraisingAccountActor,
+		tpl.InvestorAccountActor,
 		tpl.TeamAccountActor,
 		tpl.DefaultGovernorActor,
 		tpl.DefaultExpertActor,

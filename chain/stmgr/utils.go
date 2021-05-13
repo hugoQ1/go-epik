@@ -689,12 +689,13 @@ func MinerEligibleToMine(ctx context.Context, sm *StateManager, addr address.Add
 		return false, err
 	}
 
-	// No fee debt.
-	if debt, err := mstate.FeeDebt(); err != nil {
-		return false, err
-	} else if !debt.IsZero() {
-		return false, err
-	}
+	// we dont care
+	// // No fee debt.
+	// if debt, err := mstate.FeeDebt(); err != nil {
+	// 	return false, err
+	// } else if !debt.IsZero() {
+	// 	return false, err
+	// }
 
 	// No active consensus faults.
 	if mInfo, err := mstate.Info(); err != nil {

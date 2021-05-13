@@ -36,11 +36,10 @@ func (s *state2) Info() (*ExpertInfo, error) {
 
 	ret := &ExpertInfo{
 		ExpertInfo:      *info,
-		LostEpoch:       expert2.NoLostEpoch,
-		Status:          s.Status,
+		Status:          s.ExpertState,
 		ImplicatedTimes: s.ImplicatedTimes,
 		DataCount:       s.DataCount,
-		CurrentVotes:    big.Zero(),
+		CurrentVotes:    s.CurrentVotes,
 		RequiredVotes:   big.Add(expert2.ExpertVoteThreshold, big.Mul(big.NewIntUnsigned(s.ImplicatedTimes), expert2.ExpertVoteThresholdAddition)),
 	}
 
@@ -78,7 +77,7 @@ func (s *state2) Data(pieceCID cid.Cid) (*DataOnChainInfo, error) {
 		return nil, xerrors.Errorf("failed to get expert data %s: %w", pieceCID, err)
 	}
 	if !found {
-		return nil, nil
+		return nil, xerrors.Errorf("failed to found expert data: %s", pieceCID)
 	}
 	return &info, nil
 }

@@ -35,7 +35,7 @@ type State interface {
 	cbor.Marshaler
 
 	Tally() (*Tally, error)
-	VoterInfo(addr address.Address, curr abi.ChainEpoch) (*VoterInfo, error)
+	VoterInfo(addr address.Address, currEpoch abi.ChainEpoch, currBalance abi.TokenAmount) (*VoterInfo, error)
 }
 
 type Tally struct {

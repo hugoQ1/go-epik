@@ -95,6 +95,8 @@ var clientCmd = &cli.Command{
 		WithCategory("retrieval", clientRetrieveDealCmd),
 		WithCategory("retrieval", clientRetrieveListCmd),
 		WithCategory("retrieval", clientRetrievePledgeCmd),
+		WithCategory("retrieval", clientRetrieveBindCmd),
+		WithCategory("retrieval", clientRetrieveMinerCmd),
 		WithCategory("retrieval", clientRetrieveInfoCmd),
 		WithCategory("retrieval", clientRetrievePledgeStateCmd),
 		WithCategory("retrieval", clientRetrieveApplyForWithdrawCmd),
@@ -1221,6 +1223,9 @@ var clientRetrieveDealCmd = &cli.Command{
 		fmt.Printf("Retrieve Miner: %s\n", deal.MinerWallet)
 		fmt.Printf("Retrieve Status: %s\n", retrievalmarket.DealStatuses[deal.Status])
 		fmt.Printf("Retrieve Message: %s\n", deal.Message)
+		if deal.WaitMsgCID != nil {
+			fmt.Printf("Retrieve WaitMsgCID: %s\n", deal.WaitMsgCID.String())
+		}
 		return nil
 	},
 }
@@ -1277,6 +1282,14 @@ var clientRetrievePledgeCmd = &cli.Command{
 			Name:  "from",
 			Usage: "address to send transactions from",
 		},
+		&cli.StringFlag{
+			Name:  "target",
+			Usage: "address to receive the pledge, default is same with the from address.",
+		},
+		&cli.StringFlag{
+			Name:  "miner",
+			Usage: "address to bind miner",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 1 {
@@ -1307,15 +1320,169 @@ var clientRetrievePledgeCmd = &cli.Command{
 			fromAddr = addr
 		}
 
+		targertAddr := fromAddr
+		if target := cctx.String("target"); target != "" {
+			addr, err := address.NewFromString(target)
+			if err != nil {
+				return err
+			}
+
+			targertAddr = addr
+		}
+
+		miners := []address.Address{}
+		if minerStr := cctx.String("miner"); minerStr != "" {
+			addrs := strings.Split(minerStr, ",")
+			for _, addr := range addrs {
+				miner, err := address.NewFromString(addr)
+				if err != nil {
+					return err
+				}
+				miners = append(miners, miner)
+			}
+		}
+
 		val, err := types.ParseEPK(cctx.Args().Get(0))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrievePledge(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrievePledge(ctx, fromAddr, targertAddr, miners, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
 		}
 		fmt.Printf("retrieve pledge: %s\n", msg)
+		return nil
+	},
+}
+
+var clientRetrieveBindCmd = &cli.Command{
+	Name:      "retrieve-bind",
+	Usage:     "bind miners for storage retrieval",
+	ArgsUsage: "[miners ...]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address to send transactions from",
+		},
+		&cli.BoolFlag{
+			Name:  "reverse",
+			Usage: "reverse for unbind miners",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() < 1 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+		reverse := cctx.Bool("reverse")
+		miners := []address.Address{}
+		for _, m := range cctx.Args().Slice() {
+			miner, err := address.NewFromString(m)
+			if err != nil {
+				return err
+			}
+			miners = append(miners, miner)
+		}
+		msg, err := api.ClientRetrieveBind(ctx, fromAddr, miners, reverse)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to pledge retrival: %w", err))
+		}
+		fmt.Printf("retrieve pledge: %s\n", msg)
+		return nil
+	},
+}
+
+var clientRetrieveMinerCmd = &cli.Command{
+	Name:      "retrieve-miner-assign",
+	Usage:     "miner assign pledger for storage retrieval",
+	ArgsUsage: "[miner pledgerAddress]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "address for the miner owner",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() < 2 {
+			return ShowHelp(cctx, fmt.Errorf("incorrect number of arguments"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+		maddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return err
+		}
+
+		pledger, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		params, err := actors.SerializeParams(&miner2.RetrievalPledgeParams{
+			Pledger: pledger, // Default to attempting to withdraw all the extra funds in the miner actor
+		})
+		if err != nil {
+			return err
+		}
+
+		msg, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:   fromAddr,
+			To:     maddr,
+			Value:  abi.NewTokenAmount(0),
+			Method: miner.Methods.BindRetrievalPledger,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("retrieve miner assign: %s\n", msg.Cid())
 		return nil
 	},
 }
@@ -1390,6 +1557,14 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 		fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
 		fmt.Printf("Locked Balance: %s\n", types.EPK(state.Locked).String())
 		fmt.Printf("Locked Epoch: %d\n", state.LockedEpoch)
+		if len(state.BindMiners) > 0 {
+			miners := ""
+			for _, m := range state.BindMiners {
+				miners = miners + "," + m.String()
+			}
+			miners = strings.TrimLeft(miners, ",")
+			fmt.Printf("Bind Miners: %s\n", miners)
+		}
 		return nil
 	},
 }

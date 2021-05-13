@@ -61,7 +61,7 @@ var genesisNewCmd = &cli.Command{
 
 			TeamAccountActor:        gen.DefaultTeamAccountActor,
 			FoundationAccountActor:  gen.DefaultFoundationAccountActor,
-			FundraisingAccountActor: gen.DefaultFundraisingAccountActor,
+			InvestorAccountActor:    gen.DefaultInvestorAccountActor,
 			DefaultGovernorActor:    gen.DefaultGovernorActor,
 			DefaultExpertActor:      gen.DefaultExpertActor,
 			DefaultKgFundPayeeActor: gen.DefaultKgFundPayeeActor,
@@ -146,7 +146,7 @@ var genesisAddMinerCmd = &cli.Command{
 			log.Infof("Giving %s some initial balance", miner.Owner)
 			template.Accounts = append(template.Accounts, genesis.Actor{
 				Type:    genesis.TAccount,
-				Balance: big.Mul(big.NewInt(5_0_000_000), big.NewInt(int64(build.EpkPrecision))),
+				Balance: big.Mul(big.NewInt(1_000_000_000), big.NewInt(int64(build.EpkPrecision))),
 				Meta:    (&genesis.AccountMeta{Owner: miner.Owner}).ActorMeta(),
 			})
 		}

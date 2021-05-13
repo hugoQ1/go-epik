@@ -13,12 +13,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/paych"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -65,6 +67,7 @@ type FullNode interface {
 
 	// ChainGetRandomnessFromBeacon is used to sample the beacon for randomness.
 	ChainGetRandomnessFromBeacon(ctx context.Context, tsk types.TipSetKey, personalization crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainAllowNoWindowPoSt(ctx context.Context, tsk types.TipSetKey, challenge abi.ChainEpoch, rand abi.Randomness) (bool, error)
 
 	// ChainGetBlock returns the block specified by the given CID.
 	ChainGetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
@@ -355,10 +358,13 @@ type FullNode interface {
 	ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error)
 
 	// ClientRetrieveQuery query file status by file root or retrieve id
-	ClientRetrieveQuery(ctx context.Context, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
+	ClientRetrieveQuery(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*RetrievalDeal, error)
 
 	// ClientRetrievePledge retrieval pledge amount
-	ClientRetrievePledge(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error)
+
+	// ClientRetrieveBind retrieval bind miners, if reverse, unbind the miners
+	ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)
 
 	// ClientRetrieveApplyForWithdraw apply for withdraw
 	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
@@ -423,8 +429,8 @@ type FullNode interface {
 	StateMinerPreCommitDepositForPower(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error)
 	// StateMinerInitialPledgeCollateral returns the initial pledge collateral for the specified miner's sector
 	StateMinerInitialPledgeCollateral(context.Context, address.Address, miner.SectorPreCommitInfo, types.TipSetKey) (types.BigInt, error) */
-	// StateMinerAvailableBalance returns the portion of a miner's balance that can be withdrawn or spent
-	StateMinerAvailableBalance(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)
+	// StateCoinbase returns the portion of a miner's balance that can be withdrawn or spent
+	StateCoinbase(context.Context, address.Address, types.TipSetKey) (*vesting.CoinbaseInfo, error)
 	// StateMinerFunds returns the total pledge collateral for mining
 	StateMinerFunds(context.Context, address.Address, types.TipSetKey) (miner.Funds, error)
 	// StateMinerSectorAllocated checks if a sector is allocated
@@ -462,9 +468,7 @@ type FullNode interface {
 	StateMarketDeals(context.Context, types.TipSetKey) (map[string]MarketDeal, error)
 	// StateMarketStorageDeal returns information about the indicated deal
 	StateMarketStorageDeal(context.Context, abi.DealID, types.TipSetKey) (*MarketDeal, error)
-	// StateMarketInitialQuota returns current initial quota for all new deal piece
-	StateMarketInitialQuota(context.Context, types.TipSetKey) (int64, error)
-	// StateMarketInitialQuota returns remaining quota of piece
+	// StateMarketRemainingQuota returns remaining quota of piece
 	StateMarketRemainingQuota(context.Context, cid.Cid, types.TipSetKey) (int64, error)
 	// StateLookupID retrieves the ID address of the given address
 	StateLookupID(context.Context, address.Address, types.TipSetKey) (address.Address, error)
@@ -523,6 +527,8 @@ type FullNode interface {
 	StateGovernSupervisor(context.Context, types.TipSetKey) (address.Address, error)
 	// StateGovernorList returns all governors
 	StateGovernorList(context.Context, types.TipSetKey) ([]*govern.GovernorInfo, error)
+
+	StateGovernParams(context.Context, types.TipSetKey) (*govern.GovParams, error)
 
 	// StateRetrievalInfo retrieval pledge info
 	StateRetrievalInfo(context.Context, types.TipSetKey) (*RetrievalInfo, error)
@@ -640,6 +646,26 @@ type FullNode interface {
 	PaychVoucherAdd(context.Context, address.Address, *paych.SignedVoucher, []byte, types.BigInt) (types.BigInt, error)
 	PaychVoucherList(context.Context, address.Address) ([]*paych.SignedVoucher, error)
 	PaychVoucherSubmit(context.Context, address.Address, *paych.SignedVoucher, []byte, []byte) (cid.Cid, error)
+
+	// MethodGroup: Flowch
+	// The Flowch methods are for interacting with and managing payment channels
+
+	FlowchGet(ctx context.Context, from, to address.Address, amt types.BigInt) (*ChannelInfo, error)
+	FlowchGetWaitReady(context.Context, cid.Cid) (address.Address, error)
+	FlowchAvailableFunds(ctx context.Context, ch address.Address) (*ChannelAvailableFunds, error)
+	FlowchAvailableFundsByFromTo(ctx context.Context, from, to address.Address) (*ChannelAvailableFunds, error)
+	FlowchList(context.Context) ([]address.Address, error)
+	FlowchStatus(context.Context, address.Address) (*FlowchStatus, error)
+	FlowchSettle(context.Context, address.Address) (cid.Cid, error)
+	FlowchCollect(context.Context, address.Address) (cid.Cid, error)
+	FlowchAllocateLane(ctx context.Context, ch address.Address) (uint64, error)
+	FlowchNewPayment(ctx context.Context, from, to address.Address, vouchers []FlowVoucherSpec) (*FlowInfo, error)
+	FlowchVoucherCheckValid(context.Context, address.Address, *flowch.SignedVoucher) error
+	FlowchVoucherCheckSpendable(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (bool, error)
+	FlowchVoucherCreate(context.Context, address.Address, types.BigInt, uint64) (*FlowVoucherCreateResult, error)
+	FlowchVoucherAdd(context.Context, address.Address, *flowch.SignedVoucher, []byte, types.BigInt) (types.BigInt, error)
+	FlowchVoucherList(context.Context, address.Address) ([]*flowch.SignedVoucher, error)
+	FlowchVoucherSubmit(context.Context, address.Address, *flowch.SignedVoucher, []byte, []byte) (cid.Cid, error)
 
 	// CreateBackup creates node backup onder the specified file name. The
 	// method requires that the epik daemon is running with the
@@ -808,6 +834,36 @@ type VoucherCreateResult struct {
 	// Voucher that was created, or nil if there was an error or if there
 	// were insufficient funds in the channel
 	Voucher *paych.SignedVoucher
+	// Shortfall is the additional amount that would be needed in the channel
+	// in order to be able to create the voucher
+	Shortfall types.BigInt
+}
+
+type FlowchStatus struct {
+	ControlAddr address.Address
+	Direction   PCHDir
+}
+
+type FlowInfo struct {
+	Channel      address.Address
+	WaitSentinel cid.Cid
+	Vouchers     []*flowch.SignedVoucher
+}
+
+type FlowVoucherSpec struct {
+	Amount      types.BigInt
+	TimeLockMin abi.ChainEpoch
+	TimeLockMax abi.ChainEpoch
+	MinSettle   abi.ChainEpoch
+
+	Extra *flowch.ModVerifyParams
+}
+
+// FlowVoucherCreateResult is the response to calling PaychVoucherCreate
+type FlowVoucherCreateResult struct {
+	// Voucher that was created, or nil if there was an error or if there
+	// were insufficient funds in the channel
+	Voucher *flowch.SignedVoucher
 	// Shortfall is the additional amount that would be needed in the channel
 	// in order to be able to create the voucher
 	Shortfall types.BigInt
@@ -1001,7 +1057,7 @@ type CirculatingSupply struct {
 	EpkVested            abi.TokenAmount
 	EpkTeamVested        abi.TokenAmount
 	EpkFoundationVested  abi.TokenAmount
-	EpkFundraisingVested abi.TokenAmount
+	EpkInvestorVested    abi.TokenAmount
 	EpkMined             abi.TokenAmount
 	EpkBurnt             abi.TokenAmount
 	EpkLocked            abi.TokenAmount
@@ -1110,7 +1166,7 @@ type ImportAndDealParams struct {
 
 type ExpertFileInfo struct {
 	Expert     address.Address
-	PieceID    string
+	PieceID    cid.Cid
 	PieceSize  abi.PaddedPieceSize
 	Redundancy uint64
 }
@@ -1121,6 +1177,7 @@ type RetrievalInfo struct {
 	PendingReward abi.TokenAmount
 }
 type RetrievalState struct {
+	BindMiners  []address.Address
 	Balance     abi.TokenAmount
 	DayExpend   abi.TokenAmount
 	Locked      abi.TokenAmount
@@ -1141,6 +1198,7 @@ type RetrievalDeal struct {
 	MinerWallet  address.Address
 	Status       retrievalmarket.DealStatus
 	Message      string
+	WaitMsgCID   *cid.Cid // the CID of any message the client deal is waiting for
 }
 
 type MsigTransaction struct {

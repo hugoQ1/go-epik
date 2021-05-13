@@ -32,6 +32,7 @@ var expertCmd = &cli.Command{
 		expertNominateCmd,
 		expertClaimCmd,
 		expertVote,
+		expertSetOwnerCmd,
 	},
 }
 
@@ -184,14 +185,29 @@ var expertInfoCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("Expert: %s\n", expertAddr)
-		fmt.Printf("Expert owner: %s\n", info.Owner)
-		fmt.Printf("Expert proposer: %s\n", info.Proposer)
-		fmt.Printf("Expert hash: %s\n", info.ApplicationHash)
+		fmt.Printf("\tOwner: %s\n", info.Owner)
+		fmt.Printf("\tProposer: %s\n", info.Proposer)
 		expertType := "foundation"
 		if info.Type == builtin.ExpertNormal {
 			expertType = "normal"
 		}
-		fmt.Printf("Expert type: %s\n", expertType)
+		fmt.Printf("\tType: %s\n", expertType)
+		fmt.Printf("\tHash: %s\n", info.ApplicationHash)
+
+		fmt.Printf("\nVotes: %s (required %s)\n", types.EPK(info.CurrentVotes), types.EPK(info.RequiredVotes))
+		fmt.Printf("\tImplicated: %d times\n", info.ImplicatedTimes)
+		fmt.Printf("\tData Count: %d\n", info.DataCount)
+		fmt.Printf("\tStatus: %d (%s)\n", info.Status, info.StatusDesc)
+		if info.Status == expert.ExpertStateUnqualified {
+			head, err := api.ChainHead(ctx)
+			if err != nil {
+				return err
+			}
+			elapsed := head.Height() - info.LostEpoch
+			fmt.Printf("Will lose shares in %d epochs (since epoch %d)\n", expertfund.ClearExpertContributionDelay-elapsed, info.LostEpoch)
+		}
+
+		fmt.Printf("\nRewards: %d\n", types.EPK(info.TotalReward))
 		return nil
 	},
 }
@@ -374,6 +390,78 @@ var expertClaimCmd = &cli.Command{
 		}
 
 		fmt.Printf("Send claim message: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var expertSetOwnerCmd = &cli.Command{
+	Name:      "set-owner",
+	Usage:     "Change owner address by old owner",
+	ArgsUsage: "<expertAddress> <newOwnerAddress>",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the owner account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return ShowHelp(cctx, fmt.Errorf("'set-owner' expects two arguments, expert address and new owner address"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		expertAddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse expert address: %w", err))
+		}
+
+		newOwnerAddr, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse new owner address: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&newOwnerAddr)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     expertAddr,
+			From:   fromAddr,
+			Value:  big.Zero(),
+			Method: builtin.MethodsExpert.ChangeOwner,
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("failed to send message: %w", err)
+		}
+
+		fmt.Printf("Send message: %s\n", smsg.Cid())
+
+		mw, err := api.StateWaitMsg(ctx, smsg.Cid(), 2)
+		if err != nil {
+			return err
+		}
+
+		if mw.Receipt.ExitCode != 0 {
+			return xerrors.Errorf("change expert owner failed: exit code %d", mw.Receipt.ExitCode)
+		}
+
+		fmt.Printf("Owner changed!\n")
 
 		return nil
 	},

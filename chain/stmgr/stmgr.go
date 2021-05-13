@@ -34,6 +34,8 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/cron"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/flowch"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
 	_init "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
@@ -43,6 +45,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/power"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/EpiK-Protocol/go-epik/chain/state"
 	"github.com/EpiK-Protocol/go-epik/chain/store"
@@ -59,6 +62,7 @@ var log = logging.Logger("statemgr")
 type StateManagerAPI interface {
 	Call(ctx context.Context, msg *types.Message, ts *types.TipSet) (*api.InvocResult, error)
 	GetPaychState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, paych.State, error)
+	GetFlowchState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, flowch.State, error)
 	LoadActorTsk(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*types.Actor, error)
 	LookupID(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error)
 	ResolveToKeyAddress(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error)
@@ -1305,11 +1309,11 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
 func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (
-	vf, team, foundation, fundraising abi.TokenAmount, err error) {
+	vf, team, foundation, investor abi.TokenAmount, err error) {
 	vf = big.Zero()
 	team = big.Zero()
 	foundation = big.Zero()
-	fundraising = big.Zero()
+	investor = big.Zero()
 	/* if height <= build.UpgradeIgnitionHeight {
 		for _, v := range sm.preIgnitionGenInfos.genesisMsigs {
 			au := big.Sub(v.InitialBalance, v.AmountLocked(height))
@@ -1332,8 +1336,8 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 			team = au
 		case builtin.FoundationIDAddress:
 			foundation = au
-		case builtin.FundraisingIDAddress:
-			fundraising = au
+		case builtin.InvestorIDAddress:
+			investor = au
 		default:
 		}
 	}
@@ -1426,6 +1430,20 @@ func getEpkPowerLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmoun
 	return pst.TotalLocked()
 }
 
+func getEpkVestingLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
+	vactor, err := st.GetActor(vesting.Address)
+	if err != nil {
+		return big.Zero(), xerrors.Errorf("failed to load vesting actor: %w", err)
+	}
+
+	vst, err := vesting.Load(adt.WrapStore(ctx, st.Store), vactor)
+	if err != nil {
+		return big.Zero(), xerrors.Errorf("failed to load vesting state: %w", err)
+	}
+
+	return vst.TotalLocked(), nil
+}
+
 func (sm *StateManager) GetEpkLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 
 	epkMarketLocked, err := getEpkMarketLocked(ctx, st)
@@ -1438,7 +1456,12 @@ func (sm *StateManager) GetEpkLocked(ctx context.Context, st *state.StateTree) (
 		return big.Zero(), xerrors.Errorf("failed to get epkPowerLocked: %w", err)
 	}
 
-	return types.BigAdd(epkMarketLocked, epkPowerLocked), nil
+	epkVestingLocked, err := getEpkVestingLocked(ctx, st)
+	if err != nil {
+		return big.Zero(), xerrors.Errorf("failed to get epkVestingLocked: %w", err)
+	}
+
+	return types.BigAdd(epkVestingLocked, types.BigAdd(epkMarketLocked, epkPowerLocked)), nil
 }
 
 func GetEpkBurnt(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
@@ -1480,7 +1503,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup genesis information: %w", err)
 		}
 	}
-	epkVested, team, foundation, fundraising, err := sm.GetEpkVested(ctx, height, st)
+	epkVested, team, foundation, investor, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)
 	}
@@ -1526,7 +1549,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 		EpkVested:            epkVested,
 		EpkTeamVested:        team,
 		EpkFoundationVested:  foundation,
-		EpkFundraisingVested: fundraising,
+		EpkInvestorVested:    investor,
 		EpkMined:             epkMined,
 		EpkBurnt:             epkBurnt,
 		EpkLocked:            epkLocked,
@@ -1545,15 +1568,17 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			break
 		case a == _init.Address ||
 			a == reward.Address ||
-			// The power actor itself should never receive funds
+			// The power/govern actor itself should never receive funds
 			a == power.Address ||
-			a == expertfund.Address ||
-			a == retrieval.Address ||
-			a == vote.Address ||
+			a == govern.Address ||
+			// The knowledge fund actor itself receives but not hold block rewards
 			a == knowledge.Address ||
 			a == builtin.SystemActorAddr ||
 			a == builtin.CronActorAddr ||
-			a == builtin.BurntFundsActorAddr:
+			a == builtin.BurntFundsActorAddr ||
+			builtin.IsExpertActor(actor.Code) ||
+			// Just mining pledge
+			builtin.IsStorageMinerActor(actor.Code):
 
 			unCirc = big.Add(unCirc, actor.Balance)
 
@@ -1571,26 +1596,40 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 			circ = big.Add(circ, big.Sub(actor.Balance, lb))
 			unCirc = big.Add(unCirc, lb)
 
-		case builtin.IsAccountActor(actor.Code) || builtin.IsPaymentChannelActor(actor.Code):
+		case a == vote.Address ||
+			a == retrieval.Address ||
+			a == expertfund.Address ||
+			builtin.IsAccountActor(actor.Code) ||
+			builtin.IsPaymentChannelActor(actor.Code) ||
+			builtin.IsFlowChannelActor(actor.Code):
 			circ = big.Add(circ, actor.Balance)
 
-		case builtin.IsStorageMinerActor(actor.Code):
-			mst, err := miner.Load(sm.cs.ActorStore(ctx), actor)
+		case a == vesting.Address:
+			vst, err := vesting.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
 				return err
 			}
+			totalLocked := vst.TotalLocked()
 
-			ab, err := mst.AvailableBalance(actor.Balance)
+			unCirc = big.Add(unCirc, totalLocked)
+			circ = big.Add(circ, big.Sub(actor.Balance, totalLocked))
 
-			if err == nil {
-				circ = big.Add(circ, ab)
-				unCirc = big.Add(unCirc, big.Sub(actor.Balance, ab))
-			} else {
-				// Assume any error is because the miner state is "broken" (lower actor balance than locked funds)
-				// In this case, the actor's entire balance is considered "uncirculating"
-				unCirc = big.Add(unCirc, actor.Balance)
-			}
+		// case builtin.IsStorageMinerActor(actor.Code):
+		// 	mst, err := miner.Load(sm.cs.ActorStore(ctx), actor)
+		// 	if err != nil {
+		// 		return err
+		// 	}
 
+		// 	ab, err := mst.AvailableBalance(actor.Balance)
+
+		// 	if err == nil {
+		// 		circ = big.Add(circ, ab)
+		// 		unCirc = big.Add(unCirc, big.Sub(actor.Balance, ab))
+		// 	} else {
+		// 		// Assume any error is because the miner state is "broken" (lower actor balance than locked funds)
+		// 		// In this case, the actor's entire balance is considered "uncirculating"
+		// 		unCirc = big.Add(unCirc, actor.Balance)
+		// 	}
 		case builtin.IsMultisigActor(actor.Code):
 			mst, err := multisig.Load(sm.cs.ActorStore(ctx), actor)
 			if err != nil {
@@ -1647,6 +1686,24 @@ func (sm *StateManager) GetPaychState(ctx context.Context, addr address.Address,
 	}
 
 	actState, err := paych.Load(sm.cs.ActorStore(ctx), act)
+	if err != nil {
+		return nil, nil, err
+	}
+	return act, actState, nil
+}
+
+func (sm *StateManager) GetFlowchState(ctx context.Context, addr address.Address, ts *types.TipSet) (*types.Actor, flowch.State, error) {
+	st, err := sm.ParentState(ts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	act, err := st.GetActor(addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	actState, err := flowch.Load(sm.cs.ActorStore(ctx), act)
 	if err != nil {
 		return nil, nil, err
 	}
