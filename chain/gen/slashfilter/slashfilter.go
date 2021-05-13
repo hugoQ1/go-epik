@@ -25,13 +25,6 @@ func New(dstore ds.Batching) *SlashFilter {
 	}
 }
 
-func (f *SlashFilter) putEpoch(epochKey ds.Key, value []byte) error {
-	if err := f.byEpoch.Put(epochKey, value); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
-	}
-	return nil
-}
-
 func (f *SlashFilter) MarkMined(bh *types.BlockHeader) error {
 	parentsKey := ds.NewKey(fmt.Sprintf("/%s/%x", bh.Miner, types.NewTipSetKey(bh.Parents...).Bytes()))
 	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
@@ -39,7 +32,10 @@ func (f *SlashFilter) MarkMined(bh *types.BlockHeader) error {
 	}
 
 	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
-	return f.putEpoch(epochKey, bh.Cid().Bytes())
+	if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
+		return xerrors.Errorf("putting byEpoch entry: %w", err)
+	}
+	return nil
 }
 
 func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch, mark bool) error {
