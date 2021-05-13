@@ -82,8 +82,8 @@ func (rpn *retrievalProviderNode) SavePaymentVoucher(ctx context.Context, paymen
 }
 
 func (rpn *retrievalProviderNode) OnComplete(ctx context.Context, paymentChannel address.Address) error {
-	_, err := rpn.full.FlowchSettle(ctx, paymentChannel)
-	return err
+	// _, err := rpn.full.FlowchSettle(ctx, paymentChannel)
+	return nil
 }
 
 func (rpn *retrievalProviderNode) GetChainHead(ctx context.Context) (shared.TipSetToken, abi.ChainEpoch, error) {
