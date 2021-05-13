@@ -1438,6 +1438,9 @@ var msigVestedCmd = &cli.Command{
 			if err != nil {
 				return err
 			}
+			if end == nil {
+				end, err = api.ChainHead(ctx)
+			}
 		} else {
 			end, err = api.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(cctx.Int64("end-epoch")), types.EmptyTSK)
 			if err != nil {
@@ -1448,6 +1451,18 @@ var msigVestedCmd = &cli.Command{
 		ret, err := api.MsigGetVested(ctx, msig, start.Key(), end.Key())
 		if err != nil {
 			return err
+		}
+
+		vesting, err := api.MsigGetVestingSchedule(ctx, msig, start.Key())
+		if err != nil {
+			return err
+		}
+		if start.Height() <= vesting.StartEpoch {
+			ava, err := api.MsigGetAvailableBalance(ctx, msig, start.Key())
+			if err != nil {
+				return err
+			}
+			ret = big.Add(ret, ava)
 		}
 
 		fmt.Printf("Vested: %s between %d and %d\n", types.EPK(ret), start.Height(), end.Height())
