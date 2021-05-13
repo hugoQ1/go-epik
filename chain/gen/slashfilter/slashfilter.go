@@ -33,6 +33,11 @@ func (f *SlashFilter) putEpoch(epochKey ds.Key, value []byte) error {
 }
 
 func (f *SlashFilter) MarkMined(bh *types.BlockHeader) error {
+	parentsKey := ds.NewKey(fmt.Sprintf("/%s/%x", bh.Miner, types.NewTipSetKey(bh.Parents...).Bytes()))
+	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
+		return xerrors.Errorf("putting byParents entry: %w", err)
+	}
+
 	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
 	return f.putEpoch(epochKey, bh.Cid().Bytes())
 }
@@ -80,6 +85,7 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 			for _, c := range bh.Parents {
 				if c.Equals(parent) {
 					found = true
+					break
 				}
 			}
 
@@ -90,19 +96,8 @@ func (f *SlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpo
 	}
 
 	if mark {
-		if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
-			return xerrors.Errorf("putting byEpoch entry: %w", err)
-		}
-
-		return f.putEpoch(epochKey, bh.Cid().Bytes())
+		return f.MarkMined(bh)
 	}
-	/* 	if err := f.byParents.Put(parentsKey, bh.Cid().Bytes()); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
-	}
-
-	if err := f.byEpoch.Put(epochKey, bh.Cid().Bytes()); err != nil {
-		return xerrors.Errorf("putting byEpoch entry: %w", err)
-	} */
 
 	return nil
 }
