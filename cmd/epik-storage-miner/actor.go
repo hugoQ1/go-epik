@@ -240,7 +240,7 @@ var actorSetPeeridCmd = &cli.Command{
 
 		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
 			To:     maddr,
-			From:   mi.Owner,
+			From:   mi.Coinbase,
 			Value:  types.NewInt(0),
 			Method: miner.Methods.WithdrawBalance,
 			Params: params,
