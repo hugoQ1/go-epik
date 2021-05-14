@@ -15,6 +15,9 @@ func (cs *ChainStore) compressedTakeHeaviestTipSet(ctx context.Context, ts *type
 	}
 	if cs.heaviest == nil {
 		cs.heaviest = ts
+		if ts.Height() == 0 {
+			cs.compressingCh <- ts
+		}
 	} else {
 		cs.compressingCh <- ts
 	}
