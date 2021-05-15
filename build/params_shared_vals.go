@@ -70,7 +70,7 @@ var ZeroAddress = MustParseAddress("f3yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 var Devnet = true
 
-const EpkBase = uint64(195_00_000_000)
+const EpkBase = uint64(1_000_000_000)
 const EpkAllocStorageMining = uint64(700_000_000)
 
 const EpkPrecision = uint64(1_000_000_000_000_000_000)

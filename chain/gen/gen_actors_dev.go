@@ -61,7 +61,7 @@ var DefaultFoundationAccountActor = genesis.Actor{
 // investor
 var DefaultInvestorAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
-	Balance: types.FromEpk(200_000_000), //  200M
+	Balance: types.FromEpk(100_000_000), //  200M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
 			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
