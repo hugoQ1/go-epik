@@ -43,6 +43,8 @@ github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2 h
 github.com/EpiK-Protocol/go-data-transfer v1.1.1-0.20210218064751-b53c28fecbf2/go.mod h1:mvjZ+C3NkBX10JP4JMu27DCjUouHFjHwUGh+Xc4yvDA=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210512183918-a7df61bb4cd5 h1:xhbgFptkNHc5v9903LsWUE67VJLt+SzVn7iM+gwPtkA=
 github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210512183918-a7df61bb4cd5/go.mod h1:MDNBURdS1GXdcm4O5LTCINJMBzgnyoX4BNcOD60h0m8=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210514123631-cbd882e00884 h1:IAzrhBHeDKk2+OxyKLu1jWg4m8Pc6Rqdov2oNo3Q8qs=
+github.com/EpiK-Protocol/go-epik-actors/v2 v2.4.0-alpha.0.20210514123631-cbd882e00884/go.mod h1:MDNBURdS1GXdcm4O5LTCINJMBzgnyoX4BNcOD60h0m8=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118 h1:II8x29L9VUs/GaUgXG2XZX9kBGGzz2TdodC81WJ0niU=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118/go.mod h1:s2BsE4KJ4BcK4hThWCMqKXKQ36YVAPt46kyxxNyHczc=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4 h1:VqXg3SYH5FlHLclagcT6oIQ9r1knlcvKe/OF02/dT08=
