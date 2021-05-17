@@ -16,7 +16,9 @@ func (cs *ChainStore) compressedTakeHeaviestTipSet(ctx context.Context, ts *type
 	if cs.heaviest == nil {
 		cs.heaviest = ts
 		if ts.Height() == 0 {
-			cs.compressingCh <- ts
+			if err := cs.writeHead(ts); err != nil {
+				log.Errorf("failed to write chain head: %s", err)
+			}
 		}
 	} else {
 		cs.compressingCh <- ts
