@@ -125,7 +125,7 @@ install-worker:
 	install -C ./epik-worker /usr/local/bin/epik-worker
 
 # TOOLS
-
+epik-seed: GOFLAGS+=-tags=testnet
 epik-seed: $(BUILD_DEPS)
 	rm -f epik-seed
 	go build $(GOFLAGS) -o epik-seed ./cmd/epik-seed
