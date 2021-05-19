@@ -49,4 +49,4 @@ func forEachCap(store adt.Store, ver actors.Version, root rootFunc, cb func(addr
 		}
 		return cb(a, dcap)
 	})
-}
+}*/

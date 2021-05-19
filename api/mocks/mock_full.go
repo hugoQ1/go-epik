@@ -11,6 +11,7 @@ import (
 	knowledge "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	miner "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	reward "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/reward"
+	vesting "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vesting"
 	vote "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
@@ -28,6 +29,7 @@ import (
 	dline "github.com/filecoin-project/go-state-types/dline"
 	network "github.com/filecoin-project/go-state-types/network"
 	expert "github.com/filecoin-project/specs-actors/v2/actors/builtin/expert"
+	flowch "github.com/filecoin-project/specs-actors/v2/actors/builtin/flowch"
 	paych "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
@@ -805,6 +807,21 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieveApplyForWithdraw(arg0, arg1, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveApplyForWithdraw", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveApplyForWithdraw), arg0, arg1, arg2)
 }
 
+// ClientRetrieveBind mocks base method
+func (m *MockFullNode) ClientRetrieveBind(arg0 context.Context, arg1 address.Address, arg2 []address.Address, arg3 bool) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClientRetrieveBind", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClientRetrieveBind indicates an expected call of ClientRetrieveBind
+func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveBind), arg0, arg1, arg2, arg3)
+}
+
 // ClientRetrieveGetDeal mocks base method
 func (m *MockFullNode) ClientRetrieveGetDeal(arg0 context.Context, arg1 retrievalmarket.DealID) (*api.RetrievalDeal, error) {
 	m.ctrl.T.Helper()
@@ -836,33 +853,18 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieveListDeals(arg0 interface{}) *g
 }
 
 // ClientRetrievePledge mocks base method
-func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1 address.Address, arg2 address.Address, arg3 big.Int) (cid.Cid, error) {
+func (m *MockFullNode) ClientRetrievePledge(arg0 context.Context, arg1, arg2 address.Address, arg3 []address.Address, arg4 big.Int) (cid.Cid, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(cid.Cid)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ClientRetrieveBind mocks base method
-func (m *MockFullNode) ClientRetrieveBind(arg0 context.Context, arg1 address.Address, arg2 bool) (cid.Cid, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrieveBind", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ClientRetrievePledge", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(cid.Cid)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClientRetrievePledge indicates an expected call of ClientRetrievePledge
-func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrievePledge(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
-}
-
-// ClientRetrieveBind indicates an expected call of ClientRetrieveBind
-func (mr *MockFullNodeMockRecorder) ClientRetrieveBind(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveBind", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrievePledge", reflect.TypeOf((*MockFullNode)(nil).ClientRetrievePledge), arg0, arg1, arg2, arg3, arg4)
 }
 
 // ClientRetrieveQuery mocks base method
@@ -966,6 +968,259 @@ func (m *MockFullNode) CreateBackup(arg0 context.Context, arg1 string) error {
 func (mr *MockFullNodeMockRecorder) CreateBackup(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBackup", reflect.TypeOf((*MockFullNode)(nil).CreateBackup), arg0, arg1)
+}
+
+// FlowchAllocateLane mocks base method
+func (m *MockFullNode) FlowchAllocateLane(arg0 context.Context, arg1 address.Address) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchAllocateLane", arg0, arg1)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchAllocateLane indicates an expected call of FlowchAllocateLane
+func (mr *MockFullNodeMockRecorder) FlowchAllocateLane(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchAllocateLane", reflect.TypeOf((*MockFullNode)(nil).FlowchAllocateLane), arg0, arg1)
+}
+
+// FlowchAvailableFunds mocks base method
+func (m *MockFullNode) FlowchAvailableFunds(arg0 context.Context, arg1 address.Address) (*api.ChannelAvailableFunds, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchAvailableFunds", arg0, arg1)
+	ret0, _ := ret[0].(*api.ChannelAvailableFunds)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchAvailableFunds indicates an expected call of FlowchAvailableFunds
+func (mr *MockFullNodeMockRecorder) FlowchAvailableFunds(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchAvailableFunds", reflect.TypeOf((*MockFullNode)(nil).FlowchAvailableFunds), arg0, arg1)
+}
+
+// FlowchAvailableFundsByFromTo mocks base method
+func (m *MockFullNode) FlowchAvailableFundsByFromTo(arg0 context.Context, arg1, arg2 address.Address) (*api.ChannelAvailableFunds, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchAvailableFundsByFromTo", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*api.ChannelAvailableFunds)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchAvailableFundsByFromTo indicates an expected call of FlowchAvailableFundsByFromTo
+func (mr *MockFullNodeMockRecorder) FlowchAvailableFundsByFromTo(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchAvailableFundsByFromTo", reflect.TypeOf((*MockFullNode)(nil).FlowchAvailableFundsByFromTo), arg0, arg1, arg2)
+}
+
+// FlowchCollect mocks base method
+func (m *MockFullNode) FlowchCollect(arg0 context.Context, arg1 address.Address) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchCollect", arg0, arg1)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchCollect indicates an expected call of FlowchCollect
+func (mr *MockFullNodeMockRecorder) FlowchCollect(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchCollect", reflect.TypeOf((*MockFullNode)(nil).FlowchCollect), arg0, arg1)
+}
+
+// FlowchGet mocks base method
+func (m *MockFullNode) FlowchGet(arg0 context.Context, arg1, arg2 address.Address, arg3 big.Int) (*api.ChannelInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchGet", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*api.ChannelInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchGet indicates an expected call of FlowchGet
+func (mr *MockFullNodeMockRecorder) FlowchGet(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchGet", reflect.TypeOf((*MockFullNode)(nil).FlowchGet), arg0, arg1, arg2, arg3)
+}
+
+// FlowchGetWaitReady mocks base method
+func (m *MockFullNode) FlowchGetWaitReady(arg0 context.Context, arg1 cid.Cid) (address.Address, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchGetWaitReady", arg0, arg1)
+	ret0, _ := ret[0].(address.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchGetWaitReady indicates an expected call of FlowchGetWaitReady
+func (mr *MockFullNodeMockRecorder) FlowchGetWaitReady(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchGetWaitReady", reflect.TypeOf((*MockFullNode)(nil).FlowchGetWaitReady), arg0, arg1)
+}
+
+// FlowchList mocks base method
+func (m *MockFullNode) FlowchList(arg0 context.Context) ([]address.Address, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchList", arg0)
+	ret0, _ := ret[0].([]address.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchList indicates an expected call of FlowchList
+func (mr *MockFullNodeMockRecorder) FlowchList(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchList", reflect.TypeOf((*MockFullNode)(nil).FlowchList), arg0)
+}
+
+// FlowchNewPayment mocks base method
+func (m *MockFullNode) FlowchNewPayment(arg0 context.Context, arg1, arg2 address.Address, arg3 []api.FlowVoucherSpec) (*api.FlowInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchNewPayment", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*api.FlowInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchNewPayment indicates an expected call of FlowchNewPayment
+func (mr *MockFullNodeMockRecorder) FlowchNewPayment(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchNewPayment", reflect.TypeOf((*MockFullNode)(nil).FlowchNewPayment), arg0, arg1, arg2, arg3)
+}
+
+// FlowchSettle mocks base method
+func (m *MockFullNode) FlowchSettle(arg0 context.Context, arg1 address.Address) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchSettle", arg0, arg1)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchSettle indicates an expected call of FlowchSettle
+func (mr *MockFullNodeMockRecorder) FlowchSettle(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchSettle", reflect.TypeOf((*MockFullNode)(nil).FlowchSettle), arg0, arg1)
+}
+
+// FlowchStatus mocks base method
+func (m *MockFullNode) FlowchStatus(arg0 context.Context, arg1 address.Address) (*api.FlowchStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchStatus", arg0, arg1)
+	ret0, _ := ret[0].(*api.FlowchStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchStatus indicates an expected call of FlowchStatus
+func (mr *MockFullNodeMockRecorder) FlowchStatus(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchStatus", reflect.TypeOf((*MockFullNode)(nil).FlowchStatus), arg0, arg1)
+}
+
+// FlowchVoucherAdd mocks base method
+func (m *MockFullNode) FlowchVoucherAdd(arg0 context.Context, arg1 address.Address, arg2 *flowch.SignedVoucher, arg3 []byte, arg4 big.Int) (big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherAdd", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchVoucherAdd indicates an expected call of FlowchVoucherAdd
+func (mr *MockFullNodeMockRecorder) FlowchVoucherAdd(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherAdd", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherAdd), arg0, arg1, arg2, arg3, arg4)
+}
+
+// FlowchVoucherCheckSpendable mocks base method
+func (m *MockFullNode) FlowchVoucherCheckSpendable(arg0 context.Context, arg1 address.Address, arg2 *flowch.SignedVoucher, arg3, arg4 []byte) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherCheckSpendable", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchVoucherCheckSpendable indicates an expected call of FlowchVoucherCheckSpendable
+func (mr *MockFullNodeMockRecorder) FlowchVoucherCheckSpendable(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherCheckSpendable", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherCheckSpendable), arg0, arg1, arg2, arg3, arg4)
+}
+
+// FlowchVoucherCheckValid mocks base method
+func (m *MockFullNode) FlowchVoucherCheckValid(arg0 context.Context, arg1 address.Address, arg2 *flowch.SignedVoucher) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherCheckValid", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FlowchVoucherCheckValid indicates an expected call of FlowchVoucherCheckValid
+func (mr *MockFullNodeMockRecorder) FlowchVoucherCheckValid(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherCheckValid", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherCheckValid), arg0, arg1, arg2)
+}
+
+// FlowchVoucherCreate mocks base method
+func (m *MockFullNode) FlowchVoucherCreate(arg0 context.Context, arg1 address.Address, arg2 big.Int, arg3 uint64) (*api.FlowVoucherCreateResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherCreate", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*api.FlowVoucherCreateResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchVoucherCreate indicates an expected call of FlowchVoucherCreate
+func (mr *MockFullNodeMockRecorder) FlowchVoucherCreate(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherCreate", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherCreate), arg0, arg1, arg2, arg3)
+}
+
+// FlowchVoucherList mocks base method
+func (m *MockFullNode) FlowchVoucherList(arg0 context.Context, arg1 address.Address) ([]*flowch.SignedVoucher, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherList", arg0, arg1)
+	ret0, _ := ret[0].([]*flowch.SignedVoucher)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchVoucherList indicates an expected call of FlowchVoucherList
+func (mr *MockFullNodeMockRecorder) FlowchVoucherList(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherList", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherList), arg0, arg1)
+}
+
+// FlowchVoucherSubmit mocks base method
+func (m *MockFullNode) FlowchVoucherSubmit(arg0 context.Context, arg1 address.Address, arg2 *flowch.SignedVoucher, arg3, arg4 []byte) (cid.Cid, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlowchVoucherSubmit", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(cid.Cid)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlowchVoucherSubmit indicates an expected call of FlowchVoucherSubmit
+func (mr *MockFullNodeMockRecorder) FlowchVoucherSubmit(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowchVoucherSubmit", reflect.TypeOf((*MockFullNode)(nil).FlowchVoucherSubmit), arg0, arg1, arg2, arg3, arg4)
+}
+
+// GC mocks base method
+func (m *MockFullNode) GC(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GC", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GC indicates an expected call of GC
+func (mr *MockFullNodeMockRecorder) GC(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockFullNode)(nil).GC), arg0)
 }
 
 // GasEstimateFeeCap mocks base method
@@ -2203,6 +2458,21 @@ func (mr *MockFullNodeMockRecorder) StateCirculatingSupply(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateCirculatingSupply", reflect.TypeOf((*MockFullNode)(nil).StateCirculatingSupply), arg0, arg1)
 }
 
+// StateCoinbase mocks base method
+func (m *MockFullNode) StateCoinbase(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (*vesting.CoinbaseInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StateCoinbase", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*vesting.CoinbaseInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StateCoinbase indicates an expected call of StateCoinbase
+func (mr *MockFullNodeMockRecorder) StateCoinbase(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateCoinbase", reflect.TypeOf((*MockFullNode)(nil).StateCoinbase), arg0, arg1, arg2)
+}
+
 // StateCompute mocks base method
 func (m *MockFullNode) StateCompute(arg0 context.Context, arg1 abi.ChainEpoch, arg2 []*types.Message, arg3 types.TipSetKey) (*api.ComputeStateOutput, error) {
 	m.ctrl.T.Helper()
@@ -2563,21 +2833,6 @@ func (mr *MockFullNodeMockRecorder) StateMinerActives(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMinerActives", reflect.TypeOf((*MockFullNode)(nil).StateMinerActives), arg0, arg1, arg2)
 }
 
-// StateMinerAvailableBalance mocks base method
-func (m *MockFullNode) StateMinerAvailableBalance(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (big.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StateMinerAvailableBalance", arg0, arg1, arg2)
-	ret0, _ := ret[0].(big.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// StateMinerAvailableBalance indicates an expected call of StateMinerAvailableBalance
-func (mr *MockFullNodeMockRecorder) StateMinerAvailableBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMinerAvailableBalance", reflect.TypeOf((*MockFullNode)(nil).StateMinerAvailableBalance), arg0, arg1, arg2)
-}
-
 // StateMinerDeadlines mocks base method
 func (m *MockFullNode) StateMinerDeadlines(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) ([]api.Deadline, error) {
 	m.ctrl.T.Helper()
@@ -2606,6 +2861,21 @@ func (m *MockFullNode) StateMinerFaults(arg0 context.Context, arg1 address.Addre
 func (mr *MockFullNodeMockRecorder) StateMinerFaults(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMinerFaults", reflect.TypeOf((*MockFullNode)(nil).StateMinerFaults), arg0, arg1, arg2)
+}
+
+// StateMinerFunds mocks base method
+func (m *MockFullNode) StateMinerFunds(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (miner.Funds, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StateMinerFunds", arg0, arg1, arg2)
+	ret0, _ := ret[0].(miner.Funds)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StateMinerFunds indicates an expected call of StateMinerFunds
+func (mr *MockFullNodeMockRecorder) StateMinerFunds(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMinerFunds", reflect.TypeOf((*MockFullNode)(nil).StateMinerFunds), arg0, arg1, arg2)
 }
 
 // StateMinerInfo mocks base method
@@ -2741,21 +3011,6 @@ func (m *MockFullNode) StateMinerStoredAnyPiece(arg0 context.Context, arg1 addre
 func (mr *MockFullNodeMockRecorder) StateMinerStoredAnyPiece(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMinerStoredAnyPiece", reflect.TypeOf((*MockFullNode)(nil).StateMinerStoredAnyPiece), arg0, arg1, arg2, arg3)
-}
-
-// StateMiningPledge mocks base method
-func (m *MockFullNode) StateMiningPledge(arg0 context.Context, arg1 address.Address, arg2 types.TipSetKey) (big.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StateMiningPledge", arg0, arg1, arg2)
-	ret0, _ := ret[0].(big.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// StateMiningPledge indicates an expected call of StateMiningPledge
-func (mr *MockFullNodeMockRecorder) StateMiningPledge(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateMiningPledge", reflect.TypeOf((*MockFullNode)(nil).StateMiningPledge), arg0, arg1, arg2)
 }
 
 // StateNetworkName mocks base method
