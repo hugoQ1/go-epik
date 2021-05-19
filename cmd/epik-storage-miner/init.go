@@ -533,6 +533,10 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		return err
 	}
 
+	if err := ioutil.WriteFile(filepath.Join(lr.Path(), "minerid"), []byte(addr.String()), 0644); err != nil {
+		return xerrors.Errorf("persisting storage miner (%s): %w", filepath.Join(lr.Path(), "minerid"), err)
+	}
+
 	return nil
 }
 
