@@ -1309,28 +1309,16 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
 func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (
-	vf, team, foundation, investor abi.TokenAmount, err error) {
-	vf = big.Zero()
+	total, team, foundation, investor abi.TokenAmount, err error) {
+	total = big.Zero()
 	team = big.Zero()
 	foundation = big.Zero()
 	investor = big.Zero()
-	/* if height <= build.UpgradeIgnitionHeight {
-		for _, v := range sm.preIgnitionGenInfos.genesisMsigs {
-			au := big.Sub(v.InitialBalance, v.AmountLocked(height))
-			vf = big.Add(vf, au)
-		}
-	} else {
-		for _, v := range sm.postIgnitionGenInfos.genesisMsigs {
-			// In the pre-ignition logic, we simply called AmountLocked(height), assuming startEpoch was 0.
-			// The start epoch changed in the Ignition upgrade.
-			au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
-			vf = big.Add(vf, au)
-		}
-	} */
-	for addr, v := range sm.genInfos.genesisMsigs {
+
+	/* 	for addr, v := range sm.genInfos.genesisMsigs {
 		au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
 		au = big.Add(au, v.InitialVested)
-		vf = big.Add(vf, au)
+		total = big.Add(total, au)
 		switch addr {
 		case builtin.TeamIDAddress:
 			team = au
@@ -1339,6 +1327,35 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 		case builtin.InvestorIDAddress:
 			investor = au
 		default:
+		}
+	} */
+
+	for addr, v := range sm.genInfos.genesisMsigs {
+
+		switch addr {
+		case builtin.TeamIDAddress, builtin.FoundationIDAddress, builtin.InvestorIDAddress:
+			act, err := st.GetActor(addr)
+			if err != nil {
+				return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("failed to get actor %s: %w", addr, err)
+			}
+			genesisBal := big.Add(v.InitialVested, v.InitialBalance)
+			if genesisBal.GreaterThan(act.Balance) {
+				au := big.Sub(genesisBal, act.Balance)
+				total = big.Add(total, au)
+				switch addr {
+				case builtin.TeamIDAddress:
+					team = au
+				case builtin.FoundationIDAddress:
+					foundation = au
+				case builtin.InvestorIDAddress:
+					investor = au
+				default:
+				}
+			}
+		default:
+			au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
+			au = big.Add(au, v.InitialVested)
+			total = big.Add(total, au)
 		}
 	}
 
@@ -1351,17 +1368,9 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 
 		diff := big.Sub(v.initBal, act.Balance)
 		if diff.GreaterThan(big.Zero()) {
-			vf = big.Add(vf, diff)
+			total = big.Add(total, diff)
 		}
 	}
-
-	// After UpgradeActorsV2Height these funds are accounted for in GetEpkReserveDisbursed
-	// if height <= build.UpgradeActorsV2Height {
-	// 	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
-	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisPledge)
-	// 	// continue to use preIgnitionGenInfos, nothing changed at the Ignition epoch
-	// 	vf = big.Add(vf, sm.preIgnitionGenInfos.genesisMarketFunds)
-	// }
 
 	return
 }
