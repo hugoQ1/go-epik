@@ -299,14 +299,14 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
-		// if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
-		// 	log.Infof("data has been storaged in daemon:%s", data.pieceID)
-		// 	if !data.isRetrieved {
-		// 		data.isRetrieved = true
-		// 		m.totalRetrieveCount++
-		// 	}
-		// 	continue
-		// }
+		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
+			log.Infof("data has been storaged in daemon:%s", data.pieceID)
+			if !data.isRetrieved {
+				data.isRetrieved = true
+				m.totalRetrieveCount++
+			}
+			continue
+		}
 
 		if m.retrievals.Len() >= RetrieveParallelNum {
 			log.Infof("wait for retrieval:%d", m.retrievals.Len())
