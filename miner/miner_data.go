@@ -260,9 +260,11 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			m.retrievals.Remove(rk)
 			if !retrievalmarket.IsTerminalSuccess(nDeal.Status) {
 				data.tryCount++
-				data.miners[nDeal.MinerWallet] = data.miners[nDeal.MinerWallet] - MinerPunishmentScore
-				if data.miners[nDeal.MinerWallet] < 1 {
-					data.miners[nDeal.MinerWallet] = 1
+				if _, ok := data.miners[deal.Miner]; ok {
+					data.miners[deal.Miner] = data.miners[deal.Miner] - MinerPunishmentScore
+					if data.miners[deal.Miner] < 1 {
+						data.miners[deal.Miner] = 1
+					}
 				}
 			}
 		}
@@ -327,9 +329,11 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		miner := addrs[rand.Intn(len(addrs))]
 		deal, err := m.api.ClientRetrieveQuery(ctx, m.minerInfo.Owner, data.rootCID, &data.pieceID, miner)
 		if err != nil {
-			data.miners[miner] = data.miners[miner] - MinerPunishmentScore
-			if data.miners[miner] < 1 {
-				data.miners[miner] = 1
+			if _, ok := data.miners[miner]; ok {
+				data.miners[miner] = data.miners[miner] - MinerPunishmentScore
+				if data.miners[miner] < 1 {
+					data.miners[miner] = 1
+				}
 			}
 			log.Warnf("failed to retrieve miner:%s, data:%s, try:%d, err:%s", miner, data.rootCID, data.tryCount, err)
 			// if data.tryCount > RetrieveTryCountMax {

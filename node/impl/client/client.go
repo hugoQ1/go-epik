@@ -1290,7 +1290,12 @@ func (a *API) ClientRetrieveQuery(ctx context.Context, wallet address.Address, r
 		return nil, xerrors.Errorf("Retrieve failed: %w", err)
 	}
 
-	return a.ClientRetrieveGetDeal(ctx, dealID)
+	deal, err := a.ClientRetrieveGetDeal(ctx, dealID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get retrieve deal: %w", err)
+	}
+	deal.Miner = miner
+	return deal, nil
 }
 
 func (a *API) ClientRetrievePledge(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) {
