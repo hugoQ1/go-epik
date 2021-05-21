@@ -81,6 +81,7 @@ func (m *Sealing) handlePreCommitFailed(ctx statemachine.Context, sector SectorI
 		mw, err := m.api.StateSearchMsg(ctx.Context(), *sector.PreCommitMessage)
 		if err != nil {
 			// API error
+			log.Errorf("state search precommit message %s: %+v", *sector.PreCommitMessage, err)
 			if err := failedCooldown(ctx, sector); err != nil {
 				return err
 			}
@@ -89,12 +90,20 @@ func (m *Sealing) handlePreCommitFailed(ctx statemachine.Context, sector SectorI
 		}
 
 		if mw == nil {
+			log.Warnf("precommit message not found: %s", *sector.PreCommitMessage)
+			if err := failedCooldown(ctx, sector); err != nil {
+				return err
+			}
 			// API error in precommit
 			return ctx.Send(SectorRetryPreCommitWait{})
 		}
 
 		switch mw.Receipt.ExitCode {
 		case exitcode.Ok:
+			log.Warnf("unexpected precommit message exitcode ok: %s", *sector.PreCommitMessage)
+			if err := failedCooldown(ctx, sector); err != nil {
+				return err
+			}
 			// API error in PreCommitWait
 			return ctx.Send(SectorRetryPreCommitWait{})
 		case exitcode.SysErrOutOfGas:
