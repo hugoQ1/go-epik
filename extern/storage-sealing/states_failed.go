@@ -191,6 +191,7 @@ func (m *Sealing) handleCommitFailed(ctx statemachine.Context, sector SectorInfo
 	if sector.CommitMessage != nil {
 		mw, err := m.api.StateSearchMsg(ctx.Context(), *sector.CommitMessage)
 		if err != nil {
+			log.Errorf("state search commit message %s: %+v", *sector.CommitMessage, err)
 			// API error
 			if err := failedCooldown(ctx, sector); err != nil {
 				return err
@@ -200,12 +201,20 @@ func (m *Sealing) handleCommitFailed(ctx statemachine.Context, sector SectorInfo
 		}
 
 		if mw == nil {
+			log.Warnf("commit message not found: %s", *sector.CommitMessage)
+			if err := failedCooldown(ctx, sector); err != nil {
+				return err
+			}
 			// API error in commit
 			return ctx.Send(SectorRetryCommitWait{})
 		}
 
 		switch mw.Receipt.ExitCode {
 		case exitcode.Ok:
+			log.Warnf("unexpected commit message exitcode ok: %s", *sector.CommitMessage)
+			if err := failedCooldown(ctx, sector); err != nil {
+				return err
+			}
 			// API error in CcommitWait
 			return ctx.Send(SectorRetryCommitWait{})
 		case exitcode.SysErrOutOfGas:
