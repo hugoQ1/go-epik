@@ -9,50 +9,49 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func (cs *ChainStore) compressedTakeHeaviestTipSet(ctx context.Context, ts *types.TipSet) error {
-	if len(cs.compressingCh) > 2 {
-		log.Warnf("slow head compressing %d", len(cs.compressingCh))
+type heaviestNotify struct {
+	old *types.TipSet
+	new *types.TipSet
+}
+
+func (cs *ChainStore) newTakeHeaviestTipSet(ctx context.Context, ts *types.TipSet) error {
+	_, span := trace.StartSpan(ctx, "newTakeHeaviestTipSet")
+	defer span.End()
+
+	if len(cs.notifyCh) > 5 {
+		log.Warnf("slow notify %d", len(cs.notifyCh))
 	}
-	if cs.heaviest == nil {
-		cs.heaviest = ts
-		if ts.Height() == 0 {
-			if err := cs.writeHead(ts); err != nil {
-				log.Errorf("failed to write chain head: %s", err)
-			}
-		}
-	} else {
-		cs.compressingCh <- ts
+
+	cs.notifyCh <- &heaviestNotify{
+		old: cs.heaviest,
+		new: ts,
+	}
+
+	span.AddAttributes(trace.BoolAttribute("newHead", true))
+
+	log.Infof("New heaviest tipset! %s (height=%d)", ts.Cids(), ts.Height())
+	cs.heaviest = ts
+	if err := cs.writeHead(ts); err != nil {
+		log.Errorf("failed to write chain head: %s", err)
 	}
 	return nil
 }
 
-func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *types.TipSet {
+func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *heaviestNotify {
 
-	out := make(chan *types.TipSet, 32)
+	out := make(chan *heaviestNotify, 32)
 
-	pushCompressedTs := func(ts *types.TipSet) {
-		_, span := trace.StartSpan(ctx, "pushCompressedTs")
-		defer span.End()
-
-		if cs.heaviest != nil { // buf
+	pubNotify := func(notify *heaviestNotify) {
+		if notify.old != nil { // buf
 			if len(cs.reorgCh) > 0 {
 				log.Warnf("Reorg channel running behind, %d reorgs buffered", len(cs.reorgCh))
 			}
 			cs.reorgCh <- reorg{
-				old: cs.heaviest,
-				new: ts,
+				old: notify.old,
+				new: notify.new,
 			}
 		} else {
-			log.Warnf("no heaviest tipset found, using %s", ts.Cids())
-		}
-
-		span.AddAttributes(trace.BoolAttribute("newHead", true))
-
-		log.Infof("New heaviest tipset! %s (height=%d)", ts.Cids(), ts.Height())
-		cs.heaviest = ts
-
-		if err := cs.writeHead(ts); err != nil {
-			log.Errorf("failed to write chain head: %s", err)
+			log.Warnf("no heaviest tipset found, using %s", notify.new.Cids())
 		}
 	}
 
@@ -83,40 +82,51 @@ func (cs *ChainStore) headCompressor(ctx context.Context) chan<- *types.TipSet {
 		defer ticker1.Stop()
 
 		var (
-			prevBest *types.TipSet
-			lastRecv time.Time
-			prevCids map[cid.Cid]struct{}
+			prevNotify *heaviestNotify
+			lastRecv   time.Time
+			prevCids   map[cid.Cid]struct{}
 		)
 		for {
 			select {
-			case r := <-out:
+			case notify := <-out:
 				lastRecv = time.Now()
 
-				if prevBest == nil {
-					prevBest = r
-					prevCids = convertToMap(r.Cids())
+				if prevNotify == nil {
+					prevNotify = notify
+					prevCids = convertToMap(notify.new.Cids())
 					break
 				}
 
-				newCids := convertToMap(r.Cids())
+				newCids := convertToMap(notify.new.Cids())
 
 				containsPrev := false
-				if prevBest.Height() == r.Height() {
+				if prevNotify.new.Height() == notify.new.Height() {
 					containsPrev = contains(newCids, prevCids)
 				}
-				if !containsPrev {
-					pushCompressedTs(prevBest)
+				if containsPrev && notify.old == prevNotify.new {
+					prevNotify = &heaviestNotify{
+						old: prevNotify.old,
+						new: notify.new,
+					}
+					if prevNotify.old != nil {
+						log.Infof("merge heaviest notifications! old: %s (height=%d), new: %s (height=%d)",
+							prevNotify.old.Cids(), prevNotify.old.Height(),
+							prevNotify.new.Cids(), prevNotify.new.Height(),
+						)
+					} else {
+						log.Infof("merge heaviest notifications! %s (height=%d)", prevNotify.new.Cids(), prevNotify.new.Height())
+					}
 				} else {
-					log.Infof("Compress heaviest tipset! %s (height=%d)", r.Cids(), r.Height())
+					pubNotify(prevNotify)
+					prevNotify = notify
 				}
 
-				prevBest = r
 				prevCids = newCids
 
 			case <-ticker1.C:
-				if prevBest != nil && time.Since(lastRecv) >= time.Second {
-					pushCompressedTs(prevBest)
-					prevBest = nil
+				if prevNotify != nil && time.Since(lastRecv) >= time.Second {
+					pubNotify(prevNotify)
+					prevNotify = nil
 					prevCids = nil
 				}
 

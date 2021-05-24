@@ -138,7 +138,7 @@ type ChainStore struct {
 	cancelFn context.CancelFunc
 	wg       sync.WaitGroup
 
-	compressingCh chan<- *types.TipSet
+	notifyCh chan<- *heaviestNotify
 }
 
 func NewChainStore(chainBs bstore.Blockstore, stateBs bstore.Blockstore, ds dstore.Batching, vmcalls vm.SyscallBuilder, j journal.Journal) *ChainStore {
@@ -206,7 +206,7 @@ func NewChainStore(chainBs bstore.Blockstore, stateBs bstore.Blockstore, ds dsto
 
 	cs.reorgNotifeeCh = make(chan ReorgNotifee)
 	cs.reorgCh = cs.reorgWorker(ctx, []ReorgNotifee{hcnf, hcmetric})
-	cs.compressingCh = cs.headCompressor(ctx)
+	cs.notifyCh = cs.headCompressor(ctx)
 	return cs
 }
 
@@ -390,7 +390,7 @@ func (cs *ChainStore) MaybeTakeHeavierTipSet(ctx context.Context, ts *types.TipS
 			return nil
 		}
 
-		return cs.compressedTakeHeaviestTipSet(ctx, ts)
+		return cs.newTakeHeaviestTipSet(ctx, ts)
 	} else if w.Equals(heaviestW) && !ts.Equals(cs.heaviest) {
 		log.Errorw("weight draw", "currTs", cs.heaviest, "ts", ts)
 	}
@@ -562,7 +562,7 @@ func (cs *ChainStore) reorgWorker(ctx context.Context, initialNotifees []ReorgNo
 
 // takeHeaviestTipSet actually sets the incoming tipset as our head both in
 // memory and in the ChainStore. It also sends a notification to deliver to
-// ReorgNotifees.  !!! Replaced by compressedTakeHeaviestTipSet
+// ReorgNotifees.  !!! Replaced by newTakeHeaviestTipSet
 func (cs *ChainStore) takeHeaviestTipSet(ctx context.Context, ts *types.TipSet) error {
 	_, span := trace.StartSpan(ctx, "takeHeaviestTipSet")
 	defer span.End()
@@ -648,7 +648,7 @@ func FlushValidationCache(ds datastore.Batching) error {
 func (cs *ChainStore) SetHead(ts *types.TipSet) error {
 	cs.heaviestLk.Lock()
 	defer cs.heaviestLk.Unlock()
-	return cs.compressedTakeHeaviestTipSet(context.TODO(), ts)
+	return cs.newTakeHeaviestTipSet(context.TODO(), ts)
 }
 
 // Contains returns whether our BlockStore has all blocks in the supplied TipSet.
