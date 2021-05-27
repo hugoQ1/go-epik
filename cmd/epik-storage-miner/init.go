@@ -83,6 +83,11 @@ var initCmd = &cli.Command{
 			Usage:   "owner key to use",
 		},
 		&cli.StringFlag{
+			Name:    "coinbase",
+			Aliases: []string{"c"},
+			Usage:   "coinbase key to use",
+		},
+		&cli.StringFlag{
 			Name:  "sector-size",
 			Usage: "specify sector size to use",
 			Value: units.BytesSize(float64(policy.GetDefaultSectorSize())),
@@ -631,6 +636,14 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 		return address.Address{}, err
 	}
 
+	coinbase := owner
+	if cctx.String("coinbase") != "" {
+		coinbase, err = address.NewFromString(cctx.String("coinbase"))
+	}
+	if err != nil {
+		return address.Undef, err
+	}
+
 	// make sure the worker account exists on chain
 	_, err = api.StateLookupID(ctx, worker, types.EmptyTSK)
 	if err != nil {
@@ -668,7 +681,7 @@ func createStorageMiner(ctx context.Context, api lapi.FullNode, peerid peer.ID, 
 	params, err := actors.SerializeParams(&power2.CreateMinerParams{
 		Owner:               owner,
 		Worker:              worker,
-		Coinbase:            owner,
+		Coinbase:            coinbase,
 		WindowPoStProofType: abi.RegisteredPoStProof_StackedDrgWindow8MiBV1,
 		Peer:                abi.PeerID(peerid),
 	})
