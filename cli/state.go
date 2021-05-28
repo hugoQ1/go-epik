@@ -1811,48 +1811,48 @@ var stateMarketCmd = &cli.Command{
 	Name:  "market",
 	Usage: "Inspect the storage market actor",
 	Subcommands: []*cli.Command{
-		stateMarketBalanceCmd,
+		// stateMarketBalanceCmd,
 		stateMarketRemainingQuotaCmd,
 	},
 }
 
-var stateMarketBalanceCmd = &cli.Command{
-	Name:  "balance",
-	Usage: "Get the market balance (locked and escrowed) for a given account",
-	Action: func(cctx *cli.Context) error {
-		if !cctx.Args().Present() {
-			return ShowHelp(cctx, fmt.Errorf("must specify address to print market balance for"))
-		}
+// var stateMarketBalanceCmd = &cli.Command{
+// 	Name:  "balance",
+// 	Usage: "Get the market balance (locked and escrowed) for a given account",
+// 	Action: func(cctx *cli.Context) error {
+// 		if !cctx.Args().Present() {
+// 			return ShowHelp(cctx, fmt.Errorf("must specify address to print market balance for"))
+// 		}
 
-		api, closer, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
+// 		api, closer, err := GetFullNodeAPI(cctx)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		defer closer()
 
-		ctx := ReqContext(cctx)
+// 		ctx := ReqContext(cctx)
 
-		ts, err := LoadTipSet(ctx, cctx, api)
-		if err != nil {
-			return err
-		}
+// 		ts, err := LoadTipSet(ctx, cctx, api)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		addr, err := address.NewFromString(cctx.Args().First())
-		if err != nil {
-			return err
-		}
+// 		addr, err := address.NewFromString(cctx.Args().First())
+// 		if err != nil {
+// 			return err
+// 		}
 
-		balance, err := api.StateMarketBalance(ctx, addr, ts.Key())
-		if err != nil {
-			return err
-		}
+// 		balance, err := api.StateMarketBalance(ctx, addr, ts.Key())
+// 		if err != nil {
+// 			return err
+// 		}
 
-		fmt.Printf("Escrow: %s\n", types.EPK(balance.Escrow))
-		fmt.Printf("Locked: %s\n", types.EPK(balance.Locked))
+// 		fmt.Printf("Escrow: %s\n", types.EPK(balance.Escrow))
+// 		fmt.Printf("Locked: %s\n", types.EPK(balance.Locked))
 
-		return nil
-	},
-}
+// 		return nil
+// 	},
+// }
 
 var stateMarketRemainingQuotaCmd = &cli.Command{
 	Name:      "remaining-quota",

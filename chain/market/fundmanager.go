@@ -7,8 +7,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
-	"github.com/EpiK-Protocol/go-epik/chain/actors"
-	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/node/impl/full"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
@@ -35,7 +33,7 @@ type FundManagerAPI struct {
 // (used by the tests)
 type fundManagerAPI interface {
 	MpoolPushMessage(context.Context, *types.Message, *api.MessageSendSpec) (*types.SignedMessage, error)
-	StateMarketBalance(context.Context, address.Address, types.TipSetKey) (api.MarketBalance, error)
+	// StateMarketBalance(context.Context, address.Address, types.TipSetKey) (api.MarketBalance, error)
 	StateWaitMsg(ctx context.Context, cid cid.Cid, confidence uint64) (*api.MsgLookup, error)
 }
 
@@ -556,20 +554,21 @@ func (a *fundedAddress) processWithdrawals(withdrawals []*fundRequest) (msgCid c
 		return cid.Undef, nil
 	}
 
-	// Withdraw funds
-	a.debugf("withdraw funds %d", allowedAmt)
-	withdrawFundsCid, err := a.env.WithdrawFunds(a.ctx, allowed[0].Wallet, a.state.Addr, allowedAmt)
-	if err != nil {
-		return cid.Undef, err
-	}
+	// // Withdraw funds
+	// a.debugf("withdraw funds %d", allowedAmt)
+	// withdrawFundsCid, err := a.env.WithdrawFunds(a.ctx, allowed[0].Wallet, a.state.Addr, allowedAmt)
+	// if err != nil {
+	// 	return cid.Undef, err
+	// }
 
-	// Mark allowed requests as complete
-	for _, req := range allowed {
-		req.Complete(withdrawFundsCid, nil)
-	}
+	// // Mark allowed requests as complete
+	// for _, req := range allowed {
+	// 	req.Complete(withdrawFundsCid, nil)
+	// }
 
-	// Save the message CID to state
-	return withdrawFundsCid, nil
+	// // Save the message CID to state
+	// return withdrawFundsCid, nil
+	return cid.Undef, err
 }
 
 // asynchonously wait for results of message
@@ -657,12 +656,13 @@ type fundManagerEnvironment struct {
 }
 
 func (env *fundManagerEnvironment) AvailableFunds(ctx context.Context, addr address.Address) (abi.TokenAmount, error) {
-	bal, err := env.api.StateMarketBalance(ctx, addr, types.EmptyTSK)
-	if err != nil {
-		return abi.NewTokenAmount(0), err
-	}
+	// bal, err := env.api.StateMarketBalance(ctx, addr, types.EmptyTSK)
+	// if err != nil {
+	// 	return abi.NewTokenAmount(0), err
+	// }
 
-	return types.BigSub(bal.Escrow, bal.Locked), nil
+	// return types.BigSub(bal.Escrow, bal.Locked), nil
+	return abi.NewTokenAmount(0), xerrors.New("deprecated")
 }
 
 func (env *fundManagerEnvironment) AddFunds(
@@ -671,54 +671,55 @@ func (env *fundManagerEnvironment) AddFunds(
 	addr address.Address,
 	amt abi.TokenAmount,
 ) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&addr)
-	if err != nil {
-		return cid.Undef, err
-	}
+	// params, err := actors.SerializeParams(&addr)
+	// if err != nil {
+	// 	return cid.Undef, err
+	// }
 
-	smsg, aerr := env.api.MpoolPushMessage(ctx, &types.Message{
-		To:     market.Address,
-		From:   wallet,
-		Value:  amt,
-		Method: market.Methods.AddBalance,
-		Params: params,
-	}, nil)
+	// smsg, aerr := env.api.MpoolPushMessage(ctx, &types.Message{
+	// 	To:     market.Address,
+	// 	From:   wallet,
+	// 	Value:  amt,
+	// 	Method: market.Methods.AddBalance,
+	// 	Params: params,
+	// }, nil)
 
-	if aerr != nil {
-		return cid.Undef, aerr
-	}
+	// if aerr != nil {
+	// 	return cid.Undef, aerr
+	// }
 
-	return smsg.Cid(), nil
+	// return smsg.Cid(), nil
+	return cid.Undef, nil
 }
 
-func (env *fundManagerEnvironment) WithdrawFunds(
-	ctx context.Context,
-	wallet address.Address,
-	addr address.Address,
-	amt abi.TokenAmount,
-) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&market.WithdrawBalanceParams{
-		ProviderOrClientAddress: addr,
-		Amount:                  amt,
-	})
-	if err != nil {
-		return cid.Undef, xerrors.Errorf("serializing params: %w", err)
-	}
+// func (env *fundManagerEnvironment) WithdrawFunds(
+// 	ctx context.Context,
+// 	wallet address.Address,
+// 	addr address.Address,
+// 	amt abi.TokenAmount,
+// ) (cid.Cid, error) {
+// 	params, err := actors.SerializeParams(&market.WithdrawBalanceParams{
+// 		ProviderOrClientAddress: addr,
+// 		Amount:                  amt,
+// 	})
+// 	if err != nil {
+// 		return cid.Undef, xerrors.Errorf("serializing params: %w", err)
+// 	}
 
-	smsg, aerr := env.api.MpoolPushMessage(ctx, &types.Message{
-		To:     market.Address,
-		From:   wallet,
-		Value:  types.NewInt(0),
-		Method: market.Methods.WithdrawBalance,
-		Params: params,
-	}, nil)
+// 	smsg, aerr := env.api.MpoolPushMessage(ctx, &types.Message{
+// 		To:     market.Address,
+// 		From:   wallet,
+// 		Value:  types.NewInt(0),
+// 		Method: market.Methods.WithdrawBalance,
+// 		Params: params,
+// 	}, nil)
 
-	if aerr != nil {
-		return cid.Undef, aerr
-	}
+// 	if aerr != nil {
+// 		return cid.Undef, aerr
+// 	}
 
-	return smsg.Cid(), nil
-}
+// 	return smsg.Cid(), nil
+// }
 
 func (env *fundManagerEnvironment) WaitMsg(ctx context.Context, c cid.Cid) error {
 	_, err := env.api.StateWaitMsg(ctx, c, build.MessageConfidence)

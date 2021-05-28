@@ -212,41 +212,45 @@ func (n *ProviderNodeAdapter) SignBytes(ctx context.Context, signer address.Addr
 }
 
 func (n *ProviderNodeAdapter) ReserveFunds(ctx context.Context, wallet, addr address.Address, amt abi.TokenAmount) (cid.Cid, error) {
-	return n.MarketReserveFunds(ctx, wallet, addr, amt)
+	// return n.MarketReserveFunds(ctx, wallet, addr, amt)
+	return cid.Undef, xerrors.Errorf("deprecated")
 }
 
 func (n *ProviderNodeAdapter) ReleaseFunds(ctx context.Context, addr address.Address, amt abi.TokenAmount) error {
-	return n.MarketReleaseFunds(ctx, addr, amt)
+	// return n.MarketReleaseFunds(ctx, addr, amt)
+	return xerrors.Errorf("deprecated")
 }
 
 // Adds funds with the StorageMinerActor for a storage participant.  Used by both providers and clients.
 func (n *ProviderNodeAdapter) AddFunds(ctx context.Context, addr address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	// (Provider Node API)
-	smsg, err := n.MpoolPushMessage(ctx, &types.Message{
-		To:     market.Address,
-		From:   addr,
-		Value:  amount,
-		Method: market.Methods.AddBalance,
-	}, n.addBalanceSpec)
-	if err != nil {
-		return cid.Undef, err
-	}
+	// // (Provider Node API)
+	// smsg, err := n.MpoolPushMessage(ctx, &types.Message{
+	// 	To:     market.Address,
+	// 	From:   addr,
+	// 	Value:  amount,
+	// 	Method: market.Methods.AddBalance,
+	// }, n.addBalanceSpec)
+	// if err != nil {
+	// 	return cid.Undef, err
+	// }
 
-	return smsg.Cid(), nil
+	// return smsg.Cid(), nil
+	return cid.Undef, xerrors.Errorf("deprecated")
 }
 
 func (n *ProviderNodeAdapter) GetBalance(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (storagemarket.Balance, error) {
-	tsk, err := types.TipSetKeyFromBytes(encodedTs)
-	if err != nil {
-		return storagemarket.Balance{}, err
-	}
+	// tsk, err := types.TipSetKeyFromBytes(encodedTs)
+	// if err != nil {
+	// 	return storagemarket.Balance{}, err
+	// }
 
-	bal, err := n.StateMarketBalance(ctx, addr, tsk)
-	if err != nil {
-		return storagemarket.Balance{}, err
-	}
+	// bal, err := n.StateMarketBalance(ctx, addr, tsk)
+	// if err != nil {
+	// 	return storagemarket.Balance{}, err
+	// }
 
-	return utils.ToSharedBalance(bal), nil
+	// return utils.ToSharedBalance(bal), nil
+	return storagemarket.Balance{}, xerrors.New("deprecated")
 }
 
 // TODO: why doesnt this method take in a sector ID?

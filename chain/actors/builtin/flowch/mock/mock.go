@@ -68,6 +68,10 @@ func (ms *mockState) LaneCount() (uint64, error) {
 	return uint64(len(ms.lanes)), nil
 }
 
+func (ms *mockState) Received() (abi.TokenAmount, error) {
+	return abi.NewTokenAmount(0), nil
+}
+
 // Iterate lane states
 func (ms *mockState) ForEachLaneState(cb func(idx uint64, dl flowch.LaneState) error) error {
 	var lastErr error

@@ -8,7 +8,6 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/chain/exchange"
-	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/storiface"
@@ -68,13 +67,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = gen.WriteTupleEncodersToFile("./chain/market/cbor_gen.go", "market",
-		market.FundedAddressState{},
-	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	// err = gen.WriteTupleEncodersToFile("./chain/market/cbor_gen.go", "market",
+	// 	market.FundedAddressState{},
+	// )
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
 
 	err = gen.WriteTupleEncodersToFile("./chain/exchange/cbor_gen.go", "exchange",
 		exchange.Request{},

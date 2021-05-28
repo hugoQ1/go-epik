@@ -27,7 +27,6 @@ import (
 	marketactor "github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/events"
 	"github.com/EpiK-Protocol/go-epik/chain/events/state"
-	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
 	"github.com/EpiK-Protocol/go-epik/markets/utils"
@@ -38,7 +37,7 @@ import (
 type ClientNodeAdapter struct {
 	*clientApi
 
-	fundmgr   *market.FundManager
+	// fundmgr   *market.FundManager
 	ev        *events.Events
 	dsMatcher *dealStateMatcher
 	scMgr     *SectorCommittedManager
@@ -50,7 +49,7 @@ type clientApi struct {
 	full.MpoolAPI
 }
 
-func NewClientNodeAdapter(mctx helpers.MetricsCtx, lc fx.Lifecycle, stateapi full.StateAPI, chain full.ChainAPI, mpool full.MpoolAPI, fundmgr *market.FundManager) storagemarket.StorageClientNode {
+func NewClientNodeAdapter(mctx helpers.MetricsCtx, lc fx.Lifecycle, stateapi full.StateAPI, chain full.ChainAPI, mpool full.MpoolAPI /* , fundmgr *market.FundManager */) storagemarket.StorageClientNode {
 	capi := &clientApi{chain, stateapi, mpool}
 	ctx := helpers.LifecycleCtx(mctx, lc)
 
@@ -58,7 +57,7 @@ func NewClientNodeAdapter(mctx helpers.MetricsCtx, lc fx.Lifecycle, stateapi ful
 	a := &ClientNodeAdapter{
 		clientApi: capi,
 
-		fundmgr:   fundmgr,
+		// fundmgr:   fundmgr,
 		ev:        ev,
 		dsMatcher: newDealStateMatcher(state.NewStatePredicates(state.WrapFastAPI(capi))),
 	}
@@ -103,40 +102,44 @@ func (c *ClientNodeAdapter) VerifySignature(ctx context.Context, sig crypto.Sign
 
 // Adds funds with the StorageMinerActor for a storage participant.  Used by both providers and clients.
 func (c *ClientNodeAdapter) AddFunds(ctx context.Context, addr address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	// (Provider Node API)
-	smsg, err := c.MpoolPushMessage(ctx, &types.Message{
-		To:     miner2.StorageMarketActorAddr,
-		From:   addr,
-		Value:  amount,
-		Method: miner2.MethodsMarket.AddBalance,
-	}, nil)
-	if err != nil {
-		return cid.Undef, err
-	}
+	// // (Provider Node API)
+	// smsg, err := c.MpoolPushMessage(ctx, &types.Message{
+	// 	To:     miner2.StorageMarketActorAddr,
+	// 	From:   addr,
+	// 	Value:  amount,
+	// 	Method: miner2.MethodsMarket.AddBalance,
+	// }, nil)
+	// if err != nil {
+	// 	return cid.Undef, err
+	// }
 
-	return smsg.Cid(), nil
+	// return smsg.Cid(), nil
+	return cid.Undef, nil
 }
 
 func (c *ClientNodeAdapter) ReserveFunds(ctx context.Context, wallet, addr address.Address, amt abi.TokenAmount) (cid.Cid, error) {
-	return c.fundmgr.Reserve(ctx, wallet, addr, amt)
+	// return c.fundmgr.Reserve(ctx, wallet, addr, amt)
+	return cid.Undef, xerrors.Errorf("deprecated")
 }
 
 func (c *ClientNodeAdapter) ReleaseFunds(ctx context.Context, addr address.Address, amt abi.TokenAmount) error {
-	return c.fundmgr.Release(addr, amt)
+	// return c.fundmgr.Release(addr, amt)
+	return xerrors.Errorf("deprecated")
 }
 
 func (c *ClientNodeAdapter) GetBalance(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (storagemarket.Balance, error) {
-	tsk, err := types.TipSetKeyFromBytes(encodedTs)
-	if err != nil {
-		return storagemarket.Balance{}, err
-	}
+	// tsk, err := types.TipSetKeyFromBytes(encodedTs)
+	// if err != nil {
+	// 	return storagemarket.Balance{}, err
+	// }
 
-	bal, err := c.StateMarketBalance(ctx, addr, tsk)
-	if err != nil {
-		return storagemarket.Balance{}, err
-	}
+	// bal, err := c.StateMarketBalance(ctx, addr, tsk)
+	// if err != nil {
+	// 	return storagemarket.Balance{}, err
+	// }
 
-	return utils.ToSharedBalance(bal), nil
+	// return utils.ToSharedBalance(bal), nil
+	return storagemarket.Balance{}, xerrors.New("deprecated")
 }
 
 // ValidatePublishedDeal validates that the provided deal has appeared on chain and references the same ClientDeal

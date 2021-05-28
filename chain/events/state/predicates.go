@@ -93,41 +93,41 @@ type BalanceTables struct {
 // DiffBalanceTablesFunc compares two balance tables
 type DiffBalanceTablesFunc func(ctx context.Context, oldBalanceTable, newBalanceTable BalanceTables) (changed bool, user UserData, err error)
 
-// OnBalanceChanged runs when the escrow table for available balances changes
-func (sp *StatePredicates) OnBalanceChanged(diffBalances DiffBalanceTablesFunc) DiffStorageMarketStateFunc {
-	return func(ctx context.Context, oldState market.State, newState market.State) (changed bool, user UserData, err error) {
-		bc, err := oldState.BalancesChanged(newState)
-		if err != nil {
-			return false, nil, err
-		}
+// // OnBalanceChanged runs when the escrow table for available balances changes
+// func (sp *StatePredicates) OnBalanceChanged(diffBalances DiffBalanceTablesFunc) DiffStorageMarketStateFunc {
+// 	return func(ctx context.Context, oldState market.State, newState market.State) (changed bool, user UserData, err error) {
+// 		bc, err := oldState.BalancesChanged(newState)
+// 		if err != nil {
+// 			return false, nil, err
+// 		}
 
-		if !bc {
-			return false, nil, nil
-		}
+// 		if !bc {
+// 			return false, nil, nil
+// 		}
 
-		oldEscrowRoot, err := oldState.EscrowTable()
-		if err != nil {
-			return false, nil, err
-		}
+// 		oldEscrowRoot, err := oldState.EscrowTable()
+// 		if err != nil {
+// 			return false, nil, err
+// 		}
 
-		oldLockedRoot, err := oldState.LockedTable()
-		if err != nil {
-			return false, nil, err
-		}
+// 		oldLockedRoot, err := oldState.LockedTable()
+// 		if err != nil {
+// 			return false, nil, err
+// 		}
 
-		newEscrowRoot, err := newState.EscrowTable()
-		if err != nil {
-			return false, nil, err
-		}
+// 		newEscrowRoot, err := newState.EscrowTable()
+// 		if err != nil {
+// 			return false, nil, err
+// 		}
 
-		newLockedRoot, err := newState.LockedTable()
-		if err != nil {
-			return false, nil, err
-		}
+// 		newLockedRoot, err := newState.LockedTable()
+// 		if err != nil {
+// 			return false, nil, err
+// 		}
 
-		return diffBalances(ctx, BalanceTables{oldEscrowRoot, oldLockedRoot}, BalanceTables{newEscrowRoot, newLockedRoot})
-	}
-}
+// 		return diffBalances(ctx, BalanceTables{oldEscrowRoot, oldLockedRoot}, BalanceTables{newEscrowRoot, newLockedRoot})
+// 	}
+// }
 
 type DiffDealStatesFunc func(ctx context.Context, oldDealStateRoot, newDealStateRoot market.DealStates) (changed bool, user UserData, err error)
 type DiffDealProposalsFunc func(ctx context.Context, oldDealStateRoot, newDealStateRoot market.DealProposals) (changed bool, user UserData, err error)

@@ -514,7 +514,6 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 
 	// Register genesis file
 	pt := template.Miners[0].Sectors[0].ProofType
-	inis.PresealPieceCID, err = GeneratePaddedPresealFileCID(pt)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to generate genesis file piece CID: %w", err)
 	}
@@ -522,9 +521,9 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 	_, err = doExecValue(ctx, vm, inis.Expert, inis.ExpertOwner, big.Zero(),
 		builtin2.MethodsExpert.ImportData,
 		mustEnc(&expert2.BatchImportDataParams{
-			Datas: []expert2.ImportDataParams{expert2.ImportDataParams{
-				RootID:    inis.PresealPieceCID,
-				PieceID:   inis.PresealPieceCID,
+			Datas: []expert2.ImportDataParams{{
+				RootID:    template.Miners[0].Sectors[0].Deal.PieceCID,
+				PieceID:   template.Miners[0].Sectors[0].Deal.PieceCID,
 				PieceSize: abi.PaddedPieceSize(psize),
 			}},
 		}))
@@ -540,9 +539,6 @@ func VerifyPreSealedData(ctx context.Context, cs *store.ChainStore, stateroot ci
 		for si, s := range m.Sectors { // Actually should be only one sector
 			if s.Deal.Provider != m.ID {
 				return cid.Undef, xerrors.Errorf("Sector %d in miner %d in template had mismatch in provider and miner ID: %s != %s", si, mi, s.Deal.Provider, m.ID)
-			}
-			if s.Deal.PieceCID != inis.PresealPieceCID {
-				return cid.Undef, xerrors.Errorf("Sector %d in miner %d in template had mismatch in pieceCID: %s != %s", si, mi, s.Deal.PieceCID, inis.PresealPieceCID)
 			}
 			if s.ProofType != pt {
 				return cid.Undef, xerrors.Errorf("Sector %d in miner %d in template had mismatch in proof type: %s != %s", si, mi, s.ProofType, pt)

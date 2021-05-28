@@ -921,49 +921,49 @@ func (sm *StateManager) ListAllActors(ctx context.Context, ts *types.TipSet) ([]
 	return out, nil
 }
 
-func (sm *StateManager) MarketBalance(ctx context.Context, addr address.Address, ts *types.TipSet) (api.MarketBalance, error) {
-	st, err := sm.ParentState(ts)
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
+// func (sm *StateManager) MarketBalance(ctx context.Context, addr address.Address, ts *types.TipSet) (api.MarketBalance, error) {
+// 	st, err := sm.ParentState(ts)
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
 
-	act, err := st.GetActor(market.Address)
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
+// 	act, err := st.GetActor(market.Address)
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
 
-	mstate, err := market.Load(sm.cs.ActorStore(ctx), act)
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
+// 	mstate, err := market.Load(sm.cs.ActorStore(ctx), act)
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
 
-	addr, err = sm.LookupID(ctx, addr, ts)
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
+// 	addr, err = sm.LookupID(ctx, addr, ts)
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
 
-	var out api.MarketBalance
+// 	var out api.MarketBalance
 
-	et, err := mstate.EscrowTable()
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
-	out.Escrow, err = et.Get(addr)
-	if err != nil {
-		return api.MarketBalance{}, xerrors.Errorf("getting escrow balance: %w", err)
-	}
+// 	et, err := mstate.EscrowTable()
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
+// 	out.Escrow, err = et.Get(addr)
+// 	if err != nil {
+// 		return api.MarketBalance{}, xerrors.Errorf("getting escrow balance: %w", err)
+// 	}
 
-	lt, err := mstate.LockedTable()
-	if err != nil {
-		return api.MarketBalance{}, err
-	}
-	out.Locked, err = lt.Get(addr)
-	if err != nil {
-		return api.MarketBalance{}, xerrors.Errorf("getting locked balance: %w", err)
-	}
+// 	lt, err := mstate.LockedTable()
+// 	if err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
+// 	out.Locked, err = lt.Get(addr)
+// 	if err != nil {
+// 		return api.MarketBalance{}, xerrors.Errorf("getting locked balance: %w", err)
+// 	}
 
-	return out, nil
-}
+// 	return out, nil
+// }
 
 func (sm *StateManager) ValidateChain(ctx context.Context, ts *types.TipSet) error {
 	tschain := []*types.TipSet{ts}
