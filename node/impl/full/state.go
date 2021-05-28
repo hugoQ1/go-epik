@@ -151,6 +151,22 @@ func (m *StateModule) StateMinerInfo(ctx context.Context, actor address.Address,
 	if err != nil {
 		return miner.MinerInfo{}, err
 	}
+
+	// coinbase
+	cbact, err := m.StateManager.LoadActor(ctx, builtin.VestingActorAddr, ts)
+	if err != nil {
+		return miner.MinerInfo{}, xerrors.Errorf("failed to load coinbase actor: %w", err)
+	}
+	cbs, err := vesting.Load(m.StateManager.ChainStore().ActorStore(ctx), cbact)
+	if err != nil {
+		return miner.MinerInfo{}, xerrors.Errorf("failed to load coinbase actor state: %w", err)
+	}
+	accMined, err := cbs.TotalMined(actor)
+	if err != nil {
+		return miner.MinerInfo{}, err
+	}
+	info.TotalMined = accMined
+
 	return info, nil
 }
 

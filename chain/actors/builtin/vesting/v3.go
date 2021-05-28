@@ -53,3 +53,7 @@ func (s *state) Coinbase(coinbase address.Address, currEpoch abi.ChainEpoch) (*C
 func (s *state) TotalLocked() abi.TokenAmount {
 	return s.LockedFunds
 }
+
+func (s *state) TotalMined(miner address.Address) (abi.TokenAmount, error) {
+	return s.GetMinerCumulation(s.store, miner)
+}

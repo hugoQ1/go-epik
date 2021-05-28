@@ -116,6 +116,7 @@ var stateMinerInfo = &cli.Command{
 		}
 		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
 		fmt.Printf("FeeDebt: \t%s\n", types.EPK(funds.FeeDebt))
+		fmt.Printf("Total Mined: \t%s\n", types.EPK(mi.TotalMined))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
 		fmt.Printf("Worker:  \t%s\n", mi.Worker)
 		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)

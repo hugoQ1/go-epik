@@ -174,6 +174,7 @@ type MinerInfo struct {
 	WindowPoStPartitionSectors uint64
 	ConsensusFaultElapsed      abi.ChainEpoch
 	RetrievalPledger           address.Address
+	TotalMined                 abi.TokenAmount
 }
 
 func (mi MinerInfo) IsController(addr address.Address) bool {
