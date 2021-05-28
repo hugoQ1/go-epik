@@ -1309,11 +1309,12 @@ func (sm *StateManager) setupPostIgnitionGenesisActors(ctx context.Context) erro
 // - For Multisigs, it counts the actual amounts that have vested at the given epoch
 // - For Accounts, it counts max(currentBalance - genesisBalance, 0).
 func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch, st *state.StateTree) (
-	total, team, foundation, investor abi.TokenAmount, err error) {
+	total, team, foundation, investor, relocked abi.TokenAmount, err error) {
 	total = big.Zero()
 	team = big.Zero()
 	foundation = big.Zero()
 	investor = big.Zero()
+	relocked = big.Zero()
 
 	/* 	for addr, v := range sm.genInfos.genesisMsigs {
 		au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
@@ -1336,10 +1337,10 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 		case builtin.TeamIDAddress, builtin.FoundationIDAddress, builtin.InvestorIDAddress:
 			act, err := st.GetActor(addr)
 			if err != nil {
-				return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("failed to get actor %s: %w", addr, err)
+				return big.Zero(), big.Zero(), big.Zero(), big.Zero(), big.Zero(), fmt.Errorf("failed to get actor %s: %w", addr, err)
 			}
 			genesisBal := big.Add(v.InitialVested, v.InitialBalance)
-			if genesisBal.GreaterThan(act.Balance) {
+			if genesisBal.GreaterThanEqual(act.Balance) {
 				au := big.Sub(genesisBal, act.Balance)
 				total = big.Add(total, au)
 				switch addr {
@@ -1351,6 +1352,8 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 					investor = au
 				default:
 				}
+			} else {
+				relocked = big.Add(relocked, big.Sub(act.Balance, genesisBal))
 			}
 		default:
 			au := big.Sub(v.InitialBalance, v.AmountLocked(height-v.StartEpoch))
@@ -1363,7 +1366,7 @@ func (sm *StateManager) GetEpkVested(ctx context.Context, height abi.ChainEpoch,
 	for _, v := range sm.genInfos.genesisActors {
 		act, err := st.GetActor(v.addr)
 		if err != nil {
-			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("failed to get actor: %w", err)
+			return big.Zero(), big.Zero(), big.Zero(), big.Zero(), big.Zero(), xerrors.Errorf("failed to get actor: %w", err)
 		}
 
 		diff := big.Sub(v.initBal, act.Balance)
@@ -1455,22 +1458,22 @@ func getEpkVestingLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmo
 
 func (sm *StateManager) GetEpkLocked(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
 
-	epkMarketLocked, err := getEpkMarketLocked(ctx, st)
-	if err != nil {
-		return big.Zero(), xerrors.Errorf("failed to get epkMarketLocked: %w", err)
-	}
+	// epkMarketLocked, err := getEpkMarketLocked(ctx, st)
+	// if err != nil {
+	// 	return big.Zero(), xerrors.Errorf("failed to get epkMarketLocked: %w", err)
+	// }
 
-	epkPowerLocked, err := getEpkPowerLocked(ctx, st)
-	if err != nil {
-		return big.Zero(), xerrors.Errorf("failed to get epkPowerLocked: %w", err)
-	}
+	// epkPowerLocked, err := getEpkPowerLocked(ctx, st)
+	// if err != nil {
+	// 	return big.Zero(), xerrors.Errorf("failed to get epkPowerLocked: %w", err)
+	// }
 
 	epkVestingLocked, err := getEpkVestingLocked(ctx, st)
 	if err != nil {
 		return big.Zero(), xerrors.Errorf("failed to get epkVestingLocked: %w", err)
 	}
 
-	return types.BigAdd(epkVestingLocked, types.BigAdd(epkMarketLocked, epkPowerLocked)), nil
+	return epkVestingLocked, nil
 }
 
 func GetEpkBurnt(ctx context.Context, st *state.StateTree) (abi.TokenAmount, error) {
@@ -1512,7 +1515,7 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 			return api.CirculatingSupply{}, xerrors.Errorf("failed to setup genesis information: %w", err)
 		}
 	}
-	epkVested, team, foundation, investor, err := sm.GetEpkVested(ctx, height, st)
+	epkVested, team, foundation, investor, relocked, err := sm.GetEpkVested(ctx, height, st)
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkVested: %w", err)
 	}
@@ -1539,9 +1542,9 @@ func (sm *StateManager) GetVMCirculatingSupplyDetailed(ctx context.Context, heig
 	if err != nil {
 		return api.CirculatingSupply{}, xerrors.Errorf("failed to calculate epkLocked: %w", err)
 	}
+	epkLocked = big.Add(epkLocked, relocked)
 
 	ret := types.BigAdd(epkVested, epkMined)
-	// ret = types.BigAdd(ret, epkReserveDisbursed)
 	ret = types.BigSub(ret, epkBurnt)
 	ret = types.BigSub(ret, epkLocked)
 
@@ -1640,19 +1643,23 @@ func (sm *StateManager) GetCirculatingSupply(ctx context.Context, height abi.Cha
 		// 		unCirc = big.Add(unCirc, actor.Balance)
 		// 	}
 		case builtin.IsMultisigActor(actor.Code):
-			mst, err := multisig.Load(sm.cs.ActorStore(ctx), actor)
-			if err != nil {
-				return err
-			}
+			if a == builtin.TeamIDAddress || a == builtin.FoundationIDAddress || a == builtin.InvestorIDAddress {
+				unCirc = big.Add(unCirc, actor.Balance)
+			} else {
+				mst, err := multisig.Load(sm.cs.ActorStore(ctx), actor)
+				if err != nil {
+					return err
+				}
 
-			lb, err := mst.LockedBalance(height)
-			if err != nil {
-				return err
-			}
+				lb, err := mst.LockedBalance(height)
+				if err != nil {
+					return err
+				}
 
-			ab := big.Sub(actor.Balance, lb)
-			circ = big.Add(circ, big.Max(ab, big.Zero()))
-			unCirc = big.Add(unCirc, big.Min(actor.Balance, lb))
+				ab := big.Sub(actor.Balance, lb)
+				circ = big.Add(circ, big.Max(ab, big.Zero()))
+				unCirc = big.Add(unCirc, big.Min(actor.Balance, lb))
+			}
 		default:
 			return xerrors.Errorf("unexpected actor: %s", a)
 		}
