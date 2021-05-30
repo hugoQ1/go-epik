@@ -89,6 +89,7 @@ var (
 	TipsetMessagesRate      = stats.Float64("tipset/messages_rate", "Counter of processed messages per second", stats.UnitDimensionless)
 	TipsetPublishDealsCount = stats.Int64("tipset/publishdeals_count", "Counter of publishdeals in tipsets", stats.UnitDimensionless)
 	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
+	TipsetGasUsed           = stats.Int64("tipset/gasused", "Counter of gas in one tipset", stats.UnitDimensionless)
 
 	// Sys
 	BandwidthTotal = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
@@ -273,6 +274,10 @@ var (
 		Measure:     TipsetSubmitPoStsCount,
 		Aggregation: view.LastValue(),
 	}
+	TipsetGasUsedView = &view.View{
+		Measure:     TipsetGasUsed,
+		Aggregation: view.LastValue(),
+	}
 
 	// default
 	BandwidthTotalView = &view.View{
@@ -420,6 +425,7 @@ var ChainNodeViews = append([]*view.View{
 	TipsetMessagesRateView,
 	TipsetPublishDealsCountView,
 	TipsetSubmitPoStsCountView,
+	TipsetGasUsedView,
 }, DefaultViews...)
 
 var MinerNodeViews = append([]*view.View{

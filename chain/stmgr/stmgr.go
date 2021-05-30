@@ -385,6 +385,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	pubDeals := int64(0)
 	subPoSt := int64(0)
 	applyStart := build.Clock.Now()
+	tsGasTotal := int64(0)
 	defer func() {
 		count := len(processedMsgs)
 		duration := metrics.SinceInSeconds(applyStart)
@@ -392,6 +393,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		stats.Record(ctx, metrics.TipsetMessagesRate.M(float64(count)/duration))
 		stats.Record(ctx, metrics.TipsetPublishDealsCount.M(pubDeals))
 		stats.Record(ctx, metrics.TipsetSubmitPoStsCount.M(subPoSt))
+		stats.Record(ctx, metrics.TipsetGasUsed.M(tsGasTotal))
 	}()
 
 	for _, b := range bms {
@@ -429,6 +431,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 					subPoSt++
 				}
 			}
+			tsGasTotal += r.GasUsed
 		}
 
 		params, err := actors.SerializeParams(&reward.AwardBlockRewardParams{
