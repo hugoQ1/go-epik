@@ -1,10 +1,11 @@
 package retrieval
 
 import (
-	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	retrieval2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/retrieval"
+	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	"github.com/ipfs/go-cid"
 )
 
@@ -29,11 +30,27 @@ func (s *state) StateInfo(fromAddr address.Address) (*RetrievalState, error) {
 	if err != nil {
 		return nil, err
 	}
+	mmap, err := adt.AsMap(s.store, info.Miners, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, err
+	}
+	miners, err := mmap.CollectKeys()
+	if err != nil {
+		return nil, err
+	}
+	var addrs []address.Address
+	for _, miner := range miners {
+		addr, err := address.NewFromString(miner)
+		if err != nil {
+			return nil, err
+		}
+		addrs = append(addrs, addr)
+	}
 	return &RetrievalState{
-		BindMiners: info.Miners,
+		BindMiners: addrs,
 		Amount:     info.Amount,
 		EpochDate:  info.EpochDate,
-		DateSize:   info.DateSize,
+		DateSize:   info.DailyDataSize,
 	}, nil
 }
 

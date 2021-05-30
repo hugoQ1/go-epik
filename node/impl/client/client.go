@@ -1352,8 +1352,8 @@ func (a *API) ClientRetrieveBind(ctx context.Context, wallet address.Address, mi
 
 func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
-		ProviderOrClientAddress: wallet,
-		Amount:                  amount,
+		Target: wallet,
+		Amount: amount,
 	})
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
@@ -1375,10 +1375,7 @@ func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address
 }
 
 func (a *API) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
-		ProviderOrClientAddress: wallet,
-		Amount:                  amount,
-	})
+	params, err := actors.SerializeParams(&amount)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("serializing params failed: %w", err)
 	}
