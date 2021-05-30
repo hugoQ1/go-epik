@@ -271,6 +271,10 @@ type SectorRetryPreCommit struct{}
 
 func (evt SectorRetryPreCommit) apply(state *SectorInfo) {}
 
+type SectorRetryCurrent struct{}
+
+func (evt SectorRetryCurrent) apply(state *SectorInfo) {}
+
 type SectorRetryWaitSeed struct{}
 
 func (evt SectorRetryWaitSeed) apply(state *SectorInfo) {}

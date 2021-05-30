@@ -71,6 +71,7 @@ var fsmPlanners = map[SectorState]func(events []statemachine.Event, state *Secto
 		on(SectorSealPreCommit1Failed{}, SealPreCommit1Failed),
 	),
 	PreCommitting: planOne(
+		on(SectorRetryCurrent{}, PreCommitting),
 		on(SectorSealPreCommit1Failed{}, SealPreCommit1Failed),
 		on(SectorPreCommitted{}, PreCommitWait),
 		on(SectorChainPreCommitFailed{}, PreCommitFailed),
@@ -84,6 +85,7 @@ var fsmPlanners = map[SectorState]func(events []statemachine.Event, state *Secto
 		on(SectorRetryPreCommit{}, PreCommitting),
 	),
 	WaitSeed: planOne(
+		on(SectorRetryCurrent{}, WaitSeed),
 		on(SectorSeedReady{}, Committing),
 		on(SectorChainPreCommitFailed{}, PreCommitFailed),
 	),
@@ -114,6 +116,7 @@ var fsmPlanners = map[SectorState]func(events []statemachine.Event, state *Secto
 		on(SectorRetrySealPreCommit2{}, PreCommit2),
 	),
 	PreCommitFailed: planOne(
+		on(SectorRetryCurrent{}, PreCommitFailed),
 		on(SectorRetryPreCommit{}, PreCommitting),
 		on(SectorRetryPreCommitWait{}, PreCommitWait),
 		on(SectorRetryWaitSeed{}, WaitSeed),
@@ -127,6 +130,7 @@ var fsmPlanners = map[SectorState]func(events []statemachine.Event, state *Secto
 		on(SectorSealPreCommit1Failed{}, SealPreCommit1Failed),
 	),
 	CommitFailed: planOne(
+		on(SectorRetryCurrent{}, CommitFailed),
 		on(SectorSealPreCommit1Failed{}, SealPreCommit1Failed),
 		on(SectorRetryWaitSeed{}, WaitSeed),
 		on(SectorRetryComputeProof{}, Committing),

@@ -228,7 +228,7 @@ func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInf
 	tok, height, err := m.api.ChainHead(ctx.Context())
 	if err != nil {
 		log.Errorf("handlePreCommitting: api error, not proceeding: %+v", err)
-		return nil
+		return sendEventWithCooldownWhenErrorIfNeeded(ctx, sector, SectorRetryCurrent{}, err)
 	}
 
 	mi, err := m.api.StateMinerInfo(ctx.Context(), m.maddr, tok)
@@ -360,7 +360,7 @@ func (m *Sealing) handleWaitSeed(ctx statemachine.Context, sector SectorInfo) er
 	tok, _, err := m.api.ChainHead(ctx.Context())
 	if err != nil {
 		log.Errorf("handleWaitSeed: api error, not proceeding: %+v", err)
-		return nil
+		return sendEventWithCooldownWhenErrorIfNeeded(ctx, sector, SectorRetryCurrent{}, err)
 	}
 
 	pci, err := m.api.StateSectorPreCommitInfo(ctx.Context(), m.maddr, sector.SectorNumber, tok)

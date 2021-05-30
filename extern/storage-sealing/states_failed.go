@@ -1,6 +1,7 @@
 package sealing
 
 import (
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -70,11 +71,22 @@ func (m *Sealing) handleSealPrecommit2Failed(ctx statemachine.Context, sector Se
 	return ctx.Send(SectorRetrySealPreCommit2{})
 }
 
+func sendEventWithCooldownWhenErrorIfNeeded(ctx statemachine.Context, sector SectorInfo, retryEvt interface{}, err error) error {
+	cause := "websocket connection closed"
+	if strings.Contains(err.Error(), cause) {
+		if err := failedCooldown(ctx, sector); err != nil {
+			log.Warnf("failed cooldown: %+v", err)
+		}
+		return ctx.Send(retryEvt)
+	}
+	return nil
+}
+
 func (m *Sealing) handlePreCommitFailed(ctx statemachine.Context, sector SectorInfo) error {
 	tok, height, err := m.api.ChainHead(ctx.Context())
 	if err != nil {
 		log.Errorf("handlePreCommitFailed: api error, not proceeding: %+v", err)
-		return nil
+		return sendEventWithCooldownWhenErrorIfNeeded(ctx, sector, SectorRetryCurrent{}, err)
 	}
 
 	if sector.PreCommitMessage != nil {
@@ -194,7 +206,7 @@ func (m *Sealing) handleCommitFailed(ctx statemachine.Context, sector SectorInfo
 	tok, height, err := m.api.ChainHead(ctx.Context())
 	if err != nil {
 		log.Errorf("handleCommitting: api error, not proceeding: %+v", err)
-		return nil
+		return sendEventWithCooldownWhenErrorIfNeeded(ctx, sector, SectorRetryCurrent{}, err)
 	}
 
 	if sector.CommitMessage != nil {
