@@ -115,6 +115,9 @@ var (
 	SplitstoreCompactionHot         = stats.Int64("splitstore/hot", "Number of hot blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionCold        = stats.Int64("splitstore/cold", "Number of cold blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionDead        = stats.Int64("splitstore/dead", "Number of dead blocks in last compaction", stats.UnitDimensionless)
+
+	// mpool
+	MpoolPendingCount = stats.Int64("mpool/pending_count", "Counter of pending messages in mpool", stats.UnitDimensionless)
 )
 
 var (
@@ -368,6 +371,10 @@ var (
 		Measure:     SplitstoreCompactionDead,
 		Aggregation: view.Sum(),
 	}
+	MpoolPendingCountView = &view.View{
+		Measure:     MpoolPendingCount,
+		Aggregation: view.LastValue(),
+	}
 )
 
 // DefaultViews is an array of OpenCensus views for metric gathering purposes
@@ -415,6 +422,8 @@ var ChainNodeViews = append([]*view.View{
 	SplitstoreCompactionHotView,
 	SplitstoreCompactionColdView,
 	SplitstoreCompactionDeadView,
+
+	MpoolPendingCountView,
 
 	MessageReceivedBytesView,
 	BlockReceivedBytesView,
