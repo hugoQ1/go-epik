@@ -288,7 +288,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		}
 
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Errorf("failed to check miner stored piece: %w", err)
+			log.Warnf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
 			log.Infof("data has been storaged in miner:%s", data.pieceID)
@@ -450,7 +450,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		}
 
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Errorf("failed to check miner stored piece: %w", err)
+			log.Warnf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
 			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
@@ -480,7 +480,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		}
 		dealID, err := m.api.ClientStartDeal(ctx, params)
 		if err != nil {
-			log.Errorf("failed to start deal: %s", err)
+			log.Warnf("failed to start deal: %s", err)
 			continue
 		}
 		log.Warnf("start deal with miner:%s deal: %s", m.miner, dealID.String())
