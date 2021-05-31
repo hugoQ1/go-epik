@@ -287,20 +287,22 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
+		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
+			if _, err := m.api.ClientDealSize(ctx, data.rootCID); err == nil {
+				log.Infof("data has been storaged in daemon:%s", data.pieceID)
+				if !data.isRetrieved {
+					data.isRetrieved = true
+					m.totalRetrieveCount++
+				}
+				continue
+			}
+		}
+
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Warnf("failed to check miner stored piece: %w", err)
+			log.Debugf("failed to check miner stored piece: %s", err)
 			continue
 		} else if stored {
 			log.Infof("data has been storaged in miner:%s", data.pieceID)
-			if !data.isRetrieved {
-				data.isRetrieved = true
-				m.totalRetrieveCount++
-			}
-			continue
-		}
-
-		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
-			log.Infof("data has been storaged in daemon:%s", data.pieceID)
 			if !data.isRetrieved {
 				data.isRetrieved = true
 				m.totalRetrieveCount++
