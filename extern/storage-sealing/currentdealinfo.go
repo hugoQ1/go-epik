@@ -19,7 +19,7 @@ type CurrentDealInfoAPI interface {
 	ChainGetMessage(context.Context, cid.Cid) (*types.Message, error)
 	StateLookupID(context.Context, address.Address, TipSetToken) (address.Address, error)
 	StateMarketStorageDeal(context.Context, abi.DealID, TipSetToken) (*api.MarketDeal, error)
-	StateSearchMsg(context.Context, cid.Cid) (*MsgLookup, error)
+	StateSearchMsgLimited(context.Context, cid.Cid, abi.ChainEpoch) (*MsgLookup, error)
 }
 
 type CurrentDealInfo struct {
@@ -64,7 +64,7 @@ func (mgr *CurrentDealInfoManager) dealIDFromPublishDealsMsg(ctx context.Context
 	dealID := abi.DealID(0)
 
 	// Get the return value of the publish deals message
-	lookup, err := mgr.CDAPI.StateSearchMsg(ctx, publishCid)
+	lookup, err := mgr.CDAPI.StateSearchMsgLimited(ctx, publishCid, StorageMsgSearchLimit)
 	if err != nil {
 		return dealID, nil, xerrors.Errorf("looking for publish deal message %s: search msg failed: %w", publishCid, err)
 	}
@@ -164,7 +164,7 @@ type CurrentDealInfoTskAPI interface {
 	ChainGetMessage(ctx context.Context, mc cid.Cid) (*types.Message, error)
 	StateLookupID(context.Context, address.Address, types.TipSetKey) (address.Address, error)
 	StateMarketStorageDeal(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)
-	StateSearchMsg(context.Context, cid.Cid) (*api.MsgLookup, error)
+	StateSearchMsgLimited(context.Context, cid.Cid, abi.ChainEpoch) (*api.MsgLookup, error)
 }
 
 type CurrentDealInfoAPIAdapter struct {
@@ -189,8 +189,8 @@ func (c *CurrentDealInfoAPIAdapter) StateMarketStorageDeal(ctx context.Context, 
 	return c.CurrentDealInfoTskAPI.StateMarketStorageDeal(ctx, dealID, tsk)
 }
 
-func (c *CurrentDealInfoAPIAdapter) StateSearchMsg(ctx context.Context, k cid.Cid) (*MsgLookup, error) {
-	wmsg, err := c.CurrentDealInfoTskAPI.StateSearchMsg(ctx, k)
+func (c *CurrentDealInfoAPIAdapter) StateSearchMsgLimited(ctx context.Context, k cid.Cid, limit abi.ChainEpoch) (*MsgLookup, error) {
+	wmsg, err := c.CurrentDealInfoTskAPI.StateSearchMsgLimited(ctx, k, limit)
 	if err != nil {
 		return nil, err
 	}
