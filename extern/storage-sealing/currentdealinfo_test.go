@@ -294,7 +294,7 @@ func (mapi *CurrentDealInfoMockAPI) StateMarketStorageDeal(ctx context.Context, 
 	return deal, nil
 }
 
-func (mapi *CurrentDealInfoMockAPI) StateSearchMsg(ctx context.Context, c cid.Cid) (*MsgLookup, error) {
+func (mapi *CurrentDealInfoMockAPI) StateSearchMsgLimited(ctx context.Context, c cid.Cid, limit abi.ChainEpoch) (*MsgLookup, error) {
 	if mapi.SearchMessageLookup == nil {
 		return mapi.SearchMessageLookup, mapi.SearchMessageErr
 	}

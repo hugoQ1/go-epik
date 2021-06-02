@@ -78,15 +78,16 @@ func (m *Sealing) handlePreCommitFailed(ctx statemachine.Context, sector SectorI
 	}
 
 	if sector.PreCommitMessage != nil {
-		mw, err := m.api.StateSearchMsg(ctx.Context(), *sector.PreCommitMessage)
+		mw, err := m.api.StateSearchMsgLimited(ctx.Context(), *sector.PreCommitMessage, StorageMsgSearchLimit)
 		if err != nil {
 			// API error
 			log.Errorf("state search precommit message %s: %+v", *sector.PreCommitMessage, err)
-			if err := failedCooldown(ctx, sector); err != nil {
-				return err
-			}
+			// if err := failedCooldown(ctx, sector); err != nil {
+			// 	return err
+			// }
 
-			return ctx.Send(SectorRetryPreCommitWait{})
+			// return ctx.Send(SectorRetryPreCommitWait{})
+			return err
 		}
 
 		if mw == nil {
@@ -198,15 +199,16 @@ func (m *Sealing) handleCommitFailed(ctx statemachine.Context, sector SectorInfo
 	}
 
 	if sector.CommitMessage != nil {
-		mw, err := m.api.StateSearchMsg(ctx.Context(), *sector.CommitMessage)
+		mw, err := m.api.StateSearchMsgLimited(ctx.Context(), *sector.CommitMessage, StorageMsgSearchLimit)
 		if err != nil {
 			log.Errorf("state search commit message %s: %+v", *sector.CommitMessage, err)
-			// API error
-			if err := failedCooldown(ctx, sector); err != nil {
-				return err
-			}
+			// // API error
+			// if err := failedCooldown(ctx, sector); err != nil {
+			// 	return err
+			// }
 
-			return ctx.Send(SectorRetryCommitWait{})
+			// return ctx.Send(SectorRetryCommitWait{})
+			return err
 		}
 
 		if mw == nil {

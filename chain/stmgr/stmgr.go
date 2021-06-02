@@ -798,6 +798,9 @@ func (sm *StateManager) searchBackForMsg(ctx context.Context, from *types.TipSet
 
 	mNonce := m.VMMessage().Nonce
 
+	recursive := true
+	offset := abi.ChainEpoch(build.MessageConfidence)
+	last := from
 	for {
 		// If we've reached the genesis block, or we've reached the limit of
 		// how far back to look
@@ -818,7 +821,12 @@ func (sm *StateManager) searchBackForMsg(ctx context.Context, from *types.TipSet
 			return nil, nil, cid.Undef, nil
 		}
 
-		pts, err := sm.cs.LoadTipSet(cur.Parents())
+		var pts *types.TipSet
+		if recursive {
+			pts, err = sm.cs.LoadTipSet(cur.Parents())
+		} else {
+			pts, err = sm.cs.GetTipsetByHeight(ctx, cur.Height()-offset, cur, true)
+		}
 		if err != nil {
 			return nil, nil, cid.Undef, xerrors.Errorf("failed to load tipset during msg wait searchback: %w", err)
 		}
@@ -827,6 +835,20 @@ func (sm *StateManager) searchBackForMsg(ctx context.Context, from *types.TipSet
 		actorNoExist := errors.Is(err, types.ErrActorNotFound)
 		if err != nil && !actorNoExist {
 			return nil, nil, cid.Cid{}, xerrors.Errorf("failed to load the actor: %w", err)
+		}
+
+		if pts.Height() < last.Height()-offset && !actorNoExist && act.Nonce > mNonce {
+			recursive = false
+			cur = pts
+			curActor = act
+			offset = offset * 2
+			continue
+		}
+		if recursive != true {
+			recursive = true
+			offset = abi.ChainEpoch(build.MessageConfidence)
+			last = cur
+			continue
 		}
 
 		// check that between cur and parent tipset the nonce fell into range of our message

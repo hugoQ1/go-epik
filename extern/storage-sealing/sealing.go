@@ -43,7 +43,7 @@ var ErrSectorAllocated = errors.New("sectorNumber is allocated, but PreCommit in
 
 type SealingAPI interface {
 	StateWaitMsg(context.Context, cid.Cid) (MsgLookup, error)
-	StateSearchMsg(context.Context, cid.Cid) (*MsgLookup, error)
+	StateSearchMsgLimited(context.Context, cid.Cid, abi.ChainEpoch) (*MsgLookup, error)
 	StateComputeDataCommitment(ctx context.Context, maddr address.Address, sectorType abi.RegisteredSealProof, deals []abi.DealID, tok TipSetToken) (cid.Cid, error)
 
 	// Can return ErrSectorAllocated in case precommit info wasn't found, but the sector number is marked as allocated

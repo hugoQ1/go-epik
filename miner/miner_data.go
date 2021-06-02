@@ -24,9 +24,9 @@ var (
 	//LoopWaitingSeconds data check loop waiting seconds
 	LoopWaitingSeconds = time.Second * 30
 	// RetrieveParallelNum num
-	RetrieveParallelNum = 32
+	RetrieveParallelNum = 16
 	// DealParallelNum deal thread parallel num
-	DealParallelNum = 32
+	DealParallelNum = 16
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
 
