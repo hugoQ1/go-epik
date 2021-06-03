@@ -89,6 +89,7 @@ var (
 	TipsetMessagesRate      = stats.Float64("tipset/messages_rate", "Counter of processed messages per second", stats.UnitDimensionless)
 	TipsetPublishDealsCount = stats.Int64("tipset/publishdeals_count", "Counter of publishdeals in tipsets", stats.UnitDimensionless)
 	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
+	TipsetGasUsed           = stats.Int64("tipset/gasused", "Counter of gas in one tipset", stats.UnitDimensionless)
 
 	// Sys
 	BandwidthTotal = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
@@ -114,6 +115,9 @@ var (
 	SplitstoreCompactionHot         = stats.Int64("splitstore/hot", "Number of hot blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionCold        = stats.Int64("splitstore/cold", "Number of cold blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionDead        = stats.Int64("splitstore/dead", "Number of dead blocks in last compaction", stats.UnitDimensionless)
+
+	// mpool
+	MpoolPendingCount = stats.Int64("mpool/pending_count", "Counter of pending messages in mpool", stats.UnitDimensionless)
 )
 
 var (
@@ -273,6 +277,10 @@ var (
 		Measure:     TipsetSubmitPoStsCount,
 		Aggregation: view.LastValue(),
 	}
+	TipsetGasUsedView = &view.View{
+		Measure:     TipsetGasUsed,
+		Aggregation: view.LastValue(),
+	}
 
 	// default
 	BandwidthTotalView = &view.View{
@@ -363,6 +371,10 @@ var (
 		Measure:     SplitstoreCompactionDead,
 		Aggregation: view.Sum(),
 	}
+	MpoolPendingCountView = &view.View{
+		Measure:     MpoolPendingCount,
+		Aggregation: view.LastValue(),
+	}
 )
 
 // DefaultViews is an array of OpenCensus views for metric gathering purposes
@@ -411,6 +423,8 @@ var ChainNodeViews = append([]*view.View{
 	SplitstoreCompactionColdView,
 	SplitstoreCompactionDeadView,
 
+	MpoolPendingCountView,
+
 	MessageReceivedBytesView,
 	BlockReceivedBytesView,
 	ServeSyncSuccessView,
@@ -420,6 +434,7 @@ var ChainNodeViews = append([]*view.View{
 	TipsetMessagesRateView,
 	TipsetPublishDealsCountView,
 	TipsetSubmitPoStsCountView,
+	TipsetGasUsedView,
 }, DefaultViews...)
 
 var MinerNodeViews = append([]*view.View{

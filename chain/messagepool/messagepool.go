@@ -23,6 +23,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	lps "github.com/whyrusleeping/pubsub"
+	"go.opencensus.io/stats"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
@@ -34,6 +35,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/vm"
 	"github.com/EpiK-Protocol/go-epik/journal"
 	"github.com/EpiK-Protocol/go-epik/lib/sigs"
+	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 
 	"github.com/raulk/clock"
@@ -801,6 +803,8 @@ func (mp *MessagePool) addLocked(m *types.SignedMessage, strict, untrusted bool)
 			Messages: []MessagePoolEvtMessage{{Message: m.Message, CID: m.Cid()}},
 		}
 	})
+
+	stats.Record(context.Background(), metrics.MpoolPendingCount.M(int64(len(mp.pending))))
 
 	return nil
 }
