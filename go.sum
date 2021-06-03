@@ -53,6 +53,8 @@ github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118 h1
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210512080400-25db1eac2118/go.mod h1:s2BsE4KJ4BcK4hThWCMqKXKQ36YVAPt46kyxxNyHczc=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210527114420-776d2b315ece h1:LNfmIRMhlDIJp0R5v/fY8NNK5WOpMFV8XsPz9B2n6K4=
 github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210527114420-776d2b315ece/go.mod h1:18W4bKCmxrYvrwJRpH4TssSQISJQYEvXm0ARBpKoSIo=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210603082613-42b14d2c2dfc h1:SkqDnnoJQEa2A0UdHQm/CfQDHy0kzYwqMzEfmAUNpbY=
+github.com/EpiK-Protocol/go-epik-markets v0.5.3-0.20210603082613-42b14d2c2dfc/go.mod h1:18W4bKCmxrYvrwJRpH4TssSQISJQYEvXm0ARBpKoSIo=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4 h1:VqXg3SYH5FlHLclagcT6oIQ9r1knlcvKe/OF02/dT08=
 github.com/EpiK-Protocol/go-epik-storage v0.1.1-0.20210109141728-73c1715728b4/go.mod h1:kmKOGzuaPgIShW+JiPnALWb59tLkTkfWBrUr79JJzCk=
 github.com/GeertJohan/go.incremental v1.0.0 h1:7AH+pY1XUgQE4Y1HcXYaMqAI0m9yrFqo/jt0CW30vsg=
