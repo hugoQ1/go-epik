@@ -13,7 +13,6 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/filecoin-project/go-data-transfer/channelmonitor"
 	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
 	dtnet "github.com/filecoin-project/go-data-transfer/network"
 	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
@@ -26,6 +25,7 @@ import (
 	storageimpl "github.com/filecoin-project/go-fil-markets/storagemarket/impl"
 	"github.com/filecoin-project/go-fil-markets/storagemarket/impl/requestvalidation"
 	smnet "github.com/filecoin-project/go-fil-markets/storagemarket/network"
+	"github.com/filecoin-project/go-storedcounter"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -121,6 +121,7 @@ func RegisterClientValidator(crv dtypes.ClientRequestValidator, dtm dtypes.Clien
 // NewClientGraphsyncDataTransfer returns a data transfer manager that just
 // uses the clients's Client DAG service for transfers
 func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Graphsync, ds dtypes.MetadataDS, r repo.LockedRepo) (dtypes.ClientDataTransfer, error) {
+	sc := storedcounter.New(ds, datastore.NewKey("/datatransfer/client/counter"))
 
 	// go-data-transfer protocol retries:
 	// 1s, 5s, 25s, 2m5s, 5m x 11 ~= 1 hour
@@ -134,25 +135,10 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 		return nil, err
 	}
 
-	// data-transfer push / pull channel restart configuration:
-	dtRestartConfig := dtimpl.ChannelRestartConfig(channelmonitor.Config{
-		// Wait up to 2m for the other side to respond to an Open channel message
-		AcceptTimeout: 2 * time.Minute,
-		// When an error occurs, wait a little while until all related errors
-		// have fired before sending a restart message
-		RestartDebounce: 10 * time.Second,
-		// After sending a restart, wait for at least 1 minute before sending another
-		RestartBackoff: time.Minute,
-		// After trying to restart 3 times, give up and fail the transfer
-		MaxConsecutiveRestarts: 3,
-		// After sending a restart message, the time to wait for the peer to
-		// respond with an ack of the restart
-		RestartAckTimeout: 30 * time.Second,
-		// Wait up to 10m for the other side to send a Complete message once all
-		// data has been sent / received
-		CompleteTimeout: 10 * time.Minute,
-	})
-	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, dtRestartConfig)
+	timeoutOpt := dtimpl.ChannelRemoveTimeout(30 * time.Minute)
+	// data-transfer push channel restart configuration
+	dtRestartConfig := dtimpl.PushChannelRestartConfig(time.Minute, 10, 1024, 10*time.Minute, 3)
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc, dtRestartConfig, timeoutOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +192,8 @@ func StorageClient(lc fx.Lifecycle, h host.Host, ibs dtypes.ClientBlockstore, md
 func RetrievalClient(lc fx.Lifecycle, h host.Host, mds dtypes.ClientMultiDstore, dt dtypes.ClientDataTransfer, flowAPI flowapi.FlowchAPI, resolver discovery.PeerResolver, ds dtypes.MetadataDS, chainAPI full.ChainAPI, stateAPI full.StateAPI, mpoolAPI full.MpoolAPI, j journal.Journal) (retrievalmarket.RetrievalClient, error) {
 	adapter := retrievaladapter.NewRetrievalClientNode(flowAPI, chainAPI, stateAPI, mpoolAPI)
 	network := rmnet.NewFromLibp2pHost(h)
-	client, err := retrievalimpl.NewClient(network, mds, dt, adapter, resolver, namespace.Wrap(ds, datastore.NewKey("/retrievals/client")))
+	sc := storedcounter.New(ds, datastore.NewKey("/retr"))
+	client, err := retrievalimpl.NewClient(network, mds, dt, adapter, resolver, namespace.Wrap(ds, datastore.NewKey("/retrievals/client")), sc)
 	if err != nil {
 		return nil, err
 	}
