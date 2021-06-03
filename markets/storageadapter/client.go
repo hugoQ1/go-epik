@@ -119,12 +119,12 @@ func (c *ClientNodeAdapter) AddFunds(ctx context.Context, addr address.Address, 
 
 func (c *ClientNodeAdapter) ReserveFunds(ctx context.Context, wallet, addr address.Address, amt abi.TokenAmount) (cid.Cid, error) {
 	// return c.fundmgr.Reserve(ctx, wallet, addr, amt)
-	return cid.Undef, xerrors.Errorf("deprecated")
+	return cid.Undef, nil
 }
 
 func (c *ClientNodeAdapter) ReleaseFunds(ctx context.Context, addr address.Address, amt abi.TokenAmount) error {
 	// return c.fundmgr.Release(addr, amt)
-	return xerrors.Errorf("deprecated")
+	return nil
 }
 
 func (c *ClientNodeAdapter) GetBalance(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (storagemarket.Balance, error) {

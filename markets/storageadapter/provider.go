@@ -213,12 +213,12 @@ func (n *ProviderNodeAdapter) SignBytes(ctx context.Context, signer address.Addr
 
 func (n *ProviderNodeAdapter) ReserveFunds(ctx context.Context, wallet, addr address.Address, amt abi.TokenAmount) (cid.Cid, error) {
 	// return n.MarketReserveFunds(ctx, wallet, addr, amt)
-	return cid.Undef, xerrors.Errorf("deprecated")
+	return cid.Undef, nil
 }
 
 func (n *ProviderNodeAdapter) ReleaseFunds(ctx context.Context, addr address.Address, amt abi.TokenAmount) error {
 	// return n.MarketReleaseFunds(ctx, addr, amt)
-	return xerrors.Errorf("deprecated")
+	return nil
 }
 
 // Adds funds with the StorageMinerActor for a storage participant.  Used by both providers and clients.
@@ -235,7 +235,7 @@ func (n *ProviderNodeAdapter) AddFunds(ctx context.Context, addr address.Address
 	// }
 
 	// return smsg.Cid(), nil
-	return cid.Undef, xerrors.Errorf("deprecated")
+	return cid.Undef, nil
 }
 
 func (n *ProviderNodeAdapter) GetBalance(ctx context.Context, addr address.Address, encodedTs shared.TipSetToken) (storagemarket.Balance, error) {
@@ -250,7 +250,7 @@ func (n *ProviderNodeAdapter) GetBalance(ctx context.Context, addr address.Addre
 	// }
 
 	// return utils.ToSharedBalance(bal), nil
-	return storagemarket.Balance{}, xerrors.New("deprecated")
+	return storagemarket.Balance{}, xerrors.New("GetBalance deprecated")
 }
 
 // TODO: why doesnt this method take in a sector ID?
