@@ -40,7 +40,7 @@ func (s *state) StateInfo(fromAddr address.Address) (*RetrievalState, error) {
 	}
 	var addrs []address.Address
 	for _, miner := range miners {
-		addr, err := address.NewFromString(miner)
+		addr, err := address.NewFromBytes([]byte(miner))
 		if err != nil {
 			return nil, err
 		}
@@ -58,8 +58,16 @@ func (s *state) DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.T
 	return s.State.DayExpend(s.store, epoch, fromAddr)
 }
 
-func (s *state) LockedState(fromAddr address.Address) (*LockedState, error) {
-	return s.State.LockedState(s.store, fromAddr)
+func (s *state) LockedState(fromAddr address.Address, out *LockedState) (bool, error) {
+	lockedMap, err := adt.AsMap(s.store, s.State.LockedTable, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return false, err
+	}
+	found, err := lockedMap.Get(abi.AddrKey(fromAddr), out)
+	if err != nil {
+		return false, err
+	}
+	return found, nil
 }
 
 func (s *state) TotalCollateral() (abi.TokenAmount, error) {

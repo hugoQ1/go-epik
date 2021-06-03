@@ -1816,17 +1816,23 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval expend: %w", err)
 	}
-	locked, err := state.LockedState(ida)
+	var locked retrieval.LockedState
+	found, err := state.LockedState(ida, &locked)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
-	return &api.RetrievalState{
+	ret := &api.RetrievalState{
 		BindMiners:  info.BindMiners,
 		Balance:     info.Amount,
 		DayExpend:   expend,
-		Locked:      locked.Amount,
-		LockedEpoch: locked.ApplyEpoch,
-	}, nil
+		Locked:      abi.NewTokenAmount(0),
+		LockedEpoch: abi.ChainEpoch(0),
+	}
+	if found {
+		ret.Locked = locked.Amount
+		ret.LockedEpoch = locked.ApplyEpoch
+	}
+	return ret, nil
 }
 
 func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) ([]*api.DataIndex, error) {
