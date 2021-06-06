@@ -173,9 +173,19 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			return err
 		}
 		for _, data := range datas {
+			info, err := m.api.StateExpertFileInfo(ctx, data.PieceCID, types.EmptyTSK)
+			if err != nil {
+				log.Error("failed to load expert data:", err)
+				return err
+			}
+			if info.Redundancy <= 10 {
+				log.Infof("ignore data not reach the threshold:%v", data.PieceCID)
+				continue
+			}
 			var dataRef *DataRef
 			ref, ok := m.dataRefs.Get(data.PieceCID.String())
 			if !ok {
+				log.Infof("miner collect data:%v", data.PieceCID)
 				dataRef = &DataRef{
 					pieceID:     data.PieceCID,
 					rootCID:     data.RootCID,
