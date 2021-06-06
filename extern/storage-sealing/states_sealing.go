@@ -413,7 +413,7 @@ func (m *Sealing) handleCommitting(ctx statemachine.Context, sector SectorInfo) 
 	if sector.CommitMessage != nil {
 		log.Warnf("sector %d entered committing state with a commit message cid", sector.SectorNumber)
 
-		ml, err := m.api.StateSearchMsg(ctx.Context(), *sector.CommitMessage)
+		ml, err := m.api.StateSearchMsgLimited(ctx.Context(), *sector.CommitMessage, StorageMsgSearchLimit)
 		if err != nil {
 			log.Warnf("sector %d searching existing commit message %s: %+v", sector.SectorNumber, *sector.CommitMessage, err)
 		}

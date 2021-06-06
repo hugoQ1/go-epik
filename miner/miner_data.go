@@ -24,9 +24,9 @@ var (
 	//LoopWaitingSeconds data check loop waiting seconds
 	LoopWaitingSeconds = time.Second * 30
 	// RetrieveParallelNum num
-	RetrieveParallelNum = 32
+	RetrieveParallelNum = 16
 	// DealParallelNum deal thread parallel num
-	DealParallelNum = 32
+	DealParallelNum = 16
 	// RetrieveTryCountMax retrieve try count max
 	RetrieveTryCountMax = 50
 
@@ -173,9 +173,19 @@ func (m *MinerData) checkChainData(ctx context.Context) error {
 			return err
 		}
 		for _, data := range datas {
+			info, err := m.api.StateExpertFileInfo(ctx, data.PieceCID, types.EmptyTSK)
+			if err != nil {
+				log.Error("failed to load expert data:", err)
+				return err
+			}
+			if info.Redundancy <= 10 {
+				log.Infof("ignore data not reach the threshold:%v", data.PieceCID)
+				continue
+			}
 			var dataRef *DataRef
 			ref, ok := m.dataRefs.Get(data.PieceCID.String())
 			if !ok {
+				log.Infof("miner collect data:%v", data.PieceCID)
 				dataRef = &DataRef{
 					pieceID:     data.PieceCID,
 					rootCID:     data.RootCID,
@@ -287,20 +297,22 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 
+		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
+			if _, err := m.api.ClientDealSize(ctx, data.rootCID); err == nil {
+				log.Infof("data has been storaged in daemon:%s", data.pieceID)
+				if !data.isRetrieved {
+					data.isRetrieved = true
+					m.totalRetrieveCount++
+				}
+				continue
+			}
+		}
+
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Errorf("failed to check miner stored piece: %w", err)
+			log.Debugf("failed to check miner stored piece: %s", err)
 			continue
 		} else if stored {
 			log.Infof("data has been storaged in miner:%s", data.pieceID)
-			if !data.isRetrieved {
-				data.isRetrieved = true
-				m.totalRetrieveCount++
-			}
-			continue
-		}
-
-		if ok, _ := m.api.ClientHasLocal(ctx, data.rootCID); ok {
-			log.Infof("data has been storaged in daemon:%s", data.pieceID)
 			if !data.isRetrieved {
 				data.isRetrieved = true
 				m.totalRetrieveCount++
@@ -450,7 +462,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		}
 
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
-			log.Errorf("failed to check miner stored piece: %w", err)
+			log.Warnf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
 			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
@@ -480,7 +492,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		}
 		dealID, err := m.api.ClientStartDeal(ctx, params)
 		if err != nil {
-			log.Errorf("failed to start deal: %s", err)
+			log.Warnf("failed to start deal: %s", err)
 			continue
 		}
 		log.Warnf("start deal with miner:%s deal: %s", m.miner, dealID.String())

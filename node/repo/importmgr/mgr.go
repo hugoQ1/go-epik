@@ -33,7 +33,8 @@ func New(mds *multistore.MultiStore, ds datastore.Batching) *Mgr {
 		mds:        mds,
 		Blockstore: blockstore.Adapt(mds.MultiReadBlockstore()),
 
-		ds: datastore.NewLogDatastore(namespace.Wrap(ds, datastore.NewKey("/stores")), "storess"),
+		// ds: datastore.NewLogDatastore(namespace.Wrap(ds, datastore.NewKey("/stores")), "storess"),
+		ds: namespace.Wrap(ds, datastore.NewKey("/stores")),
 	}
 }
 

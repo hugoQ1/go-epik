@@ -118,8 +118,8 @@ func (s SealingAPIAdapter) StateWaitMsg(ctx context.Context, mcid cid.Cid) (seal
 	}, nil
 }
 
-func (s SealingAPIAdapter) StateSearchMsg(ctx context.Context, c cid.Cid) (*sealing.MsgLookup, error) {
-	wmsg, err := s.delegate.StateSearchMsg(ctx, c)
+func (s SealingAPIAdapter) StateSearchMsgLimited(ctx context.Context, c cid.Cid, limit abi.ChainEpoch) (*sealing.MsgLookup, error) {
+	wmsg, err := s.delegate.StateSearchMsgLimited(ctx, c, limit)
 	if err != nil {
 		return nil, err
 	}
