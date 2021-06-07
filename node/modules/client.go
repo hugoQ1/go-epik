@@ -133,8 +133,8 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 
 	// data-transfer push / pull channel restart configuration:
 	dtRestartConfig := dtimpl.ChannelRestartConfig(channelmonitor.Config{
-		// Wait up to 2m for the other side to respond to an Open channel message
-		AcceptTimeout: 2 * time.Minute,
+		// Wait up to 5m for the other side to respond to an Open channel message
+		AcceptTimeout: 5 * time.Minute,
 		// When an error occurs, wait a little while until all related errors
 		// have fired before sending a restart message
 		RestartDebounce: 10 * time.Second,
