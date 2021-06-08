@@ -21,6 +21,7 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
@@ -92,6 +93,25 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 
 						stats.RecordWithTags(ctx, tagsT, metrics.CoinbaseBalance.M(b2f(ci.Total)))
 						stats.RecordWithTags(ctx, tagsA, metrics.CoinbaseBalance.M(b2f(ci.Vested)))
+
+						tagsPR := []tag.Mutator{
+							tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
+							tag.Insert(metrics.Type, "raw"),
+						}
+
+						tagsPQ := []tag.Mutator{
+							tag.Insert(metrics.MinerID, address.Address(minerAddress).String()),
+							tag.Insert(metrics.Type, "quality"),
+						}
+
+						p, err := node.StateMinerPower(ctx, address.Address(minerAddress), types.EmptyTSK)
+						if err != nil {
+							log.Warnf("failed to get miner power: %w", err)
+							continue
+						}
+
+						stats.RecordWithTags(ctx, tagsPR, metrics.MinerPower.M(p.MinerPower.RawBytePower.Int64()))
+						stats.RecordWithTags(ctx, tagsPQ, metrics.MinerPower.M(p.MinerPower.QualityAdjPower.Int64()))
 					}
 				}
 			}()
