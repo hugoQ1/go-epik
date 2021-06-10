@@ -22,9 +22,10 @@ import (
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	sealing "github.com/EpiK-Protocol/go-epik/extern/storage-sealing"
 	"github.com/EpiK-Protocol/go-epik/metrics"
+	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/storage"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	metrics2 "github.com/libp2p/go-libp2p-core/metrics"
@@ -43,7 +44,7 @@ func RunChainSysMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, reporter metri
 	go metrics.RunSysInspector(ctx, reporter, 5*time.Second, "chain")
 }
 
-func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, minerapi api.StorageMiner, reporter metrics2.Reporter) {
+func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, st *storage.Miner, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {
 	ctx := helpers.LifecycleCtx(mctx, lc)
 	stop := make(chan struct{})
 	lc.Append(fx.Hook{
@@ -56,11 +57,7 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 					case <-stop:
 						return
 					case <-ticker.C:
-						miner, err := minerapi.ActorAddress(ctx)
-						if err != nil {
-							log.Warnf("failed to get miner: %w", err)
-							continue
-						}
+						miner := address.Address(minerAddress)
 
 						if err := recordCoinbase(ctx, node, miner); err != nil {
 							log.Warnf("failed to record coinbase: %w", err)
@@ -72,7 +69,7 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 							continue
 						}
 
-						if err := recordMinerSector(ctx, minerapi, miner); err != nil {
+						if err := recordMinerSector(ctx, st, miner); err != nil {
 							log.Warnf("failed to record miner sector: %w", err)
 							continue
 						}
@@ -142,19 +139,18 @@ func recordMinerPower(ctx context.Context, node api.FullNode, miner address.Addr
 	return nil
 }
 
-func recordMinerSector(ctx context.Context, minerapi api.StorageMiner, miner address.Address) error {
-	summary, err := minerapi.SectorsSummary(ctx)
+func recordMinerSector(ctx context.Context, st *storage.Miner, miner address.Address) error {
+	sectors, err := st.ListSectors()
 	if err != nil {
 		return err
 	}
 
-	buckets := make(map[sealing.SectorState]int)
-	var total int
-	for s, c := range summary {
-		buckets[sealing.SectorState(s)] = c
-		total += c
+	buckets := make(map[string]int)
+	for i := range sectors {
+		state := string(sectors[i].State)
+		buckets[state]++
+		buckets["Total"]++
 	}
-	buckets["Total"] = total
 
 	for state, count := range buckets {
 		tags := []tag.Mutator{
