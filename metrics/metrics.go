@@ -109,7 +109,6 @@ var (
 	ServeTransferResult = stats.Int64("serve/transfer_result", "Counter for process results", stats.UnitDimensionless)
 	CoinbaseBalance     = stats.Float64("coinbase/balance", "Counter for coinbase balance in EPK", stats.UnitDimensionless)
 	MinerPower          = stats.Int64("miner/power", "miner power", stats.UnitBytes)
-	MinerSectorCount    = stats.Int64("miner/sector", "Counter for miner sector with type", stats.UnitDimensionless)
 
 	// splitstore
 	SplitstoreMiss                  = stats.Int64("splitstore/miss", "Number of misses in hotstre access", stats.UnitDimensionless)
@@ -356,11 +355,6 @@ var (
 		Aggregation: view.LastValue(),
 		TagKeys:     []tag.Key{Type, MinerID},
 	}
-	MinerSectorView = &view.View{
-		Measure:     MinerSectorCount,
-		Aggregation: view.LastValue(),
-		TagKeys:     []tag.Key{Type, MinerID},
-	}
 
 	// splitstore
 	SplitstoreMissView = &view.View{
@@ -457,7 +451,6 @@ var MinerNodeViews = append([]*view.View{
 
 	CoinbaseBalanceView,
 	MinerPowerView,
-	MinerSectorView,
 	ServeTransferBytesView,
 	ServeTransferAcceptView,
 	ServeTransferResultView,
