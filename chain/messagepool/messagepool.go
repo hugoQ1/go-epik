@@ -56,7 +56,7 @@ var minimumBaseFee = types.NewInt(uint64(build.MinimumBaseFee))
 var baseFeeLowerBoundFactor = types.NewInt(10)
 var baseFeeLowerBoundFactorConservative = types.NewInt(100)
 
-var MaxActorPendingMessages = 1000
+var MaxActorPendingMessages = 100000
 var MaxUntrustedActorPendingMessages = 10
 
 var MaxNonceGap = uint64(4)
