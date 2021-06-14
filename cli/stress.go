@@ -10,6 +10,8 @@ import (
 
 	"github.com/filecoin-project/go-state-types/abi"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/retrieval"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 )
 
@@ -35,6 +37,11 @@ var stressCmd = &cli.Command{
 		&cli.Int64Flag{
 			Name:  "gas-limit",
 			Usage: "specify gas limit",
+			Value: 0,
+		},
+		&cli.Int64Flag{
+			Name:  "type",
+			Usage: "specify message type, 0 normal, 1 retrieve pledge",
 			Value: 0,
 		},
 	},
@@ -74,6 +81,11 @@ var stressCmd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
 
+		mtype := uint64(0)
+		if cctx.IsSet("type") {
+			mtype = cctx.Uint64("type")
+		}
+
 		i := uint64(0)
 		for i < count {
 			from := list[rand.Intn(len(list))]
@@ -84,12 +96,29 @@ var stressCmd = &cli.Command{
 			for to == def || to == from {
 				to = list[rand.Intn(len(list))]
 			}
-			param := SendParams{
-				From: from,
-				To:   to,
-				Val:  abi.TokenAmount(val),
+			if mtype == 1 {
+				serializeParams, err := actors.SerializeParams(&retrieval.PledgeParams{
+					Address: to,
+				})
+				if err != nil {
+					return xerrors.Errorf("serializing params failed: %w", err)
+				}
+				param := SendParams{
+					From:   from,
+					To:     retrieval.Address,
+					Val:    abi.TokenAmount(val),
+					Method: retrieval.Methods.Pledge,
+					Params: serializeParams,
+				}
+				params = append(params, param)
+			} else {
+				param := SendParams{
+					From: from,
+					To:   to,
+					Val:  abi.TokenAmount(val),
+				}
+				params = append(params, param)
 			}
-			params = append(params, param)
 			i++
 		}
 
