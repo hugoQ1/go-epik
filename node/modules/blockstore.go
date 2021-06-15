@@ -66,8 +66,41 @@ func BadgerHotBlockstore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.HotBlocksto
 	return bs, nil
 }
 
-func SplitBlockstore(cfg *config.Chainstore) func(lc fx.Lifecycle, r repo.LockedRepo, ds dtypes.MetadataDS, cold dtypes.UniversalBlockstore, hot dtypes.HotBlockstore) (dtypes.SplitBlockstore, error) {
-	return func(lc fx.Lifecycle, r repo.LockedRepo, ds dtypes.MetadataDS, cold dtypes.UniversalBlockstore, hot dtypes.HotBlockstore) (dtypes.SplitBlockstore, error) {
+func BadgerColdBlockstore(lc fx.Lifecycle, r repo.LockedRepo) (dtypes.ColdBlockstore, error) {
+	path, err := r.SplitstorePath()
+	if err != nil {
+		return nil, err
+	}
+
+	// reset the split cold path if env path set
+	if os.Getenv("EPIK_COLD_PATH") != "" {
+		path = os.Getenv("EPIK_COLD_PATH")
+	}
+	path = filepath.Join(path, "cold.badger")
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return nil, err
+	}
+
+	opts, err := repo.BadgerBlockstoreOptions(repo.ColdBlockstore, path, r.Readonly())
+	if err != nil {
+		return nil, err
+	}
+
+	bs, err := badgerbs.Open(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(_ context.Context) error {
+			return bs.Close()
+		}})
+
+	return bs, nil
+}
+
+func SplitBlockstore(cfg *config.Chainstore) func(lc fx.Lifecycle, r repo.LockedRepo, ds dtypes.MetadataDS, cold dtypes.ColdBlockstore, hot dtypes.HotBlockstore) (dtypes.SplitBlockstore, error) {
+	return func(lc fx.Lifecycle, r repo.LockedRepo, ds dtypes.MetadataDS, cold dtypes.ColdBlockstore, hot dtypes.HotBlockstore) (dtypes.SplitBlockstore, error) {
 		path, err := r.SplitstorePath()
 		if err != nil {
 			return nil, err

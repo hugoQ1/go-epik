@@ -24,6 +24,7 @@ const (
 	// domains.
 	UniversalBlockstore = BlockstoreDomain("universal")
 	HotBlockstore       = BlockstoreDomain("hot")
+	ColdBlockstore      = BlockstoreDomain("cold")
 )
 
 var (
