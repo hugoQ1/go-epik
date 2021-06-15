@@ -40,16 +40,16 @@ var (
 	// === :: cold (already archived)
 	// ≡≡≡ :: to be archived in this compaction
 	// --- :: hot
-	CompactionThreshold = 5 * build.Finality / 50
+	CompactionThreshold = 5 * build.Finality
 
 	// CompactionCold is the number of epochs that will be archived to the
 	// cold store on compaction. See diagram on CompactionThreshold for a
 	// better sense.
-	CompactionCold = build.Finality / 50
+	CompactionCold = build.Finality
 
 	// CompactionBoundary is the number of epochs from the current epoch at which
 	// we will walk the chain for live objects
-	CompactionBoundary = 2 * build.Finality / 50
+	CompactionBoundary = 2 * build.Finality
 )
 
 var (
