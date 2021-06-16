@@ -44,7 +44,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/beacon"
 	"github.com/EpiK-Protocol/go-epik/chain/gen"
 	"github.com/EpiK-Protocol/go-epik/chain/gen/slashfilter"
-	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/chain/messagepool"
 	"github.com/EpiK-Protocol/go-epik/chain/messagesigner"
 	"github.com/EpiK-Protocol/go-epik/chain/metrics"
@@ -133,13 +132,13 @@ const (
 
 	HandleIncomingBlocksKey
 	HandleIncomingMessagesKey
-	HandleMigrateClientFundsKey
+	// HandleMigrateClientFundsKey
 	HandlePaymentChannelManagerKey
 	HandleFlowChannelManagerKey
 
 	// miner
 	GetParamsKey
-	HandleMigrateProviderFundsKey
+	// HandleMigrateProviderFundsKey
 	HandleDealsKey
 	HandleRetrievalKey
 	RunSectorServiceKey
@@ -333,11 +332,11 @@ var ChainNode = Options(
 	Override(new(dtypes.ClientDataTransfer), modules.NewClientGraphsyncDataTransfer),
 
 	// Markets (storage)
-	Override(new(*market.FundManager), market.NewFundManager),
+	// Override(new(*market.FundManager), market.NewFundManager),
 	Override(new(dtypes.ClientDatastore), modules.NewClientDatastore),
 	Override(new(storagemarket.StorageClient), modules.StorageClient),
 	Override(new(storagemarket.StorageClientNode), storageadapter.NewClientNodeAdapter),
-	Override(HandleMigrateClientFundsKey, modules.HandleMigrateClientFunds),
+	// Override(HandleMigrateClientFundsKey, modules.HandleMigrateClientFunds),
 
 	// Lite node API
 	ApplyIf(isLiteNode,
@@ -423,7 +422,7 @@ var MinerNode = Options(
 	Override(new(storagemarket.StorageProvider), modules.StorageProvider),
 	Override(new(*storageadapter.DealPublisher), storageadapter.NewDealPublisher(nil, storageadapter.PublishMsgConfig{})),
 	Override(new(storagemarket.StorageProviderNode), storageadapter.NewProviderNodeAdapter(nil)),
-	Override(HandleMigrateProviderFundsKey, modules.HandleMigrateProviderFunds),
+	// Override(HandleMigrateProviderFundsKey, modules.HandleMigrateProviderFunds),
 	Override(HandleDealsKey, modules.HandleDeals),
 
 	// Config (todo: get a real property system)
@@ -624,6 +623,7 @@ func Repo(r repo.Repo) Option {
 			If(cfg.EnableSplitstore,
 				If(cfg.Splitstore.HotStoreType == "badger",
 					Override(new(dtypes.HotBlockstore), modules.BadgerHotBlockstore)),
+				Override(new(dtypes.ColdBlockstore), modules.BadgerColdBlockstore),
 				Override(new(dtypes.SplitBlockstore), modules.SplitBlockstore(cfg)),
 				Override(new(dtypes.ChainBlockstore), modules.ChainSplitBlockstore),
 				Override(new(dtypes.StateBlockstore), modules.StateSplitBlockstore),

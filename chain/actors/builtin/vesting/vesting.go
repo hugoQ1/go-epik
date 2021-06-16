@@ -36,6 +36,7 @@ type State interface {
 
 	TotalLocked() abi.TokenAmount
 	Coinbase(address.Address, abi.ChainEpoch) (*CoinbaseInfo, error)
+	TotalMined(address.Address) (abi.TokenAmount, error)
 }
 
 type CoinbaseInfo struct {

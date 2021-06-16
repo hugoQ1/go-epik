@@ -75,7 +75,13 @@ func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shut
 		},
 	}
 
-	ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
+	peerID, err := a.ID(context.Background())
+	if err != nil {
+		return err
+	}
+	tags := make(map[string]string)
+	tags["id"] = peerID.ShortString()
+	ifExporter, ifCloser, err := influxexporter.NewExporter(tags)
 	if err != nil {
 		log.Warnf("unable to register influx exporter: %v", err)
 	} else {

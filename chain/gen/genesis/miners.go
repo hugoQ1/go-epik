@@ -126,16 +126,6 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 			fmt.Printf("create genesis miner %s: Owner %s, Worker %s, Coinbase %s\n", ma.IDAddress, m.Owner, m.Worker, m.Coinbase)
 		}
 
-		// Add market funds
-
-		if m.MarketBalance.GreaterThan(big.Zero()) {
-			params := mustEnc(&minerInfos[i].maddr)
-			_, err := doExecValue(ctx, vm, market.Address, m.Worker, m.MarketBalance, builtin2.MethodsMarket.AddBalance, params)
-			if err != nil {
-				return cid.Undef, xerrors.Errorf("failed to create genesis miner (add balance): %w", err)
-			}
-		}
-
 		// Publish preseal deals
 
 		{
@@ -161,7 +151,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 					Proposal:        preseal.Deal,
 					ClientSignature: crypto.Signature{Type: crypto.SigTypeBLS}, // TODO: do we want to sign these? Or do we want to fake signatures for genesis setup?
 					DataRef: market2.StorageDataRef{
-						RootCID: inis.PresealPieceCID, // NOTE Piece CID
+						RootCID: preseal.Deal.PieceCID, // NOTE Piece CID
 						Expert:  inis.Expert.String(),
 					},
 				})
@@ -334,7 +324,7 @@ func SetupStorageMiners(ctx context.Context, cs *store.ChainStore, sroot cid.Cid
 		return cid.Undef, xerrors.Errorf("check genesis power state: %w", err)
 	}
 
-	err = checkMarketActor(vm, cs.ActorStore(ctx), inis.PresealPieceCID, int64(len(minerInfos)))
+	err = checkMarketActor(vm, cs.ActorStore(ctx), miners[0].Sectors[0].Deal.PieceCID, int64(len(minerInfos)))
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("check genesis market state: %w", err)
 	}

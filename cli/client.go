@@ -103,7 +103,7 @@ var clientCmd = &cli.Command{
 		WithCategory("retrieval", clientRetrieveWithdrawCmd),
 		WithCategory("util", clientCommPCmd),
 		WithCategory("util", clientCarGenCmd),
-		WithCategory("util", clientBalancesCmd),
+		// WithCategory("util", clientBalancesCmd),
 		WithCategory("util", clientListTransfers),
 		WithCategory("util", clientRestartTransfer),
 		WithCategory("util", clientCancelTransfer),
@@ -2480,64 +2480,64 @@ var clientGetDealCmd = &cli.Command{
 	},
 }
 
-var clientBalancesCmd = &cli.Command{
-	Name:  "balances",
-	Usage: "Print storage market client balances",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "client",
-			Usage: "specify storage client address",
-		},
-	},
-	Action: func(cctx *cli.Context) error {
-		api, closer, err := GetFullNodeAPI(cctx)
-		if err != nil {
-			return err
-		}
-		defer closer()
-		ctx := ReqContext(cctx)
+// var clientBalancesCmd = &cli.Command{
+// 	Name:  "balances",
+// 	Usage: "Print storage market client balances",
+// 	Flags: []cli.Flag{
+// 		&cli.StringFlag{
+// 			Name:  "client",
+// 			Usage: "specify storage client address",
+// 		},
+// 	},
+// 	Action: func(cctx *cli.Context) error {
+// 		api, closer, err := GetFullNodeAPI(cctx)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		defer closer()
+// 		ctx := ReqContext(cctx)
 
-		var addr address.Address
-		if clientFlag := cctx.String("client"); clientFlag != "" {
-			ca, err := address.NewFromString(clientFlag)
-			if err != nil {
-				return err
-			}
+// 		var addr address.Address
+// 		if clientFlag := cctx.String("client"); clientFlag != "" {
+// 			ca, err := address.NewFromString(clientFlag)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			addr = ca
-		} else {
-			def, err := api.WalletDefaultAddress(ctx)
-			if err != nil {
-				return err
-			}
-			addr = def
-		}
+// 			addr = ca
+// 		} else {
+// 			def, err := api.WalletDefaultAddress(ctx)
+// 			if err != nil {
+// 				return err
+// 			}
+// 			addr = def
+// 		}
 
-		balance, err := api.StateMarketBalance(ctx, addr, types.EmptyTSK)
-		if err != nil {
-			return err
-		}
+// 		balance, err := api.StateMarketBalance(ctx, addr, types.EmptyTSK)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		reserved, err := api.MarketGetReserved(ctx, addr)
-		if err != nil {
-			return err
-		}
+// 		reserved, err := api.MarketGetReserved(ctx, addr)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		avail := big.Sub(big.Sub(balance.Escrow, balance.Locked), reserved)
-		if avail.LessThan(big.Zero()) {
-			avail = big.Zero()
-		}
+// 		avail := big.Sub(big.Sub(balance.Escrow, balance.Locked), reserved)
+// 		if avail.LessThan(big.Zero()) {
+// 			avail = big.Zero()
+// 		}
 
-		fmt.Printf("Client Market Balance for address %s:\n", addr)
+// 		fmt.Printf("Client Market Balance for address %s:\n", addr)
 
-		fmt.Printf("  Escrowed Funds:        %s\n", types.EPK(balance.Escrow))
-		fmt.Printf("  Locked Funds:          %s\n", types.EPK(balance.Locked))
-		fmt.Printf("  Reserved Funds:        %s\n", types.EPK(reserved))
-		fmt.Printf("  Available to Withdraw: %s\n", types.EPK(avail))
+// 		fmt.Printf("  Escrowed Funds:        %s\n", types.EPK(balance.Escrow))
+// 		fmt.Printf("  Locked Funds:          %s\n", types.EPK(balance.Locked))
+// 		fmt.Printf("  Reserved Funds:        %s\n", types.EPK(reserved))
+// 		fmt.Printf("  Available to Withdraw: %s\n", types.EPK(avail))
 
-		return nil
-	},
-}
+// 		return nil
+// 	},
+// }
 
 var clientStat = &cli.Command{
 	Name:      "stat",

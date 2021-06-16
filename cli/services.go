@@ -22,8 +22,11 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination=servicesmock_test.go -package=cli -self_package github.com/EpiK-Protocol/go-epik/cli . ServicesAPI
 
 type ServicesAPI interface {
+	API() api.FullNode
 	// Sends executes a send given SendParams
 	Send(ctx context.Context, params SendParams) (cid.Cid, error)
+	// BatchSends executes a send given SendParams
+	BatchSend(ctx context.Context, params []SendParams) ([]cid.Cid, error)
 	// DecodeTypedParamsFromJSON takes in information needed to identify a method and converts JSON
 	// parameters to bytes of their CBOR encoding
 	DecodeTypedParamsFromJSON(ctx context.Context, to address.Address, method abi.MethodNum, paramstr string) ([]byte, error)
@@ -94,11 +97,88 @@ type SendParams struct {
 
 var ErrSendBalanceTooLow = errors.New("balance too low")
 
+func (s *ServicesImpl) API() api.FullNode {
+	return s.api
+}
+
 func (s *ServicesImpl) Send(ctx context.Context, params SendParams) (cid.Cid, error) {
+	msg, err := s.parseMessage(ctx, params)
+	if err != nil {
+		return cid.Undef, err
+	}
+
+	if params.Nonce != nil {
+		msg.Nonce = *params.Nonce
+		sm, err := s.api.WalletSignMessage(ctx, params.From, msg)
+		if err != nil {
+			return cid.Undef, err
+		}
+
+		_, err = s.api.MpoolPush(ctx, sm)
+		if err != nil {
+			return cid.Undef, err
+		}
+
+		return sm.Cid(), nil
+	}
+
+	sm, err := s.api.MpoolPushMessage(ctx, msg, nil)
+	if err != nil {
+		return cid.Undef, err
+	}
+
+	return sm.Cid(), nil
+}
+
+func (s *ServicesImpl) BatchSend(ctx context.Context, params []SendParams) ([]cid.Cid, error) {
+	var (
+		msgs  []*types.Message
+		smsgs []*types.SignedMessage
+		cids  []cid.Cid
+	)
+	for _, p := range params {
+		msg, err := s.parseMessage(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+
+		if p.Nonce != nil {
+			msg.Nonce = *p.Nonce
+			sm, err := s.api.WalletSignMessage(ctx, p.From, msg)
+			if err != nil {
+				return nil, err
+			}
+			smsgs = append(smsgs, sm)
+		} else {
+			msgs = append(msgs, msg)
+		}
+	}
+
+	if len(smsgs) > 0 {
+		ids, err := s.api.MpoolBatchPush(ctx, smsgs)
+		if err != nil {
+			return nil, err
+		}
+		cids = append(cids, ids...)
+	}
+
+	if len(msgs) > 0 {
+		smsgs, err := s.api.MpoolBatchPushMessage(ctx, msgs, nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, sm := range smsgs {
+			cids = append(cids, sm.Cid())
+		}
+	}
+	return cids, nil
+}
+
+func (s *ServicesImpl) parseMessage(ctx context.Context, params SendParams) (*types.Message, error) {
 	if params.From == address.Undef {
 		defaddr, err := s.api.WalletDefaultAddress(ctx)
 		if err != nil {
-			return cid.Undef, err
+			return nil, err
 		}
 		params.From = defaddr
 	}
@@ -132,35 +212,15 @@ func (s *ServicesImpl) Send(ctx context.Context, params SendParams) (cid.Cid, er
 		// Funds insufficient check
 		fromBalance, err := s.api.WalletBalance(ctx, msg.From)
 		if err != nil {
-			return cid.Undef, err
+			return nil, err
 		}
 		totalCost := types.BigAdd(types.BigMul(msg.GasFeeCap, types.NewInt(uint64(msg.GasLimit))), msg.Value)
 
 		if fromBalance.LessThan(totalCost) {
-			return cid.Undef, xerrors.Errorf("From balance %s less than total cost %s: %w", types.EPK(fromBalance), types.EPK(totalCost), ErrSendBalanceTooLow)
+			return nil, xerrors.Errorf("From balance %s less than total cost %s: %w", types.EPK(fromBalance), types.EPK(totalCost), ErrSendBalanceTooLow)
 
 		}
 	}
 
-	if params.Nonce != nil {
-		msg.Nonce = *params.Nonce
-		sm, err := s.api.WalletSignMessage(ctx, params.From, msg)
-		if err != nil {
-			return cid.Undef, err
-		}
-
-		_, err = s.api.MpoolPush(ctx, sm)
-		if err != nil {
-			return cid.Undef, err
-		}
-
-		return sm.Cid(), nil
-	}
-
-	sm, err := s.api.MpoolPushMessage(ctx, msg, nil)
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	return sm.Cid(), nil
+	return msg, nil
 }

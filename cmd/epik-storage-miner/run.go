@@ -186,7 +186,13 @@ var runCmd = &cli.Command{
 			},
 		}
 
-		ifExporter, ifCloser, err := influxexporter.NewExporter(nil)
+		peerID, err := minerapi.ID(context.Background())
+		if err != nil {
+			return err
+		}
+		tags := make(map[string]string)
+		tags["id"] = peerID.ShortString()
+		ifExporter, ifCloser, err := influxexporter.NewExporter(tags)
 		if err != nil {
 			log.Warnf("unable to register influx exporter: %v", err)
 		} else {

@@ -21,9 +21,11 @@ import (
 
 	"github.com/EpiK-Protocol/go-epik/api"
 	"github.com/EpiK-Protocol/go-epik/build"
+	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/metrics"
 	"github.com/EpiK-Protocol/go-epik/node/modules/dtypes"
 	"github.com/EpiK-Protocol/go-epik/node/modules/helpers"
+	"github.com/EpiK-Protocol/go-epik/storage"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	metrics2 "github.com/libp2p/go-libp2p-core/metrics"
@@ -42,21 +44,12 @@ func RunChainSysMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, reporter metri
 	go metrics.RunSysInspector(ctx, reporter, 5*time.Second, "chain")
 }
 
-func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {
+func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode, st *storage.Miner, minerAddress dtypes.MinerAddress, reporter metrics2.Reporter) {
 	ctx := helpers.LifecycleCtx(mctx, lc)
 	stop := make(chan struct{})
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			go func() {
-				b2f := func(amt abi.TokenAmount) float64 {
-					f := 0.0
-					r := new(big.Rat).SetFrac(amt.Int, big.NewInt(int64(build.EpkPrecision)))
-					if r.Sign() != 0 {
-						f, _ = r.Float64()
-					}
-					return f
-				}
-
 				ticker := time.NewTicker(time.Duration(build.BlockDelaySecs) * time.Second)
 				defer ticker.Stop()
 				for {
@@ -64,34 +57,22 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 					case <-stop:
 						return
 					case <-ticker.C:
-						head, err := node.ChainHead(ctx)
-						if err != nil {
-							log.Warnf("failed to get head: %w", err)
+						miner := address.Address(minerAddress)
+
+						if err := recordCoinbase(ctx, node, miner); err != nil {
+							log.Warnf("failed to record coinbase: %w", err)
 							continue
 						}
 
-						mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), head.Key())
-						if err != nil {
-							log.Warnf("failed to get minerinfo: %w", err)
-							continue
-						}
-						tagsT := []tag.Mutator{
-							tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
-							tag.Insert(metrics.Type, "total"),
-						}
-						tagsA := []tag.Mutator{
-							tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
-							tag.Insert(metrics.Type, "available"),
-						}
-
-						ci, err := node.StateCoinbase(ctx, mi.Coinbase, head.Key())
-						if err != nil {
-							log.Warnf("failed to get coinbase info: %w", err)
+						if err := recordMinerPower(ctx, node, miner); err != nil {
+							log.Warnf("failed to record miner power: %w", err)
 							continue
 						}
 
-						stats.RecordWithTags(ctx, tagsT, metrics.CoinbaseBalance.M(b2f(ci.Total)))
-						stats.RecordWithTags(ctx, tagsA, metrics.CoinbaseBalance.M(b2f(ci.Vested)))
+						if err := recordMinerSector(ctx, st, miner); err != nil {
+							log.Warnf("failed to record miner sector: %w", err)
+							continue
+						}
 					}
 				}
 			}()
@@ -102,4 +83,81 @@ func RunMinerMetrics(mctx helpers.MetricsCtx, lc fx.Lifecycle, node api.FullNode
 			return nil
 		},
 	})
+}
+
+func recordCoinbase(ctx context.Context, node api.FullNode, miner address.Address) error {
+	b2f := func(amt abi.TokenAmount) float64 {
+		f := 0.0
+		r := new(big.Rat).SetFrac(amt.Int, big.NewInt(int64(build.EpkPrecision)))
+		if r.Sign() != 0 {
+			f, _ = r.Float64()
+		}
+		return f
+	}
+
+	mi, err := node.StateMinerInfo(ctx, miner, types.EmptyTSK)
+	if err != nil {
+		return err
+	}
+	tagsT := []tag.Mutator{
+		tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
+		tag.Insert(metrics.Type, "total"),
+	}
+	tagsA := []tag.Mutator{
+		tag.Insert(metrics.Coinbase, mi.Coinbase.String()),
+		tag.Insert(metrics.Type, "available"),
+	}
+
+	ci, err := node.StateCoinbase(ctx, mi.Coinbase, types.EmptyTSK)
+	if err != nil {
+		return err
+	}
+
+	stats.RecordWithTags(ctx, tagsT, metrics.CoinbaseBalance.M(b2f(ci.Total)))
+	stats.RecordWithTags(ctx, tagsA, metrics.CoinbaseBalance.M(b2f(ci.Vested)))
+	return nil
+}
+
+func recordMinerPower(ctx context.Context, node api.FullNode, miner address.Address) error {
+	tagsPR := []tag.Mutator{
+		tag.Insert(metrics.MinerID, miner.String()),
+		tag.Insert(metrics.Type, "raw"),
+	}
+
+	tagsPQ := []tag.Mutator{
+		tag.Insert(metrics.MinerID, miner.String()),
+		tag.Insert(metrics.Type, "quality"),
+	}
+
+	p, err := node.StateMinerPower(ctx, miner, types.EmptyTSK)
+	if err != nil {
+		return err
+	}
+
+	stats.RecordWithTags(ctx, tagsPR, metrics.MinerPower.M(p.MinerPower.RawBytePower.Int64()))
+	stats.RecordWithTags(ctx, tagsPQ, metrics.MinerPower.M(p.MinerPower.QualityAdjPower.Int64()))
+	return nil
+}
+
+func recordMinerSector(ctx context.Context, st *storage.Miner, miner address.Address) error {
+	sectors, err := st.ListSectors()
+	if err != nil {
+		return err
+	}
+
+	buckets := make(map[string]int)
+	for i := range sectors {
+		state := string(sectors[i].State)
+		buckets[state]++
+		buckets["Total"]++
+	}
+
+	for state, count := range buckets {
+		tags := []tag.Mutator{
+			tag.Insert(metrics.MinerID, miner.String()),
+			tag.Insert(metrics.Type, string(state)),
+		}
+		stats.RecordWithTags(ctx, tags, metrics.MinerSectorCount.M(int64(count)))
+	}
+	return nil
 }

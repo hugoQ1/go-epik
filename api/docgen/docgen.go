@@ -135,9 +135,9 @@ func init() {
 	addExample(map[string]api.MarketDeal{
 		"t026363": exampleValue("init", reflect.TypeOf(api.MarketDeal{}), nil).(api.MarketDeal),
 	})
-	addExample(map[string]api.MarketBalance{
-		"t026363": exampleValue("init", reflect.TypeOf(api.MarketBalance{}), nil).(api.MarketBalance),
-	})
+	// addExample(map[string]api.MarketBalance{
+	// 	"t026363": exampleValue("init", reflect.TypeOf(api.MarketBalance{}), nil).(api.MarketBalance),
+	// })
 	addExample(map[string]*pubsub.TopicScoreSnapshot{
 		"/blocks": {
 			TimeInMesh:               time.Minute,

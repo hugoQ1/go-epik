@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -52,7 +51,6 @@ import (
 	"github.com/filecoin-project/go-statestore"
 	"github.com/filecoin-project/go-storedcounter"
 
-	"github.com/EpiK-Protocol/go-epik/api"
 	sectorstorage "github.com/EpiK-Protocol/go-epik/extern/sector-storage"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/ffiwrapper"
 	"github.com/EpiK-Protocol/go-epik/extern/sector-storage/stores"
@@ -293,44 +291,44 @@ func HandleDeals(mctx helpers.MetricsCtx, lc fx.Lifecycle, host host.Host, h sto
 	})
 }
 
-func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.FullNode, minerAddress dtypes.MinerAddress) {
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			b, err := ds.Get(datastore.NewKey("/marketfunds/provider"))
-			if err != nil {
-				if xerrors.Is(err, datastore.ErrNotFound) {
-					return nil
-				}
-				return err
-			}
+// func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.FullNode, minerAddress dtypes.MinerAddress) {
+// 	lc.Append(fx.Hook{
+// 		OnStart: func(ctx context.Context) error {
+// 			b, err := ds.Get(datastore.NewKey("/marketfunds/provider"))
+// 			if err != nil {
+// 				if xerrors.Is(err, datastore.ErrNotFound) {
+// 					return nil
+// 				}
+// 				return err
+// 			}
 
-			var value abi.TokenAmount
-			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
-				return err
-			}
-			ts, err := node.ChainHead(ctx)
-			if err != nil {
-				log.Errorf("provider funds migration - getting chain head: %v", err)
-				return nil
-			}
+// 			var value abi.TokenAmount
+// 			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
+// 				return err
+// 			}
+// 			ts, err := node.ChainHead(ctx)
+// 			if err != nil {
+// 				log.Errorf("provider funds migration - getting chain head: %v", err)
+// 				return nil
+// 			}
 
-			mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), ts.Key())
-			if err != nil {
-				log.Errorf("provider funds migration - getting miner info %s: %v", minerAddress, err)
-				return nil
-			}
+// 			mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), ts.Key())
+// 			if err != nil {
+// 				log.Errorf("provider funds migration - getting miner info %s: %v", minerAddress, err)
+// 				return nil
+// 			}
 
-			_, err = node.MarketReserveFunds(ctx, mi.Worker, address.Address(minerAddress), value)
-			if err != nil {
-				log.Errorf("provider funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
-					mi.Worker, minerAddress, value, err)
-				return nil
-			}
+// 			_, err = node.MarketReserveFunds(ctx, mi.Worker, address.Address(minerAddress), value)
+// 			if err != nil {
+// 				log.Errorf("provider funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
+// 					mi.Worker, minerAddress, value, err)
+// 				return nil
+// 			}
 
-			return ds.Delete(datastore.NewKey("/marketfunds/provider"))
-		},
-	})
-}
+// 			return ds.Delete(datastore.NewKey("/marketfunds/provider"))
+// 		},
+// 	})
+// }
 
 // NewProviderDAGServiceDataTransfer returns a data transfer manager that just
 // uses the provider's Staging DAG service for transfers

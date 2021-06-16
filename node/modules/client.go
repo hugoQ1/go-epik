@@ -1,14 +1,12 @@
 package modules
 
 import (
-	"bytes"
 	"context"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/filecoin-project/go-multistore"
-	"github.com/filecoin-project/go-state-types/abi"
 	"golang.org/x/xerrors"
 
 	"go.uber.org/fx"
@@ -31,7 +29,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 
 	"github.com/EpiK-Protocol/go-epik/blockstore"
-	"github.com/EpiK-Protocol/go-epik/chain/market"
 	"github.com/EpiK-Protocol/go-epik/journal"
 	"github.com/EpiK-Protocol/go-epik/markets"
 	marketevents "github.com/EpiK-Protocol/go-epik/markets/loggers"
@@ -45,39 +42,39 @@ import (
 	"github.com/EpiK-Protocol/go-epik/node/repo/retrievalstoremgr"
 )
 
-func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full.WalletAPI, fundMgr *market.FundManager) {
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			addr, err := wallet.WalletDefaultAddress(ctx)
-			// nothing to be done if there is no default address
-			if err != nil {
-				return nil
-			}
-			b, err := ds.Get(datastore.NewKey("/marketfunds/client"))
-			if err != nil {
-				if xerrors.Is(err, datastore.ErrNotFound) {
-					return nil
-				}
-				log.Errorf("client funds migration - getting datastore value: %v", err)
-				return nil
-			}
+// func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full.WalletAPI, fundMgr *market.FundManager) {
+// 	lc.Append(fx.Hook{
+// 		OnStart: func(ctx context.Context) error {
+// 			addr, err := wallet.WalletDefaultAddress(ctx)
+// 			// nothing to be done if there is no default address
+// 			if err != nil {
+// 				return nil
+// 			}
+// 			b, err := ds.Get(datastore.NewKey("/marketfunds/client"))
+// 			if err != nil {
+// 				if xerrors.Is(err, datastore.ErrNotFound) {
+// 					return nil
+// 				}
+// 				log.Errorf("client funds migration - getting datastore value: %v", err)
+// 				return nil
+// 			}
 
-			var value abi.TokenAmount
-			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
-				log.Errorf("client funds migration - unmarshalling datastore value: %v", err)
-				return nil
-			}
-			_, err = fundMgr.Reserve(ctx, addr, addr, value)
-			if err != nil {
-				log.Errorf("client funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
-					addr, addr, value, err)
-				return nil
-			}
+// 			var value abi.TokenAmount
+// 			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
+// 				log.Errorf("client funds migration - unmarshalling datastore value: %v", err)
+// 				return nil
+// 			}
+// 			_, err = fundMgr.Reserve(ctx, addr, addr, value)
+// 			if err != nil {
+// 				log.Errorf("client funds migration - reserving funds (wallet %s, addr %s, funds %d): %v",
+// 					addr, addr, value, err)
+// 				return nil
+// 			}
 
-			return ds.Delete(datastore.NewKey("/marketfunds/client"))
-		},
-	})
-}
+// 			return ds.Delete(datastore.NewKey("/marketfunds/client"))
+// 		},
+// 	})
+// }
 
 func ClientMultiDatastore(lc fx.Lifecycle, mctx helpers.MetricsCtx, r repo.LockedRepo) (dtypes.ClientMultiDstore, error) {
 	ctx := helpers.LifecycleCtx(mctx, lc)
@@ -136,8 +133,8 @@ func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Grap
 
 	// data-transfer push / pull channel restart configuration:
 	dtRestartConfig := dtimpl.ChannelRestartConfig(channelmonitor.Config{
-		// Wait up to 2m for the other side to respond to an Open channel message
-		AcceptTimeout: 2 * time.Minute,
+		// Wait up to 5m for the other side to respond to an Open channel message
+		AcceptTimeout: 5 * time.Minute,
 		// When an error occurs, wait a little while until all related errors
 		// have fired before sending a restart message
 		RestartDebounce: 10 * time.Second,

@@ -56,7 +56,7 @@ type gatewayDepsAPI interface {
 	StateGetReceipt(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)
 	StateLookupID(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
 	StateListMiners(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error)
-	StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
+	// StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
 	StateMarketStorageDeal(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
 	StateNetworkVersion(context.Context, types.TipSetKey) (network.Version, error)
 	StateSearchMsgLimited(ctx context.Context, msg cid.Cid, lookbackLimit abi.ChainEpoch) (*api.MsgLookup, error)
@@ -288,13 +288,13 @@ func (a *GatewayAPI) StateLookupID(ctx context.Context, addr address.Address, ts
 	return a.api.StateLookupID(ctx, addr, tsk)
 }
 
-func (a *GatewayAPI) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
-	if err := a.checkTipsetKey(ctx, tsk); err != nil {
-		return api.MarketBalance{}, err
-	}
+// func (a *GatewayAPI) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
+// 	if err := a.checkTipsetKey(ctx, tsk); err != nil {
+// 		return api.MarketBalance{}, err
+// 	}
 
-	return a.api.StateMarketBalance(ctx, addr, tsk)
-}
+// 	return a.api.StateMarketBalance(ctx, addr, tsk)
+// }
 
 func (a *GatewayAPI) StateMarketStorageDeal(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error) {
 	if err := a.checkTipsetKey(ctx, tsk); err != nil {

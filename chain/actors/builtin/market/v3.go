@@ -41,15 +41,15 @@ func (s *state3) TotalLocked() (abi.TokenAmount, error) {
 	return big.Zero(), nil
 }
 
-func (s *state3) BalancesChanged(otherState State) (bool, error) {
-	otherState2, ok := otherState.(*state3)
-	if !ok {
-		// there's no way to compare different versions of the state, so let's
-		// just say that means the state of balances has changed
-		return true, nil
-	}
-	return !s.State.EscrowTable.Equals(otherState2.State.EscrowTable) || !s.State.LockedTable.Equals(otherState2.State.LockedTable), nil
-}
+// func (s *state3) BalancesChanged(otherState State) (bool, error) {
+// 	otherState2, ok := otherState.(*state3)
+// 	if !ok {
+// 		// there's no way to compare different versions of the state, so let's
+// 		// just say that means the state of balances has changed
+// 		return true, nil
+// 	}
+// 	return !s.State.EscrowTable.Equals(otherState2.State.EscrowTable) || !s.State.LockedTable.Equals(otherState2.State.LockedTable), nil
+// }
 
 func (s *state3) StatesChanged(otherState State) (bool, error) {
 	otherState2, ok := otherState.(*state3)
@@ -87,21 +87,21 @@ func (s *state3) Proposals() (DealProposals, error) {
 	return &dealProposals3{proposalArray}, nil
 }
 
-func (s *state3) EscrowTable() (BalanceTable, error) {
-	bt, err := adt3.AsBalanceTable(s.store, s.State.EscrowTable)
-	if err != nil {
-		return nil, err
-	}
-	return &balanceTable3{bt}, nil
-}
+// func (s *state3) EscrowTable() (BalanceTable, error) {
+// 	bt, err := adt3.AsBalanceTable(s.store, s.State.EscrowTable)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &balanceTable3{bt}, nil
+// }
 
-func (s *state3) LockedTable() (BalanceTable, error) {
-	bt, err := adt3.AsBalanceTable(s.store, s.State.LockedTable)
-	if err != nil {
-		return nil, err
-	}
-	return &balanceTable3{bt}, nil
-}
+// func (s *state3) LockedTable() (BalanceTable, error) {
+// 	bt, err := adt3.AsBalanceTable(s.store, s.State.LockedTable)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &balanceTable3{bt}, nil
+// }
 
 func (s *state3) Quotas() (Quotas, error) {
 	quotas, err := adt3.AsMap(s.store, s.State.Quotas, builtin.DefaultHamtBitwidth)

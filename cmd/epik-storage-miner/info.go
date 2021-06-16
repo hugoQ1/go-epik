@@ -213,6 +213,7 @@ func infoCmdAct(cctx *cli.Context) error {
 	fmt.Printf("Miner Balance:        %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
 	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(funds.MiningPledge))
 	fmt.Printf("      FeeDebt:        %s\n", types.EPK(funds.FeeDebt).Short())
+	fmt.Printf("      Total Mined:    %s\n", types.EPK(mi.TotalMined).Short())
 
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/docker/go-units"
 	logging "github.com/ipfs/go-log/v2"
@@ -20,7 +19,6 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
-	"github.com/EpiK-Protocol/go-epik/chain/wallet"
 	"github.com/EpiK-Protocol/go-epik/cmd/epik-seed/seed"
 	"github.com/EpiK-Protocol/go-epik/genesis"
 )
@@ -32,7 +30,7 @@ func main() {
 
 	local := []*cli.Command{
 		genesisCmd,
-		newKeyCmd,
+
 		preSealCmd,
 		aggregateManifestsCmd,
 	}
@@ -55,42 +53,6 @@ func main() {
 		log.Warn(err)
 		os.Exit(1)
 	}
-}
-
-var newKeyCmd = &cli.Command{
-	Name:      "new-key",
-	Usage:     "Generate a new key of the given type",
-	ArgsUsage: "[bls|secp256k1 (default secp256k1)]",
-	Action: func(c *cli.Context) error {
-
-		typ := c.Args().First()
-		if typ == "" {
-			typ = "secp256k1"
-		}
-
-		nk, err := wallet.GenerateKey(types.KeyType(typ))
-		if err != nil {
-			return err
-		}
-
-		cur, err := homedir.Expand(".")
-		if err != nil {
-			return err
-		}
-
-		b, err := json.Marshal(nk.KeyInfo)
-		if err != nil {
-			return err
-		}
-
-		// TODO: allow providing key
-		if err := ioutil.WriteFile(filepath.Join(cur, nk.Address.String()+".key"), []byte(hex.EncodeToString(b)), 0664); err != nil {
-			return err
-		}
-
-		fmt.Println(nk.Address.String())
-		return nil
-	},
 }
 
 var preSealCmd = &cli.Command{
@@ -170,7 +132,7 @@ var preSealCmd = &cli.Command{
 			return err
 		}
 
-		gm, key, err := seed.PreSeal(maddr, spt, abi.SectorNumber(c.Uint64("sector-offset")) /* , c.Int("num-sectors") */, sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
+		gm, key, err := seed.PreSeal(maddr, spt, abi.SectorNumber(c.Uint64("sector-offset")), 1 /* c.Int("num-sectors") */, sbroot, []byte(c.String("ticket-preimage")), k, c.Bool("fake-sectors"))
 		if err != nil {
 			return err
 		}

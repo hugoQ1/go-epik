@@ -54,7 +54,7 @@ type StateModuleAPI interface {
 	StateGetReceipt(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)
 	StateListMiners(ctx context.Context, tsk types.TipSetKey) ([]address.Address, error)
 	StateLookupID(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)
-	StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
+	// StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
 	StateMarketStorageDeal(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
 	StateMinerInfo(ctx context.Context, actor address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
 	StateMinerProvingDeadline(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*dline.Info, error)
@@ -151,6 +151,22 @@ func (m *StateModule) StateMinerInfo(ctx context.Context, actor address.Address,
 	if err != nil {
 		return miner.MinerInfo{}, err
 	}
+
+	// coinbase
+	cbact, err := m.StateManager.LoadActor(ctx, builtin.VestingActorAddr, ts)
+	if err != nil {
+		return miner.MinerInfo{}, xerrors.Errorf("failed to load coinbase actor: %w", err)
+	}
+	cbs, err := vesting.Load(m.StateManager.ChainStore().ActorStore(ctx), cbact)
+	if err != nil {
+		return miner.MinerInfo{}, xerrors.Errorf("failed to load coinbase actor state: %w", err)
+	}
+	accMined, err := cbs.TotalMined(actor)
+	if err != nil {
+		return miner.MinerInfo{}, err
+	}
+	info.TotalMined = accMined
+
 	return info, nil
 }
 
@@ -669,53 +685,53 @@ func (a *StateAPI) StateListActors(ctx context.Context, tsk types.TipSetKey) ([]
 	return a.StateManager.ListAllActors(ctx, ts)
 }
 
-func (m *StateModule) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
-	ts, err := m.Chain.GetTipSetFromKey(tsk)
-	if err != nil {
-		return api.MarketBalance{}, xerrors.Errorf("loading tipset %s: %w", tsk, err)
-	}
-	return m.StateManager.MarketBalance(ctx, addr, ts)
-}
+// func (m *StateModule) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
+// 	ts, err := m.Chain.GetTipSetFromKey(tsk)
+// 	if err != nil {
+// 		return api.MarketBalance{}, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+// 	}
+// 	return m.StateManager.MarketBalance(ctx, addr, ts)
+// }
 
-func (a *StateAPI) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketBalance, error) {
-	out := map[string]api.MarketBalance{}
+// func (a *StateAPI) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketBalance, error) {
+// 	out := map[string]api.MarketBalance{}
 
-	ts, err := a.Chain.GetTipSetFromKey(tsk)
-	if err != nil {
-		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
-	}
+// 	ts, err := a.Chain.GetTipSetFromKey(tsk)
+// 	if err != nil {
+// 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+// 	}
 
-	state, err := a.StateManager.GetMarketState(ctx, ts)
-	if err != nil {
-		return nil, err
-	}
-	escrow, err := state.EscrowTable()
-	if err != nil {
-		return nil, err
-	}
-	locked, err := state.LockedTable()
-	if err != nil {
-		return nil, err
-	}
+// 	state, err := a.StateManager.GetMarketState(ctx, ts)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	escrow, err := state.EscrowTable()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	locked, err := state.LockedTable()
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	err = escrow.ForEach(func(a address.Address, es abi.TokenAmount) error {
+// 	err = escrow.ForEach(func(a address.Address, es abi.TokenAmount) error {
 
-		lk, err := locked.Get(a)
-		if err != nil {
-			return err
-		}
+// 		lk, err := locked.Get(a)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		out[a.String()] = api.MarketBalance{
-			Escrow: es,
-			Locked: lk,
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
+// 		out[a.String()] = api.MarketBalance{
+// 			Escrow: es,
+// 			Locked: lk,
+// 		}
+// 		return nil
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return out, nil
+// }
 
 func (a *StateAPI) StateMarketDeals(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketDeal, error) {
 	out := map[string]api.MarketDeal{}
@@ -1800,17 +1816,23 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval expend: %w", err)
 	}
-	locked, err := state.LockedState(ida)
+	var locked retrieval.LockedState
+	found, err := state.LockedState(ida, &locked)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
-	return &api.RetrievalState{
+	ret := &api.RetrievalState{
 		BindMiners:  info.BindMiners,
 		Balance:     info.Amount,
 		DayExpend:   expend,
-		Locked:      locked.Amount,
-		LockedEpoch: locked.ApplyEpoch,
-	}, nil
+		Locked:      abi.NewTokenAmount(0),
+		LockedEpoch: abi.ChainEpoch(0),
+	}
+	if found {
+		ret.Locked = locked.Amount
+		ret.LockedEpoch = locked.ApplyEpoch
+	}
+	return ret, nil
 }
 
 func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) ([]*api.DataIndex, error) {

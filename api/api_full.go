@@ -28,7 +28,6 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-multistore"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/dline"
 
@@ -460,10 +459,10 @@ type FullNode interface {
 	StateListMiners(context.Context, types.TipSetKey) ([]address.Address, error)
 	// StateListActors returns the addresses of every actor in the state
 	StateListActors(context.Context, types.TipSetKey) ([]address.Address, error)
-	// StateMarketBalance looks up the Escrow and Locked balances of the given address in the Storage Market
-	StateMarketBalance(context.Context, address.Address, types.TipSetKey) (MarketBalance, error)
-	// StateMarketParticipants returns the Escrow and Locked balances of every participant in the Storage Market
-	StateMarketParticipants(context.Context, types.TipSetKey) (map[string]MarketBalance, error)
+	// // StateMarketBalance looks up the Escrow and Locked balances of the given address in the Storage Market
+	// StateMarketBalance(context.Context, address.Address, types.TipSetKey) (MarketBalance, error)
+	// // StateMarketParticipants returns the Escrow and Locked balances of every participant in the Storage Market
+	// StateMarketParticipants(context.Context, types.TipSetKey) (map[string]MarketBalance, error)
 	// StateMarketDeals returns information about every deal in the Storage Market
 	StateMarketDeals(context.Context, types.TipSetKey) (map[string]MarketDeal, error)
 	// StateMarketStorageDeal returns information about the indicated deal
@@ -616,16 +615,16 @@ type FullNode interface {
 	// along with the address removal.
 	MsigRemoveSigner(ctx context.Context, msig address.Address, proposer address.Address, toRemove address.Address, decrease bool) (cid.Cid, error)
 
-	// MarketAddBalance adds funds to the market actor
-	MarketAddBalance(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)
-	// MarketGetReserved gets the amount of funds that are currently reserved for the address
-	MarketGetReserved(ctx context.Context, addr address.Address) (types.BigInt, error)
-	// MarketReserveFunds reserves funds for a deal
-	MarketReserveFunds(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error)
-	// MarketReleaseFunds releases funds reserved by MarketReserveFunds
-	MarketReleaseFunds(ctx context.Context, addr address.Address, amt types.BigInt) error
-	// MarketWithdraw withdraws unlocked funds from the market actor
-	MarketWithdraw(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)
+	// // MarketAddBalance adds funds to the market actor
+	// MarketAddBalance(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)
+	// // MarketGetReserved gets the amount of funds that are currently reserved for the address
+	// MarketGetReserved(ctx context.Context, addr address.Address) (types.BigInt, error)
+	// // MarketReserveFunds reserves funds for a deal
+	// MarketReserveFunds(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error)
+	// // MarketReleaseFunds releases funds reserved by MarketReserveFunds
+	// MarketReleaseFunds(ctx context.Context, addr address.Address, amt types.BigInt) error
+	// // MarketWithdraw withdraws unlocked funds from the market actor
+	// MarketWithdraw(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)
 
 	// MethodGroup: Paych
 	// The Paych methods are for interacting with and managing payment channels
@@ -906,10 +905,10 @@ func (o *QueryOffer) Order(client address.Address) RetrievalOrder {
 	}
 }
 
-type MarketBalance struct {
-	Escrow big.Int
-	Locked big.Int
-}
+// type MarketBalance struct {
+// 	Escrow big.Int
+// 	Locked big.Int
+// }
 
 type MarketDeal struct {
 	Proposal market.DealProposal

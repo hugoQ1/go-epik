@@ -41,9 +41,9 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 
 type State interface {
 	cbor.Marshaler
-	BalancesChanged(State) (bool, error)
-	EscrowTable() (BalanceTable, error)
-	LockedTable() (BalanceTable, error)
+	// BalancesChanged(State) (bool, error)
+	// EscrowTable() (BalanceTable, error)
+	// LockedTable() (BalanceTable, error)
 	TotalLocked() (abi.TokenAmount, error)
 	StatesChanged(State) (bool, error)
 	States() (DealStates, error)
@@ -88,7 +88,8 @@ type StorageDataRef = market3.StorageDataRef
 type PublishStorageDealsParams = market3.PublishStorageDealsParams
 type PublishStorageDealsReturn = market3.PublishStorageDealsReturn
 type VerifyDealsForActivationParams = market3.VerifyDealsForActivationParams
-type WithdrawBalanceParams = market3.WithdrawBalanceParams
+
+// type WithdrawBalanceParams = market3.WithdrawBalanceParams
 
 type ClientDealProposal = market3.ClientDealProposal
 type DataIndex = market3.DataIndex

@@ -233,19 +233,19 @@ type FullNodeStruct struct {
 		StateSearchMsgLimited     func(context.Context, cid.Cid, abi.ChainEpoch) (*api.MsgLookup, error)                                              `perm:"read"`
 		StateListMiners           func(context.Context, types.TipSetKey) ([]address.Address, error)                                                   `perm:"read"`
 		StateListActors           func(context.Context, types.TipSetKey) ([]address.Address, error)                                                   `perm:"read"`
-		StateMarketBalance        func(context.Context, address.Address, types.TipSetKey) (api.MarketBalance, error)                                  `perm:"read"`
-		StateMarketParticipants   func(context.Context, types.TipSetKey) (map[string]api.MarketBalance, error)                                        `perm:"read"`
-		StateMarketDeals          func(context.Context, types.TipSetKey) (map[string]api.MarketDeal, error)                                           `perm:"read"`
-		StateMarketStorageDeal    func(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)                                         `perm:"read"`
-		StateMarketRemainingQuota func(context.Context, cid.Cid, types.TipSetKey) (int64, error)                                                      `perm:"read"`
-		StateLookupID             func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)                       `perm:"read"`
-		StateAccountKey           func(context.Context, address.Address, types.TipSetKey) (address.Address, error)                                    `perm:"read"`
-		StateChangedActors        func(context.Context, cid.Cid, cid.Cid) (map[string]types.Actor, error)                                             `perm:"read"`
-		StateGetReceipt           func(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)                                      `perm:"read"`
-		StateMinerSectorCount     func(context.Context, address.Address, types.TipSetKey) (api.MinerSectors, error)                                   `perm:"read"`
-		StateListMessages         func(ctx context.Context, match *api.MessageMatch, tsk types.TipSetKey, toht abi.ChainEpoch) ([]cid.Cid, error)     `perm:"read"`
-		StateDecodeParams         func(context.Context, address.Address, abi.MethodNum, []byte, types.TipSetKey) (interface{}, error)                 `perm:"read"`
-		StateCompute              func(context.Context, abi.ChainEpoch, []*types.Message, types.TipSetKey) (*api.ComputeStateOutput, error)           `perm:"read"`
+		// StateMarketBalance        func(context.Context, address.Address, types.TipSetKey) (api.MarketBalance, error)                                  `perm:"read"`
+		// StateMarketParticipants   func(context.Context, types.TipSetKey) (map[string]api.MarketBalance, error)                                        `perm:"read"`
+		StateMarketDeals          func(context.Context, types.TipSetKey) (map[string]api.MarketDeal, error)                                       `perm:"read"`
+		StateMarketStorageDeal    func(context.Context, abi.DealID, types.TipSetKey) (*api.MarketDeal, error)                                     `perm:"read"`
+		StateMarketRemainingQuota func(context.Context, cid.Cid, types.TipSetKey) (int64, error)                                                  `perm:"read"`
+		StateLookupID             func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error)                   `perm:"read"`
+		StateAccountKey           func(context.Context, address.Address, types.TipSetKey) (address.Address, error)                                `perm:"read"`
+		StateChangedActors        func(context.Context, cid.Cid, cid.Cid) (map[string]types.Actor, error)                                         `perm:"read"`
+		StateGetReceipt           func(context.Context, cid.Cid, types.TipSetKey) (*types.MessageReceipt, error)                                  `perm:"read"`
+		StateMinerSectorCount     func(context.Context, address.Address, types.TipSetKey) (api.MinerSectors, error)                               `perm:"read"`
+		StateListMessages         func(ctx context.Context, match *api.MessageMatch, tsk types.TipSetKey, toht abi.ChainEpoch) ([]cid.Cid, error) `perm:"read"`
+		StateDecodeParams         func(context.Context, address.Address, abi.MethodNum, []byte, types.TipSetKey) (interface{}, error)             `perm:"read"`
+		StateCompute              func(context.Context, abi.ChainEpoch, []*types.Message, types.TipSetKey) (*api.ComputeStateOutput, error)       `perm:"read"`
 		/* StateVerifierStatus                func(context.Context, address.Address, types.TipSetKey) (*abi.StoragePower, error)                                   `perm:"read"`
 		StateVerifiedClientStatus         func(context.Context, address.Address, types.TipSetKey) (*abi.StoragePower, error)                                   `perm:"read"`
 		StateVerifiedRegistryRootKey      func(ctx context.Context, tsk types.TipSetKey) (address.Address, error)                                              `perm:"read"`
@@ -286,11 +286,11 @@ type FullNodeStruct struct {
 		MsigSwapCancel          func(context.Context, address.Address, address.Address, uint64, address.Address, address.Address) (cid.Cid, error)                               `perm:"sign"`
 		MsigRemoveSigner        func(ctx context.Context, msig address.Address, proposer address.Address, toRemove address.Address, decrease bool) (cid.Cid, error)              `perm:"sign"`
 
-		MarketAddBalance   func(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)                 `perm:"sign"`
-		MarketGetReserved  func(ctx context.Context, addr address.Address) (types.BigInt, error)                                      `perm:"sign"`
-		MarketReserveFunds func(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) `perm:"sign"`
-		MarketReleaseFunds func(ctx context.Context, addr address.Address, amt types.BigInt) error                                    `perm:"sign"`
-		MarketWithdraw     func(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)                 `perm:"sign"`
+		// MarketAddBalance   func(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)                 `perm:"sign"`
+		// MarketGetReserved  func(ctx context.Context, addr address.Address) (types.BigInt, error)                                      `perm:"sign"`
+		// MarketReserveFunds func(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) `perm:"sign"`
+		// MarketReleaseFunds func(ctx context.Context, addr address.Address, amt types.BigInt) error                                    `perm:"sign"`
+		// MarketWithdraw     func(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error)                 `perm:"sign"`
 
 		PaychGet                    func(ctx context.Context, from, to address.Address, amt types.BigInt) (*api.ChannelInfo, error)           `perm:"sign"`
 		PaychGetWaitReady           func(context.Context, cid.Cid) (address.Address, error)                                                   `perm:"sign"`
@@ -500,12 +500,12 @@ type GatewayStruct struct {
 		StateMinerInfo            func(ctx context.Context, actor address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
 		StateMinerProvingDeadline func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*dline.Info, error)
 		StateMinerPower           func(context.Context, address.Address, types.TipSetKey) (*api.MinerPower, error)
-		StateMarketBalance        func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
-		StateMarketStorageDeal    func(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
-		StateReadState            func(context.Context, address.Address, types.TipSetKey) (*api.ActorState, error)
-		StateNetworkVersion       func(ctx context.Context, tsk types.TipSetKey) (stnetwork.Version, error)
-		StateSearchMsg            func(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error)
-		StateSectorGetInfo        func(ctx context.Context, maddr address.Address, n abi.SectorNumber, tsk types.TipSetKey) (*miner.SectorOnChainInfo, error)
+		// StateMarketBalance        func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error)
+		StateMarketStorageDeal func(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error)
+		StateReadState         func(context.Context, address.Address, types.TipSetKey) (*api.ActorState, error)
+		StateNetworkVersion    func(ctx context.Context, tsk types.TipSetKey) (stnetwork.Version, error)
+		StateSearchMsg         func(ctx context.Context, msg cid.Cid) (*api.MsgLookup, error)
+		StateSectorGetInfo     func(ctx context.Context, maddr address.Address, n abi.SectorNumber, tsk types.TipSetKey) (*miner.SectorOnChainInfo, error)
 		// StateVerifiedClientStatus         func(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
 		StateWaitMsg func(ctx context.Context, msg cid.Cid, confidence uint64) (*api.MsgLookup, error)
 	}
@@ -1153,13 +1153,13 @@ func (c *FullNodeStruct) StateListActors(ctx context.Context, tsk types.TipSetKe
 	return c.Internal.StateListActors(ctx, tsk)
 }
 
-func (c *FullNodeStruct) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
-	return c.Internal.StateMarketBalance(ctx, addr, tsk)
-}
+// func (c *FullNodeStruct) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
+// 	return c.Internal.StateMarketBalance(ctx, addr, tsk)
+// }
 
-func (c *FullNodeStruct) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketBalance, error) {
-	return c.Internal.StateMarketParticipants(ctx, tsk)
-}
+// func (c *FullNodeStruct) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketBalance, error) {
+// 	return c.Internal.StateMarketParticipants(ctx, tsk)
+// }
 
 func (c *FullNodeStruct) StateMarketDeals(ctx context.Context, tsk types.TipSetKey) (map[string]api.MarketDeal, error) {
 	return c.Internal.StateMarketDeals(ctx, tsk)
@@ -1353,25 +1353,25 @@ func (c *FullNodeStruct) MsigRemoveSigner(ctx context.Context, msig address.Addr
 	return c.Internal.MsigRemoveSigner(ctx, msig, proposer, toRemove, decrease)
 }
 
-func (c *FullNodeStruct) MarketAddBalance(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) {
-	return c.Internal.MarketAddBalance(ctx, wallet, addr, amt)
-}
+// func (c *FullNodeStruct) MarketAddBalance(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) {
+// 	return c.Internal.MarketAddBalance(ctx, wallet, addr, amt)
+// }
 
-func (c *FullNodeStruct) MarketGetReserved(ctx context.Context, addr address.Address) (types.BigInt, error) {
-	return c.Internal.MarketGetReserved(ctx, addr)
-}
+// func (c *FullNodeStruct) MarketGetReserved(ctx context.Context, addr address.Address) (types.BigInt, error) {
+// 	return c.Internal.MarketGetReserved(ctx, addr)
+// }
 
-func (c *FullNodeStruct) MarketReserveFunds(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) {
-	return c.Internal.MarketReserveFunds(ctx, wallet, addr, amt)
-}
+// func (c *FullNodeStruct) MarketReserveFunds(ctx context.Context, wallet address.Address, addr address.Address, amt types.BigInt) (cid.Cid, error) {
+// 	return c.Internal.MarketReserveFunds(ctx, wallet, addr, amt)
+// }
 
-func (c *FullNodeStruct) MarketReleaseFunds(ctx context.Context, addr address.Address, amt types.BigInt) error {
-	return c.Internal.MarketReleaseFunds(ctx, addr, amt)
-}
+// func (c *FullNodeStruct) MarketReleaseFunds(ctx context.Context, addr address.Address, amt types.BigInt) error {
+// 	return c.Internal.MarketReleaseFunds(ctx, addr, amt)
+// }
 
-func (c *FullNodeStruct) MarketWithdraw(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error) {
-	return c.Internal.MarketWithdraw(ctx, wallet, addr, amt)
-}
+// func (c *FullNodeStruct) MarketWithdraw(ctx context.Context, wallet, addr address.Address, amt types.BigInt) (cid.Cid, error) {
+// 	return c.Internal.MarketWithdraw(ctx, wallet, addr, amt)
+// }
 
 func (c *FullNodeStruct) PaychGet(ctx context.Context, from, to address.Address, amt types.BigInt) (*api.ChannelInfo, error) {
 	return c.Internal.PaychGet(ctx, from, to, amt)
@@ -2011,9 +2011,9 @@ func (g GatewayStruct) StateListMiners(ctx context.Context, tsk types.TipSetKey)
 	return g.Internal.StateListMiners(ctx, tsk)
 }
 
-func (g GatewayStruct) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
-	return g.Internal.StateMarketBalance(ctx, addr, tsk)
-}
+// func (g GatewayStruct) StateMarketBalance(ctx context.Context, addr address.Address, tsk types.TipSetKey) (api.MarketBalance, error) {
+// 	return g.Internal.StateMarketBalance(ctx, addr, tsk)
+// }
 
 func (g GatewayStruct) StateMarketStorageDeal(ctx context.Context, dealId abi.DealID, tsk types.TipSetKey) (*api.MarketDeal, error) {
 	return g.Internal.StateMarketStorageDeal(ctx, dealId, tsk)

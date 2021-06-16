@@ -30,6 +30,9 @@ type (
 	// HotBlockstore is the Hot blockstore abstraction for the splitstore
 	HotBlockstore blockstore.Blockstore
 
+	// ColdBlockstore is the Cold blockstore abstraction for the splitstore
+	ColdBlockstore blockstore.Blockstore
+
 	// SplitBlockstore is the hot/cold blockstore that sits on top of the ColdBlockstore.
 	SplitBlockstore blockstore.Blockstore
 
