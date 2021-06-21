@@ -1578,6 +1578,10 @@ var clientRetrieveApplyForWithdrawCmd = &cli.Command{
 			Name:  "from",
 			Usage: "address to send transactions from",
 		},
+		&cli.StringFlag{
+			Name:  "target",
+			Usage: "address of pledge target",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 1 {
@@ -1608,11 +1612,21 @@ var clientRetrieveApplyForWithdrawCmd = &cli.Command{
 			fromAddr = addr
 		}
 
+		target := fromAddr
+		if tstr := cctx.String("target"); tstr != "" {
+			addr, err := address.NewFromString(tstr)
+			if err != nil {
+				return err
+			}
+
+			target = addr
+		}
+
 		val, err := types.ParseEPK(cctx.Args().Get(0))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
 		}
-		msg, err := api.ClientRetrieveApplyForWithdraw(ctx, fromAddr, big.Int(val))
+		msg, err := api.ClientRetrieveApplyForWithdraw(ctx, fromAddr, target, big.Int(val))
 		if err != nil {
 			return ShowHelp(cctx, fmt.Errorf("failed to apply for withdraw: %w", err))
 		}

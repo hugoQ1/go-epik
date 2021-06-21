@@ -197,7 +197,7 @@ type FullNodeStruct struct {
 		ClientRetrieveQuery                       func(ctx context.Context, wallet address.Address, root cid.Cid, piece *cid.Cid, miner address.Address) (*api.RetrievalDeal, error)           `perm:"read"`
 		ClientRetrievePledge                      func(ctx context.Context, wallet address.Address, target address.Address, miners []address.Address, amount abi.TokenAmount) (cid.Cid, error) `perm:"admin"`
 		ClientRetrieveBind                        func(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)                                   `perm:"admin"`
-		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                                                   `perm:"admin"`
+		ClientRetrieveApplyForWithdraw            func(ctx context.Context, wallet address.Address, target address.Address, amount abi.TokenAmount) (cid.Cid, error)                           `perm:"admin"`
 		ClientRetrieveWithdraw                    func(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)                                                   `perm:"admin"`
 		ClientExpertNominate                      func(ctx context.Context, wallet address.Address, expert address.Address) (cid.Cid, error)                                                   `perm:"admin"`
 
@@ -757,8 +757,8 @@ func (c *FullNodeStruct) ClientRetrieveBind(ctx context.Context, wallet address.
 	return c.Internal.ClientRetrieveBind(ctx, wallet, miners, reverse)
 }
 
-func (c *FullNodeStruct) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
-	return c.Internal.ClientRetrieveApplyForWithdraw(ctx, wallet, amount)
+func (c *FullNodeStruct) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, target address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+	return c.Internal.ClientRetrieveApplyForWithdraw(ctx, wallet, target, amount)
 }
 
 func (c *FullNodeStruct) ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {

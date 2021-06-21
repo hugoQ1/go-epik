@@ -793,18 +793,18 @@ func (mr *MockFullNodeMockRecorder) ClientRetrieve(arg0, arg1, arg2 interface{})
 }
 
 // ClientRetrieveApplyForWithdraw mocks base method
-func (m *MockFullNode) ClientRetrieveApplyForWithdraw(arg0 context.Context, arg1 address.Address, arg2 big.Int) (cid.Cid, error) {
+func (m *MockFullNode) ClientRetrieveApplyForWithdraw(arg0 context.Context, arg1 address.Address, arg2 address.Address, arg3 big.Int) (cid.Cid, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClientRetrieveApplyForWithdraw", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ClientRetrieveApplyForWithdraw", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(cid.Cid)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClientRetrieveApplyForWithdraw indicates an expected call of ClientRetrieveApplyForWithdraw
-func (mr *MockFullNodeMockRecorder) ClientRetrieveApplyForWithdraw(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockFullNodeMockRecorder) ClientRetrieveApplyForWithdraw(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveApplyForWithdraw", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveApplyForWithdraw), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClientRetrieveApplyForWithdraw", reflect.TypeOf((*MockFullNode)(nil).ClientRetrieveApplyForWithdraw), arg0, arg1, arg2, arg3)
 }
 
 // ClientRetrieveBind mocks base method

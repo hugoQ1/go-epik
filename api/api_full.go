@@ -366,7 +366,7 @@ type FullNode interface {
 	ClientRetrieveBind(ctx context.Context, wallet address.Address, miners []address.Address, reverse bool) (cid.Cid, error)
 
 	// ClientRetrieveApplyForWithdraw apply for withdraw
-	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)
+	ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, target address.Address, amount abi.TokenAmount) (cid.Cid, error)
 
 	// ClientRetrieveWithdraw withdraw
 	ClientRetrieveWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error)

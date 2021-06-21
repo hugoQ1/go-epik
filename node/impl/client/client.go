@@ -1350,9 +1350,9 @@ func (a *API) ClientRetrieveBind(ctx context.Context, wallet address.Address, mi
 	return mid, nil
 }
 
-func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, amount abi.TokenAmount) (cid.Cid, error) {
+func (a *API) ClientRetrieveApplyForWithdraw(ctx context.Context, wallet address.Address, target address.Address, amount abi.TokenAmount) (cid.Cid, error) {
 	params, err := actors.SerializeParams(&retrieval.WithdrawBalanceParams{
-		Target: wallet,
+		Target: target,
 		Amount: amount,
 	})
 	if err != nil {
