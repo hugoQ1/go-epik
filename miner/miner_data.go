@@ -41,13 +41,13 @@ var (
 )
 
 type DataRef struct {
-	pieceID      cid.Cid
-	rootCID      cid.Cid
-	miners       map[address.Address]int
-	tryCount     int
-	retrieveTime time.Time
-	isRetrieved  bool
-	isDealed     bool
+	pieceID     cid.Cid
+	rootCID     cid.Cid
+	miners      map[address.Address]int
+	tryCount    int
+	retryTime   time.Time
+	isRetrieved bool
+	isDealed    bool
 }
 
 type MinerData struct {
@@ -326,7 +326,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 		}
 
 		if data.tryCount > 3 {
-			if time.Now().Before(data.retrieveTime.Add(30 * time.Minute)) {
+			if time.Now().Before(data.retryTime.Add(30 * time.Minute)) {
 				continue
 			}
 		}
@@ -360,7 +360,7 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			continue
 		}
 		data.tryCount++
-		data.retrieveTime = time.Now()
+		data.retryTime = time.Now()
 		log.Warnf("client retrieve miner:%s, data:%s", miner, data.rootCID)
 
 		m.retrievals.Add(rk, deal)
@@ -478,6 +478,12 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 			break
 		}
 
+		if data.tryCount > 5 {
+			if time.Now().Before(data.retryTime.Add(30 * time.Minute)) {
+				continue
+			}
+		}
+
 		stData := &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
 			Root:         data.rootCID,
@@ -491,6 +497,8 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 			FastRetrieval: true,
 		}
 		dealID, err := m.api.ClientStartDeal(ctx, params)
+		data.tryCount++
+		data.retryTime = time.Now()
 		if err != nil {
 			log.Warnf("failed to start deal: %s", err)
 			continue
