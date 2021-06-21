@@ -484,7 +484,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 		}
 		params := &api.StartDealParams{
 			Data:   stData,
-			Wallet: address.Undef,
+			Wallet: m.minerInfo.Owner,
 			Miner:  m.miner,
 			/* EpochPrice:        ask.Price,
 			MinBlocksDuration: uint64(ask.Expiry - ts.Height()), */
