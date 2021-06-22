@@ -7,6 +7,7 @@ import (
 	retrieval2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/retrieval"
 	"github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 )
 
 var _ State = (*state)(nil)
@@ -23,6 +24,41 @@ func load2(store adt.Store, root cid.Cid) (State, error) {
 type state struct {
 	retrieval2.State
 	store adt.Store
+}
+
+func (s *state) PledgesInfo(addr address.Address) (map[address.Address]abi.TokenAmount, error) {
+	pledgesMap, err := adt.AsMap(s.store, s.Pledges, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load pledges:%v", err)
+	}
+
+	var pledge PledgeState
+	found, err := pledgesMap.Get(abi.AddrKey(addr), &pledge)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get pledger info:%v", err)
+	}
+	if !found {
+		return nil, xerrors.Errorf("failed to find the pledge:%s", addr)
+	}
+	tmap, err := adt.AsMap(s.store, pledge.Targets, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load pledge target:%v", err)
+	}
+
+	targets := make(map[address.Address]abi.TokenAmount)
+	var outAmount abi.TokenAmount
+	err = tmap.ForEach(&outAmount, func(key string) error {
+		addr, err := address.NewFromBytes([]byte(key))
+		if err != nil {
+			return err
+		}
+		targets[addr] = outAmount
+		return nil
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load pledge amount:%v", err)
+	}
+	return targets, nil
 }
 
 func (s *state) StateInfo(fromAddr address.Address) (*RetrievalState, error) {

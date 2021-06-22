@@ -24,6 +24,7 @@ var (
 	Methods = builtin2.MethodsRetrieval
 )
 
+type PledgeState = retrieval2.PledgeState
 type PledgeParams = retrieval2.PledgeParams
 type RetrievalDataParams = retrieval2.RetrievalDataParams
 type WithdrawBalanceParams = retrieval2.WithdrawBalanceParams
@@ -48,6 +49,7 @@ func Load(store adt.Store, act *types.Actor) (st State, err error) {
 type State interface {
 	cbor.Marshaler
 
+	PledgesInfo(addr address.Address) (map[address.Address]abi.TokenAmount, error)
 	StateInfo(fromAddr address.Address) (*RetrievalState, error)
 	DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.TokenAmount, error)
 	LockedState(fromAddr address.Address, out *LockedState) (bool, error)

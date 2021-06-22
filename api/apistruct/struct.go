@@ -266,6 +266,7 @@ type FullNodeStruct struct {
 		StateGovernParams                func(context.Context, types.TipSetKey) (*govern.GovParams, error)                                                    `perm:"read"`
 		StateRetrievalInfo               func(context.Context, types.TipSetKey) (*api.RetrievalInfo, error)                                                   `perm:"read"`
 		StateRetrievalPledge             func(context.Context, address.Address, types.TipSetKey) (*api.RetrievalState, error)                                 `perm:"read"`
+		StateRetrievalPledgeFrom         func(context.Context, address.Address, types.TipSetKey) (*api.RetrievalPledgeInfo, error)                            `perm:"read"`
 		StateRetrievalPledgeList         func(context.Context, types.TipSetKey) (map[address.Address]*api.RetrievalState, error)                              `perm:"read"`
 		StateDataIndex                   func(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*api.DataIndex, error)                                     `perm:"read"`
 		StateMinerStoredAnyPiece         func(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)                                     `perm:"read"`
@@ -1280,6 +1281,10 @@ func (c *FullNodeStruct) StateRetrievalInfo(ctx context.Context, tsk types.TipSe
 
 func (c *FullNodeStruct) StateRetrievalPledge(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalState, error) {
 	return c.Internal.StateRetrievalPledge(ctx, addr, tsk)
+}
+
+func (c *FullNodeStruct) StateRetrievalPledgeFrom(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalPledgeInfo, error) {
+	return c.Internal.StateRetrievalPledgeFrom(ctx, addr, tsk)
 }
 
 func (c *FullNodeStruct) StateRetrievalPledgeList(ctx context.Context, tsk types.TipSetKey) (map[address.Address]*api.RetrievalState, error) {

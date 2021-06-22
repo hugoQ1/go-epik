@@ -1816,23 +1816,57 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval expend: %w", err)
 	}
+	ret := &api.RetrievalState{
+		BindMiners: info.BindMiners,
+		Balance:    info.Amount,
+		DayExpend:  expend,
+	}
+	return ret, nil
+}
+
+func (a *StateAPI) StateRetrievalPledgeFrom(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*api.RetrievalPledgeInfo, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, retrieval.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
+	}
+
+	state, err := retrieval.Load(a.Chain.ActorStore(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
+	}
+
+	ida, err := a.StateLookupID(ctx, addr, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to lookup id: %w", err)
+	}
+
+	infos, err := state.PledgesInfo(ida)
+	if err != nil {
+		return nil, err
+	}
+
+	pledges := make(map[address.Address]abi.TokenAmount)
+	for ida, amount := range infos {
+		t, err := a.StateAccountKey(ctx, ida, tsk)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load account key: %w", err)
+		}
+		pledges[t] = amount
+	}
+
 	var locked retrieval.LockedState
-	found, err := state.LockedState(ida, &locked)
+	found, err := state.LockedState(addr, &locked)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
-	ret := &api.RetrievalState{
-		BindMiners:  info.BindMiners,
-		Balance:     info.Amount,
-		DayExpend:   expend,
-		Locked:      abi.NewTokenAmount(0),
-		LockedEpoch: abi.ChainEpoch(0),
+	info := &api.RetrievalPledgeInfo{
+		Pledges: pledges,
 	}
 	if found {
-		ret.Locked = locked.Amount
-		ret.LockedEpoch = locked.ApplyEpoch
+		info.Locked = locked.Amount
+		info.LockedEpoch = locked.ApplyEpoch
 	}
-	return ret, nil
+	return info, nil
 }
 
 func (a *StateAPI) StateRetrievalPledgeList(ctx context.Context, tsk types.TipSetKey) (map[address.Address]*api.RetrievalState, error) {
@@ -1857,21 +1891,10 @@ func (a *StateAPI) StateRetrievalPledgeList(ctx context.Context, tsk types.TipSe
 		if err != nil {
 			return xerrors.Errorf("failed to load retrieval expend: %w", err)
 		}
-		var locked retrieval.LockedState
-		found, err := state.LockedState(addr, &locked)
-		if err != nil {
-			return xerrors.Errorf("failed to load retrieval locked: %w", err)
-		}
 		ret := &api.RetrievalState{
-			BindMiners:  info.BindMiners,
-			Balance:     info.Amount,
-			DayExpend:   expend,
-			Locked:      abi.NewTokenAmount(0),
-			LockedEpoch: abi.ChainEpoch(0),
-		}
-		if found {
-			ret.Locked = locked.Amount
-			ret.LockedEpoch = locked.ApplyEpoch
+			BindMiners: info.BindMiners,
+			Balance:    info.Amount,
+			DayExpend:  expend,
 		}
 		states[addr] = ret
 		return nil

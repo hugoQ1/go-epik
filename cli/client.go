@@ -1553,10 +1553,21 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
 		}
 
+		pledges, err := api.StateRetrievalPledgeFrom(ctx, fromAddr, types.EmptyTSK)
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to query pledge: %w", err))
+		}
+
 		fmt.Printf("Retrieve Balance: %s\n", types.EPK(state.Balance).String())
 		fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
-		fmt.Printf("Locked Balance: %s\n", types.EPK(state.Locked).String())
-		fmt.Printf("Locked Epoch: %d\n", state.LockedEpoch)
+		fmt.Printf("Locked Balance: %s\n", types.EPK(pledges.Locked).String())
+		fmt.Printf("Locked Epoch: %d\n", pledges.LockedEpoch)
+		if len(pledges.Pledges) > 0 {
+			fmt.Printf("Pledge:\n")
+			for target, token := range pledges.Pledges {
+				fmt.Printf("%s: %s\n", target, types.EPK(token).String())
+			}
+		}
 		if len(state.BindMiners) > 0 {
 			miners := ""
 			for _, m := range state.BindMiners {

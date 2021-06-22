@@ -535,6 +535,9 @@ type FullNode interface {
 	// StateRetrievalPledge retrieval pledge state
 	StateRetrievalPledge(context.Context, address.Address, types.TipSetKey) (*RetrievalState, error)
 
+	// StateRetrievalPledge retrieval from address
+	StateRetrievalPledgeFrom(context.Context, address.Address, types.TipSetKey) (*RetrievalPledgeInfo, error)
+
 	// StateRetrievalPledgeList retrieval pledge list
 	StateRetrievalPledgeList(context.Context, types.TipSetKey) (map[address.Address]*RetrievalState, error)
 
@@ -1178,12 +1181,17 @@ type RetrievalInfo struct {
 	TotalReward   abi.TokenAmount
 	PendingReward abi.TokenAmount
 }
-type RetrievalState struct {
-	BindMiners  []address.Address
-	Balance     abi.TokenAmount
-	DayExpend   abi.TokenAmount
+
+type RetrievalPledgeInfo struct {
+	Pledges     map[address.Address]abi.TokenAmount
 	Locked      abi.TokenAmount
 	LockedEpoch abi.ChainEpoch
+}
+
+type RetrievalState struct {
+	BindMiners []address.Address
+	Balance    abi.TokenAmount
+	DayExpend  abi.TokenAmount
 }
 
 type DataIndex struct {
