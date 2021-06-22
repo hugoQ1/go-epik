@@ -1835,6 +1835,53 @@ func (a *StateAPI) StateRetrievalPledge(ctx context.Context, addr address.Addres
 	return ret, nil
 }
 
+func (a *StateAPI) StateRetrievalPledgeList(ctx context.Context, tsk types.TipSetKey) (map[address.Address]*api.RetrievalState, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, retrieval.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor: %w", err)
+	}
+
+	state, err := retrieval.Load(a.Chain.ActorStore(ctx), act)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval actor state: %w", err)
+	}
+
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
+	states := make(map[address.Address]*api.RetrievalState)
+	err = state.ForEachState(func(addr address.Address, info *retrieval.RetrievalState) error {
+		expend, err := state.DayExpend(ts.Height(), addr)
+		if err != nil {
+			return xerrors.Errorf("failed to load retrieval expend: %w", err)
+		}
+		var locked retrieval.LockedState
+		found, err := state.LockedState(addr, &locked)
+		if err != nil {
+			return xerrors.Errorf("failed to load retrieval locked: %w", err)
+		}
+		ret := &api.RetrievalState{
+			BindMiners:  info.BindMiners,
+			Balance:     info.Amount,
+			DayExpend:   expend,
+			Locked:      abi.NewTokenAmount(0),
+			LockedEpoch: abi.ChainEpoch(0),
+		}
+		if found {
+			ret.Locked = locked.Amount
+			ret.LockedEpoch = locked.ApplyEpoch
+		}
+		states[addr] = ret
+		return nil
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load retrieval state info: %w", err)
+	}
+	return states, nil
+}
+
 func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) ([]*api.DataIndex, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, market.Address, tsk)
 	if err != nil {

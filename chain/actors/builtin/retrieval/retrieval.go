@@ -54,4 +54,5 @@ type State interface {
 	TotalCollateral() (abi.TokenAmount, error)
 	TotalRetrievalReward() (abi.TokenAmount, error)
 	PendingReward() (abi.TokenAmount, error)
+	ForEachState(func(addr address.Address, state *RetrievalState) error) error
 }

@@ -81,3 +81,26 @@ func (s *state) TotalRetrievalReward() (abi.TokenAmount, error) {
 func (s *state) PendingReward() (abi.TokenAmount, error) {
 	return s.State.PendingReward, nil
 }
+
+func (s *state) ForEachState(cb func(addr address.Address, state *RetrievalState) error) error {
+	stateMap, err := adt.AsMap(s.store, s.RetrievalStates, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return err
+	}
+	addrStrs, err := stateMap.CollectKeys()
+	if err != nil {
+		return err
+	}
+	for _, str := range addrStrs {
+		addr, err := address.NewFromBytes([]byte(str))
+		if err != nil {
+			return err
+		}
+		state, err := s.StateInfo(addr)
+		if err != nil {
+			return err
+		}
+		return cb(addr, state)
+	}
+	return nil
+}

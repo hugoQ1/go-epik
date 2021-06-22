@@ -535,6 +535,9 @@ type FullNode interface {
 	// StateRetrievalPledge retrieval pledge state
 	StateRetrievalPledge(context.Context, address.Address, types.TipSetKey) (*RetrievalState, error)
 
+	// StateRetrievalPledgeList retrieval pledge list
+	StateRetrievalPledgeList(context.Context, types.TipSetKey) (map[address.Address]*RetrievalState, error)
+
 	// StateDataIndex data index
 	StateDataIndex(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*DataIndex, error)
 
