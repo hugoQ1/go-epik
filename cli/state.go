@@ -120,6 +120,7 @@ var stateMinerInfo = &cli.Command{
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
 		fmt.Printf("Worker:  \t%s\n", mi.Worker)
 		fmt.Printf("Coinbase:\t%s\n", mi.Coinbase)
+		fmt.Printf("RetrivalPledger:\t%s\n", mi.RetrievalPledger)
 		for i, controlAddress := range mi.ControlAddresses {
 			fmt.Printf("Control %d: \t%s\n", i, controlAddress)
 		}
