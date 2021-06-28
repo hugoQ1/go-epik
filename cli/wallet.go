@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"strings"
 
@@ -735,13 +734,24 @@ var walletCoinbaseWithdraw = &cli.Command{
 			}
 		}
 
-		amount := big.NewInt(math.MaxInt64)
+		amount := abi.NewTokenAmount(0)
 		if cctx.Args().Present() {
 			f, err := types.ParseEPK(cctx.Args().First())
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
 			amount = abi.TokenAmount(f)
+		} else {
+			ida, err := api.StateLookupID(ctx, coinbase, types.EmptyTSK)
+			if err != nil {
+				return xerrors.Errorf("looking up id address: %w", err)
+			}
+
+			ci, err := api.StateCoinbase(ctx, ida, types.EmptyTSK)
+			if err != nil {
+				return err
+			}
+			amount = ci.Vested
 		}
 
 		params, err := actors.SerializeParams(&vesting.WithdrawBalanceParams{
