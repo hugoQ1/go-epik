@@ -1859,12 +1859,16 @@ func (a *StateAPI) StateRetrievalPledgeFrom(ctx context.Context, addr address.Ad
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
+	lockedPeriod, err := state.LockedPeriod()
+	if err != nil {
+		return nil, err
+	}
 	info := &api.RetrievalPledgeInfo{
 		Pledges: pledges,
 	}
 	if found {
 		info.Locked = locked.Amount
-		info.LockedEpoch = locked.ApplyEpoch
+		info.UnlockedEpoch = locked.ApplyEpoch + lockedPeriod
 	}
 	return info, nil
 }

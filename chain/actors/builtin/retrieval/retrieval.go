@@ -52,6 +52,7 @@ type State interface {
 	PledgesInfo(addr address.Address) (map[address.Address]abi.TokenAmount, error)
 	StateInfo(fromAddr address.Address) (*RetrievalState, error)
 	DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.TokenAmount, error)
+	LockedPeriod() (abi.ChainEpoch, error)
 	LockedState(fromAddr address.Address, out *LockedState) (bool, error)
 	TotalCollateral() (abi.TokenAmount, error)
 	TotalRetrievalReward() (abi.TokenAmount, error)

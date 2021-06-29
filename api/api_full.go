@@ -1183,9 +1183,9 @@ type RetrievalInfo struct {
 }
 
 type RetrievalPledgeInfo struct {
-	Pledges     map[address.Address]abi.TokenAmount
-	Locked      abi.TokenAmount
-	LockedEpoch abi.ChainEpoch
+	Pledges       map[address.Address]abi.TokenAmount
+	Locked        abi.TokenAmount
+	UnlockedEpoch abi.ChainEpoch
 }
 
 type RetrievalState struct {

@@ -1561,7 +1561,7 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 		fmt.Printf("Retrieve Balance: %s\n", types.EPK(state.Balance).String())
 		fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
 		fmt.Printf("Locked Balance: %s\n", types.EPK(pledges.Locked).String())
-		fmt.Printf("Locked Epoch: %d\n", pledges.LockedEpoch)
+		fmt.Printf("Unlocked Epoch: %d\n", pledges.UnlockedEpoch)
 		if len(pledges.Pledges) > 0 {
 			fmt.Printf("Pledge:\n")
 			for target, token := range pledges.Pledges {

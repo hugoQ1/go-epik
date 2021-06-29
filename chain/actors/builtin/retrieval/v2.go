@@ -94,6 +94,10 @@ func (s *state) DayExpend(epoch abi.ChainEpoch, fromAddr address.Address) (abi.T
 	return s.State.DayExpend(s.store, epoch, fromAddr)
 }
 
+func (s *state) LockedPeriod() (abi.ChainEpoch, error) {
+	return retrieval2.RetrievalLockPeriod, nil
+}
+
 func (s *state) LockedState(fromAddr address.Address, out *LockedState) (bool, error) {
 	lockedMap, err := adt.AsMap(s.store, s.State.LockedTable, builtin.DefaultHamtBitwidth)
 	if err != nil {
