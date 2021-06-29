@@ -1183,7 +1183,7 @@ type RetrievalInfo struct {
 }
 
 type RetrievalPledgeInfo struct {
-	Pledges       map[address.Address]abi.TokenAmount
+	Pledges       map[string]abi.TokenAmount
 	Locked        abi.TokenAmount
 	UnlockedEpoch abi.ChainEpoch
 }

@@ -1845,14 +1845,14 @@ func (a *StateAPI) StateRetrievalPledgeFrom(ctx context.Context, addr address.Ad
 		return nil, err
 	}
 
-	// pledges := make(map[address.Address]abi.TokenAmount)
-	// for ida, amount := range infos {
-	// 	t, err := a.StateAccountKey(ctx, ida, tsk)
-	// 	if err != nil {
-	// 		return nil, xerrors.Errorf("failed to load account key: %w", err)
-	// 	}
-	// 	pledges[t] = amount
-	// }
+	pledges := make(map[string]abi.TokenAmount)
+	for ida, amount := range infos {
+		// t, err := a.StateAccountKey(ctx, ida, tsk)
+		// if err != nil {
+		// 	return nil, xerrors.Errorf("failed to load account key: %w", err)
+		// }
+		pledges[ida.String()] = amount
+	}
 
 	var locked retrieval.LockedState
 	found, err := state.LockedState(addr, &locked)
@@ -1864,7 +1864,7 @@ func (a *StateAPI) StateRetrievalPledgeFrom(ctx context.Context, addr address.Ad
 		return nil, err
 	}
 	info := &api.RetrievalPledgeInfo{
-		Pledges: infos,
+		Pledges: pledges,
 	}
 	if found {
 		info.Locked = locked.Amount
