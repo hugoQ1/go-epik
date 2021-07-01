@@ -1846,16 +1846,16 @@ func (a *StateAPI) StateRetrievalPledgeFrom(ctx context.Context, addr address.Ad
 	}
 
 	pledges := make(map[string]abi.TokenAmount)
-	for ida, amount := range infos {
+	for iida, amount := range infos {
 		// t, err := a.StateAccountKey(ctx, ida, tsk)
 		// if err != nil {
 		// 	return nil, xerrors.Errorf("failed to load account key: %w", err)
 		// }
-		pledges[ida.String()] = amount
+		pledges[iida.String()] = amount
 	}
 
 	var locked retrieval.LockedState
-	found, err := state.LockedState(addr, &locked)
+	found, err := state.LockedState(ida, &locked)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load retrieval locked: %w", err)
 	}
