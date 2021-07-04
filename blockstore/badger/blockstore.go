@@ -6,8 +6,7 @@ import (
 	"io"
 	"sync/atomic"
 
-	"github.com/dgraph-io/badger/v2"
-	"github.com/dgraph-io/badger/v2/options"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/multiformats/go-base32"
 	"go.uber.org/zap"
 
@@ -34,12 +33,12 @@ var (
 
 // aliases to mask badger dependencies.
 const (
-	// FileIO is equivalent to badger/options.FileIO.
-	FileIO = options.FileIO
-	// MemoryMap is equivalent to badger/options.MemoryMap.
-	MemoryMap = options.MemoryMap
-	// LoadToRAM is equivalent to badger/options.LoadToRAM.
-	LoadToRAM = options.LoadToRAM
+// FileIO is equivalent to badger/options.FileIO.
+// FileIO = options.FileIO
+// // MemoryMap is equivalent to badger/options.MemoryMap.
+// MemoryMap = options.MemoryMap
+// // LoadToRAM is equivalent to badger/options.LoadToRAM.
+// LoadToRAM = options.LoadToRAM
 )
 
 // Options embeds the badger options themselves, and augments them with

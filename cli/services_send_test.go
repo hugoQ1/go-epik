@@ -55,7 +55,7 @@ func setupMockSrvcs(t *testing.T) (*ServicesImpl, *mocks.MockFullNode) {
 	mockApi := mocks.NewMockFullNode(mockCtrl)
 
 	srvcs := &ServicesImpl{
-		api:    mockApi,
+		// api:    mockApi,
 		closer: mockCtrl.Finish,
 	}
 	return srvcs, mockApi

@@ -315,7 +315,7 @@ func (m *mockStorageMinerAPI) StateMinerInitialPledgeCollateral(ctx context.Cont
 	panic("implement me")
 } */
 
-func (m *mockStorageMinerAPI) StateSearchMsgLimited(ctx context.Context, cid cid.Cid, abi.ChainEpoch) (*api.MsgLookup, error) {
+func (m *mockStorageMinerAPI) StateSearchMsgLimited(ctx context.Context, cid cid.Cid, height abi.ChainEpoch) (*api.MsgLookup, error) {
 	panic("implement me")
 }
 
