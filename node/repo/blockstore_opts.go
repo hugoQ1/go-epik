@@ -44,5 +44,9 @@ func BadgerBlockstoreOptions(domain BlockstoreDomain, path string, readonly bool
 
 	opts.ReadOnly = readonly
 
+	opts.ValueLogFileSize = 1024 * 1024 * 1024
+
+	opts.VLogPercentile = 0.1
+
 	return opts, nil
 }
