@@ -86,6 +86,9 @@ type Config struct {
 	//
 	// Supported values are: "bloom" (default if omitted), "bolt".
 	MarkSetType string
+	// DisableCompaction is the switch of splitstore compaction,
+	// You should enable this option if you plan to disable move data from hot to cold.
+	DisableCompaction bool
 	// perform full reachability analysis (expensive) for compaction
 	// You should enable this option if you plan to use the splitstore without a backing coldstore
 	EnableFullCompaction bool
@@ -116,11 +119,12 @@ type SplitStore struct {
 	critsection int32 // compaction critical section
 	closing     int32 // the split store is closing
 
-	fullCompaction  bool
-	enableGC        bool
-	skipOldMsgs     bool
-	skipMsgReceipts bool
-	dropColdData    bool
+	disableCompaction bool
+	fullCompaction    bool
+	enableGC          bool
+	skipOldMsgs       bool
+	skipMsgReceipts   bool
+	dropColdData      bool
 
 	baseEpoch   abi.ChainEpoch
 	warmupEpoch abi.ChainEpoch
@@ -133,6 +137,7 @@ type SplitStore struct {
 
 	chain   ChainAccessor
 	ds      dstore.Datastore
+	us      bstore.Blockstore
 	hot     bstore.Blockstore
 	cold    bstore.Blockstore
 	tracker TrackingStore
@@ -147,7 +152,7 @@ var _ bstore.Blockstore = (*SplitStore)(nil)
 // Open opens an existing splistore, or creates a new splitstore. The splitstore
 // is backed by the provided hot and cold stores. The returned SplitStore MUST be
 // attached to the ChainStore with Start in order to trigger compaction.
-func Open(path string, ds dstore.Datastore, hot, cold bstore.Blockstore, cfg *Config) (*SplitStore, error) {
+func Open(path string, us bstore.Blockstore, ds dstore.Datastore, hot, cold bstore.Blockstore, cfg *Config) (*SplitStore, error) {
 	// the tracking store
 	tracker, err := OpenTrackingStore(path, cfg.TrackingStoreType)
 	if err != nil {
@@ -164,16 +169,18 @@ func Open(path string, ds dstore.Datastore, hot, cold bstore.Blockstore, cfg *Co
 	// and now we can make a SplitStore
 	ss := &SplitStore{
 		ds:      ds,
+		us:      us,
 		hot:     hot,
 		cold:    cold,
 		tracker: tracker,
 		env:     env,
 
-		fullCompaction:  cfg.EnableFullCompaction,
-		enableGC:        cfg.EnableGC,
-		skipOldMsgs:     !(cfg.EnableFullCompaction && cfg.Archival),
-		skipMsgReceipts: !(cfg.EnableFullCompaction && cfg.Archival),
-		dropColdData:    cfg.EnableColdDrop,
+		disableCompaction: cfg.DisableCompaction,
+		fullCompaction:    cfg.EnableFullCompaction,
+		enableGC:          cfg.EnableGC,
+		skipOldMsgs:       !(cfg.EnableFullCompaction && cfg.Archival),
+		skipMsgReceipts:   !(cfg.EnableFullCompaction && cfg.Archival),
+		dropColdData:      cfg.EnableColdDrop,
 
 		coldPurgeSize: defaultColdPurgeSize,
 	}
@@ -208,7 +215,12 @@ func (s *SplitStore) Has(cid cid.Cid) (bool, error) {
 		return has, err
 	}
 
-	return s.cold.Has(cid)
+	has, err = s.cold.Has(cid)
+	if err != nil || has {
+		return has, err
+	}
+
+	return s.us.Has(cid)
 }
 
 func (s *SplitStore) Get(cid cid.Cid) (blocks.Block, error) {
@@ -220,6 +232,9 @@ func (s *SplitStore) Get(cid cid.Cid) (blocks.Block, error) {
 
 	case bstore.ErrNotFound:
 		blk, err = s.cold.Get(cid)
+		if err == bstore.ErrNotFound {
+			blk, err = s.us.Get(cid)
+		}
 		if err == nil {
 			stats.Record(context.Background(), metrics.SplitstoreMiss.M(1))
 		}
@@ -239,6 +254,9 @@ func (s *SplitStore) GetSize(cid cid.Cid) (int, error) {
 
 	case bstore.ErrNotFound:
 		size, err = s.cold.GetSize(cid)
+		if err == bstore.ErrNotFound {
+			size, err = s.us.GetSize(cid)
+		}
 		if err == nil {
 			stats.Record(context.Background(), metrics.SplitstoreMiss.M(1))
 		}
@@ -307,12 +325,18 @@ func (s *SplitStore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
 		return nil, err
 	}
 
+	chUn, err := s.us.AllKeysChan(ctx)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
 	ch := make(chan cid.Cid)
 	go func() {
 		defer cancel()
 		defer close(ch)
 
-		for _, in := range []<-chan cid.Cid{chHot, chCold} {
+		for _, in := range []<-chan cid.Cid{chHot, chCold, chUn} {
 			for cid := range in {
 				select {
 				case ch <- cid:
@@ -360,7 +384,7 @@ func (s *SplitStore) Start(chain ChainAccessor) error {
 			break
 		}
 
-		err = s.setBaseEpoch(s.curTs.Height())
+		err = s.setBaseEpoch(1)
 		if err != nil {
 			return xerrors.Errorf("error saving base epoch: %w", err)
 		}
@@ -416,6 +440,10 @@ func (s *SplitStore) Close() error {
 }
 
 func (s *SplitStore) HeadChange(_, apply []*types.TipSet) error {
+	if s.disableCompaction {
+		return nil
+	}
+
 	s.mx.Lock()
 	curTs := apply[len(apply)-1]
 	epoch := curTs.Height()
@@ -805,7 +833,15 @@ func (s *SplitStore) purgeBatch(cids []cid.Cid, deleteBatch func([]cid.Cid) erro
 }
 
 func (s *SplitStore) purgeBlocks(cids []cid.Cid) error {
-	return s.purgeBatch(cids, s.hot.DeleteMany)
+	err := s.purgeBatch(cids, s.hot.DeleteMany)
+	if err != nil {
+		return err
+	}
+	err = s.purgeBatch(cids, s.us.DeleteMany)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *SplitStore) purgeTracking(cids []cid.Cid) error {
