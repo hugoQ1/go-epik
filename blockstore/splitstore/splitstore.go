@@ -353,13 +353,19 @@ func (s *SplitStore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
 func (s *SplitStore) HashOnRead(enabled bool) {
 	s.hot.HashOnRead(enabled)
 	s.cold.HashOnRead(enabled)
+	s.us.HashOnRead(enabled)
 }
 
 func (s *SplitStore) View(cid cid.Cid, cb func([]byte) error) error {
 	err := s.hot.View(cid, cb)
 	switch err {
 	case bstore.ErrNotFound:
-		return s.cold.View(cid, cb)
+		err = s.cold.View(cid, cb)
+		if err == bstore.ErrNotFound {
+			return s.us.View(cid, cb)
+		} else {
+			return err
+		}
 
 	default:
 		return err
