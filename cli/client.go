@@ -1777,6 +1777,7 @@ var miningPledgeCmd = &cli.Command{
 	Usage: "Manipulate pledge funds for mining",
 	Subcommands: []*cli.Command{
 		miningPledgeAddCmd,
+		miningPledgeApplyForWithdrawCmd,
 		miningPledgeWithdrawCmd,
 	},
 }
@@ -1844,6 +1845,94 @@ var miningPledgeAddCmd = &cli.Command{
 		}
 
 		fmt.Printf("Sent 'mining-pledge add' message %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var miningPledgeApplyForWithdrawCmd = &cli.Command{
+	Name:      "applyfor-withdraw",
+	Usage:     "apply for Withdraw pledge funds",
+	ArgsUsage: "[minerAddress] [amount (EPK, optional)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if !cctx.Args().Present() {
+			return xerrors.New("'applyfor-withdraw' expects at least one argument, miner address")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		maddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		funds, err := api.StateMinerFunds(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		if funds.MiningPledge.IsZero() {
+			return xerrors.New("no pledge funds")
+		}
+		reqAmount := funds.MiningPledge
+		if cctx.Args().Len() > 1 {
+			arg1, err := types.ParseEPK(cctx.Args().Get(1))
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+			if abi.TokenAmount(arg1).GreaterThan(funds.MiningPledge) {
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
+			}
+			reqAmount = abi.TokenAmount(arg1)
+		}
+
+		params, err := actors.SerializeParams(&miner2.WithdrawPledgeParams{
+			AmountRequested: reqAmount, // Default to attempting to withdraw all the extra funds in the miner actor
+		})
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     maddr,
+			From:   fromAddr,
+			Value:  types.NewInt(0),
+			Method: miner.Methods.ApplyForWithdraw,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Sent 'mining-pledge apply for withdraw' %s\n", smsg.Cid())
 
 		return nil
 	},
