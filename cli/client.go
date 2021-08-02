@@ -1548,33 +1548,34 @@ var clientRetrievePledgeStateCmd = &cli.Command{
 			fromAddr = addr
 		}
 
-		state, err := api.StateRetrievalPledge(ctx, fromAddr, types.EmptyTSK)
-		if err != nil {
-			return ShowHelp(cctx, fmt.Errorf("failed to query state: %w", err))
-		}
+		state, _ := api.StateRetrievalPledge(ctx, fromAddr, types.EmptyTSK)
 
-		pledges, err := api.StateRetrievalPledgeFrom(ctx, fromAddr, types.EmptyTSK)
-		if err != nil {
-			return ShowHelp(cctx, fmt.Errorf("failed to query pledge: %w", err))
-		}
+		pledges, _ := api.StateRetrievalPledgeFrom(ctx, fromAddr, types.EmptyTSK)
 
-		fmt.Printf("Retrieve Balance: %s\n", types.EPK(state.Balance).String())
-		fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
-		fmt.Printf("Locked Balance: %s\n", types.EPK(pledges.Locked).String())
-		fmt.Printf("Unlocked Epoch: %d\n", pledges.UnlockedEpoch)
-		if len(pledges.Pledges) > 0 {
-			fmt.Printf("Pledge:\n")
-			for target, token := range pledges.Pledges {
-				fmt.Printf("%s: %s\n", target, types.EPK(token).String())
+		if state != nil {
+			fmt.Printf("Retrieve State:\n")
+			fmt.Printf("Retrieve Balance: %s\n", types.EPK(state.Balance).String())
+			fmt.Printf("Retrieve Day expend: %s\n", types.EPK(state.DayExpend).String())
+			if len(state.BindMiners) > 0 {
+				miners := ""
+				for _, m := range state.BindMiners {
+					miners = miners + "," + m.String()
+				}
+				miners = strings.TrimLeft(miners, ",")
+				fmt.Printf("Bind Miners: %s\n", miners)
 			}
 		}
-		if len(state.BindMiners) > 0 {
-			miners := ""
-			for _, m := range state.BindMiners {
-				miners = miners + "," + m.String()
+
+		if pledges != nil {
+			fmt.Printf("Retrieve Pledge:\n")
+			fmt.Printf("Locked Balance: %s\n", types.EPK(pledges.Locked).String())
+			fmt.Printf("Unlocked Epoch: %d\n", pledges.UnlockedEpoch)
+			if len(pledges.Pledges) > 0 {
+				fmt.Printf("Pledge:\n")
+				for target, token := range pledges.Pledges {
+					fmt.Printf("%s: %s\n", target, types.EPK(token).String())
+				}
 			}
-			miners = strings.TrimLeft(miners, ",")
-			fmt.Printf("Bind Miners: %s\n", miners)
 		}
 		return nil
 	},
