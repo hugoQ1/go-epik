@@ -175,3 +175,7 @@ func fromV3Claim(v3 power3.Claim) Claim {
 		QualityAdjPower: v3.QualityAdjPower,
 	}
 }
+
+func (s *state3) PledgeReleasePeriod() (period abi.ChainEpoch, err error) {
+	return s.State.MinerPledgeReleasePeriod, nil
+}

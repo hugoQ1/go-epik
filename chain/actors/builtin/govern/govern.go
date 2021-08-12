@@ -52,6 +52,7 @@ type Authority struct {
 
 type GovParams struct {
 	MinersPoStRatio     power3.WdPoStRatio
+	MinersPledgePeriod  abi.ChainEpoch
 	MarketInitialQuota  int64
 	ExpertfundThreshold uint64
 	KnowledgePayee      address.Address

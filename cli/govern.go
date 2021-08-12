@@ -571,6 +571,7 @@ var govMiners = &cli.Command{
 	Usage: "Manipulate miner params",
 	Subcommands: []*cli.Command{
 		govMinersSetPoStRatio,
+		govMinersSetPledgeRelease,
 	},
 }
 
@@ -620,6 +621,49 @@ var govMinersSetPoStRatio = &cli.Command{
 	},
 }
 
+var govMinersSetPledgeRelease = &cli.Command{
+	Name:      "set-pledge-release",
+	Usage:     "Set pledge withdraw release epoch.",
+	ArgsUsage: "<epoch>",
+	Action: func(cctx *cli.Context) error {
+		if cctx.NArg() != 1 {
+			return xerrors.New("'set-pledge-release' expects one arguments, ratio ∈ [0, 1000]")
+		}
+
+		api, acloser, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer acloser()
+		ctx := ReqContext(cctx)
+
+		period, err := strconv.ParseUint(cctx.Args().First(), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		sp, err := actors.SerializeParams(&power.ChangePledgeParams{Period: abi.ChainEpoch(period)})
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		if fmsig := cctx.String("msig"); fmsig == "" {
+			return sendTransaction(cctx, ctx, api, fromAddr, builtin2.StoragePowerActorAddr, big.Zero(), builtin2.MethodsPower.ChangePledgeReleasePeriod, sp)
+		} else {
+			governor, err := address.NewFromString(fmsig)
+			if err != nil {
+				return err
+			}
+			return sendProposal(cctx, ctx, api, governor, builtin2.StoragePowerActorAddr, fromAddr, big.Zero(), builtin2.MethodsPower.ChangePledgeReleasePeriod, sp)
+		}
+	},
+}
+
 //////////////////////////
 //     gov params
 //////////////////////////
@@ -644,7 +688,7 @@ var govListParamsCmd = &cli.Command{
 		fmt.Printf("[Knowledge Fund] Payee:        %s\n", params.KnowledgePayee)
 		fmt.Printf("[Miners] PoSt Ratio:            %d (effected at epoch %d)\n",
 			params.MinersPoStRatio.Ratio, params.MinersPoStRatio.EffectiveEpoch)
-
+		fmt.Printf("[Miners] Pledge Release Period: %d\n", params.MinersPledgePeriod)
 		return nil
 	},
 }

@@ -65,6 +65,8 @@ type State interface {
 	// Diff helpers. Used by Diff* functions internally.
 	claims() (adt.Map, error)
 	decodeClaim(*cbg.Deferred) (Claim, error)
+
+	PledgeReleasePeriod() (abi.ChainEpoch, error)
 }
 
 type Claim struct {
