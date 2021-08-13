@@ -1899,16 +1899,24 @@ var miningPledgeApplyForWithdrawCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		if funds.MiningPledge.IsZero() {
+
+		totalAmount := funds.MiningPledge
+		if len(funds.MiningPledgeLocked) > 0 {
+			for _, l := range funds.MiningPledgeLocked {
+				totalAmount = big.Add(totalAmount, l.Amount)
+			}
+		}
+		if totalAmount.IsZero() {
 			return xerrors.New("no pledge funds")
 		}
-		reqAmount := funds.MiningPledge
+
+		reqAmount := totalAmount
 		if cctx.Args().Len() > 1 {
 			arg1, err := types.ParseEPK(cctx.Args().Get(1))
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
-			if abi.TokenAmount(arg1).GreaterThan(funds.MiningPledge) {
+			if abi.TokenAmount(arg1).GreaterThan(totalAmount) {
 				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
 			}
 			reqAmount = abi.TokenAmount(arg1)
@@ -1987,16 +1995,23 @@ var miningPledgeWithdrawCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		if funds.MiningPledge.IsZero() {
+		totalAmount := funds.MiningPledge
+		if len(funds.MiningPledgeLocked) > 0 {
+			for _, l := range funds.MiningPledgeLocked {
+				totalAmount = big.Add(totalAmount, l.Amount)
+			}
+		}
+		if totalAmount.IsZero() {
 			return xerrors.New("no pledge funds")
 		}
-		reqAmount := funds.MiningPledge
+
+		reqAmount := totalAmount
 		if cctx.Args().Len() > 1 {
 			arg1, err := types.ParseEPK(cctx.Args().Get(1))
 			if err != nil {
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
-			if abi.TokenAmount(arg1).GreaterThan(funds.MiningPledge) {
+			if abi.TokenAmount(arg1).GreaterThan(totalAmount) {
 				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
 			}
 			reqAmount = abi.TokenAmount(arg1)

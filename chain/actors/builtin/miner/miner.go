@@ -36,6 +36,8 @@ var WPoStChallengeWindow = miner3.WPoStChallengeWindow
 var WPoStChallengeLookback = miner3.WPoStChallengeLookback
 var FaultDeclarationCutoff = miner3.FaultDeclarationCutoff
 
+type PledgeLocked = miner3.PledgeLocked
+
 // Not used / checked in v0
 var DeclarationsMax = miner3.DeclarationsMax
 var AddressedSectorsMax = miner3.AddressedSectorsMax
@@ -215,8 +217,9 @@ type PreCommitChanges struct {
 }
 
 type Funds struct {
-	MiningPledge   abi.TokenAmount
-	MiningPledgors map[string]abi.TokenAmount
-	FeeDebt        abi.TokenAmount
-	ReporterDebts  map[string]abi.TokenAmount
+	MiningPledge       abi.TokenAmount
+	MiningPledgors     map[string]abi.TokenAmount
+	MiningPledgeLocked map[string]PledgeLocked
+	FeeDebt            abi.TokenAmount
+	ReporterDebts      map[string]abi.TokenAmount
 }

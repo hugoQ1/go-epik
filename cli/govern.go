@@ -51,7 +51,7 @@ var govCmd = &cli.Command{
 			Aliases: []string{"f"},
 		},
 		&cli.StringFlag{
-			Name:    "msig-governor",
+			Name:    "msig",
 			Usage:   "Optionally specify the multisig governor address",
 			Aliases: []string{"m"},
 		},
