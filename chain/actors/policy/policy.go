@@ -160,7 +160,14 @@ func GetMaxPoStPartitions(p abi.RegisteredPoStProof) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return int(miner3.AddressedSectorsMax / sectorsPerPart), nil
+
+	min := func(a, b uint64) uint64 {
+		if a < b {
+			return a
+		}
+		return b
+	}
+	return int(min(miner3.AddressedSectorsMax/sectorsPerPart, miner3.AddressedPartitionsMax)), nil
 }
 
 func GetDefaultSectorSize() abi.SectorSize {
