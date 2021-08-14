@@ -577,11 +577,11 @@ var govMiners = &cli.Command{
 
 var govMinersSetPoStRatio = &cli.Command{
 	Name:      "set-post-ratio",
-	Usage:     "Set proportion of window PoSt, 0~1000(‰)",
-	ArgsUsage: "<ratio (0~1000)>",
+	Usage:     "Set proportion of window PoSt",
+	ArgsUsage: "<ratio, 0~10000>",
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 1 {
-			return xerrors.New("'set-post-ratio' expects one arguments, ratio ∈ [0, 1000]")
+			return xerrors.New("'set-post-ratio' expects one arguments, ratio ∈ [0, 10000]")
 		}
 
 		api, acloser, err := GetFullNodeAPI(cctx)
@@ -627,7 +627,7 @@ var govMinersSetPledgeRelease = &cli.Command{
 	ArgsUsage: "<epoch>",
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 1 {
-			return xerrors.New("'set-pledge-release' expects one arguments, ratio ∈ [0, 1000]")
+			return xerrors.New("'set-pledge-release' expects one arguments, epoch ∈ [0, 259200]")
 		}
 
 		api, acloser, err := GetFullNodeAPI(cctx)
