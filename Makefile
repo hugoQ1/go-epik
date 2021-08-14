@@ -106,7 +106,6 @@ epik-gateway: $(BUILD_DEPS)
 .PHONY: epik-gateway
 BINS+=epik-gateway
 
-build: GOFLAGS+=-tags=testnet
 build: epik epik-miner epik-worker
 	@[[ $$(type -P "epik") ]] && echo "Caution: you have \
 an existing epik binary in your PATH. This may cause problems if you don't run 'sudo make install'" || true
@@ -125,7 +124,6 @@ install-worker:
 	install -C ./epik-worker /usr/local/bin/epik-worker
 
 # TOOLS
-epik-seed: GOFLAGS+=-tags=testnet
 epik-seed: $(BUILD_DEPS)
 	rm -f epik-seed
 	go build $(GOFLAGS) -o epik-seed ./cmd/epik-seed
