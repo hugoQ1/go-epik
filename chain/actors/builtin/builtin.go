@@ -19,10 +19,10 @@ var BurntFundsActorAddr = builtin.BurntFundsActorAddr
 var CronActorAddr = builtin.CronActorAddr
 
 var (
-	FoundationIDAddress      = makeAddress("t080")
-	InvestorIDAddress        = makeAddress("t081")
-	TeamIDAddress            = makeAddress("t082")
-	DefaultGovernorIDAddress = makeAddress("t083")
+	FoundationIDAddress      = makeAddress("f080")
+	InvestorIDAddress        = makeAddress("f081")
+	TeamIDAddress            = makeAddress("f082")
+	DefaultGovernorIDAddress = makeAddress("f083")
 )
 
 var (

@@ -1,4 +1,4 @@
-// +build testnet
+// +build testground
 
 package gen
 
