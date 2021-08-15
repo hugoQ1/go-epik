@@ -259,9 +259,13 @@ var fileRegisterCmd = &cli.Command{
 
 		msg, err := api.ClientExpertRegisterFile(ctx, &lapi.ExpertRegisterFileParams{
 			Expert:    expert,
+			RootID:    root,
 			PieceID:   ds.PieceCID,
 			PieceSize: ds.PieceSize,
 		})
+		if err != nil {
+			return xerrors.Errorf("failed to push register msg: %w", root, err)
+		}
 		fmt.Println("register CID: ", msg)
 		return nil
 	},
