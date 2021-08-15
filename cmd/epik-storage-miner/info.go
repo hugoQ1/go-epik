@@ -209,9 +209,14 @@ func infoCmdAct(cctx *cli.Context) error {
 	if err != nil {
 		return xerrors.Errorf("getting mining pledge: %w", err)
 	}
+	locked := abi.NewTokenAmount(0)
+	for _, l := range funds.MiningPledgeLocked {
+		locked = big.Add(locked, l.Amount)
+	}
 
 	fmt.Printf("Miner Balance:        %s\n", color.YellowString("%s", types.EPK(mact.Balance).Short()))
 	fmt.Printf("      Mining Pledge:  %s\n", types.EPK(funds.MiningPledge))
+	fmt.Printf("      Pledge Locked:  %s\n", types.EPK(locked))
 	fmt.Printf("      FeeDebt:        %s\n", types.EPK(funds.FeeDebt).Short())
 	fmt.Printf("      Total Mined:    %s\n", types.EPK(mi.TotalMined).Short())
 

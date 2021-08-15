@@ -1,5 +1,4 @@
-// +build !mainnet
-// +build !testnet
+// +build debug 2k
 
 package gen
 

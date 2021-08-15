@@ -1726,6 +1726,10 @@ func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get ratio")
 	}
+	out.MinersPledgePeriod, err = powerState.PledgeReleasePeriod()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get pledge release period")
+	}
 
 	// quota
 	marketState, err := market.Load(store, act)

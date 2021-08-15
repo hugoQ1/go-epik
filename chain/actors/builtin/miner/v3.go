@@ -66,6 +66,26 @@ func (s *state3) Funds() (Funds, error) {
 		return Funds{}, xerrors.Errorf("failed to iterate pledges: %w", err)
 	}
 
+	//locked
+	l, err := adt3.AsMap(s.store, s.Locked, builtin3.DefaultHamtBitwidth)
+	if err != nil {
+		return Funds{}, err
+	}
+
+	lockedMap := make(map[string]miner3.PledgeLocked)
+	var lstate miner3.PledgeLocked
+	err = l.ForEach(&lstate, func(k string) error {
+		ad, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+		lockedMap[ad.String()] = lstate
+		return nil
+	})
+	if err != nil {
+		return Funds{}, xerrors.Errorf("failed to iterate pledges: %w", err)
+	}
+
 	// reporters
 	reporters := make(map[string]abi.TokenAmount)
 	reporterDebts, err := adt3.AsMap(s.store, s.ReporterDebts, builtin3.DefaultHamtBitwidth)
@@ -83,10 +103,11 @@ func (s *state3) Funds() (Funds, error) {
 	})
 
 	return Funds{
-		MiningPledge:   s.State.TotalPledge,
-		MiningPledgors: pledgors,
-		FeeDebt:        s.State.FeeDebt,
-		ReporterDebts:  reporters,
+		MiningPledge:       s.State.TotalPledge,
+		MiningPledgors:     pledgors,
+		MiningPledgeLocked: lockedMap,
+		FeeDebt:            s.State.FeeDebt,
+		ReporterDebts:      reporters,
 	}, nil
 }
 

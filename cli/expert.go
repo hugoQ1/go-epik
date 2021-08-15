@@ -9,6 +9,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/build"
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
 	types "github.com/EpiK-Protocol/go-epik/chain/types"
+	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
@@ -214,22 +215,24 @@ var expertInfoCmd = &cli.Command{
 
 var expertFileCmd = &cli.Command{
 	Name:  "file",
-	Usage: "register file",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "expert",
-			Aliases: []string{"e"},
-			Usage:   "expert address",
-		},
-		&cli.StringFlag{
-			Name:    "root",
-			Aliases: []string{"r"},
-			Usage:   "expert address",
-		},
+	Usage: "Interact with epik expert",
+	Subcommands: []*cli.Command{
+		fileRegisterCmd,
+		fileListCmd,
 	},
+}
+
+var fileRegisterCmd = &cli.Command{
+	Name:      "register",
+	Usage:     "expert register file",
+	ArgsUsage: "[expert] [rootId]",
 	Action: func(cctx *cli.Context) error {
 
-		expert, err := address.NewFromString(cctx.String("expert"))
+		if cctx.Args().Len() != 2 {
+			return fmt.Errorf("usage: register <expert> <rootId>")
+		}
+
+		expert, err := address.NewFromString(cctx.Args().First())
 		if err != nil {
 			return err
 		}
@@ -244,13 +247,9 @@ var expertFileCmd = &cli.Command{
 		}
 		defer closer()
 
-		var root cid.Cid
-		if cctx.String("root") != "" {
-			parsed, err := cid.Parse(cctx.String("root"))
-			if err != nil {
-				return err
-			}
-			root = parsed
+		root, err := cid.Parse(cctx.Args().Get(1))
+		if err != nil {
+			return err
 		}
 
 		ds, err := api.ClientDealPieceCID(ctx, root)
@@ -260,11 +259,61 @@ var expertFileCmd = &cli.Command{
 
 		msg, err := api.ClientExpertRegisterFile(ctx, &lapi.ExpertRegisterFileParams{
 			Expert:    expert,
+			RootID:    root,
 			PieceID:   ds.PieceCID,
 			PieceSize: ds.PieceSize,
 		})
+		if err != nil {
+			return xerrors.Errorf("failed to push register msg: %w", root, err)
+		}
 		fmt.Println("register CID: ", msg)
 		return nil
+	},
+}
+
+var fileListCmd = &cli.Command{
+	Name:      "list",
+	Usage:     "expert list file",
+	ArgsUsage: "[expert]",
+	Action: func(cctx *cli.Context) error {
+
+		if cctx.Args().Len() != 1 {
+			return fmt.Errorf("usage: list <expert>")
+		}
+
+		expert, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		ctx := ReqContext(cctx)
+
+		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		infos, err := api.StateExpertDatas(ctx, expert, nil, false, types.EmptyTSK)
+
+		w := tablewriter.New(
+			tablewriter.Col("RootID"),
+			tablewriter.Col("PieceCID"),
+			tablewriter.Col("Size"))
+
+		for _, d := range infos {
+			if d.RootID == d.PieceID {
+				// ignore fake data
+				continue
+			}
+			w.Write(map[string]interface{}{
+				"RootID":   d.RootID,
+				"PieceCID": d.PieceID,
+				"Size":     types.SizeStr(types.NewInt(uint64(d.PieceSize))),
+			})
+		}
+
+		return w.Flush(cctx.App.Writer)
 	},
 }
 
@@ -275,9 +324,7 @@ var expertListCmd = &cli.Command{
 	Action: func(cctx *cli.Context) error {
 		ctx := ReqContext(cctx)
 
-		// log.Info("Trying to connect to full node RPC")
-
-		api, closer, err := GetFullNodeAPI(cctx) // TODO: consider storing full node address in config
+		api, closer, err := GetFullNodeAPI(cctx)
 		if err != nil {
 			return err
 		}

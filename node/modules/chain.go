@@ -103,7 +103,7 @@ func ChainStore(lc fx.Lifecycle, cbs dtypes.ChainBlockstore, sbs dtypes.StateBlo
 
 func NetworkName(mctx helpers.MetricsCtx, lc fx.Lifecycle, cs *store.ChainStore, us stmgr.UpgradeSchedule, _ dtypes.AfterGenesisSet) (dtypes.NetworkName, error) {
 	if !build.Devnet {
-		return "testnetnet", nil
+		return "mainnet", nil
 	}
 
 	ctx := helpers.LifecycleCtx(mctx, lc)
