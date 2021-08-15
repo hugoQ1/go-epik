@@ -302,6 +302,10 @@ var fileListCmd = &cli.Command{
 			tablewriter.Col("Size"))
 
 		for _, d := range infos {
+			if d.RootID == d.PieceID {
+				// ignore fake data
+				continue
+			}
 			w.Write(map[string]interface{}{
 				"RootID":   d.RootID,
 				"PieceCID": d.PieceID,
