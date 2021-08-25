@@ -4,6 +4,7 @@
 // +build !calibnet
 // +build !nerpanet
 // +build !butterflynet
+// +build !devnet
 
 package build
 

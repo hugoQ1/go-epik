@@ -64,12 +64,13 @@ deps: $(BUILD_DEPS)
 .PHONY: deps
 
 debug: GOFLAGS+=-tags=debug
-debug: epik epik-miner epik-worker epik-seed
+debug: epik epik-miner epik-seed
 
 2k: GOFLAGS+=-tags=2k
-2k: epik epik-miner epik-worker epik-seed
+2k: epik epik-miner epik-seed
 
-dev: epik epik-miner epik-worker epik-seed
+dev: GOFLAGS+=-tags=devnet
+dev: epik epik-miner epik-seed
 
 epik: $(BUILD_DEPS)
 	rm -f epik
