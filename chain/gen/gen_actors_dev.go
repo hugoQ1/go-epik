@@ -1,4 +1,4 @@
-// +build debug 2k
+// +build debug 2k devnet
 
 package gen
 
@@ -11,23 +11,13 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
-// For testing
-var (
-	TestAddress = "t1dnas3yoc5bvz5evcuocb7tudimn2tpz63ajlk4y"
-	TestPrivKey = "7b2254797065223a22736563703235366b31222c22507269766174654b6579223a226e4a592b41555649724f596e6a51452f675653565274444f434374686d39785a4d7162764f7546794f69413d227d"
-)
-
-/////////////////
-//	allocation
-/////////////////
-
 // team & contributors
 var DefaultTeamAccountActor = genesis.Actor{
 	Type:    genesis.TMultisig,
 	Balance: types.FromEpk(50_000_000), // 50M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+			makeAddress("f3sjljpkhkgcosm5strgwnlwr5iuvbao54s6vhpeiqnyso75yioz6hdcrmm7xlccyacltjulivfiehb54ondxa"),
 		},
 		Threshold:       1,
 		VestingDuration: 90 * 15 * builtin.EpochsInDay,
@@ -45,7 +35,7 @@ var DefaultFoundationAccountActor = genesis.Actor{
 	Balance: types.FromEpk(50_000_000), // may be a little less than 50M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+			makeAddress("f3vjp7dkpwx3prkjhyvl75az6qx6buw4kgzcvzopo7jydikhqellwfjl6n3v4hd5jiyp2sfg772zarv6vty42q"),
 		},
 		Threshold:       1,
 		VestingDuration: 90 * 3 * builtin.EpochsInDay,
@@ -63,7 +53,7 @@ var DefaultInvestorAccountActor = genesis.Actor{
 	Balance: types.FromEpk(200_000_000), //  200M
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+			makeAddress("f3wn5zdvm2hkra3wtvtj5st7fweqjdg5e2h4epsujbemzmlq3hqlcfaktqqpcceemmtpqurw234kz2sy7v5zyq"),
 		},
 		Threshold:       1,
 		VestingDuration: 90 * 6 * builtin.EpochsInDay,
@@ -83,7 +73,7 @@ var DefaultGovernorActor = genesis.Actor{
 	Balance: big.Zero(),
 	Meta: (&genesis.MultisigMeta{
 		Signers: []address.Address{
-			makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+			makeAddress("f3r3gyljdth7atl2lcsihuxr3e2ntdyuipdh24aszgwrbxc5ordtmkstw426kgq3bu7ubzrjtxoq4ote6vtdra"),
 		},
 		Threshold:       1,
 		VestingDuration: 0,
@@ -98,7 +88,7 @@ var DefaultExpertActor = genesis.Actor{
 	Type:    genesis.TAccount,
 	Balance: abi.NewTokenAmount(0),
 	Meta: (&genesis.AccountMeta{
-		Owner: makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+		Owner: makeAddress("f3v37327k2kwfktufgpxspeqayne6cpfev4vzlb5wq555ehnyz3z3zkhzcvyh7vgikjzjpdf7f3wbzfkgyzapq"),
 	}).ActorMeta(),
 }
 
@@ -109,7 +99,7 @@ var DefaultKgFundPayeeActor = genesis.Actor{
 	Type:    genesis.TAccount,
 	Balance: abi.NewTokenAmount(0),
 	Meta: (&genesis.AccountMeta{
-		Owner: makeAddress("f3r4ekwjeycqyrcdlzgs5pqlsqivk3mlkx2xm4gakj4kt7iukellfvwrkpa2rq6zzlwlhepkq4tjnb6vuq3pjq"),
+		Owner: makeAddress("f3qurflq6smm7fb7uhlswckysc6x52gaq3diwwkg7qdsoapzxrkliu2nddyzpevymqgwomwhtjltkfp4ndxzca"),
 	}).ActorMeta(),
 }
 
