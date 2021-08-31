@@ -463,7 +463,6 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
 			log.Warnf("failed to check miner stored piece: %w", err)
-			continue
 		} else if stored {
 			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
 			if !data.isDealed {
