@@ -12,7 +12,6 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-statemachine"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/EpiK-Protocol/go-epik/api"
@@ -21,7 +20,7 @@ import (
 )
 
 var DealSectorPriority = 1024
-var MaxTicketAge = abi.ChainEpoch(builtin.EpochsInDay * 2)
+var MaxTicketAge = policy.MaxPreCommitRandomnessLookback
 
 func (m *Sealing) handlePacking(ctx statemachine.Context, sector SectorInfo) error {
 	m.inputLk.Lock()

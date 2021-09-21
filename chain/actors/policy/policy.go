@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	ChainFinality          = miner3.ChainFinality
-	SealRandomnessLookback = ChainFinality
-	PaychSettleDelay       = paych3.SettleDelay
+	ChainFinality                  = miner3.ChainFinality
+	SealRandomnessLookback         = ChainFinality
+	PaychSettleDelay               = paych3.SettleDelay
+	MaxPreCommitRandomnessLookback = builtin3.EpochsInDay + SealRandomnessLookback
 )
 
 // SetSupportedProofTypes sets supported proof types, across all actor versions.
