@@ -1780,6 +1780,7 @@ var miningPledgeCmd = &cli.Command{
 		miningPledgeAddCmd,
 		miningPledgeApplyForWithdrawCmd,
 		miningPledgeWithdrawCmd,
+		miningPledgeTransferCmd,
 	},
 }
 
@@ -2037,6 +2038,107 @@ var miningPledgeWithdrawCmd = &cli.Command{
 		}
 
 		fmt.Printf("Sent 'mining-pledge withdraw' %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var miningPledgeTransferCmd = &cli.Command{
+	Name:      "transfer",
+	Usage:     "transfer pledge funds from miner to target miner.",
+	ArgsUsage: "[minerAddress] [targetMiner] [amount (EPK, optional)]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "optionally specify the account to send funds from",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() < 2 {
+			return xerrors.New("'transfer' expects at least two argument, miner address and target miner")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		maddr, err := address.NewFromString(cctx.Args().First())
+		if err != nil {
+			return err
+		}
+
+		targetMiner, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		// from
+		var fromAddr address.Address
+		if from := cctx.String("from"); from == "" {
+			defaddr, err := api.WalletDefaultAddress(ctx)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = defaddr
+		} else {
+			addr, err := address.NewFromString(from)
+			if err != nil {
+				return err
+			}
+
+			fromAddr = addr
+		}
+
+		funds, err := api.StateMinerFunds(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+		totalAmount := funds.MiningPledge
+		if len(funds.MiningPledgeLocked) > 0 {
+			for _, l := range funds.MiningPledgeLocked {
+				totalAmount = big.Add(totalAmount, l.Amount)
+			}
+		}
+		if totalAmount.IsZero() {
+			return xerrors.New("no pledge funds")
+		}
+
+		reqAmount := totalAmount
+		if cctx.Args().Len() > 2 {
+			arg2, err := types.ParseEPK(cctx.Args().Get(2))
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+			if abi.TokenAmount(arg2).GreaterThan(totalAmount) {
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
+			}
+			reqAmount = abi.TokenAmount(arg2)
+		}
+
+		params, err := actors.SerializeParams(&miner2.TransferPledgeParams{
+			AmountRequested: reqAmount,
+			Miner:           targetMiner,
+		})
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     maddr,
+			From:   fromAddr,
+			Value:  types.NewInt(0),
+			Method: miner.Methods.TransferPledge,
+			Params: params,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Sent 'mining-pledge transfer' %s\n", smsg.Cid())
 
 		return nil
 	},
