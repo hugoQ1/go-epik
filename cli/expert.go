@@ -521,6 +521,7 @@ var expertVote = &cli.Command{
 		expertVoteSend,
 		expertVoteRescind,
 		expertVoteWithdraw,
+		expertVoteInject,
 	},
 }
 
@@ -687,6 +688,56 @@ var expertVoteWithdraw = &cli.Command{
 		}
 
 		fmt.Printf("Withdraw message cid: %s\n", smsg.Cid())
+
+		return nil
+	},
+}
+
+var expertVoteInject = &cli.Command{
+	Name:  "inject",
+	Usage: "inject amount to vote pool",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "from",
+			Usage:   "optionally specify the voter account, otherwise it will use the default wallet address",
+			Aliases: []string{"f"},
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 1 {
+			return ShowHelp(cctx, fmt.Errorf("'inject' expects one argument, amount"))
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		amount, err := types.ParseEPK(cctx.Args().First())
+		if err != nil {
+			return ShowHelp(cctx, fmt.Errorf("failed to parse amount: %w", err))
+		}
+
+		fromAddr, err := parseFrom(cctx, ctx, api, true)
+		if err != nil {
+			return err
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			To:     builtin.VoteFundActorAddr,
+			From:   fromAddr,
+			Value:  big.Int(amount),
+			Method: builtin.MethodsVote.InjectBalance,
+			Params: nil,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("Submitting inject message: %w", err)
+		}
+
+		fmt.Printf("inject message cid: %s\n", smsg.Cid())
 
 		return nil
 	},
