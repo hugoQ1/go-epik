@@ -14,7 +14,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/vote"
 	"github.com/fatih/color"
 
 	"github.com/ipfs/go-cid"
@@ -1900,6 +1902,7 @@ var stateVotesFundCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		stateVotesTallyCmd,
 		stateVotesVoterCmd,
+		stateListVotersCmd,
 	},
 }
 
@@ -1993,6 +1996,53 @@ var stateVotesVoterCmd = &cli.Command{
 			fmt.Printf("\t%s: %s\n", cand, types.EPK(amt))
 		}
 
+		return nil
+	},
+}
+
+var stateListVotersCmd = &cli.Command{
+	Name: "list-voters",
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+
+		ctx := ReqContext(cctx)
+
+		ts, err := LoadTipSet(ctx, cctx, api)
+		if err != nil {
+			return err
+		}
+
+		act, err := api.StateGetActor(ctx, vote.Address, ts.Key())
+		if err != nil {
+			return err
+		}
+		store := adt.WrapStore(ctx, cbor.NewCborStore(blockstore.NewAPIBlockstore(api)))
+		as, err := vote.Load(store, act)
+		if err != nil {
+			return err
+		}
+		infos, err := as.ListVoterInfos(ts.Height(), act.Balance)
+		if err != nil {
+			return err
+		}
+
+		totalVotes := abi.NewTokenAmount(0)
+		totalRewards := abi.NewTokenAmount(0)
+		for _, info := range infos {
+			fmt.Printf("Voter %s: %s Votes, %s Withdrawable Rewards\n",
+				info.Voter,
+				types.EPK(big.Add(info.UnlockedVotes, info.UnlockingVotes)),
+				types.EPK(info.WithdrawableRewards),
+			)
+			totalVotes = big.Add(totalVotes, big.Add(info.UnlockedVotes, info.UnlockingVotes))
+			totalRewards = big.Add(totalRewards, info.WithdrawableRewards)
+		}
+
+		fmt.Printf("\nTotal: %d Voters, %s Votes, %s Rewards\n", len(infos), types.EPK(totalVotes), types.EPK(totalRewards))
 		return nil
 	},
 }

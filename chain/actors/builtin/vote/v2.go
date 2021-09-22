@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vote"
 	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 )
@@ -57,8 +58,38 @@ func (s *state) Tally() (*Tally, error) {
 	}, nil
 }
 
-func (s *state) VoterInfo(vaddr address.Address, currEpoch abi.ChainEpoch, currBalance abi.TokenAmount) (*VoterInfo, error) {
-	voter, err := s.EstimateSettle(s.store, vaddr, currEpoch, currBalance)
+func (s *state) ListVoterInfos(currEpoch abi.ChainEpoch, actorBalance abi.TokenAmount) ([]*VoterInfo, error) {
+	voters, err := adt2.AsMap(s.store, s.State.Voters, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, err
+	}
+
+	var infos []*VoterInfo
+	err = voters.ForEach(nil, func(k string) error {
+		ida, err := address.NewFromBytes([]byte(k))
+		if err != nil {
+			return err
+		}
+
+		info, err := s.VoterInfo(ida, currEpoch, actorBalance)
+		if err != nil {
+			return err
+		}
+		infos = append(infos, info)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return infos, nil
+}
+
+func (s *state) VoterInfo(vaddr address.Address, currEpoch abi.ChainEpoch, actorBalance abi.TokenAmount) (*VoterInfo, error) {
+	if actorBalance.LessThan(s.State.TotalVotes) {
+		return nil, xerrors.Errorf("actor balance %s less than total votes %s", actorBalance, s.State.TotalVotes)
+	}
+	voter, err := s.EstimateSettle(s.store, vaddr, currEpoch, big.Sub(actorBalance, s.State.TotalVotes))
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +124,7 @@ func (s *state) VoterInfo(vaddr address.Address, currEpoch abi.ChainEpoch, currB
 	}
 
 	return &VoterInfo{
+		Voter:               vaddr,
 		UnlockingVotes:      unlocking,
 		UnlockedVotes:       unlocked,
 		WithdrawableRewards: voter.Withdrawable,

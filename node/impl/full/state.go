@@ -1661,12 +1661,7 @@ func (a *StateAPI) StateVoterInfo(ctx context.Context, addr address.Address, tsk
 		return nil, xerrors.Errorf("failed to look up id for %s: %w", addr, err)
 	}
 
-	vAct, err := sTree.GetActor(builtin.VoteFundActorAddr)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load votefund actor: %w", err)
-	}
-
-	return vst.VoterInfo(ida, ts.Height(), vAct.Balance)
+	return vst.VoterInfo(ida, ts.Height(), act.Balance)
 }
 
 func (a *StateAPI) StateKnowledgeInfo(ctx context.Context, tsk types.TipSetKey) (*knowledge.Info, error) {
