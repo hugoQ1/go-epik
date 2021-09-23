@@ -2039,16 +2039,22 @@ var stateListVotersCmd = &cli.Command{
 		totalVotes := abi.NewTokenAmount(0)
 		totalRewards := abi.NewTokenAmount(0)
 		for _, info := range infos {
-			fmt.Printf("Voter %s: %s Votes, %s Withdrawable Rewards\n",
+			validVotes := abi.NewTokenAmount(0)
+			for _, amt := range info.Candidates {
+				validVotes = big.Add(validVotes, amt)
+			}
+			rescindedVotes := big.Add(info.UnlockedVotes, info.UnlockingVotes)
+			fmt.Printf("Voter %s: %s Votes, %s Rewards\n",
 				info.Voter,
-				types.EPK(big.Add(info.UnlockedVotes, info.UnlockingVotes)),
+				types.EPK(big.Add(validVotes, rescindedVotes)),
 				types.EPK(info.WithdrawableRewards),
 			)
-			totalVotes = big.Add(totalVotes, big.Add(info.UnlockedVotes, info.UnlockingVotes))
+
+			totalVotes = big.Add(totalVotes, big.Add(validVotes, rescindedVotes))
 			totalRewards = big.Add(totalRewards, info.WithdrawableRewards)
 		}
 
-		fmt.Printf("\nTotal: %d Voters, %s Votes, %s Rewards\n", len(infos), types.EPK(totalVotes), types.EPK(totalRewards))
+		fmt.Printf("\n@%d Total: %d Voters, %s Votes, %s Rewards\n", ts.Height(), len(infos), types.EPK(totalVotes), types.EPK(totalRewards))
 		return nil
 	},
 }
