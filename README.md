@@ -12,7 +12,7 @@ For instructions on how to build go-epik from source, please visit the source [h
 
 ## Development
 
-All work is tracked via issues. An attempt at keeping an up-to-date view on remaining work is in the [Epik Wiki](https://github.com/EpiK-Protocol/go-epik/wiki).
+All work is tracked via issues. An attempt at keeping an up-to-date view on remaining work is in the [Wiki](https://github.com/EpiK-Protocol/go-epik/wiki).
 
 ## License
 
