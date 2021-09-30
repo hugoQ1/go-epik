@@ -93,8 +93,8 @@ func (s *state3) MinerPower(addr address.Address) (Claim, bool, error) {
 	}, ok, nil
 }
 
-func (s *state3) MinerNominalPowerMeetsConsensusMinimum(a address.Address) (bool, error) {
-	return s.State.MinerNominalPowerMeetsConsensusMinimum(s.store, a)
+func (s *state3) MinerNominalPowerMeetsConsensusMinimum(miner address.Address, epoch abi.ChainEpoch, locked abi.TokenAmount) (bool, error) {
+	return s.State.MinerNominalPowerMeetsConsensusMinimum(s.store, miner, epoch, locked)
 }
 
 func (s *state3) MinerCounts() (uint64, uint64, error) {

@@ -263,7 +263,7 @@ var chainBalanceStateCmd = &cli.Command{
 			}
 
 			if minerInfo && builtin.IsStorageMinerActor(act.Code) {
-				pow, _, _, err := stmgr.GetPowerRaw(ctx, sm, sroot, addr)
+				pow, _, _, err := stmgr.GetPowerRaw(ctx, sm, sroot, addr, 0 /* meaningless */)
 				if err != nil {
 					return xerrors.Errorf("failed to get power: %w", err)
 				}

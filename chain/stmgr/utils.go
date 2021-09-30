@@ -78,10 +78,14 @@ func GetMinerWorkerRaw(ctx context.Context, sm *StateManager, st cid.Cid, maddr 
 }
 
 func GetPower(ctx context.Context, sm *StateManager, ts *types.TipSet, maddr address.Address) (power.Claim, power.Claim, bool, error) {
-	return GetPowerRaw(ctx, sm, ts.ParentState(), maddr)
+	pts, err := sm.ChainStore().GetTipSetFromKey(ts.Parents())
+	if err != nil {
+		return power.Claim{}, power.Claim{}, false, err
+	}
+	return GetPowerRaw(ctx, sm, ts.ParentState(), maddr, pts.Height())
 }
 
-func GetPowerRaw(ctx context.Context, sm *StateManager, st cid.Cid, maddr address.Address) (power.Claim, power.Claim, bool, error) {
+func GetPowerRaw(ctx context.Context, sm *StateManager, st cid.Cid, maddr address.Address, epoch abi.ChainEpoch) (power.Claim, power.Claim, bool, error) {
 	act, err := sm.LoadActorRaw(ctx, power.Address, st)
 	if err != nil {
 		return power.Claim{}, power.Claim{}, false, xerrors.Errorf("(get sset) failed to load power actor state: %w", err)
@@ -107,7 +111,24 @@ func GetPowerRaw(ctx context.Context, sm *StateManager, st cid.Cid, maddr addres
 			return power.Claim{}, power.Claim{}, false, err
 		}
 
-		minpow, err = pas.MinerNominalPowerMeetsConsensusMinimum(maddr)
+		mact, err := sm.LoadActorRaw(ctx, maddr, st)
+		if err != nil {
+			return power.Claim{}, power.Claim{}, false, xerrors.Errorf("failed to load miner actor: %s, %w", maddr, err)
+		}
+		mas, err := miner.Load(sm.cs.ActorStore(ctx), mact)
+		if err != nil {
+			return power.Claim{}, power.Claim{}, false, xerrors.Errorf("failed to load miner actor state: %s, %w", maddr, err)
+		}
+		funds, err := mas.Funds()
+		if err != nil {
+			return power.Claim{}, power.Claim{}, false, err
+		}
+		locked := abi.NewTokenAmount(0)
+		for _, pl := range funds.MiningPledgeLocked {
+			locked = big.Add(locked, pl.Amount)
+		}
+
+		minpow, err = pas.MinerNominalPowerMeetsConsensusMinimum(maddr, epoch, locked)
 		if err != nil {
 			return power.Claim{}, power.Claim{}, false, err
 		}
@@ -511,7 +532,7 @@ func MinerGetBaseInfo(ctx context.Context, sm *StateManager, bcs beacon.Schedule
 		return nil, nil
 	}
 
-	mpow, tpow, _, err := GetPowerRaw(ctx, sm, lbst, maddr)
+	mpow, tpow, _, err := GetPowerRaw(ctx, sm, lbst, maddr, lbts.Height())
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get power: %w", err)
 	}
@@ -639,7 +660,30 @@ func minerHasMinPower(ctx context.Context, sm *StateManager, addr address.Addres
 		return false, err
 	}
 
-	return ps.MinerNominalPowerMeetsConsensusMinimum(addr)
+	// total locked
+	mact, err := sm.LoadActor(ctx, addr, ts)
+	if err != nil {
+		return false, xerrors.Errorf("loading miner actor: %s, %w", addr, err)
+	}
+	ms, err := miner.Load(sm.cs.ActorStore(ctx), mact)
+	if err != nil {
+		return false, xerrors.Errorf("loading miner actor state: %s, %w", addr, err)
+	}
+	funds, err := ms.Funds()
+	if err != nil {
+		return false, err
+	}
+	locked := abi.NewTokenAmount(0)
+	for _, pl := range funds.MiningPledgeLocked {
+		locked = big.Add(locked, pl.Amount)
+	}
+
+	parentTs, err := sm.ChainStore().GetTipSetFromKey(ts.Parents())
+	if err != nil {
+		return false, err
+	}
+
+	return ps.MinerNominalPowerMeetsConsensusMinimum(addr, parentTs.Height(), locked)
 }
 
 func MinerEligibleToMine(ctx context.Context, sm *StateManager, addr address.Address, baseTs *types.TipSet, lookbackTs *types.TipSet) (bool, error) {
