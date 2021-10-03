@@ -1919,7 +1919,7 @@ var miningPledgeApplyForWithdrawCmd = &cli.Command{
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
 			if abi.TokenAmount(arg1).GreaterThan(totalAmount) {
-				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(totalAmount), types.EPK(arg1))
 			}
 			reqAmount = abi.TokenAmount(arg1)
 		}
@@ -2014,7 +2014,7 @@ var miningPledgeWithdrawCmd = &cli.Command{
 				return xerrors.Errorf("parsing 'amount' argument: %w", err)
 			}
 			if abi.TokenAmount(arg1).GreaterThan(totalAmount) {
-				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(funds.MiningPledge), types.EPK(reqAmount))
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(totalAmount), types.EPK(arg1))
 			}
 			reqAmount = abi.TokenAmount(arg1)
 		}
@@ -2046,7 +2046,7 @@ var miningPledgeWithdrawCmd = &cli.Command{
 var miningPledgeTransferCmd = &cli.Command{
 	Name:      "transfer",
 	Usage:     "transfer pledge funds from miner to target miner.",
-	ArgsUsage: "[minerAddress] [targetMiner]",
+	ArgsUsage: "[minerAddress] [targetMiner] [amount (EPK, optional)]",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "from",
@@ -2093,8 +2093,36 @@ var miningPledgeTransferCmd = &cli.Command{
 			fromAddr = addr
 		}
 
+		funds, err := api.StateMinerFunds(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		totalAmount := funds.MiningPledge
+		if len(funds.MiningPledgeLocked) > 0 {
+			for _, l := range funds.MiningPledgeLocked {
+				totalAmount = big.Add(totalAmount, l.Amount)
+			}
+		}
+		if totalAmount.IsZero() {
+			return xerrors.New("no pledge funds")
+		}
+
+		reqAmount := totalAmount
+		if cctx.Args().Len() > 2 {
+			arg2, err := types.ParseEPK(cctx.Args().Get(2))
+			if err != nil {
+				return xerrors.Errorf("parsing 'amount' argument: %w", err)
+			}
+			if abi.TokenAmount(arg2).GreaterThan(totalAmount) {
+				return xerrors.Errorf("pledge balance %s less than requested: %s", types.EPK(totalAmount), types.EPK(arg2))
+			}
+			reqAmount = abi.TokenAmount(arg2)
+		}
+
 		params, err := actors.SerializeParams(&miner2.TransferPledgeParams{
-			Miner: targetMiner,
+			Amount: reqAmount,
+			Miner:  targetMiner,
 		})
 		if err != nil {
 			return err
