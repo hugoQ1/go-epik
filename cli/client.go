@@ -2120,7 +2120,7 @@ var miningPledgeTransferCmd = &cli.Command{
 			reqAmount = abi.TokenAmount(arg2)
 		}
 
-		params, err := actors.SerializeParams(&miner2.TransferPledgeParams{
+		params, err := actors.SerializeParams(&miner2.TransferPledgeParamsV2{
 			Amount: reqAmount,
 			Miner:  targetMiner,
 		})
@@ -2132,7 +2132,7 @@ var miningPledgeTransferCmd = &cli.Command{
 			To:     maddr,
 			From:   fromAddr,
 			Value:  types.NewInt(0),
-			Method: miner.Methods.TransferPledge,
+			Method: miner.Methods.TransferPledgeV2,
 			Params: params,
 		}, nil)
 		if err != nil {
