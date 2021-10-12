@@ -116,7 +116,12 @@ var stateMinerInfo = &cli.Command{
 		if err != nil {
 			return xerrors.Errorf("getting miner total pledge: %w", err)
 		}
+		locked := abi.NewTokenAmount(0)
+		for _, l := range funds.MiningPledgeLocked {
+			locked = big.Add(locked, l.Amount)
+		}
 		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
+		fmt.Printf("Pledge Locked:  %s\n", types.EPK(locked))
 		fmt.Printf("FeeDebt: \t%s\n", types.EPK(funds.FeeDebt))
 		fmt.Printf("Total Mined: \t%s\n", types.EPK(mi.TotalMined))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
