@@ -678,12 +678,16 @@ func minerHasMinPower(ctx context.Context, sm *StateManager, addr address.Addres
 		locked = big.Add(locked, pl.Amount)
 	}
 
-	parentTs, err := sm.ChainStore().GetTipSetFromKey(ts.Parents())
-	if err != nil {
-		return false, err
+	psHeight := abi.ChainEpoch(0)
+	if ts.Height() > 1 {
+		parentTs, err := sm.ChainStore().GetTipSetFromKey(ts.Parents())
+		if err != nil {
+			return false, err
+		}
+		psHeight = parentTs.Height()
 	}
 
-	return ps.MinerNominalPowerMeetsConsensusMinimum(addr, parentTs.Height(), locked)
+	return ps.MinerNominalPowerMeetsConsensusMinimum(addr, psHeight, locked)
 }
 
 func MinerEligibleToMine(ctx context.Context, sm *StateManager, addr address.Address, baseTs *types.TipSet, lookbackTs *types.TipSet) (bool, error) {
