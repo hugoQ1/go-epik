@@ -1470,6 +1470,7 @@ func printMsg(ctx context.Context, api api.FullNode, msg cid.Cid, mw *lapi.MsgLo
 		fmt.Printf("Return: %x\n", mw.Receipt.Return)
 	} else {
 		fmt.Println("message was not found on chain")
+		return nil
 	}
 
 	if err := printReceiptReturn(ctx, api, m, mw.Receipt); err != nil {
