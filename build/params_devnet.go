@@ -12,7 +12,7 @@ import (
 )
 
 var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
-	0: DrandDevnet,
+	0: DrandMainnet,
 }
 
 const BootstrappersFile = "devnet.pi"
