@@ -2793,11 +2793,12 @@ var clientStat = &cli.Command{
 			return fmt.Errorf("parsing data cid: %w", err)
 		}
 
-		ds, err := api.ClientDealSize(ctx, dataCid)
+		ds, err := api.ClientDealPieceCID(ctx, dataCid)
 		if err != nil {
 			return err
 		}
 
+		fmt.Printf("Piece CID  : %v\n", ds.PieceCID)
 		fmt.Printf("Piece Size  : %v\n", ds.PieceSize)
 		fmt.Printf("Payload Size: %v\n", ds.PayloadSize)
 
