@@ -522,10 +522,10 @@ var govExpertfund = &cli.Command{
 }
 var govExpertfundSetThreshold = &cli.Command{
 	Name:      "set-threshold",
-	Usage:     "Set new threshold of data redundancy for valid expert acknowledgement",
-	ArgsUsage: "<newThreshold>",
+	Usage:     "Set new threshold of data redundancy for valid expert acknowledgement.(set 0 if don't change)",
+	ArgsUsage: "<dataThreshold> <dailyThreshold>",
 	Action: func(cctx *cli.Context) error {
-		if cctx.NArg() != 1 {
+		if cctx.NArg() != 2 {
 			return fmt.Errorf("'set-threshold' expects one arguments, new threshold number")
 		}
 
@@ -536,7 +536,12 @@ var govExpertfundSetThreshold = &cli.Command{
 		defer acloser()
 		ctx := ReqContext(cctx)
 
-		threshold, err := strconv.ParseUint(cctx.Args().First(), 10, 64)
+		dataThreshold, err := strconv.ParseUint(cctx.Args().Get(0), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		dailyThreshold, err := strconv.ParseUint(cctx.Args().Get(1), 10, 64)
 		if err != nil {
 			return err
 		}
@@ -546,7 +551,7 @@ var govExpertfundSetThreshold = &cli.Command{
 			return err
 		}
 
-		sp, err := actors.SerializeParams(&expertfund.ChangeThresholdParams{DataStoreThreshold: threshold})
+		sp, err := actors.SerializeParams(&expertfund.ChangeThresholdParams{DataStoreThreshold: dataThreshold, DailyImportThreshold: dailyThreshold})
 		if err != nil {
 			return xerrors.Errorf("serializing params: %w", err)
 		}

@@ -465,7 +465,7 @@ func (m *MinerData) storageChainData(ctx context.Context) error {
 			log.Warnf("failed to check miner stored piece: %w", err)
 			continue
 		} else if stored {
-			log.Infof("data has been storaged:%s, error:%s", data.pieceID, err)
+			log.Infof("data has been storaged:%s", data.pieceID)
 			if !data.isDealed {
 				data.isDealed = true
 				m.totalDealCount++
