@@ -526,7 +526,7 @@ var govExpertfundSetThreshold = &cli.Command{
 	ArgsUsage: "<dataThreshold> <dailyThreshold>",
 	Action: func(cctx *cli.Context) error {
 		if cctx.NArg() != 2 {
-			return fmt.Errorf("'set-threshold' expects one arguments, new threshold number")
+			return fmt.Errorf("'set-threshold' expects two arguments, <dataThreshold> <dailyThreshold>")
 		}
 
 		api, acloser, err := GetFullNodeAPI(cctx)
