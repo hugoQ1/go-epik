@@ -5,6 +5,7 @@ import (
 	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 	builtin3 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	ef3 "github.com/filecoin-project/specs-actors/v2/actors/builtin/expertfund"
 	adt3 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
@@ -70,6 +71,14 @@ func (s *state3) DisqualifiedExpertInfo(a address.Address) (*DisqualifiedExpertI
 	return info, err
 }
 
-func (s *state3) Threshold() uint64 {
+func (s *state3) Reward(epoch abi.ChainEpoch, a address.Address) (*ExpertReward, error) {
+	return s.State.Reward(s.store, epoch, a)
+}
+
+func (s *state3) DataThreshold() uint64 {
 	return s.DataStoreThreshold
+}
+
+func (s *state3) DailyThreshold() uint64 {
+	return s.DailyImportSizeThreshold
 }

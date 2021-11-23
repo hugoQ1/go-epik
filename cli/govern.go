@@ -689,7 +689,8 @@ var govListParamsCmd = &cli.Command{
 		}
 
 		fmt.Printf("[Power] Initial Quota:         %d\n", params.MarketInitialQuota)
-		fmt.Printf("[Experts] Threshold of Reward:  %d\n", params.ExpertfundThreshold)
+		fmt.Printf("[Experts] Threshold of Data:  %d\n", params.ExpertDataThreshold)
+		fmt.Printf("[Experts] Threshold of Daily:  %d\n", params.ExpertDailyThreshold)
 		fmt.Printf("[Knowledge Fund] Payee:        %s\n", params.KnowledgePayee)
 		fmt.Printf("[Miners] PoSt Ratio:            %d (effected at epoch %d)\n",
 			params.MinersPoStRatio.Ratio, params.MinersPoStRatio.EffectiveEpoch)

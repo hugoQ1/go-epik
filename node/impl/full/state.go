@@ -1509,6 +1509,11 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	if addr.Protocol() != address.ID {
 		return nil, xerrors.Errorf("not a ID address: %s", addr)
 	}
+	ts, err := a.Chain.GetTipSetFromKey(tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
+	}
+
 	act, err := a.StateGetActor(ctx, addr, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expert actor: %w", err)
@@ -1525,9 +1530,9 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
 
-	efInfo, err := efs.ExpertInfo(addr)
+	reward, err := efs.Reward(ts.Height(), addr)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get expertfund info: %w", err)
+		return nil, xerrors.Errorf("failed to get expertfund reward: %w", err)
 	}
 	defInfo, err := efs.DisqualifiedExpertInfo(addr)
 	if err != nil {
@@ -1566,7 +1571,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 
 	return &api.ExpertInfo{
 		ExpertInfo:  *info,
-		TotalReward: efInfo.RewardDebt,
+		TotalReward: big.Add(reward.LockedFunds, reward.UnlockedFunds),
 	}, nil
 }
 
@@ -1753,7 +1758,8 @@ func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
-	out.ExpertfundThreshold = efState.Threshold()
+	out.ExpertDataThreshold = efState.DataThreshold()
+	out.ExpertDailyThreshold = efState.DailyThreshold()
 
 	return &out, nil
 }
