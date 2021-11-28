@@ -308,6 +308,31 @@ func (m *MinerData) retrieveChainData(ctx context.Context) error {
 			}
 		}
 
+		hasRetrieving := false
+		deals, err := m.api.ClientRetrieveListDeals(ctx)
+		if err != nil {
+			return err
+		}
+		for _, d := range deals {
+			if d.RootCID == data.rootCID && *d.PieceCID == data.pieceID {
+				if retrievalmarket.IsTerminalSuccess(d.Status) {
+					data.isRetrieved = true
+					m.totalRetrieveCount++
+					hasRetrieving = true
+				}
+				if !(d.Status == retrievalmarket.DealStatusErrored ||
+					d.Status == retrievalmarket.DealStatusCancelled ||
+					retrievalmarket.IsTerminalStatus(d.Status)) {
+					hasRetrieving = true
+				}
+				break
+			}
+		}
+		if hasRetrieving {
+			log.Infof("data has been retrieving in daemon:%s", data.pieceID)
+			continue
+		}
+
 		if stored, err := m.api.StateMinerStoredAnyPiece(ctx, m.miner, []cid.Cid{data.pieceID}, types.EmptyTSK); err != nil {
 			log.Debugf("failed to check miner stored piece: %s", err)
 			continue
