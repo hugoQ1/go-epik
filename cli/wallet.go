@@ -20,6 +20,7 @@ import (
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin/vesting"
 
 	"github.com/EpiK-Protocol/go-epik/chain/actors"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
 	"github.com/EpiK-Protocol/go-epik/chain/types"
 	"github.com/EpiK-Protocol/go-epik/lib/tablewriter"
 )
@@ -699,6 +700,7 @@ var walletCoinbase = &cli.Command{
 	Subcommands: []*cli.Command{
 		walletCoinbaseWithdraw,
 		walletCoinbaseInfo,
+		walletCoinbaseChange,
 	},
 }
 
@@ -827,6 +829,56 @@ var walletCoinbaseInfo = &cli.Command{
 		fmt.Printf("Coinbase Balance:   %s\n", types.EPK(ci.Total))
 		fmt.Printf("\t Vesting:   %s\n", types.EPK(ci.Vesting))
 		fmt.Printf("\t Available: %s\n", types.EPK(ci.Vested))
+
+		return nil
+	},
+}
+
+var walletCoinbaseChange = &cli.Command{
+	Name:      "change",
+	Usage:     "change miner coinbase",
+	ArgsUsage: "<miner> <coinbase>",
+	Flags:     []cli.Flag{},
+	Action: func(cctx *cli.Context) error {
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return xerrors.Errorf("getting node API: %w", err)
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		maddr, err := address.NewFromString(cctx.Args().Get(0))
+		if err != nil {
+			return xerrors.Errorf("parsing miner: %w", err)
+		}
+
+		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		if err != nil {
+			return err
+		}
+
+		coinbase, err := address.NewFromString(cctx.Args().Get(1))
+		if err != nil {
+			return xerrors.Errorf("parsing coinbase: %w", err)
+		}
+
+		sp, err := actors.SerializeParams(&coinbase)
+		if err != nil {
+			return xerrors.Errorf("serializing params: %w", err)
+		}
+
+		smsg, err := api.MpoolPushMessage(ctx, &types.Message{
+			From:   mi.Owner,
+			To:     maddr,
+			Method: miner.Methods.ChangeCoinbase,
+			Value:  big.Zero(),
+			Params: sp,
+		}, nil)
+		if err != nil {
+			return xerrors.Errorf("mpool push: %w", err)
+		}
+
+		fmt.Println("Send Message CID:", smsg.Cid())
 
 		return nil
 	},
