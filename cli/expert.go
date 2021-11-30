@@ -208,7 +208,9 @@ var expertInfoCmd = &cli.Command{
 			fmt.Printf("Will lose shares in %d epochs (since epoch %d)\n", expertfund.ClearExpertContributionDelay-elapsed, info.LostEpoch)
 		}
 
-		fmt.Printf("\nRewards: %d\n", types.EPK(info.TotalReward))
+		fmt.Printf("\nLockRewards: %d\n", types.EPK(info.LockAmount))
+		fmt.Printf("\nUnlockRewards: %d\n", types.EPK(info.UnlockAmount))
+		fmt.Printf("\nTotalRewards: %d\n", types.EPK(info.TotalReward))
 		return nil
 	},
 }

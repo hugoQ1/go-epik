@@ -1224,5 +1224,7 @@ type MsigTransaction struct {
 
 type ExpertInfo struct {
 	expert.ExpertInfo
-	TotalReward abi.TokenAmount
+	LockAmount   abi.TokenAmount
+	UnlockAmount abi.TokenAmount
+	TotalReward  abi.TokenAmount
 }
