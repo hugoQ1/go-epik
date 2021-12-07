@@ -97,11 +97,11 @@ func GetAPIInfo(ctx *cli.Context, t repo.RepoType) (APIInfo, error) {
 		// TODO remove after deprecation period
 		envKey = envForRepoDeprecation(t)
 		env, ok = os.LookupEnv(envKey)
-		if ok {
+		if len(env) > 0 && ok {
 			log.Warnf("Use deprecation env(%s) value, please use env(%s) instead.", envKey, EnvForRepo(t))
 		}
 	}
-	if ok {
+	if len(env) > 0 && ok {
 		return ParseApiInfo(env), nil
 	}
 

@@ -43,3 +43,6 @@ bin/tmp/*
 scratchpad
 
 extern/blst/
+
+.epik
+.epikminer

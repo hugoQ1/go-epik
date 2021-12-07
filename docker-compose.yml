@@ -2,15 +2,31 @@ version: '3'
 
 services:
   
-  node:
+  daemon:
     image: epik/go-epik
     build:
-      context: ./docker
+      context: ./
     ports:
       - '1234:1234'
       - '1347:1347'
     volumes:
-      - .:/go-epik
+      - .:/opt/epik
+      - ./.epik:/root/.epik
     environment:
-      - MINER_INIT=false
-    command: bash docker/scripts/node.sh
+      - PROCESS=daemon
+    command: bash docker/scripts/setup.sh
+
+  # miner:
+  #   image: epik/go-epik
+  #   build:
+  #     context: ./
+  #   ports:
+  #     - '2458:2458'
+  #   volumes:
+  #     - .:/opt/epik
+  #     - ./.epikminer:/root/.epikminer
+  #   environment:
+  #     - PROCESS=miner
+  #     - COINBASE=
+  #     - FULLNODE_API_INFO=
+  #   command: bash docker/scripts/setup.sh
