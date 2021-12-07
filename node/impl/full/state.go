@@ -1572,6 +1572,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 	return &api.ExpertInfo{
 		ExpertInfo:   *info,
 		LockAmount:   reward.LockedFunds,
+		VestingFunds: reward.VestingFunds,
 		UnlockAmount: reward.UnlockedFunds,
 		TotalReward:  big.Add(reward.LockedFunds, reward.UnlockedFunds),
 	}, nil

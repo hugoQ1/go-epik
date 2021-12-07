@@ -49,4 +49,14 @@ type State interface {
 
 type ExpertInfo = expertfund2.ExpertInfo
 type DisqualifiedExpertInfo = expertfund2.DisqualifiedExpertInfo
-type ExpertReward = expertfund2.ExpertReward
+
+// type ExpertReward = expertfund2.ExpertReward
+type ExpertReward struct {
+	RewardDebt abi.TokenAmount
+
+	LockedFunds abi.TokenAmount // Total rewards and added funds locked in vesting table
+
+	UnlockedFunds abi.TokenAmount
+
+	VestingFunds map[abi.ChainEpoch]abi.TokenAmount
+}

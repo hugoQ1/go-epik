@@ -3,6 +3,7 @@ package expertfund
 import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/adt"
 	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -72,7 +73,34 @@ func (s *state3) DisqualifiedExpertInfo(a address.Address) (*DisqualifiedExpertI
 }
 
 func (s *state3) Reward(epoch abi.ChainEpoch, a address.Address) (*ExpertReward, error) {
-	return s.State.Reward(s.store, epoch, a)
+	reward, err := s.State.Reward(s.store, epoch, a)
+	if err != nil {
+		return nil, err
+	}
+	vestingFund, err := adt3.AsMap(s.store, reward.VestingFunds, builtin3.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, err
+	}
+
+	var amount abi.TokenAmount
+	vestingFundsMap := make(map[abi.ChainEpoch]abi.TokenAmount)
+	err = vestingFund.ForEach(&amount, func(k string) error {
+		epoch, err := abi.ParseIntKey(k)
+		if err != nil {
+			return xerrors.Errorf("failed to parse vestingFund key: %w", err)
+		}
+		vestingFundsMap[abi.ChainEpoch(epoch)] = amount
+		return nil
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to iterate vestingFund: %w", err)
+	}
+	return &ExpertReward{
+		RewardDebt:    reward.RewardDebt,
+		LockedFunds:   reward.LockedFunds,
+		UnlockedFunds: reward.UnlockedFunds,
+		VestingFunds:  vestingFundsMap,
+	}, nil
 }
 
 func (s *state3) DataThreshold() uint64 {

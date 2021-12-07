@@ -199,16 +199,22 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("\tImplicated: %d times\n", info.ImplicatedTimes)
 		fmt.Printf("\tData Count: %d\n", info.DataCount)
 		fmt.Printf("\tStatus: %d (%s)\n", info.Status, info.StatusDesc)
+		head, err := api.ChainHead(ctx)
+		if err != nil {
+			return err
+		}
 		if info.Status == expert.ExpertStateUnqualified {
-			head, err := api.ChainHead(ctx)
-			if err != nil {
-				return err
-			}
 			elapsed := head.Height() - info.LostEpoch
 			fmt.Printf("Will lose shares in %d epochs (since epoch %d)\n", expertfund.ClearExpertContributionDelay-elapsed, info.LostEpoch)
 		}
 
 		fmt.Printf("\nLockRewards: %d\n", types.EPK(info.LockAmount))
+		if info.LockAmount.GreaterThan(big.Zero()) {
+			for epoch, amount := range info.VestingFunds {
+				elapsed := head.Height() - epoch
+				fmt.Printf("Unlock At: %d, Elapsed:%d, Amount:%d\n", epoch, elapsed, types.EPK(amount))
+			}
+		}
 		fmt.Printf("\nUnlockRewards: %d\n", types.EPK(info.UnlockAmount))
 		fmt.Printf("\nTotalRewards: %d\n", types.EPK(info.TotalReward))
 		return nil

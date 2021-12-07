@@ -1227,4 +1227,5 @@ type ExpertInfo struct {
 	LockAmount   abi.TokenAmount
 	UnlockAmount abi.TokenAmount
 	TotalReward  abi.TokenAmount
+	VestingFunds map[abi.ChainEpoch]abi.TokenAmount
 }
