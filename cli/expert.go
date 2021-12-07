@@ -211,6 +211,7 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("\nLockRewards: %d\n", types.EPK(info.LockAmount))
 		if info.LockAmount.GreaterThan(big.Zero()) {
 			for epoch, amount := range info.VestingFunds {
+				epoch += expertfund.RewardVestingDelay
 				elapsed := head.Height() - epoch
 				fmt.Printf("Unlock At: %d, Elapsed:%d, Amount:%d\n", epoch, elapsed, types.EPK(amount))
 			}
