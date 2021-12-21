@@ -87,6 +87,7 @@ var clientCmd = &cli.Command{
 		WithCategory("storage", clientDealStatsCmd),
 		WithCategory("storage", miningPledgeCmd),
 		WithCategory("data", clientImportCmd),
+		WithCategory("data", clientExportCmd),
 		WithCategory("data", clientDropCmd),
 		WithCategory("data", clientLocalCmd),
 		WithCategory("data", clientStat),
@@ -226,6 +227,45 @@ var clientImportCmd = &cli.Command{
 		fmt.Printf("Piece CID: %s\n", encoder.Encode(ds.PieceCID))
 		fmt.Printf("Piece Size: %d\n", ds.PieceSize)
 		fmt.Printf("Payload Size: %d\n", ds.PayloadSize)
+
+		return nil
+	},
+}
+
+var clientExportCmd = &cli.Command{
+	Name:      "export",
+	Usage:     "export import file",
+	ArgsUsage: "[rootID] [output path]",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "car",
+			Usage: "export to a car file instead of a regular file",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() != 2 {
+			return fmt.Errorf("usage: export [rootID] [output path]")
+		}
+
+		api, closer, err := GetFullNodeAPI(cctx)
+		if err != nil {
+			return err
+		}
+		defer closer()
+		ctx := ReqContext(cctx)
+
+		rootID, err := cid.Parse(cctx.Args().Get(0))
+		if err != nil {
+			return err
+		}
+
+		path := cctx.Args().Get(1)
+
+		isCar := cctx.Bool("car")
+
+		if err := api.ClientExport(ctx, lapi.ExportRef{Root: rootID}, lapi.FileRef{Path: path, IsCAR: isCar}); err != nil {
+			return xerrors.Errorf("export %d: %w", rootID, err)
+		}
 
 		return nil
 	},
