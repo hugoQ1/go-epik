@@ -692,6 +692,33 @@ func (a *API) ClientListImports(ctx context.Context) ([]api.Import, error) {
 	return out, nil
 }
 
+func (a *API) ClientExport(ctx context.Context, exportRef api.ExportRef, ref api.FileRef) error {
+	rdag := merkledag.NewDAGService(blockservice.New(a.CombinedBstore, offline.Exchange(a.CombinedBstore)))
+
+	if ref.IsCAR {
+		f, err := os.OpenFile(ref.Path, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		err = car.WriteCar(ctx, rdag, []cid.Cid{exportRef.Root}, f)
+		if err != nil {
+			return err
+		}
+		return f.Close()
+	}
+
+	nd, err := rdag.Get(ctx, exportRef.Root)
+	if err != nil {
+		return xerrors.Errorf("export: %w", err)
+	}
+	file, err := unixfile.NewUnixfsFile(ctx, rdag, nd)
+	if err != nil {
+		return xerrors.Errorf("export: %w", err)
+	}
+
+	return files.WriteTo(file, ref.Path)
+}
+
 func (a *API) ClientRetrieve(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error {
 	events := make(chan marketevents.RetrievalEvent)
 	go a.clientRetrieve(ctx, order, ref, events)
