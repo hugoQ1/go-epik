@@ -1539,6 +1539,11 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		return nil, xerrors.Errorf("failed to get disqualification info: %w", err)
 	}
 
+	efInfo, err := efs.ExpertInfo(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expert fund info: %w", err)
+	}
+
 	// expert
 	eas, err := expert.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
@@ -1575,6 +1580,7 @@ func (a *StateAPI) StateExpertInfo(ctx context.Context, addr address.Address, ts
 		VestingFunds: reward.VestingFunds,
 		UnlockAmount: reward.UnlockedFunds,
 		TotalReward:  big.Add(reward.LockedFunds, reward.UnlockedFunds),
+		DataSize:     efInfo.DataSize,
 	}, nil
 }
 

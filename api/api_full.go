@@ -1231,6 +1231,7 @@ type ExpertInfo struct {
 	UnlockAmount abi.TokenAmount
 	TotalReward  abi.TokenAmount
 	VestingFunds map[abi.ChainEpoch]abi.TokenAmount
+	DataSize     abi.PaddedPieceSize
 }
 
 type ExportRef struct {
