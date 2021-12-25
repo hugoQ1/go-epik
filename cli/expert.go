@@ -198,6 +198,7 @@ var expertInfoCmd = &cli.Command{
 		fmt.Printf("\nVotes: %s (required %s)\n", types.EPK(info.CurrentVotes), types.EPK(info.RequiredVotes))
 		fmt.Printf("\tImplicated: %d times\n", info.ImplicatedTimes)
 		fmt.Printf("\tData Count: %d\n", info.DataCount)
+		fmt.Printf("\tData Size: %d\n", info.DataSize)
 		fmt.Printf("\tStatus: %d (%s)\n", info.Status, info.StatusDesc)
 		head, err := api.ChainHead(ctx)
 		if err != nil {
