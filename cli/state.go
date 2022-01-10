@@ -107,6 +107,13 @@ var stateMinerInfo = &cli.Command{
 			return err
 		}
 
+		if ts == nil {
+			ts, err = api.ChainHead(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
 		mi, err := api.StateMinerInfo(ctx, addr, ts.Key())
 		if err != nil {
 			return err
@@ -121,7 +128,13 @@ var stateMinerInfo = &cli.Command{
 			locked = big.Add(locked, l.Amount)
 		}
 		fmt.Printf("Mining Pledge: %s\n", types.EPK(funds.MiningPledge))
+		for addr, val := range funds.MiningPledgors {
+			fmt.Printf("\tAddress: %s Amount: %s\n", addr, types.EPK(val))
+		}
 		fmt.Printf("Pledge Locked:  %s\n", types.EPK(locked))
+		for addr, val := range funds.MiningPledgeLocked {
+			fmt.Printf("\tLocked-Addr: %s Amount: %s Unlock-At: %s\n", addr, types.EPK(val.Amount), EpochTime(ts.Height(), val.EffectiveAt))
+		}
 		fmt.Printf("FeeDebt: \t%s\n", types.EPK(funds.FeeDebt))
 		fmt.Printf("Total Mined: \t%s\n", types.EPK(mi.TotalMined))
 		fmt.Printf("Owner:   \t%s\n", mi.Owner)
@@ -140,13 +153,6 @@ var stateMinerInfo = &cli.Command{
 				return xerrors.Errorf("undecodable listen address: %w", err)
 			}
 			fmt.Printf("%s ", a)
-		}
-
-		for addr, val := range funds.MiningPledgors {
-			fmt.Printf("Mining-Pledger: %s %s\n", addr, types.EPK(val))
-		}
-		for addr, val := range funds.MiningPledgeLocked {
-			fmt.Printf("Mining-Pledger locked: %s %s at:%s\n", addr, types.EPK(val.Amount), EpochTime(ts.Height(), val.EffectiveAt))
 		}
 
 		fmt.Println()
