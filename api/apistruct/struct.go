@@ -271,6 +271,7 @@ type FullNodeStruct struct {
 		StateRetrievalPledgeList         func(context.Context, types.TipSetKey) (map[address.Address]*api.RetrievalState, error)                              `perm:"read"`
 		StateDataIndex                   func(context.Context, abi.ChainEpoch, types.TipSetKey) ([]*api.DataIndex, error)                                     `perm:"read"`
 		StateMinerStoredAnyPiece         func(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)                                     `perm:"read"`
+		StateTotalID                     func(context.Context, types.TipSetKey) (uint64, error)                                                               `perm:"read"`
 
 		MsigGetAvailableBalance func(context.Context, address.Address, types.TipSetKey) (types.BigInt, error)                                                                    `perm:"read"`
 		MsigGetVestingSchedule  func(context.Context, address.Address, types.TipSetKey) (api.MsigVesting, error)                                                                 `perm:"read"`
@@ -1302,6 +1303,10 @@ func (c *FullNodeStruct) StateDataIndex(ctx context.Context, epoch abi.ChainEpoc
 
 func (c *FullNodeStruct) StateMinerStoredAnyPiece(ctx context.Context, addr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) (bool, error) {
 	return c.Internal.StateMinerStoredAnyPiece(ctx, addr, pieceIDs, tsk)
+}
+
+func (c *FullNodeStruct) StateTotalID(ctx context.Context, tsk types.TipSetKey) (uint64, error) {
+	return c.Internal.StateTotalID(ctx, tsk)
 }
 
 func (c *FullNodeStruct) MsigGetAvailableBalance(ctx context.Context, a address.Address, tsk types.TipSetKey) (types.BigInt, error) {

@@ -550,6 +550,9 @@ type FullNode interface {
 	// StateMinerStoredAnyPiece check miner has storage the data by pieceIDs
 	StateMinerStoredAnyPiece(context.Context, address.Address, []cid.Cid, types.TipSetKey) (bool, error)
 
+	// StateTotalID returns the count of id address count
+	StateTotalID(context.Context, types.TipSetKey) (uint64, error)
+
 	// MethodGroup: Msig
 	// The Msig methods are used to interact with multisig wallets on the
 	// epik network

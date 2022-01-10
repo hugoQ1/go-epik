@@ -141,6 +141,14 @@ var stateMinerInfo = &cli.Command{
 			}
 			fmt.Printf("%s ", a)
 		}
+
+		for addr, val := range funds.MiningPledgors {
+			fmt.Printf("Mining-Pledger: %s %s\n", addr, types.EPK(val))
+		}
+		for addr, val := range funds.MiningPledgeLocked {
+			fmt.Printf("Mining-Pledger locked: %s %s at:%s\n", addr, types.EPK(val.Amount), EpochTime(ts.Height(), val.EffectiveAt))
+		}
+
 		fmt.Println()
 		fmt.Printf("Consensus Fault End:\t%d\n", mi.ConsensusFaultElapsed)
 

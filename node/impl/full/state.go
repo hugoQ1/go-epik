@@ -23,6 +23,7 @@ import (
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expert"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/expertfund"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/govern"
+	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/init"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/knowledge"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/market"
 	"github.com/EpiK-Protocol/go-epik/chain/actors/builtin/miner"
@@ -1958,37 +1959,52 @@ func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk
 	return ret, nil
 }
 
-func (a *StateAPI) StateMinerStoredAnyPiece(ctx context.Context, maddr address.Address, pieceIDs []cid.Cid, tsk types.TipSetKey) (bool, error) {
+func (a *StateAPI) StateTotalID(ctx context.Context, tsk types.TipSetKey) (uint64, error) {
 
-	// check pending
-	mact, err := a.StateManager.LoadActorTsk(ctx, builtin.StorageMarketActorAddr, tsk)
+	iact, err := a.StateManager.LoadActorTsk(ctx, builtin.InitActorAddr, tsk)
 	if err != nil {
-		return false, xerrors.Errorf("failed to load market actor: %w", err)
+		return 0, xerrors.Errorf("failed to load init actor: %w", err)
 	}
 
-	mstate, err := market.Load(a.Chain.ActorStore(ctx), mact)
+	istate, err := init.Load(a.Chain.ActorStore(ctx), iact)
 	if err != nil {
-		return false, xerrors.Errorf("failed to load market actor state: %w", err)
+		return 0, xerrors.Errorf("failed to load init actor state: %w", err)
 	}
 
-	has, err := mstate.HasPendingPiece(maddr, pieceIDs)
+	return istate.TotalID(), nil
+}
+
+func (a *StateAPI) StateDataIndex(ctx context.Context, epoch abi.ChainEpoch, tsk types.TipSetKey) ([]*api.DataIndex, error) {
+	act, err := a.StateManager.LoadActorTsk(ctx, market.Address, tsk)
 	if err != nil {
-		return false, xerrors.Errorf("failed to check pending deals: %w", err)
-	}
-	if has {
-		return true, nil
+		return nil, xerrors.Errorf("failed to load market actor: %w", err)
 	}
 
-	// check miner
-	act, err := a.StateManager.LoadActorTsk(ctx, maddr, tsk)
+	state, err := market.Load(a.Chain.ActorStore(ctx), act)
 	if err != nil {
-		return false, xerrors.Errorf("failed to load miner actor: %w", err)
+		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
 
-	state, err := miner.Load(a.Chain.ActorStore(ctx), act)
+	dataIndex, err := state.DataIndexes()
 	if err != nil {
-		return false, xerrors.Errorf("failed to load miner actor state: %w", err)
+		return nil, xerrors.Errorf("failed to load state index: %w", err)
 	}
 
-	return state.ContainsAnyPiece(pieceIDs)
+	var ret []*api.DataIndex
+	err = dataIndex.ForEach(epoch, func(provider address.Address, data market.DataIndex) error {
+		root, err := cid.Parse(data.RootCID)
+		if err != nil {
+			return err
+		}
+		ret = append(ret, &api.DataIndex{
+			Miner:    provider,
+			RootCID:  root,
+			PieceCID: data.PieceCID,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
