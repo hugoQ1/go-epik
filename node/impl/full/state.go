@@ -1719,16 +1719,17 @@ func (a *StateAPI) StateGovernorList(ctx context.Context, tsk types.TipSetKey) (
 }
 
 func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (*govern.GovParams, error) {
-	act, err := a.StateManager.LoadActorTsk(ctx, govern.Address, tsk)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load govern actor: %w", err)
-	}
+
 	store := a.Chain.ActorStore(ctx)
 
 	var out govern.GovParams
 
 	// ratio
-	powerState, err := power.Load(store, act)
+	pact, err := a.StateGetActor(ctx, power.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get power actor: %w", err)
+	}
+	powerState, err := power.Load(store, pact)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load power actor state: %w", err)
 	}
@@ -1742,7 +1743,11 @@ func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (
 	}
 
 	// quota
-	marketState, err := market.Load(store, act)
+	mact, err := a.StateGetActor(ctx, market.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get market actor: %w", err)
+	}
+	marketState, err := market.Load(store, mact)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load market actor state: %w", err)
 	}
@@ -1753,7 +1758,11 @@ func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (
 	out.MarketInitialQuota = quotas.InitialQuota()
 
 	// knowledge
-	knowState, err := knowledge.Load(store, act)
+	kact, err := a.StateGetActor(ctx, knowledge.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get knowledge actor: %w", err)
+	}
+	knowState, err := knowledge.Load(store, kact)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load knowledge actor state: %w", err)
 	}
@@ -1764,7 +1773,11 @@ func (a *StateAPI) StateGovernParams(ctx context.Context, tsk types.TipSetKey) (
 	out.KnowledgePayee = info.Payee
 
 	// threshold
-	efState, err := expertfund.Load(store, act)
+	efact, err := a.StateGetActor(ctx, expertfund.Address, tsk)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get expertfund actor: %w", err)
+	}
+	efState, err := expertfund.Load(store, efact)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load expertfund actor state: %w", err)
 	}
