@@ -143,7 +143,9 @@ func (m *MinerData) syncData(ctx context.Context) {
 		if err := m.storageChainData(ctx); err != nil {
 			log.Errorf("failed to deal chain data: %s", err)
 		}
-		log.Infof("sync data height:%d, data:%d, retrieved:%d, storaged:%d, retrievaling:%d, dealing:%d", m.checkHeight, m.totalDataCount, m.totalRetrieveCount, m.totalDealCount, m.retrievals.Len(), m.deals.Len())
+		if m.retrievals != nil && m.deals != nil {
+			log.Infof("sync data height:%d, data:%d, retrieved:%d, storaged:%d, retrievaling:%d, dealing:%d", m.checkHeight, m.totalDataCount, m.totalRetrieveCount, m.totalDealCount, m.retrievals.Len(), m.deals.Len())
+		}
 		m.niceSleep(LoopWaitingSeconds)
 	}
 }

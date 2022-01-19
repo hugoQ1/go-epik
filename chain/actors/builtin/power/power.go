@@ -32,6 +32,8 @@ var (
 	Methods = builtin3.MethodsPower
 )
 
+type ChangeWdPoStRatioParams = power3.ChangeWdPoStRatioParams
+
 func Load(store adt.Store, act *types.Actor) (st State, err error) {
 	switch act.Code {
 	// case builtin2.StoragePowerActorCodeID:

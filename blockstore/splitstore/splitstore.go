@@ -390,7 +390,7 @@ func (s *SplitStore) Start(chain ChainAccessor) error {
 			break
 		}
 
-		err = s.setBaseEpoch(1)
+		err = s.setBaseEpoch(s.curTs.Height())
 		if err != nil {
 			return xerrors.Errorf("error saving base epoch: %w", err)
 		}
