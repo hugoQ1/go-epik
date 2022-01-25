@@ -151,6 +151,7 @@ type Splitstore struct {
 	EnableGC             bool // EXPERIMENTAL
 	Archival             bool
 	EnableColdDrop       bool
+	CompactionMultiplier int32
 }
 
 // // Full Node
@@ -221,7 +222,8 @@ func DefaultFullNode() *FullNode {
 		Chainstore: Chainstore{
 			EnableSplitstore: false,
 			Splitstore: Splitstore{
-				HotStoreType: "badger",
+				HotStoreType:         "badger",
+				CompactionMultiplier: 1,
 			},
 		},
 	}

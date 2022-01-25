@@ -103,6 +103,9 @@ type Config struct {
 
 	// drop the cold store, the node only save the hot data.
 	EnableColdDrop bool
+
+	// compaction multiplier for Threshold. (default is 1)
+	CompactionMultiplier int32
 }
 
 // ChainAccessor allows the Splitstore to access the chain. It will most likely
@@ -125,6 +128,8 @@ type SplitStore struct {
 	skipOldMsgs       bool
 	skipMsgReceipts   bool
 	dropColdData      bool
+
+	compactionMultiplier int32
 
 	baseEpoch   abi.ChainEpoch
 	warmupEpoch abi.ChainEpoch
@@ -166,6 +171,11 @@ func Open(path string, us bstore.Blockstore, ds dstore.Datastore, hot, cold bsto
 		return nil, err
 	}
 
+	compactionMultiplier := int32(1)
+	if cfg.CompactionMultiplier > 0 {
+		compactionMultiplier = cfg.CompactionMultiplier
+	}
+
 	// and now we can make a SplitStore
 	ss := &SplitStore{
 		ds:      ds,
@@ -175,12 +185,13 @@ func Open(path string, us bstore.Blockstore, ds dstore.Datastore, hot, cold bsto
 		tracker: tracker,
 		env:     env,
 
-		disableCompaction: cfg.DisableCompaction,
-		fullCompaction:    cfg.EnableFullCompaction,
-		enableGC:          cfg.EnableGC,
-		skipOldMsgs:       !(cfg.EnableFullCompaction && cfg.Archival),
-		skipMsgReceipts:   !(cfg.EnableFullCompaction && cfg.Archival),
-		dropColdData:      cfg.EnableColdDrop,
+		disableCompaction:    cfg.DisableCompaction,
+		fullCompaction:       cfg.EnableFullCompaction,
+		enableGC:             cfg.EnableGC,
+		skipOldMsgs:          !(cfg.EnableFullCompaction && cfg.Archival),
+		skipMsgReceipts:      !(cfg.EnableFullCompaction && cfg.Archival),
+		dropColdData:         cfg.EnableColdDrop,
+		compactionMultiplier: compactionMultiplier,
 
 		coldPurgeSize: defaultColdPurgeSize,
 	}
@@ -477,7 +488,7 @@ func (s *SplitStore) HeadChange(_, apply []*types.TipSet) error {
 		return nil
 	}
 
-	if epoch-s.baseEpoch > CompactionThreshold {
+	if epoch-s.baseEpoch > CompactionThreshold*abi.ChainEpoch(s.compactionMultiplier) {
 		// it's time to compact
 		go func() {
 			defer atomic.StoreInt32(&s.compacting, 0)
@@ -625,9 +636,9 @@ func (s *SplitStore) estimateMarkSetSize(curTs *types.TipSet) error {
 }
 
 func (s *SplitStore) compactSimple(curTs *types.TipSet) error {
-	coldEpoch := s.baseEpoch + CompactionCold
+	coldEpoch := s.baseEpoch + CompactionCold*abi.ChainEpoch(s.compactionMultiplier)
 	currentEpoch := curTs.Height()
-	boundaryEpoch := currentEpoch - CompactionBoundary
+	boundaryEpoch := currentEpoch - CompactionBoundary*abi.ChainEpoch(s.compactionMultiplier)
 
 	log.Infow("running simple compaction", "currentEpoch", currentEpoch, "baseEpoch", s.baseEpoch, "coldEpoch", coldEpoch, "boundaryEpoch", boundaryEpoch)
 
@@ -869,8 +880,8 @@ func (s *SplitStore) gcHotstore() {
 
 func (s *SplitStore) compactFull(curTs *types.TipSet) error {
 	currentEpoch := curTs.Height()
-	coldEpoch := s.baseEpoch + CompactionCold
-	boundaryEpoch := currentEpoch - CompactionBoundary
+	coldEpoch := s.baseEpoch + CompactionCold*abi.ChainEpoch(s.compactionMultiplier)
+	boundaryEpoch := currentEpoch - CompactionBoundary*abi.ChainEpoch(s.compactionMultiplier)
 
 	log.Infow("running full compaction", "currentEpoch", currentEpoch, "baseEpoch", s.baseEpoch, "coldEpoch", coldEpoch, "boundaryEpoch", boundaryEpoch)
 
@@ -920,7 +931,7 @@ func (s *SplitStore) compactFull(curTs *types.TipSet) error {
 	}
 
 	count = 0
-	err = s.chain.WalkSnapshot(context.Background(), coldTs, CompactionCold, s.skipOldMsgs, s.skipMsgReceipts,
+	err = s.chain.WalkSnapshot(context.Background(), coldTs, CompactionCold*abi.ChainEpoch(s.compactionMultiplier), s.skipOldMsgs, s.skipMsgReceipts,
 		func(cid cid.Cid) error {
 			count++
 			return coldSet.Mark(cid)
