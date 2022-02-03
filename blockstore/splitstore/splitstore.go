@@ -294,6 +294,8 @@ func (s *SplitStore) Put(blk blocks.Block) error {
 		return s.cold.Put(blk)
 	}
 
+	stats.Record(context.Background(), metrics.SplitstoreBytes.M(int64(len(blk.RawData()))))
+
 	return s.hot.Put(blk)
 }
 
@@ -310,6 +312,7 @@ func (s *SplitStore) PutMany(blks []blocks.Block) error {
 	batch := make([]cid.Cid, 0, len(blks))
 	for _, blk := range blks {
 		batch = append(batch, blk.Cid())
+		stats.Record(context.Background(), metrics.SplitstoreBytes.M(int64(len(blk.RawData()))))
 	}
 
 	err := s.tracker.PutBatch(batch, epoch)
@@ -850,6 +853,12 @@ func (s *SplitStore) purgeBatch(cids []cid.Cid, deleteBatch func([]cid.Cid) erro
 }
 
 func (s *SplitStore) purgeBlocks(cids []cid.Cid) error {
+	for _, cid := range cids {
+		size, _ := s.hot.GetSize(cid)
+		if size > 0 {
+			stats.Record(context.Background(), metrics.SplitstoreColdBytes.M(int64(size)))
+		}
+	}
 	err := s.purgeBatch(cids, s.hot.DeleteMany)
 	if err != nil {
 		return err

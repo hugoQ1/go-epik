@@ -1185,6 +1185,11 @@ func (mp *MessagePool) runHeadChange(from *types.TipSet, to *types.TipSet, rmsgs
 	var merr error
 
 	for _, ts := range revert {
+		for _, blk := range ts.Blocks() {
+			stats.Record(context.Background(), metrics.BlockRevert.M(1))
+			sblk, _ := blk.ToStorageBlock()
+			stats.Record(context.Background(), metrics.BlockRevertBytes.M(int64(len(sblk.RawData()))))
+		}
 		msgs, err := mp.MessagesForBlocks(ts.Blocks())
 		if err != nil {
 			log.Errorf("error retrieving messages for reverted block: %s", err)
@@ -1193,6 +1198,8 @@ func (mp *MessagePool) runHeadChange(from *types.TipSet, to *types.TipSet, rmsgs
 		}
 
 		for _, msg := range msgs {
+			stats.Record(context.Background(), metrics.MessageRevert.M(1))
+			stats.Record(context.Background(), metrics.MessageRevertBytes.M(int64(msg.Size())))
 			add(msg)
 		}
 	}

@@ -91,6 +91,11 @@ var (
 	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
 	TipsetGasUsed           = stats.Int64("tipset/gasused", "Counter of gas in one tipset", stats.UnitDimensionless)
 
+	MessageRevert      = stats.Int64("message/revert", "Counter for total revert messages", stats.UnitDimensionless)
+	MessageRevertBytes = stats.Int64("message/revert_bytes", "Counter for total bytes of revert messages", stats.UnitBytes)
+	BlockRevert        = stats.Int64("block/revert", "Counter for total revert blocks", stats.UnitDimensionless)
+	BlockRevertBytes   = stats.Int64("block/revert_bytes", "Counter for total bytes of revert blocks", stats.UnitBytes)
+
 	// Sys
 	BandwidthTotal = stats.Int64("bandwidth/total", "Counter for total traffic bytes", stats.UnitBytes)
 	BandwidthRate  = stats.Float64("bandwidth/rate", "Counter for bytes per second", stats.UnitBytes)
@@ -117,6 +122,9 @@ var (
 	SplitstoreCompactionHot         = stats.Int64("splitstore/hot", "Number of hot blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionCold        = stats.Int64("splitstore/cold", "Number of cold blocks in last compaction", stats.UnitDimensionless)
 	SplitstoreCompactionDead        = stats.Int64("splitstore/dead", "Number of dead blocks in last compaction", stats.UnitDimensionless)
+
+	SplitstoreBytes     = stats.Int64("splitstore/bytes", "Counter for total bytes of storage", stats.UnitBytes)
+	SplitstoreColdBytes = stats.Int64("splitstore/cold_bytes", "Counter for total bytes of cold storage", stats.UnitBytes)
 
 	// mpool
 	MpoolPendingCount = stats.Int64("mpool/pending_count", "Counter of pending messages in mpool", stats.UnitDimensionless)
@@ -284,6 +292,26 @@ var (
 		Aggregation: view.LastValue(),
 	}
 
+	MessageRevertView = &view.View{
+		Measure:     MessageRevert,
+		Aggregation: view.Count(),
+	}
+
+	MessageRevertBytesView = &view.View{
+		Measure:     MessageRevertBytes,
+		Aggregation: view.Sum(),
+	}
+
+	BlockRevertView = &view.View{
+		Measure:     BlockRevert,
+		Aggregation: view.Count(),
+	}
+
+	BlockRevertBytesView = &view.View{
+		Measure:     BlockRevertBytes,
+		Aggregation: view.Sum(),
+	}
+
 	// default
 	BandwidthTotalView = &view.View{
 		Measure:     BandwidthTotal,
@@ -383,6 +411,14 @@ var (
 		Measure:     SplitstoreCompactionDead,
 		Aggregation: view.Sum(),
 	}
+	SplitstoreBytesView = &view.View{
+		Measure:     SplitstoreBytes,
+		Aggregation: view.Sum(),
+	}
+	SplitstoreColdBytesView = &view.View{
+		Measure:     SplitstoreColdBytes,
+		Aggregation: view.Sum(),
+	}
 	MpoolPendingCountView = &view.View{
 		Measure:     MpoolPendingCount,
 		Aggregation: view.LastValue(),
@@ -434,6 +470,13 @@ var ChainNodeViews = append([]*view.View{
 	SplitstoreCompactionHotView,
 	SplitstoreCompactionColdView,
 	SplitstoreCompactionDeadView,
+
+	MessageRevertView,
+	MessageRevertBytesView,
+	BlockRevertView,
+	BlockRevertBytesView,
+	SplitstoreBytesView,
+	SplitstoreColdBytesView,
 
 	MpoolPendingCountView,
 
