@@ -386,6 +386,9 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 	subPoSt := int64(0)
 	applyStart := build.Clock.Now()
 	tsGasTotal := int64(0)
+	tsGasReward := int64(0)
+	tsGasPenalty := int64(0)
+	tsGasBurn := int64(0)
 	defer func() {
 		count := len(processedMsgs)
 		duration := metrics.SinceInSeconds(applyStart)
@@ -394,11 +397,15 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		stats.Record(ctx, metrics.TipsetPublishDealsCount.M(pubDeals))
 		stats.Record(ctx, metrics.TipsetSubmitPoStsCount.M(subPoSt))
 		stats.Record(ctx, metrics.TipsetGasUsed.M(tsGasTotal))
+		stats.Record(ctx, metrics.TipsetGasReward.M(tsGasReward))
+		stats.Record(ctx, metrics.TipsetGasPenalty.M(tsGasPenalty))
+		stats.Record(ctx, metrics.TipsetGasBurn.M(tsGasBurn))
 	}()
 
 	for _, b := range bms {
 		penalty := big.Zero()
 		gasReward := big.Zero()
+		gasBurn := big.Zero()
 
 		for _, cm := range append(b.BlsMessages, b.SecpkMessages...) {
 			m := cm.VMMessage()
@@ -413,6 +420,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			receipts = append(receipts, &r.MessageReceipt)
 			gasReward = big.Add(gasReward, r.GasCosts.MinerTip)
 			penalty = big.Add(penalty, r.GasCosts.MinerPenalty)
+			gasBurn = big.Add(gasBurn, big.Add(r.GasCosts.BaseFeeBurn, r.GasCosts.OverEstimationBurn))
 
 			if cb != nil {
 				if err := cb(cm.Cid(), m, r); err != nil {
@@ -433,6 +441,9 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			}
 			tsGasTotal += r.GasUsed
 		}
+		tsGasPenalty += penalty.Int64()
+		tsGasReward += gasReward.Int64()
+		tsGasBurn += gasBurn.Int64()
 
 		params, err := actors.SerializeParams(&reward.AwardBlockRewardParams{
 			Miner:                 b.Miner,

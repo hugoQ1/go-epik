@@ -90,6 +90,9 @@ var (
 	TipsetPublishDealsCount = stats.Int64("tipset/publishdeals_count", "Counter of publishdeals in tipsets", stats.UnitDimensionless)
 	TipsetSubmitPoStsCount  = stats.Int64("tipset/submitposts_count", "Counter of submitposts in tipsets", stats.UnitDimensionless)
 	TipsetGasUsed           = stats.Int64("tipset/gasused", "Counter of gas in one tipset", stats.UnitDimensionless)
+	TipsetGasReward         = stats.Int64("tipset/gasreward", "Counter of gas reward in one tipset", stats.UnitDimensionless)
+	TipsetGasPenalty        = stats.Int64("tipset/gaspenalty", "Counter of gas penalty in one tipset", stats.UnitDimensionless)
+	TipsetGasBurn           = stats.Int64("tipset/gasburn", "Counter of gas burn in one tipset", stats.UnitDimensionless)
 
 	MessageRevert      = stats.Int64("message/revert", "Counter for total revert messages", stats.UnitDimensionless)
 	MessageRevertBytes = stats.Int64("message/revert_bytes", "Counter for total bytes of revert messages", stats.UnitBytes)
@@ -291,6 +294,18 @@ var (
 		Measure:     TipsetGasUsed,
 		Aggregation: view.LastValue(),
 	}
+	TipsetGasRewardView = &view.View{
+		Measure:     TipsetGasReward,
+		Aggregation: view.Sum(),
+	}
+	TipsetGasPenaltyView = &view.View{
+		Measure:     TipsetGasPenalty,
+		Aggregation: view.Sum(),
+	}
+	TipsetGasBurnView = &view.View{
+		Measure:     TipsetGasBurn,
+		Aggregation: view.Sum(),
+	}
 
 	MessageRevertView = &view.View{
 		Measure:     MessageRevert,
@@ -490,6 +505,9 @@ var ChainNodeViews = append([]*view.View{
 	TipsetPublishDealsCountView,
 	TipsetSubmitPoStsCountView,
 	TipsetGasUsedView,
+	TipsetGasRewardView,
+	TipsetGasPenaltyView,
+	TipsetGasBurnView,
 }, DefaultViews...)
 
 var MinerNodeViews = append([]*view.View{
