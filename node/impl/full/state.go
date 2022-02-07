@@ -171,6 +171,31 @@ func (m *StateModule) StateMinerInfo(ctx context.Context, actor address.Address,
 	return info, nil
 }
 
+func (m *StateAPI) StateMinerDetail(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*api.MinerDetail, error) {
+	info, err := m.StateMinerInfo(ctx, actor, tsk)
+	if err != nil {
+		return nil, err
+	}
+	funds, err := m.StateMinerFunds(ctx, actor, tsk)
+	if err != nil {
+		return nil, err
+	}
+	power, err := m.StateMinerPower(ctx, actor, tsk)
+	if err != nil {
+		return nil, err
+	}
+	oaddr, err := m.StateAccountKey(ctx, info.Owner, tsk)
+	if err != nil {
+		return nil, err
+	}
+	return &api.MinerDetail{
+		MinerInfo:    info,
+		Funds:        funds,
+		MinerPower:   *power,
+		OwnerAddress: oaddr,
+	}, nil
+}
+
 func (a *StateAPI) StateMinerDeadlines(ctx context.Context, m address.Address, tsk types.TipSetKey) ([]api.Deadline, error) {
 	act, err := a.StateManager.LoadActorTsk(ctx, m, tsk)
 	if err != nil {

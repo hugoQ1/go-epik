@@ -415,6 +415,8 @@ type FullNode interface {
 	StateMinerPower(context.Context, address.Address, types.TipSetKey) (*MinerPower, error)
 	// StateMinerInfo returns info about the indicated miner
 	StateMinerInfo(context.Context, address.Address, types.TipSetKey) (miner.MinerInfo, error)
+	// StateMinerDetail returns the detail of miner
+	StateMinerDetail(context.Context, address.Address, types.TipSetKey) (*MinerDetail, error)
 	// StateMinerDeadlines returns all the proving deadlines for the given miner
 	StateMinerDeadlines(context.Context, address.Address, types.TipSetKey) ([]Deadline, error)
 	// StateMinerPartitions returns all partitions in the specified deadline
@@ -884,6 +886,13 @@ type MinerPower struct {
 	MinerPower  power.Claim
 	TotalPower  power.Claim
 	HasMinPower bool
+}
+
+type MinerDetail struct {
+	miner.MinerInfo
+	miner.Funds
+	MinerPower
+	OwnerAddress address.Address
 }
 
 type QueryOffer struct {
