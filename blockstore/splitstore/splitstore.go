@@ -517,6 +517,8 @@ func (s *SplitStore) warmup(curTs *types.TipSet) {
 	batchHot := make([]blocks.Block, 0, batchSize)
 	batchSnoop := make([]cid.Cid, 0, batchSize)
 
+	log.Infow("splitstore start warmup", "epoch", epoch)
+
 	count := int64(0)
 	err := s.chain.WalkSnapshot(context.Background(), curTs, 1, s.skipOldMsgs, s.skipMsgReceipts,
 		func(cid cid.Cid) error {
@@ -533,7 +535,14 @@ func (s *SplitStore) warmup(curTs *types.TipSet) {
 
 			blk, err := s.cold.Get(cid)
 			if err != nil {
-				return err
+				if err == bstore.ErrNotFound {
+					blk, err = s.us.Get(cid)
+					if err != nil {
+						return err
+					}
+				} else {
+					return err
+				}
 			}
 
 			batchHot = append(batchHot, blk)
