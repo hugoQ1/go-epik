@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -1060,24 +1061,35 @@ func (a *API) ClientGenCar(ctx context.Context, ref api.FileRef, outputPath stri
 }
 
 func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multistore.Store) (cid.Cid, error) {
-	f, err := os.Open(ref.Path)
-	if err != nil {
-		return cid.Undef, err
-	}
-	defer f.Close() //nolint:errcheck
+	var rd io.Reader
+	if strings.HasPrefix(ref.Path, "http://") || strings.HasPrefix(ref.Path, "https://") {
+		resp, err := http.Get(ref.Path) //nolint:gosec
+		if err != nil {
+			return cid.Undef, err
+		}
+		defer resp.Body.Close() //nolint:errcheck
 
-	stat, err := f.Stat()
-	if err != nil {
-		return cid.Undef, err
-	}
+		if resp.StatusCode != http.StatusOK {
+			return cid.Undef, xerrors.Errorf("fetching file failed with non-200 response: %d", resp.StatusCode)
+		}
+		rd = resp.Body
+	} else {
+		f, err := os.Open(ref.Path)
+		if err != nil {
+			return cid.Undef, err
+		}
+		defer f.Close() //nolint:errcheck
 
-	file, err := files.NewReaderPathFile(ref.Path, f, stat)
-	if err != nil {
-		return cid.Undef, err
-	}
+		stat, err := f.Stat()
+		if err != nil {
+			return cid.Undef, err
+		}
 
-	if err := a.checkRDFFile(ref, file); err != nil {
-		return cid.Undef, err
+		file, err := files.NewReaderPathFile(ref.Path, f, stat)
+		if err != nil {
+			return cid.Undef, err
+		}
+		rd = file
 	}
 
 	if ref.IsCAR {
@@ -1087,7 +1099,7 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 		} else {
 			st = store.Fstore
 		}
-		result, err := car.LoadCar(st, file)
+		result, err := car.LoadCar(st, rd)
 		if err != nil {
 			return cid.Undef, err
 		}
@@ -1118,7 +1130,7 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 		NoCopy:  true,
 	}
 
-	db, err := params.New(chunker.NewSizeSplitter(file, int64(build.UnixfsChunkSize)))
+	db, err := params.New(chunker.NewSizeSplitter(rd, int64(build.UnixfsChunkSize)))
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -1227,11 +1239,6 @@ func (a *API) ClientGetDealStatus(ctx context.Context, statusCode uint64) (strin
 	}
 
 	return ststr, nil
-}
-
-func (a *API) checkRDFFile(ref api.FileRef, r io.Reader) error {
-	//TODO: add rdf file check, only rdf data is be allowed.
-	return nil
 }
 
 func (a *API) ClientRemove(ctx context.Context, root cid.Cid, wallet address.Address) (cid.Cid, error) {
