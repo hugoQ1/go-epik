@@ -191,10 +191,10 @@ var clientImportCmd = &cli.Command{
 
 			// miner
 			var miner address.Address
-			if minerStr := cctx.String("miner"); minerStr != "" {
-				miner, err = address.NewFromString(minerStr)
+			if miner, err = address.NewFromString(cctx.String("miner")); err != nil {
+
 				if err != nil {
-					return xerrors.Errorf("failed to parse 'miner' address: %w", err)
+					return xerrors.Errorf("failed to parse 'miner' address to start deal: %w", err)
 				}
 			}
 
@@ -421,14 +421,14 @@ var clientDealCmd = &cli.Command{
 	ArgsUsage: "[dataCid miner]",
 	// ArgsUsage: "[dataCid miner price duration]",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "manual-piece-cid",
-			Usage: "manually specify piece commitment for data (dataCid must be to a car file)",
-		},
-		&cli.Int64Flag{
-			Name:  "manual-piece-size",
-			Usage: "if manually specifying piece cid, used to specify size (dataCid must be to a car file)",
-		},
+		// &cli.StringFlag{
+		// 	Name:  "manual-piece-cid",
+		// 	Usage: "manually specify piece commitment for data (dataCid must be to a car file)",
+		// },
+		// &cli.Int64Flag{
+		// 	Name:  "manual-piece-size",
+		// 	Usage: "if manually specifying piece cid, used to specify size (dataCid must be to a car file)",
+		// },
 		&cli.StringFlag{
 			Name:  "from",
 			Usage: "specify address to fund the deal with",
@@ -438,11 +438,11 @@ var clientDealCmd = &cli.Command{
 			Usage: "specify the epoch that the deal should start at",
 			Value: -1,
 		},
-		&cli.BoolFlag{
-			Name:  "fast-retrieval",
-			Usage: "indicates that data should be available for fast retrieval",
-			Value: true,
-		},
+		// &cli.BoolFlag{
+		// 	Name:  "fast-retrieval",
+		// 	Usage: "indicates that data should be available for fast retrieval",
+		// 	Value: true,
+		// },
 		/* &cli.BoolFlag{
 			Name:        "verified-deal",
 			Usage:       "indicate that the deal counts towards verified client total",
@@ -526,23 +526,23 @@ var clientDealCmd = &cli.Command{
 			Root:         data,
 		}
 
-		if mpc := cctx.String("manual-piece-cid"); mpc != "" {
-			c, err := cid.Parse(mpc)
-			if err != nil {
-				return xerrors.Errorf("failed to parse provided manual piece cid: %w", err)
-			}
+		// if mpc := cctx.String("manual-piece-cid"); mpc != "" {
+		// 	c, err := cid.Parse(mpc)
+		// 	if err != nil {
+		// 		return xerrors.Errorf("failed to parse provided manual piece cid: %w", err)
+		// 	}
 
-			ref.PieceCid = &c
+		// 	ref.PieceCid = &c
 
-			psize := cctx.Int64("manual-piece-size")
-			if psize == 0 {
-				return xerrors.Errorf("must specify piece size when manually setting cid")
-			}
+		// 	psize := cctx.Int64("manual-piece-size")
+		// 	if psize == 0 {
+		// 		return xerrors.Errorf("must specify piece size when manually setting cid")
+		// 	}
 
-			ref.PieceSize = abi.UnpaddedPieceSize(psize)
+		// 	ref.PieceSize = abi.UnpaddedPieceSize(psize)
 
-			ref.TransferType = storagemarket.TTManual
-		}
+		// 	ref.TransferType = storagemarket.TTManual
+		// }
 
 		/* // Check if the address is a verified client
 		dcap, err := api.StateVerifiedClientStatus(ctx, a, types.EmptyTSK)
@@ -572,7 +572,7 @@ var clientDealCmd = &cli.Command{
 			/* EpochPrice:         types.BigInt(price),
 			MinBlocksDuration:  uint64(dur), */
 			DealStartEpoch: abi.ChainEpoch(cctx.Int64("start-epoch")),
-			FastRetrieval:  cctx.Bool("fast-retrieval"),
+			FastRetrieval:  true,
 			/* VerifiedDeal:       isVerified,
 			ProviderCollateral: provCol, */
 		})
