@@ -1061,7 +1061,8 @@ func (a *API) ClientGenCar(ctx context.Context, ref api.FileRef, outputPath stri
 }
 
 func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multistore.Store) (cid.Cid, error) {
-	var rd io.Reader
+	var file files.File
+	var noCopy bool
 	if strings.HasPrefix(ref.Path, "http://") || strings.HasPrefix(ref.Path, "https://") {
 		resp, err := http.Get(ref.Path) //nolint:gosec
 		if err != nil {
@@ -1072,7 +1073,7 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 		if resp.StatusCode != http.StatusOK {
 			return cid.Undef, xerrors.Errorf("fetching file failed with non-200 response: %d", resp.StatusCode)
 		}
-		rd = resp.Body
+		file = files.NewReaderFile(resp.Body)
 	} else {
 		f, err := os.Open(ref.Path)
 		if err != nil {
@@ -1085,11 +1086,11 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 			return cid.Undef, err
 		}
 
-		file, err := files.NewReaderPathFile(ref.Path, f, stat)
+		file, err = files.NewReaderPathFile(ref.Path, f, stat)
 		if err != nil {
 			return cid.Undef, err
 		}
-		rd = file
+		noCopy = true
 	}
 
 	if ref.IsCAR {
@@ -1099,7 +1100,7 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 		} else {
 			st = store.Fstore
 		}
-		result, err := car.LoadCar(st, rd)
+		result, err := car.LoadCar(st, file)
 		if err != nil {
 			return cid.Undef, err
 		}
@@ -1127,10 +1128,10 @@ func (a *API) clientImport(ctx context.Context, ref api.FileRef, store *multisto
 			Limit:   126,
 		},
 		Dagserv: bufDs,
-		NoCopy:  true,
+		NoCopy:  noCopy,
 	}
 
-	db, err := params.New(chunker.NewSizeSplitter(rd, int64(build.UnixfsChunkSize)))
+	db, err := params.New(chunker.NewSizeSplitter(file, int64(build.UnixfsChunkSize)))
 	if err != nil {
 		return cid.Undef, err
 	}
