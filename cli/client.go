@@ -124,6 +124,7 @@ var clientImportCmd = &cli.Command{
 		&cli.BoolFlag{
 			Name:  "local",
 			Usage: "import the file to local and not start storage deal",
+			Value: true,
 		},
 		&cli.StringFlag{
 			Name:  "expert",
@@ -151,9 +152,15 @@ var clientImportCmd = &cli.Command{
 			return xerrors.New("expected input path as the only arg")
 		}
 
-		absPath, err := filepath.Abs(cctx.Args().First())
-		if err != nil {
-			return err
+		var absPath string
+		path := cctx.Args().First()
+		if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+			absPath = path
+		} else {
+			absPath, err = filepath.Abs(path)
+			if err != nil {
+				return err
+			}
 		}
 
 		var res *lapi.ImportRes
