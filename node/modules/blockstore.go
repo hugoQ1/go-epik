@@ -112,6 +112,8 @@ func SplitBlockstore(cfg *config.Chainstore) func(lc fx.Lifecycle, r repo.Locked
 			EnableFullCompaction: cfg.Splitstore.EnableFullCompaction,
 			EnableGC:             cfg.Splitstore.EnableGC,
 			Archival:             cfg.Splitstore.Archival,
+			EnableColdDrop:       cfg.Splitstore.EnableColdDrop,
+			CompactionMultiplier: cfg.Splitstore.CompactionMultiplier,
 		}
 		ss, err := splitstore.Open(path, us, ds, hot, cold, cfg)
 		if err != nil {
