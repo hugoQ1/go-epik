@@ -91,15 +91,6 @@ func (m unionBlockstore) DeleteMany(cids []cid.Cid) (err error) {
 	return err
 }
 
-func (m unionBlockstore) CollectGarbage() (err error) {
-	for _, bs := range m {
-		if err = bs.CollectGarbage(); err != nil {
-			break
-		}
-	}
-	return err
-}
-
 func (m unionBlockstore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
 	// this does not deduplicate; this interface needs to be revisited.
 	outCh := make(chan cid.Cid)

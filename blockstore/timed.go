@@ -47,8 +47,12 @@ func (t *TimedCacheBlockstore) Start(_ context.Context) error {
 		return fmt.Errorf("already started")
 	}
 	t.closeCh = make(chan struct{})
+
+	// Create this timer before starting the goroutine. Otherwise, creating the timer will race
+	// with adding time to the mock clock, and we could add time _first_, then stall waiting for
+	// a timer that'll never fire.
+	ticker := t.clock.Ticker(t.interval)
 	go func() {
-		ticker := t.clock.Ticker(t.interval)
 		defer ticker.Stop()
 		for {
 			select {
@@ -103,13 +107,20 @@ func (t *TimedCacheBlockstore) PutMany(bs []blocks.Block) error {
 }
 
 func (t *TimedCacheBlockstore) View(k cid.Cid, callback func([]byte) error) error {
+	// The underlying blockstore is always a "mem" blockstore so there's no difference,
+	// from a performance perspective, between view & get. So we call Get to avoid
+	// calling an arbitrary callback while holding a lock.
 	t.mu.RLock()
-	defer t.mu.RUnlock()
-	err := t.active.View(k, callback)
+	block, err := t.active.Get(k)
 	if err == ErrNotFound {
-		err = t.inactive.View(k, callback)
+		block, err = t.inactive.Get(k)
 	}
-	return err
+	t.mu.RUnlock()
+
+	if err != nil {
+		return err
+	}
+	return callback(block.RawData())
 }
 
 func (t *TimedCacheBlockstore) Get(k cid.Cid) (blocks.Block, error) {
@@ -157,12 +168,6 @@ func (t *TimedCacheBlockstore) DeleteMany(ks []cid.Cid) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return multierr.Combine(t.active.DeleteMany(ks), t.inactive.DeleteMany(ks))
-}
-
-func (t *TimedCacheBlockstore) CollectGarbage() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return multierr.Combine(t.active.CollectGarbage(), t.inactive.CollectGarbage())
 }
 
 func (t *TimedCacheBlockstore) AllKeysChan(_ context.Context) (<-chan cid.Cid, error) {

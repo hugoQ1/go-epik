@@ -27,10 +27,6 @@ func (m MemBlockstore) DeleteMany(ks []cid.Cid) error {
 	return nil
 }
 
-func (m MemBlockstore) CollectGarbage() error {
-	return nil
-}
-
 func (m MemBlockstore) Has(k cid.Cid) (bool, error) {
 	_, ok := m[k]
 	return ok, nil

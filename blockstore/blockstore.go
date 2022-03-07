@@ -19,7 +19,6 @@ type Blockstore interface {
 	blockstore.Blockstore
 	blockstore.Viewer
 	BatchDeleter
-	CollectGarbage
 }
 
 // BasicBlockstore is an alias to the original IPFS Blockstore.
@@ -31,8 +30,34 @@ type BatchDeleter interface {
 	DeleteMany(cids []cid.Cid) error
 }
 
-type CollectGarbage interface {
-	CollectGarbage() error
+// BlockstoreIterator is a trait for efficient iteration
+type BlockstoreIterator interface {
+	ForEachKey(func(cid.Cid) error) error
+}
+
+// BlockstoreGC is a trait for blockstores that support online garbage collection
+type BlockstoreGC interface {
+	CollectGarbage(options ...BlockstoreGCOption) error
+}
+
+// BlockstoreGCOption is a functional interface for controlling blockstore GC options
+type BlockstoreGCOption = func(*BlockstoreGCOptions) error
+
+// BlockstoreGCOptions is a struct with GC options
+type BlockstoreGCOptions struct {
+	FullGC bool
+}
+
+func WithFullGC(fullgc bool) BlockstoreGCOption {
+	return func(opts *BlockstoreGCOptions) error {
+		opts.FullGC = fullgc
+		return nil
+	}
+}
+
+// BlockstoreSize is a trait for on-disk blockstores that can report their size
+type BlockstoreSize interface {
+	Size() (int64, error)
 }
 
 // WrapIDStore wraps the underlying blockstore in an "identity" blockstore.
@@ -84,10 +109,6 @@ func (a *adaptedBlockstore) DeleteMany(cids []cid.Cid) error {
 		}
 	}
 
-	return nil
-}
-
-func (a *adaptedBlockstore) CollectGarbage() error {
 	return nil
 }
 

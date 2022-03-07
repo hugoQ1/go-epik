@@ -144,14 +144,23 @@ type Chainstore struct {
 }
 
 type Splitstore struct {
-	HotStoreType         string
-	TrackingStoreType    string
-	MarkSetType          string
-	EnableFullCompaction bool
-	EnableGC             bool // EXPERIMENTAL
-	Archival             bool
-	EnableColdDrop       bool
-	CompactionMultiplier int32
+	// ColdStoreType specifies the type of the coldstore.
+	// It can be "universal" (default) or "discard" for discarding cold blocks.
+	ColdStoreType string
+	// HotStoreType specifies the type of the hotstore.
+	// Only currently supported value is "badger".
+	HotStoreType string
+	// MarkSetType specifies the type of the markset.
+	// It can be "map" (default) for in memory marking or "badger" for on-disk marking.
+	MarkSetType string
+
+	// HotStoreMessageRetention specifies the retention policy for messages, in finalities beyond
+	// the compaction boundary; default is 0.
+	HotStoreMessageRetention uint64
+	// HotStoreFullGCFrequency specifies how often to perform a full (moving) GC on the hotstore.
+	// A value of 0 disables, while a value 1 will do full GC in every compaction.
+	// Default is 20 (about once a week).
+	HotStoreFullGCFrequency uint64
 }
 
 // // Full Node
@@ -222,8 +231,11 @@ func DefaultFullNode() *FullNode {
 		Chainstore: Chainstore{
 			EnableSplitstore: false,
 			Splitstore: Splitstore{
-				HotStoreType:         "badger",
-				CompactionMultiplier: 1,
+				ColdStoreType: "universal",
+				HotStoreType:  "badger",
+				MarkSetType:   "map",
+
+				HotStoreFullGCFrequency: 20,
 			},
 		},
 	}

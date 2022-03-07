@@ -24,14 +24,14 @@ import (
 type MetadataDS datastore.Batching
 
 type (
-	// UniversalBlockstore is the cold blockstore.
+	// UniversalBlockstore is the universal blockstore backend.
 	UniversalBlockstore blockstore.Blockstore
-
-	// HotBlockstore is the Hot blockstore abstraction for the splitstore
-	HotBlockstore blockstore.Blockstore
 
 	// ColdBlockstore is the Cold blockstore abstraction for the splitstore
 	ColdBlockstore blockstore.Blockstore
+
+	// HotBlockstore is the Hot blockstore abstraction for the splitstore
+	HotBlockstore blockstore.Blockstore
 
 	// SplitBlockstore is the hot/cold blockstore that sits on top of the ColdBlockstore.
 	SplitBlockstore blockstore.Blockstore
@@ -39,11 +39,19 @@ type (
 	// BaseBlockstore is something, coz DI
 	BaseBlockstore blockstore.Blockstore
 
+	// BasicChainBlockstore is like ChainBlockstore, but without the optional
+	// network fallback support
+	BasicChainBlockstore blockstore.Blockstore
+
 	// ChainBlockstore is a blockstore to store chain data (tipsets, blocks,
 	// messages). It is physically backed by the BareMonolithBlockstore, but it
 	// has a cache on top that is specially tuned for chain data access
 	// patterns.
 	ChainBlockstore blockstore.Blockstore
+
+	// BasicStateBlockstore is like StateBlockstore, but without the optional
+	// network fallback support
+	BasicStateBlockstore blockstore.Blockstore
 
 	// StateBlockstore is a blockstore to store state data (state tree). It is
 	// physically backed by the BareMonolithBlockstore, but it has a cache on
