@@ -235,7 +235,7 @@ func (a *CommonAPI) LogSetLevel(ctx context.Context, subsystem, level string) er
 }
 
 func (a *CommonAPI) GC(ctx context.Context) error {
-	return a.UniversalStore.CollectGarbage()
+	return nil
 }
 
 func (a *CommonAPI) Shutdown(ctx context.Context) error {
