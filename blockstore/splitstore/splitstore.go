@@ -323,6 +323,8 @@ func (s *SplitStore) Put(blk blocks.Block) error {
 
 	s.debug.LogWrite(blk)
 
+	stats.Record(context.Background(), metrics.SplitstoreBytes.M(int64(len(blk.RawData()))))
+
 	s.trackTxnRef(blk.Cid())
 	return nil
 }
@@ -367,6 +369,10 @@ func (s *SplitStore) PutMany(blks []blocks.Block) error {
 	}
 
 	s.debug.LogWriteMany(blks)
+
+	for _, blk := range blks {
+		stats.Record(context.Background(), metrics.SplitstoreBytes.M(int64(len(blk.RawData()))))
+	}
 
 	s.trackTxnRefMany(batch)
 	return nil

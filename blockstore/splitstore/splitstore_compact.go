@@ -2,6 +2,7 @@ package splitstore
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"runtime"
 	"sort"
@@ -859,6 +860,10 @@ func (s *SplitStore) moveColdBlocks(cold []cid.Cid) error {
 			}
 
 			return xerrors.Errorf("error retrieving block %s from hotstore: %w", c, err)
+		}
+		size, _ := s.hot.GetSize(c)
+		if size > 0 {
+			stats.Record(context.Background(), metrics.SplitstoreColdBytes.M(int64(size)))
 		}
 
 		batch = append(batch, blk)
