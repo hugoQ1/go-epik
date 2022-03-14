@@ -59,7 +59,7 @@ func ChainBlockService(bs dtypes.ExposedBlockstore, rem dtypes.ChainBitswap) dty
 	return blockservice.New(bs, rem)
 }
 
-func MessagePool(lc fx.Lifecycle, sm *stmgr.StateManager, ps *pubsub.PubSub, ds dtypes.MetadataDS, nn dtypes.NetworkName, j journal.Journal) (*messagepool.MessagePool, error) {
+func MessagePool(lc fx.Lifecycle, sm *stmgr.StateManager, ps *pubsub.PubSub, ds dtypes.MetadataDS, nn dtypes.NetworkName, j journal.Journal, protector dtypes.GCReferenceProtector) (*messagepool.MessagePool, error) {
 	mpp := messagepool.NewProvider(sm, ps)
 	mp, err := messagepool.New(mpp, ds, nn, j)
 	if err != nil {
@@ -70,6 +70,7 @@ func MessagePool(lc fx.Lifecycle, sm *stmgr.StateManager, ps *pubsub.PubSub, ds 
 			return mp.Close()
 		},
 	})
+	protector.AddProtector(mp.ForEachPendingMessage)
 	return mp, nil
 }
 

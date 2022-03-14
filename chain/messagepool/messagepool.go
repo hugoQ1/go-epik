@@ -413,6 +413,27 @@ func New(api Provider, ds dtypes.MetadataDS, netName dtypes.NetworkName, j journ
 	return mp, nil
 }
 
+func (mp *MessagePool) ForEachPendingMessage(f func(cid.Cid) error) error {
+	mp.lk.Lock()
+	defer mp.lk.Unlock()
+
+	for _, mset := range mp.pending {
+		for _, m := range mset.msgs {
+			err := f(m.Cid())
+			if err != nil {
+				return err
+			}
+
+			err = f(m.Message.Cid())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (mp *MessagePool) Close() error {
 	close(mp.closer)
 	return nil
